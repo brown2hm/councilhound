@@ -1,0 +1,12 @@
+# Phase 1-3 dependencies. Pin versions once confirmed working.
+requests
+beautifulsoup4
+pymupdf
+sqlalchemy
+psycopg2-binary
+pgvector
+anthropic
+faster-whisper
+tenacity
+click
+python-dotenv

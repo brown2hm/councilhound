@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -sL --max-time 20 \"https://fairfax.granicus.com/ViewPublisher.php?view_id=13&mode=rss\")",
+      "Bash(curl -sL --max-time 20 \"https://fairfax.granicus.com/ViewPublisherRSS.php?view_id=13&mode=agendas\")",
+      "Bash(curl -sL --max-time 20 \"https://fairfax.granicus.com/ViewPublisher.php?view_id=13\")",
+      "Bash(curl -sL --max-time 25 \"https://fairfax.granicus.com/player/clip/2633\" -o /tmp/clip.html)",
+      "Read(//tmp/**)",
+      "Bash(grep -oiE '\"?\\(captionURL|subtitles?|cc_url|closedCaption\\)[^,}]{0,120}' /tmp/clip.html)",
+      "Bash(curl -s --max-time 15 \"https://fairfax.granicus.com/videos/2633/captions.vtt\")",
+      "Bash(curl -s --max-time 25 \"https://fairfax.granicus.com/ViewPublisher.php?view_id=11\")",
+      "Bash(sort -t= -k2 -n -u)"
+    ]
+  }
+}
