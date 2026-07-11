@@ -156,9 +156,9 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('entity_id', 'meeting_id', 'document_id', 'transcript_chunk_id', 'role')
     )
-    op.create_index('idx_meetings_date', 'meetings', ['meeting_date'])
-    op.create_index('idx_entity_mentions_entity', 'entity_mentions', ['entity_id'])
-    op.create_index('idx_entity_updates_entity', 'entity_updates', ['entity_id'])
+    op.create_index('ix_meetings_meeting_date', 'meetings', ['meeting_date'])
+    op.create_index('ix_entity_mentions_entity_id', 'entity_mentions', ['entity_id'])
+    op.create_index('ix_entity_updates_entity_id', 'entity_updates', ['entity_id'])
     # ### end Alembic commands ###
 
 

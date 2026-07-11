@@ -86,6 +86,38 @@ def ingest(view_id, since, until, limit, skip_media):
             click.echo(f"  clip {err['clip_id']}: {err['error']}")
 
 
+@cli.command("extract-text")
+@limit_option
+def extract_text(limit):
+    """Phase 2: extract raw_text for downloaded documents (PDF/HTML)."""
+    from fairfax_kb.db.session import get_session
+    from fairfax_kb.extraction.pdf_text import extract_pending
+
+    with get_session() as session:
+        click.echo(extract_pending(session, limit=limit))
+
+
+@cli.command()
+@limit_option
+@click.option("--clip-id", default=None, help="transcribe a single meeting by Granicus clip_id")
+def transcribe(limit, clip_id):
+    """Phase 2: transcribe downloaded meeting audio into transcript_chunks."""
+    from sqlalchemy import select
+
+    from fairfax_kb.db.models import Meeting
+    from fairfax_kb.db.session import get_session
+    from fairfax_kb.extraction.transcript import transcribe_meeting, transcribe_pending
+
+    with get_session() as session:
+        if clip_id:
+            meeting = session.scalar(select(Meeting).where(Meeting.granicus_clip_id == clip_id))
+            if not meeting:
+                raise click.ClickException(f"no meeting with clip_id={clip_id}")
+            click.echo(f"{transcribe_meeting(session, meeting)} chunks")
+        else:
+            click.echo(transcribe_pending(session, limit=limit))
+
+
 @cli.command()
 def status():
     """Show ingest progress: meeting counts by status and type."""

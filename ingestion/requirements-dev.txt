@@ -3,3 +3,5 @@
 # (db/session.py falls back to this when DATABASE_URL is unset).
 pgserver>=0.1.4
 pytest>=8.0
+# Apple Silicon GPU transcription (preferred backend on this Mac)
+mlx-whisper>=0.4

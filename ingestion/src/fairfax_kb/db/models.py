@@ -30,7 +30,7 @@ class Meeting(Base):
     granicus_view_id = Column(String, nullable=False)
     body = Column(String, nullable=False)  # 'city_council' | 'planning_commission'
     meeting_type = Column(String, nullable=False)  # 'council_regular','council_work_session',...
-    meeting_date = Column(Date, nullable=False)
+    meeting_date = Column(Date, nullable=False, index=True)
     title = Column(Text, nullable=False)
     duration_seconds = Column(Integer)
     video_url = Column(Text)
@@ -85,6 +85,10 @@ class TranscriptChunk(Base):
     start_seconds = Column(Numeric)
     end_seconds = Column(Numeric)
     text = Column(Text, nullable=False)
+    # Raw diarization label ('SPEAKER_00'); kept even after attribution.
+    speaker_label = Column(String)
+    # Set only on confident attribution (Phase 3) — never guessed.
+    speaker_entity_id = Column(Integer, ForeignKey("entities.id"))
     # Dimension intentionally unspecified until the embedding provider is
     # chosen at Phase 4 start (PLAN.md section 2).
     embedding = Column(Vector())
@@ -119,7 +123,7 @@ class EntityUpdate(Base):
     __table_args__ = (UniqueConstraint("entity_id", "meeting_id"),)
 
     id = Column(Integer, primary_key=True)
-    entity_id = Column(Integer, ForeignKey("entities.id", ondelete="CASCADE"), nullable=False)
+    entity_id = Column(Integer, ForeignKey("entities.id", ondelete="CASCADE"), nullable=False, index=True)
     meeting_id = Column(Integer, ForeignKey("meetings.id", ondelete="CASCADE"), nullable=False)
     agenda_item_id = Column(Integer, ForeignKey("agenda_items.id"))
     update_text = Column(Text, nullable=False)
@@ -133,7 +137,7 @@ class EntityMention(Base):
     )
 
     id = Column(Integer, primary_key=True)
-    entity_id = Column(Integer, ForeignKey("entities.id", ondelete="CASCADE"), nullable=False)
+    entity_id = Column(Integer, ForeignKey("entities.id", ondelete="CASCADE"), nullable=False, index=True)
     meeting_id = Column(Integer, ForeignKey("meetings.id", ondelete="CASCADE"), nullable=False)
     agenda_item_id = Column(Integer, ForeignKey("agenda_items.id"))
     document_id = Column(Integer, ForeignKey("documents.id"))
