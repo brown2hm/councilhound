@@ -1,0 +1,5 @@
+-r requirements.txt
+# Embedded Postgres 16 + pgvector for local dev without Docker
+# (db/session.py falls back to this when DATABASE_URL is unset).
+pgserver>=0.1.4
+pytest>=8.0

@@ -13,7 +13,6 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./ingestion/src/fairfax_kb/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 5s
@@ -23,11 +22,18 @@ services:
   ingestion:
     build: ./ingestion
     env_file: .env
+    environment:
+      DATA_DIR: /data
+      RAW_DATA_DIR: /data/raw
     depends_on:
       postgres:
         condition: service_healthy
     volumes:
       - ./data/raw:/data/raw
+    # Schema is managed by Alembic: run
+    #   docker compose run ingestion python -m fairfax_kb.cli init-db
+    # then e.g.
+    #   docker compose run ingestion python -m fairfax_kb.cli ingest --since 2024-07-01
     # No long-running process yet — Phase 1 CLI is invoked manually or via
     # a scheduled job added in Phase 6. Placeholder keeps container idle.
     command: ["tail", "-f", "/dev/null"]
