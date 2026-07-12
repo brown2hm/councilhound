@@ -166,8 +166,13 @@ def transcribe_pending(session: Session, limit: int | None = None) -> dict:
         q = q.limit(limit)
     meetings = session.scalars(q).all()
 
-    done = failed = 0
+    done = failed = missing = 0
     for meeting in meetings:
+        # audio may live on another machine (e.g. backfill done locally,
+        # daily job in the cloud) — skip quietly rather than erroring
+        if not os.path.exists(meeting.audio_local_path):
+            missing += 1
+            continue
         try:
             transcribe_meeting(session, meeting)
             done += 1
@@ -175,4 +180,5 @@ def transcribe_pending(session: Session, limit: int | None = None) -> dict:
             session.rollback()
             log.exception("transcription failed for meeting %s", meeting.id)
             failed += 1
-    return {"transcribed": done, "failed": failed, "candidates": len(meetings)}
+    return {"transcribed": done, "failed": failed, "audio_elsewhere": missing,
+            "candidates": len(meetings)}

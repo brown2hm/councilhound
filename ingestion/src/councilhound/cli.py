@@ -196,6 +196,40 @@ def embed(limit):
 
 
 @cli.command()
+@click.option("--days", default=14, show_default=True,
+              help="look-back window for new/updated meetings")
+def daily(days):
+    """Phase 6: the nightly job. Discover + fetch recent meetings, then run
+    every downstream pass (all idempotent, so re-runs are safe): text
+    extraction, transcription, LLM structuring, roster seeding, profile
+    refresh, embeddings."""
+    import datetime
+
+    from councilhound import pipeline
+    from councilhound.config import GRANICUS_VIEW_IDS
+    from councilhound.db.session import get_session
+    from councilhound.embeddings.embed import embed_pending
+    from councilhound.extraction.entity_profile import profile_pending
+    from councilhound.extraction.llm_structure import structure_pending
+    from councilhound.extraction.pdf_text import extract_pending
+    from councilhound.extraction.transcript import transcribe_pending
+    from councilhound.seed import seed_people
+
+    since = datetime.date.today() - datetime.timedelta(days=days)
+    with get_session() as session:
+        for view_id in GRANICUS_VIEW_IDS:
+            run = pipeline.run_ingest(session, view_id, since=since)
+            click.echo(f"ingest view {view_id}: {run.meetings_processed} meetings, "
+                       f"{len(run.errors or [])} errors")
+        click.echo(f"extract-text: {extract_pending(session)}")
+        click.echo(f"transcribe:   {transcribe_pending(session)}")
+        click.echo(f"structure:    {structure_pending(session)}")
+        click.echo(f"seed:         {seed_people(session)}")
+        click.echo(f"profile:      {profile_pending(session)}")
+        click.echo(f"embed:        {embed_pending(session)}")
+
+
+@cli.command()
 def status():
     """Show ingest progress: meeting counts by status and type."""
     from sqlalchemy import func, select

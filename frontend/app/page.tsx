@@ -2,6 +2,9 @@ import Link from "next/link";
 import StatusBadge from "@/components/StatusBadge";
 import { api, BODY_LABELS, formatDate } from "@/lib/api";
 
+// data comes from the API at request time; never prerender at build
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   const [projects, meetings] = await Promise.all([
     api.entities(new URLSearchParams({ entity_type: "project", limit: "8" })),

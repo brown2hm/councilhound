@@ -24,6 +24,7 @@ from councilhound.db.models import AgendaItem, Meeting, TranscriptChunk
 from councilhound.embeddings.embed import embed_query
 
 from app.db import db_session
+from app.ratelimit import check_ask_rate
 
 router = APIRouter()
 
@@ -123,7 +124,7 @@ def _answer(question: str, sources: list[dict]) -> str:
     return "".join(b.text for b in response.content if b.type == "text")
 
 
-@router.post("/")
+@router.post("/", dependencies=[Depends(check_ask_rate)])
 def ask(req: AskRequest, session: Session = Depends(db_session)):
     vec = embed_query(req.question)
     sources = _retrieve(session, vec)
