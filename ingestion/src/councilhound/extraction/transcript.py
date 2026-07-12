@@ -25,7 +25,7 @@ import time
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from councillens.db.models import Meeting, TranscriptChunk
+from councilhound.db.models import Meeting, TranscriptChunk
 
 log = logging.getLogger(__name__)
 

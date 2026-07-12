@@ -6,11 +6,11 @@ import datetime
 
 from sqlalchemy import func, select
 
-from councillens.db.models import (
+from councilhound.db.models import (
     AgendaItem, Document, Entity, EntityUpdate, Meeting, Vote,
 )
-from councillens.entities import add_alias, resolve_entity
-from councillens.extraction.llm_structure import apply_extraction
+from councilhound.entities import add_alias, resolve_entity
+from councilhound.extraction.llm_structure import apply_extraction
 
 
 def _make_meeting(session, clip_id, date):

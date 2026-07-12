@@ -19,8 +19,8 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
-from councillens.config import ANTHROPIC_API_KEY
-from councillens.db.models import (
+from councilhound.config import ANTHROPIC_API_KEY
+from councilhound.db.models import (
     AgendaItem,
     Entity,
     EntityAlias,
@@ -30,7 +30,7 @@ from councillens.db.models import (
     TranscriptChunk,
     Vote,
 )
-from councillens.entities import resolve_entity
+from councilhound.entities import resolve_entity
 
 log = logging.getLogger(__name__)
 

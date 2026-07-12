@@ -19,8 +19,8 @@ import re
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from councillens.db.models import Document, Meeting
-from councillens.entities import add_alias, display_name, resolve_entity
+from councilhound.db.models import Document, Meeting
+from councilhound.entities import add_alias, display_name, resolve_entity
 
 log = logging.getLogger(__name__)
 
@@ -123,7 +123,7 @@ def seed_people(session: Session) -> dict:
                 seen_names.add(c)
     session.commit()
 
-    from councillens.db.models import Entity, EntityAlias
+    from councilhound.db.models import Entity, EntityAlias
     n_people = session.scalar(select(func.count(Entity.id)).where(Entity.entity_type == "person"))
     n_aliases = session.scalar(select(func.count(EntityAlias.id)))
     result = {"people": n_people, "aliases": n_aliases, "names_seen": len(seen_names)}

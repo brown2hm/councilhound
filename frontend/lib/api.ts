@@ -1,4 +1,4 @@
-// Typed client for the CouncilLens API. Server components fetch directly
+// Typed client for the CouncilHound API. Server components fetch directly
 // (API_URL, in-cluster/localhost); the Ask page fetches from the browser
 // (NEXT_PUBLIC_API_URL).
 

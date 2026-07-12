@@ -30,8 +30,8 @@ from datetime import date, datetime
 
 from bs4 import BeautifulSoup
 
-from councillens import http
-from councillens.config import GRANICUS_BASE_URL
+from councilhound import http
+from councilhound.config import GRANICUS_BASE_URL
 
 log = logging.getLogger(__name__)
 

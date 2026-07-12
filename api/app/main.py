@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import meetings, entities, ask
 
-app = FastAPI(title="CouncilLens API")
+app = FastAPI(title="CouncilHound API")
 
 app.add_middleware(
     CORSMiddleware,

@@ -32,9 +32,9 @@ services:
     volumes:
       - ./data/raw:/data/raw
     # Schema is managed by Alembic: run
-    #   docker compose run ingestion python -m councillens.cli init-db
+    #   docker compose run ingestion python -m councilhound.cli init-db
     # then e.g.
-    #   docker compose run ingestion python -m councillens.cli ingest --since 2024-07-01
+    #   docker compose run ingestion python -m councilhound.cli ingest --since 2024-07-01
     # No long-running process yet — Phase 1 CLI is invoked manually or via
     # a scheduled job added in Phase 6. Placeholder keeps container idle.
     command: ["tail", "-f", "/dev/null"]

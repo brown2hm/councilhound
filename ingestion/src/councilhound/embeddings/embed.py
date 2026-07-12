@@ -19,7 +19,7 @@ import os
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from councillens.db.models import AgendaItem, TranscriptChunk
+from councilhound.db.models import AgendaItem, TranscriptChunk
 
 log = logging.getLogger(__name__)
 

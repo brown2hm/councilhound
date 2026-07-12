@@ -39,9 +39,9 @@ export default function AskPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="mb-1 text-xl font-semibold">Ask</h1>
+      <h1 className="mb-1 text-xl font-semibold">Ask the hound</h1>
       <p className="mb-5 text-sm text-slate-500">
-        Answers come only from the meeting record, with citations you can verify.
+        It fetches answers only from the meeting record, with citations you can verify.
       </p>
 
       <form

@@ -17,7 +17,7 @@ from collections import defaultdict
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from councillens.db.models import Entity, EntityAlias, Meeting, TranscriptChunk
+from councilhound.db.models import Entity, EntityAlias, Meeting, TranscriptChunk
 
 log = logging.getLogger(__name__)
 

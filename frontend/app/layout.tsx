@@ -3,9 +3,9 @@ import Link from "next/link";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "CouncilLens — City of Fairfax",
+  title: "CouncilHound — City of Fairfax",
   description:
-    "Track City of Fairfax council and planning commission projects, votes, and decisions over time.",
+    "CouncilHound sniffs through City of Fairfax council and planning commission records so you can track projects, votes, and decisions over time.",
 };
 
 const nav = [
@@ -21,7 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <header className="border-b border-slate-200 bg-white">
           <div className="mx-auto flex max-w-5xl items-center gap-8 px-4 py-3">
             <Link href="/" className="text-lg font-semibold tracking-tight">
-              Council<span className="text-sky-600">Lens</span>
+              <span aria-hidden className="mr-1.5">🐕</span>Council<span className="text-amber-600">Hound</span>
             </Link>
             <nav className="flex gap-5 text-sm font-medium text-slate-600">
               {nav.map((n) => (
@@ -34,8 +34,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </header>
         <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
         <footer className="mx-auto max-w-5xl px-4 pb-8 text-xs text-slate-400">
-          Data from public City of Fairfax, VA meeting records on Granicus. Summaries are
-          machine-generated — always verify against the linked source documents.
+          CouncilHound fetches from public City of Fairfax, VA meeting records on Granicus.
+          Summaries are machine-generated — always verify against the linked source documents.
         </footer>
       </body>
     </html>

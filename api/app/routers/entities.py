@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from councillens.db.models import AgendaItem, Entity, EntityProfile, EntityUpdate, Meeting
-from councillens.hot_topics import hot_topics
+from councilhound.db.models import AgendaItem, Entity, EntityProfile, EntityUpdate, Meeting
+from councilhound.hot_topics import hot_topics
 
 from app.db import db_session
 

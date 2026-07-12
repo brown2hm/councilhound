@@ -1,8 +1,8 @@
 """Hot-topic scoring: named discussion time over recent transcribed meetings."""
 import datetime
 
-from councillens.db.models import Entity, EntityAlias, Meeting, TranscriptChunk
-from councillens.hot_topics import hot_topics
+from councilhound.db.models import Entity, EntityAlias, Meeting, TranscriptChunk
+from councilhound.hot_topics import hot_topics
 
 
 def _meeting(db, clip, date):

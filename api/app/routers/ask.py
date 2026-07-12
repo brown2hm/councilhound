@@ -19,9 +19,9 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from councillens.config import ANTHROPIC_API_KEY, GRANICUS_BASE_URL
-from councillens.db.models import AgendaItem, Meeting, TranscriptChunk
-from councillens.embeddings.embed import embed_query
+from councilhound.config import ANTHROPIC_API_KEY, GRANICUS_BASE_URL
+from councilhound.db.models import AgendaItem, Meeting, TranscriptChunk
+from councilhound.embeddings.embed import embed_query
 
 from app.db import db_session
 

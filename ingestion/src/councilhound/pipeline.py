@@ -17,10 +17,10 @@ from datetime import date, datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from councillens import http
-from councillens.config import RAW_DATA_DIR
-from councillens.db.models import Document, IngestRun, Meeting
-from councillens.scraper import granicus
+from councilhound import http
+from councilhound.config import RAW_DATA_DIR
+from councilhound.db.models import Document, IngestRun, Meeting
+from councilhound.scraper import granicus
 
 log = logging.getLogger(__name__)
 

@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from councillens.db.models import AgendaItem, Document, Meeting, Vote
+from councilhound.db.models import AgendaItem, Document, Meeting, Vote
 
 from app.db import db_session
 

@@ -1,18 +1,18 @@
 """
 Command-line entrypoint for the ingestion pipeline.
 
-  python -m councillens.cli init-db                      # create/upgrade schema (Alembic)
-  python -m councillens.cli discover --since 2024-07-01  # meetings rows only
-  python -m councillens.cli ingest --since 2024-07-01    # discover + documents + audio
-  python -m councillens.cli ingest --limit 3 --skip-media
-  python -m councillens.cli status                       # counts by status/type
+  python -m councilhound.cli init-db                      # create/upgrade schema (Alembic)
+  python -m councilhound.cli discover --since 2024-07-01  # meetings rows only
+  python -m councilhound.cli ingest --since 2024-07-01    # discover + documents + audio
+  python -m councilhound.cli ingest --limit 3 --skip-media
+  python -m councilhound.cli status                       # counts by status/type
 """
 import logging
 from datetime import datetime
 
 import click
 
-from councillens.config import GRANICUS_VIEW_IDS
+from councilhound.config import GRANICUS_VIEW_IDS
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logging.getLogger("pgserver").setLevel(logging.WARNING)
@@ -55,8 +55,8 @@ def init_db():
 @limit_option
 def discover(view_id, since, until, limit):
     """Phase 1: discover in-scope meetings and upsert meetings rows."""
-    from councillens import pipeline
-    from councillens.db.session import get_session
+    from councilhound import pipeline
+    from councilhound.db.session import get_session
 
     with get_session() as session:
         result = pipeline.discover(session, view_id, since=since, until=until, limit=limit)
@@ -71,8 +71,8 @@ def discover(view_id, since, until, limit):
 @click.option("--skip-media", is_flag=True, help="skip MP3 downloads (documents only)")
 def ingest(view_id, since, until, limit, skip_media):
     """Phase 1: discover + fetch documents and audio for in-scope meetings."""
-    from councillens import pipeline
-    from councillens.db.session import get_session
+    from councilhound import pipeline
+    from councilhound.db.session import get_session
 
     with get_session() as session:
         run = pipeline.run_ingest(
@@ -90,8 +90,8 @@ def ingest(view_id, since, until, limit, skip_media):
 @limit_option
 def extract_text(limit):
     """Phase 2: extract raw_text for downloaded documents (PDF/HTML)."""
-    from councillens.db.session import get_session
-    from councillens.extraction.pdf_text import extract_pending
+    from councilhound.db.session import get_session
+    from councilhound.extraction.pdf_text import extract_pending
 
     with get_session() as session:
         click.echo(extract_pending(session, limit=limit))
@@ -104,9 +104,9 @@ def transcribe(limit, clip_id):
     """Phase 2: transcribe downloaded meeting audio into transcript_chunks."""
     from sqlalchemy import select
 
-    from councillens.db.models import Meeting
-    from councillens.db.session import get_session
-    from councillens.extraction.transcript import transcribe_meeting, transcribe_pending
+    from councilhound.db.models import Meeting
+    from councilhound.db.session import get_session
+    from councilhound.extraction.transcript import transcribe_meeting, transcribe_pending
 
     with get_session() as session:
         if clip_id:
@@ -121,8 +121,8 @@ def transcribe(limit, clip_id):
 @cli.command("seed-entities")
 def seed_entities():
     """Phase 3 setup: seed person entities + aliases from agenda headers."""
-    from councillens.db.session import get_session
-    from councillens.seed import seed_people
+    from councilhound.db.session import get_session
+    from councilhound.seed import seed_people
 
     with get_session() as session:
         click.echo(seed_people(session))
@@ -137,9 +137,9 @@ def structure(limit, clip_id, force, reapply):
     """Phase 3: LLM structuring pass (agenda items, votes, entity timelines)."""
     from sqlalchemy import select
 
-    from councillens.db.models import Meeting
-    from councillens.db.session import get_session
-    from councillens.extraction.llm_structure import structure_meeting, structure_pending
+    from councilhound.db.models import Meeting
+    from councilhound.db.session import get_session
+    from councilhound.extraction.llm_structure import structure_meeting, structure_pending
 
     with get_session() as session:
         if clip_id:
@@ -149,8 +149,8 @@ def structure(limit, clip_id, force, reapply):
             structure_meeting(session, meeting, force=force, reapply_only=reapply)
             click.echo(f"structured meeting {meeting.id} ({meeting.title} {meeting.meeting_date})")
         elif reapply:
-            from councillens.db.models import Extraction
-            from councillens.extraction.llm_structure import apply_extraction
+            from councilhound.db.models import Extraction
+            from councilhound.extraction.llm_structure import apply_extraction
 
             for ext in session.scalars(select(Extraction)).all():
                 meeting = session.get(Meeting, ext.meeting_id)
@@ -169,9 +169,9 @@ def profile(limit, slug, include_fresh):
     """Synthesize entity profiles (summary, open questions, member commentary)."""
     from sqlalchemy import select
 
-    from councillens.db.models import Entity
-    from councillens.db.session import get_session
-    from councillens.extraction.entity_profile import profile_pending, synthesize_profile
+    from councilhound.db.models import Entity
+    from councilhound.db.session import get_session
+    from councilhound.extraction.entity_profile import profile_pending, synthesize_profile
 
     with get_session() as session:
         if slug:
@@ -188,8 +188,8 @@ def profile(limit, slug, include_fresh):
 @limit_option
 def embed(limit):
     """Phase 4: embed transcript chunks + agenda items for RAG retrieval."""
-    from councillens.db.session import get_session
-    from councillens.embeddings.embed import embed_pending
+    from councilhound.db.session import get_session
+    from councilhound.embeddings.embed import embed_pending
 
     with get_session() as session:
         click.echo(embed_pending(session, limit=limit))
@@ -200,8 +200,8 @@ def status():
     """Show ingest progress: meeting counts by status and type."""
     from sqlalchemy import func, select
 
-    from councillens.db.models import Document, Meeting
-    from councillens.db.session import get_session
+    from councilhound.db.models import Document, Meeting
+    from councilhound.db.session import get_session
 
     with get_session() as session:
         rows = session.execute(
@@ -218,7 +218,7 @@ def status():
         for doc_type, total, on_disk in docs:
             click.echo(f"documents/{doc_type:20} {on_disk}/{total} fetched")
 
-        from councillens.db.models import (
+        from councilhound.db.models import (
             AgendaItem, Entity, EntityUpdate, Extraction, TranscriptChunk, Vote,
         )
         n_tc_meetings = session.scalar(

@@ -14,7 +14,7 @@ from bs4 import BeautifulSoup
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from councillens.db.models import Document
+from councilhound.db.models import Document
 
 log = logging.getLogger(__name__)
 

@@ -11,7 +11,7 @@ import unicodedata
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from councillens.db.models import Entity, EntityAlias
+from councilhound.db.models import Entity, EntityAlias
 
 log = logging.getLogger(__name__)
 

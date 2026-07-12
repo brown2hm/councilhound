@@ -1,7 +1,9 @@
-# CouncilLens
+# CouncilHound 🐕
 
-[![CI](https://github.com/brown2hm/councillens/actions/workflows/ci.yml/badge.svg)](https://github.com/brown2hm/councillens/actions/workflows/ci.yml)
-[![Granicus canary](https://github.com/brown2hm/councillens/actions/workflows/granicus-canary.yml/badge.svg)](https://github.com/brown2hm/councillens/actions/workflows/granicus-canary.yml)
+[![CI](https://github.com/brown2hm/councilhound/actions/workflows/ci.yml/badge.svg)](https://github.com/brown2hm/councilhound/actions/workflows/ci.yml)
+[![Granicus canary](https://github.com/brown2hm/councilhound/actions/workflows/granicus-canary.yml/badge.svg)](https://github.com/brown2hm/councilhound/actions/workflows/granicus-canary.yml)
+
+*The good dog that reads your city council's paperwork so you don't have to.*
 
 Turns any [Granicus](https://granicus.com)-hosted public meeting archive —
 the platform behind hundreds of US city/county "view meetings online" pages —
@@ -42,9 +44,9 @@ package) when `DATABASE_URL` is unset — data lives in `data/pgdev/`.
 uv venv .venv --python 3.12
 uv pip install -p .venv/bin/python -r ingestion/requirements-dev.txt
 cd ingestion
-PYTHONPATH=src ../.venv/bin/python -m councillens.cli init-db
-PYTHONPATH=src ../.venv/bin/python -m councillens.cli ingest --since 2024-07-01 --skip-media
-PYTHONPATH=src ../.venv/bin/python -m councillens.cli status
+PYTHONPATH=src ../.venv/bin/python -m councilhound.cli init-db
+PYTHONPATH=src ../.venv/bin/python -m councilhound.cli ingest --since 2024-07-01 --skip-media
+PYTHONPATH=src ../.venv/bin/python -m councilhound.cli status
 ```
 
 Drop `--skip-media` to also download meeting MP3s (needed for transcription;
@@ -53,7 +55,7 @@ a full council meeting is ~80–150 MB, a 24-month backfill is roughly
 Apple Silicon (~35x realtime on GPU) and falls back to `faster-whisper` on
 CPU elsewhere.
 
-Schema changes: edit `ingestion/src/councillens/db/models.py`, then
+Schema changes: edit `ingestion/src/councilhound/db/models.py`, then
 `cd ingestion && alembic revision --autogenerate -m "..."` and `init-db`.
 
 ### Docker (full stack)
@@ -61,7 +63,7 @@ Schema changes: edit `ingestion/src/councillens/db/models.py`, then
 ```
 cp .env.example .env   # fill in ANTHROPIC_API_KEY etc.
 docker compose up --build
-docker compose run ingestion python -m councillens.cli init-db
+docker compose run ingestion python -m councilhound.cli init-db
 ```
 
 - Postgres (with pgvector) on :5432
@@ -80,7 +82,7 @@ per-city:
 2. **Archive section names → bodies** — cities name their archive sections
    differently ("City Council Meetings", "Board of Supervisors", ...). Edit
    `SECTION_BODIES` and `classify()` in
-   `ingestion/src/councillens/scraper/granicus.py` to map your city's section
+   `ingestion/src/councilhound/scraper/granicus.py` to map your city's section
    headers and meeting-title patterns to the bodies you want to track.
 3. **Seeded entities** (Phase 3) — the LLM pass resolves people against a
    seeded list of council members / commissioners; seed your city's roster.
@@ -88,12 +90,12 @@ per-city:
 Two Granicus behaviors worth knowing, verified against the reference city:
 requests need a browser-ish User-Agent (bare curl gets 403s), and the
 caption endpoint (`/videos/<clip>/captions.vtt`) may exist but be empty —
-CouncilLens transcribes the MP3 audio rather than relying on captions.
+CouncilHound transcribes the MP3 audio rather than relying on captions.
 
 ## Order of work
 
 Follow the plan's phases in order. Implemented so far: Phases 1-4 (scraper +
-raw ingest: `councillens/scraper/granicus.py`, `councillens/pipeline.py`) and
-text extraction, transcription, LLM structuring: `councillens/extraction/`,
-embeddings + RAG API: `councillens/embeddings/`, `api/app/`). Next up:
+raw ingest: `councilhound/scraper/granicus.py`, `councilhound/pipeline.py`) and
+text extraction, transcription, LLM structuring: `councilhound/extraction/`,
+embeddings + RAG API: `councilhound/embeddings/`, `api/app/`). Next up:
 Phase 5 — the Next.js frontend.

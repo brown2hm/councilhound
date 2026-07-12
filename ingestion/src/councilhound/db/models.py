@@ -1,6 +1,6 @@
 """SQLAlchemy models — source of truth for the schema (PLAN.md section 3).
 Migrations are managed by Alembic (ingestion/alembic/); run
-`python -m councillens.cli init-db` to create/upgrade a database."""
+`python -m councilhound.cli init-db` to create/upgrade a database."""
 from sqlalchemy import (
     JSON,
     BigInteger,

@@ -2,14 +2,14 @@
 embedded dev Postgres) and targets the SQLAlchemy models' metadata."""
 from alembic import context
 
-from councillens.db.models import Base
-from councillens.db.session import get_engine
+from councilhound.db.models import Base
+from councilhound.db.session import get_engine
 
 target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
-    from councillens.db.session import _resolve_database_url
+    from councilhound.db.session import _resolve_database_url
 
     context.configure(
         url=_resolve_database_url(),

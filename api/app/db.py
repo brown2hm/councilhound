@@ -1,7 +1,7 @@
-"""DB session dependency. The API reuses the councillens package (models,
+"""DB session dependency. The API reuses the councilhound package (models,
 session resolution) — locally via PYTHONPATH=ingestion/src, in Docker the
 image copies ingestion/src alongside app/."""
-from councillens.db.session import get_session
+from councilhound.db.session import get_session
 
 
 def db_session():

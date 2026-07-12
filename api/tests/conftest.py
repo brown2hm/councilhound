@@ -8,13 +8,13 @@ import sqlalchemy as sa
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import sessionmaker
 
-from councillens.db import session as dbsession
-from councillens.db.models import Base
+from councilhound.db import session as dbsession
+from councilhound.db.models import Base
 
 from app.db import db_session
 from app.main import app
 
-TEST_DB = "councillens_api_test"
+TEST_DB = "councilhound_api_test"
 
 
 @pytest.fixture

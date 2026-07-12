@@ -3,7 +3,7 @@ The /ask test mocks the embedding + Claude calls — it exercises retrieval
 SQL and citation wiring, not the models."""
 import datetime
 
-from councillens.db.models import (
+from councilhound.db.models import (
     AgendaItem, Entity, EntityProfile, EntityUpdate, Meeting, TranscriptChunk, Vote,
 )
 

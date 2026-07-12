@@ -8,7 +8,7 @@ Claude returns agenda items, votes, and entity updates; we then:
 
   1. store the raw output in `extractions` keyed by (meeting_id,
      PROMPT_VERSION) — re-apply or diff prompts without new LLM calls;
-  2. resolve every entity name via councillens.entities (slug -> alias ->
+  2. resolve every entity name via councilhound.entities (slug -> alias ->
      create) — the model never controls canonical identity;
   3. rebuild the meeting's agenda_items / votes / entity_updates /
      entity_mentions rows from scratch (delete + recreate), so a re-run
@@ -24,8 +24,8 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
-from councillens.config import ANTHROPIC_API_KEY
-from councillens.db.models import (
+from councilhound.config import ANTHROPIC_API_KEY
+from councilhound.db.models import (
     AgendaItem,
     Document,
     Entity,
@@ -35,7 +35,7 @@ from councillens.db.models import (
     Meeting,
     Vote,
 )
-from councillens.entities import resolve_entity
+from councilhound.entities import resolve_entity
 
 log = logging.getLogger(__name__)
 

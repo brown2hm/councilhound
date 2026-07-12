@@ -4,10 +4,10 @@ import pytest
 import sqlalchemy as sa
 from sqlalchemy.orm import sessionmaker
 
-from councillens.db import session as dbsession
-from councillens.db.models import Base
+from councilhound.db import session as dbsession
+from councilhound.db.models import Base
 
-TEST_DB = "councillens_test"
+TEST_DB = "councilhound_test"
 
 
 @pytest.fixture

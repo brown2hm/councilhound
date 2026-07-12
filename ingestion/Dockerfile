@@ -14,4 +14,4 @@ COPY alembic.ini ./
 COPY alembic/ ./alembic/
 ENV PYTHONPATH=/app/src
 
-CMD ["python", "-m", "councillens.cli", "--help"]
+CMD ["python", "-m", "councilhound.cli", "--help"]

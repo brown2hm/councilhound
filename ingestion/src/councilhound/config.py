@@ -10,7 +10,7 @@ DATABASE_URL = os.environ.get("DATABASE_URL", "")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 GRANICUS_BASE_URL = os.environ.get("GRANICUS_BASE_URL", "https://fairfax.granicus.com")
 GRANICUS_VIEW_IDS = [v.strip() for v in os.environ.get("GRANICUS_VIEW_IDS", "13").split(",") if v.strip()]
-# Anchor default data dir to the repo root (ingestion/src/councillens/config.py
+# Anchor default data dir to the repo root (ingestion/src/councilhound/config.py
 # -> three parents up), so CLI behavior doesn't depend on cwd. Overridden by
 # env in Docker/cloud.
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -22,6 +22,6 @@ RAW_DATA_DIR = os.environ.get("RAW_DATA_DIR", os.path.join(DATA_DIR, "raw"))
 USER_AGENT = os.environ.get(
     "SCRAPER_USER_AGENT",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/126.0 Safari/537.36 councillens/0.1",
+    "(KHTML, like Gecko) Chrome/126.0 Safari/537.36 councilhound/0.1",
 )
 REQUEST_DELAY_SECONDS = float(os.environ.get("REQUEST_DELAY_SECONDS", "1.0"))

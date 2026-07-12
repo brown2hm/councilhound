@@ -29,7 +29,7 @@ jobs:
           PYTHONPATH: src
         run: |
           uv run python - <<'EOF'
-          from councillens.scraper.granicus import list_meetings
+          from councilhound.scraper.granicus import list_meetings
 
           meetings = list_meetings("13")
           assert len(meetings) > 50, f"only {len(meetings)} in-scope meetings parsed - markup drift?"
