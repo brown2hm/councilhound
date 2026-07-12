@@ -118,6 +118,49 @@ def transcribe(limit, clip_id):
             click.echo(transcribe_pending(session, limit=limit))
 
 
+@cli.command("seed-entities")
+def seed_entities():
+    """Phase 3 setup: seed person entities + aliases from agenda headers."""
+    from councillens.db.session import get_session
+    from councillens.seed import seed_people
+
+    with get_session() as session:
+        click.echo(seed_people(session))
+
+
+@cli.command()
+@limit_option
+@click.option("--clip-id", default=None, help="structure a single meeting by Granicus clip_id")
+@click.option("--force", is_flag=True, help="re-run the LLM even if an extraction exists")
+@click.option("--reapply", is_flag=True, help="re-apply stored extractions without calling the LLM")
+def structure(limit, clip_id, force, reapply):
+    """Phase 3: LLM structuring pass (agenda items, votes, entity timelines)."""
+    from sqlalchemy import select
+
+    from councillens.db.models import Meeting
+    from councillens.db.session import get_session
+    from councillens.extraction.llm_structure import structure_meeting, structure_pending
+
+    with get_session() as session:
+        if clip_id:
+            meeting = session.scalar(select(Meeting).where(Meeting.granicus_clip_id == clip_id))
+            if not meeting:
+                raise click.ClickException(f"no meeting with clip_id={clip_id}")
+            structure_meeting(session, meeting, force=force, reapply_only=reapply)
+            click.echo(f"structured meeting {meeting.id} ({meeting.title} {meeting.meeting_date})")
+        elif reapply:
+            from councillens.db.models import Extraction
+            from councillens.extraction.llm_structure import apply_extraction
+
+            for ext in session.scalars(select(Extraction)).all():
+                meeting = session.get(Meeting, ext.meeting_id)
+                apply_extraction(session, meeting, ext.raw_json)
+            session.commit()
+            click.echo("re-applied all stored extractions")
+        else:
+            click.echo(structure_pending(session, limit=limit))
+
+
 @cli.command()
 def status():
     """Show ingest progress: meeting counts by status and type."""
@@ -140,6 +183,23 @@ def status():
         ).all()
         for doc_type, total, on_disk in docs:
             click.echo(f"documents/{doc_type:20} {on_disk}/{total} fetched")
+
+        from councillens.db.models import (
+            AgendaItem, Entity, EntityUpdate, Extraction, TranscriptChunk, Vote,
+        )
+        n_tc_meetings = session.scalar(
+            select(func.count(func.distinct(TranscriptChunk.meeting_id))))
+        click.echo(f"transcripts: {n_tc_meetings} meetings, "
+                   f"{session.scalar(select(func.count(TranscriptChunk.id)))} chunks")
+        click.echo(f"extractions: {session.scalar(select(func.count(Extraction.id)))} meetings | "
+                   f"agenda_items: {session.scalar(select(func.count(AgendaItem.id)))} | "
+                   f"votes: {session.scalar(select(func.count(Vote.id)))} | "
+                   f"entity_updates: {session.scalar(select(func.count(EntityUpdate.id)))}")
+        ents = session.execute(
+            select(Entity.entity_type, func.count()).group_by(Entity.entity_type)
+        ).all()
+        if ents:
+            click.echo("entities: " + ", ".join(f"{t}={c}" for t, c in ents))
 
 
 if __name__ == "__main__":

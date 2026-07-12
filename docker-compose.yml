@@ -25,6 +25,7 @@ services:
     environment:
       DATA_DIR: /data
       RAW_DATA_DIR: /data/raw
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
     depends_on:
       postgres:
         condition: service_healthy
@@ -41,6 +42,8 @@ services:
   api:
     build: ./api
     env_file: .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
     depends_on:
       postgres:
         condition: service_healthy
