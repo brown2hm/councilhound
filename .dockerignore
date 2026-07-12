@@ -1,0 +1,10 @@
+data/
+.venv/
+.git/
+.github/
+.playwright-mcp/
+frontend/node_modules/
+frontend/.next/
+**/__pycache__/
+*.png
+.env

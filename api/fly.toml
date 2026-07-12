@@ -4,7 +4,9 @@ app = "councilhound-api"
 primary_region = "iad"
 
 [build]
-  dockerfile = "api/Dockerfile"
+  # resolved relative to this file; build context is the repo root
+  # (deploy with: flyctl deploy -c api/fly.toml . from the repo root)
+  dockerfile = "Dockerfile"
 
 [env]
   EMBEDDING_DEVICE = "cpu"
@@ -24,7 +26,7 @@ primary_region = "iad"
 
 [[vm]]
   size = "shared-cpu-2x"
-  memory = "2gb"
+  memory = "4gb"  # torch + embedding model; 2gb OOM-cycles under load
 
 [checks]
   [checks.health]
@@ -32,5 +34,5 @@ primary_region = "iad"
     type = "http"
     interval = "30s"
     timeout = "5s"
-    grace_period = "30s"
+    grace_period = "120s"  # model warmup at startup takes ~20-40s on shared CPU
     path = "/health"
