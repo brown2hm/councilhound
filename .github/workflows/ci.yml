@@ -60,6 +60,8 @@ jobs:
           uv venv
           uv pip install -r requirements-dev.txt
       - name: Smoke tests
+        env:
+          PYTHONPATH: "."
         run: uv run pytest tests/ -v
 
   lint:
