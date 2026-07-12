@@ -1,0 +1,14 @@
+# CouncilHound jobs image (nightly ingest). This app has NO always-on
+# machines — build+push the image, then a scheduled machine runs it daily:
+#   cd ingestion
+#   flyctl deploy -c fly.toml --build-only --push --image-label vN .
+#   flyctl machine run registry.fly.io/councilhound-jobs:vN -a councilhound-jobs \
+#     --schedule daily --vm-cpus 4 --vm-memory 4096 \
+#     -e TRANSCRIBE_BACKEND=faster-whisper -e WHISPER_MODEL=distil-large-v3 \
+#     -e HF_HOME=/tmp/hf -e DATA_DIR=/tmp/data -e RAW_DATA_DIR=/tmp/data/raw \
+#     --restart no -- python -m councilhound.cli daily
+app = "councilhound-jobs"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"

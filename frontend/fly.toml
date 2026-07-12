@@ -6,9 +6,10 @@ primary_region = "iad"
 [build]
   dockerfile = "Dockerfile"
   [build.args]
-    NEXT_PUBLIC_API_URL = "https://councilhound-api.fly.dev"
+    NEXT_PUBLIC_API_URL = "https://api.councilhound.net"
 
 [env]
+  # server-side fetches can use the fly.dev name (no DNS dependency)
   API_URL = "https://councilhound-api.fly.dev"
 
 [http_service]
