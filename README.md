@@ -92,8 +92,8 @@ CouncilLens transcribes the MP3 audio rather than relying on captions.
 
 ## Order of work
 
-Follow the plan's phases in order. Implemented so far: Phase 1 (scraper +
+Follow the plan's phases in order. Implemented so far: Phases 1-4 (scraper +
 raw ingest: `councillens/scraper/granicus.py`, `councillens/pipeline.py`) and
-Phase 2 (text extraction: `councillens/extraction/pdf_text.py`, transcription:
-`councillens/extraction/transcript.py`). Next up: Phase 3 — entity seeding and
-the LLM structuring pass.
+text extraction, transcription, LLM structuring: `councillens/extraction/`,
+embeddings + RAG API: `councillens/embeddings/`, `api/app/`). Next up:
+Phase 5 — the Next.js frontend.

@@ -47,6 +47,21 @@ jobs:
 
   api:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:ci@localhost:5432/postgres
     defaults:
       run:
         working-directory: api
@@ -59,9 +74,9 @@ jobs:
         run: |
           uv venv
           uv pip install -r requirements-dev.txt
-      - name: Smoke tests
+      - name: Tests (endpoints against scratch DB; LLM/embeddings mocked)
         env:
-          PYTHONPATH: "."
+          PYTHONPATH: ".:../ingestion/src"
         run: uv run pytest tests/ -v
 
   lint:

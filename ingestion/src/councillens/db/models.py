@@ -57,6 +57,8 @@ class AgendaItem(Base):
     title = Column(Text)
     description = Column(Text)
     outcome = Column(Text)
+    # embeds label+title+description+outcome; part of the RAG corpus
+    embedding = Column(Vector(768))
 
     meeting = relationship("Meeting", back_populates="agenda_items")
 
@@ -89,9 +91,9 @@ class TranscriptChunk(Base):
     speaker_label = Column(String)
     # Set only on confident attribution (Phase 3) — never guessed.
     speaker_entity_id = Column(Integer, ForeignKey("entities.id"))
-    # Dimension intentionally unspecified until the embedding provider is
-    # chosen at Phase 4 start (PLAN.md section 2).
-    embedding = Column(Vector())
+    # 768 = bge-base-en-v1.5 (local sentence-transformers, the Phase 4
+    # provider decision). Changing providers means a migration + re-embed.
+    embedding = Column(Vector(768))
 
 
 class Entity(Base):

@@ -162,6 +162,17 @@ def structure(limit, clip_id, force, reapply):
 
 
 @cli.command()
+@limit_option
+def embed(limit):
+    """Phase 4: embed transcript chunks + agenda items for RAG retrieval."""
+    from councillens.db.session import get_session
+    from councillens.embeddings.embed import embed_pending
+
+    with get_session() as session:
+        click.echo(embed_pending(session, limit=limit))
+
+
+@cli.command()
 def status():
     """Show ingest progress: meeting counts by status and type."""
     from sqlalchemy import func, select
