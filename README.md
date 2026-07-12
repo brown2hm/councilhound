@@ -1,5 +1,8 @@
 # CouncilLens
 
+[![CI](https://github.com/brown2hm/councillens/actions/workflows/ci.yml/badge.svg)](https://github.com/brown2hm/councillens/actions/workflows/ci.yml)
+[![Granicus canary](https://github.com/brown2hm/councillens/actions/workflows/granicus-canary.yml/badge.svg)](https://github.com/brown2hm/councillens/actions/workflows/granicus-canary.yml)
+
 Turns any [Granicus](https://granicus.com)-hosted public meeting archive —
 the platform behind hundreds of US city/county "view meetings online" pages —
 into a structured, searchable knowledge base: meeting history, project/topic
