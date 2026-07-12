@@ -12,3 +12,12 @@ primary_region = "iad"
 
 [build]
   dockerfile = "Dockerfile"
+
+# Placeholder command: deploy creates the machine idle; it is then converted
+# to a daily schedule running `python -m councilhound.cli daily` (see above).
+[processes]
+  app = "tail -f /dev/null"
+
+[[vm]]
+  size = "shared-cpu-4x"
+  memory = "4gb"
