@@ -6,3 +6,7 @@ node_modules/
 .next/
 .venv/
 .DS_Store
+frontend/node_modules/
+frontend/.next/
+.playwright-mcp/
+*.png
