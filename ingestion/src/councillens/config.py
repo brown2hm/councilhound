@@ -10,7 +10,7 @@ DATABASE_URL = os.environ.get("DATABASE_URL", "")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 GRANICUS_BASE_URL = os.environ.get("GRANICUS_BASE_URL", "https://fairfax.granicus.com")
 GRANICUS_VIEW_IDS = [v.strip() for v in os.environ.get("GRANICUS_VIEW_IDS", "13").split(",") if v.strip()]
-# Anchor default data dir to the repo root (ingestion/src/fairfax_kb/config.py
+# Anchor default data dir to the repo root (ingestion/src/councillens/config.py
 # -> three parents up), so CLI behavior doesn't depend on cwd. Overridden by
 # env in Docker/cloud.
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))

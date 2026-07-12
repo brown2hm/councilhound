@@ -14,7 +14,7 @@ from bs4 import BeautifulSoup
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from fairfax_kb.db.models import Document
+from councillens.db.models import Document
 
 log = logging.getLogger(__name__)
 

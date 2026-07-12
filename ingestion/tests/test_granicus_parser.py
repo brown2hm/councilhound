@@ -2,7 +2,7 @@
 structure of fairfax.granicus.com/ViewPublisher.php?view_id=13 (2026-07-11)."""
 import datetime
 
-from fairfax_kb.scraper.granicus import classify, extract_agenda_item_links, parse_archive
+from councillens.scraper.granicus import classify, extract_agenda_item_links, parse_archive
 
 ARCHIVE_SNIPPET = """
 <html><body>

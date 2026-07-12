@@ -1,18 +1,18 @@
 """
 Command-line entrypoint for the ingestion pipeline.
 
-  python -m fairfax_kb.cli init-db                      # create/upgrade schema (Alembic)
-  python -m fairfax_kb.cli discover --since 2024-07-01  # meetings rows only
-  python -m fairfax_kb.cli ingest --since 2024-07-01    # discover + documents + audio
-  python -m fairfax_kb.cli ingest --limit 3 --skip-media
-  python -m fairfax_kb.cli status                       # counts by status/type
+  python -m councillens.cli init-db                      # create/upgrade schema (Alembic)
+  python -m councillens.cli discover --since 2024-07-01  # meetings rows only
+  python -m councillens.cli ingest --since 2024-07-01    # discover + documents + audio
+  python -m councillens.cli ingest --limit 3 --skip-media
+  python -m councillens.cli status                       # counts by status/type
 """
 import logging
 from datetime import datetime
 
 import click
 
-from fairfax_kb.config import GRANICUS_VIEW_IDS
+from councillens.config import GRANICUS_VIEW_IDS
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logging.getLogger("pgserver").setLevel(logging.WARNING)
@@ -55,8 +55,8 @@ def init_db():
 @limit_option
 def discover(view_id, since, until, limit):
     """Phase 1: discover in-scope meetings and upsert meetings rows."""
-    from fairfax_kb import pipeline
-    from fairfax_kb.db.session import get_session
+    from councillens import pipeline
+    from councillens.db.session import get_session
 
     with get_session() as session:
         result = pipeline.discover(session, view_id, since=since, until=until, limit=limit)
@@ -71,8 +71,8 @@ def discover(view_id, since, until, limit):
 @click.option("--skip-media", is_flag=True, help="skip MP3 downloads (documents only)")
 def ingest(view_id, since, until, limit, skip_media):
     """Phase 1: discover + fetch documents and audio for in-scope meetings."""
-    from fairfax_kb import pipeline
-    from fairfax_kb.db.session import get_session
+    from councillens import pipeline
+    from councillens.db.session import get_session
 
     with get_session() as session:
         run = pipeline.run_ingest(
@@ -90,8 +90,8 @@ def ingest(view_id, since, until, limit, skip_media):
 @limit_option
 def extract_text(limit):
     """Phase 2: extract raw_text for downloaded documents (PDF/HTML)."""
-    from fairfax_kb.db.session import get_session
-    from fairfax_kb.extraction.pdf_text import extract_pending
+    from councillens.db.session import get_session
+    from councillens.extraction.pdf_text import extract_pending
 
     with get_session() as session:
         click.echo(extract_pending(session, limit=limit))
@@ -104,9 +104,9 @@ def transcribe(limit, clip_id):
     """Phase 2: transcribe downloaded meeting audio into transcript_chunks."""
     from sqlalchemy import select
 
-    from fairfax_kb.db.models import Meeting
-    from fairfax_kb.db.session import get_session
-    from fairfax_kb.extraction.transcript import transcribe_meeting, transcribe_pending
+    from councillens.db.models import Meeting
+    from councillens.db.session import get_session
+    from councillens.extraction.transcript import transcribe_meeting, transcribe_pending
 
     with get_session() as session:
         if clip_id:
@@ -123,8 +123,8 @@ def status():
     """Show ingest progress: meeting counts by status and type."""
     from sqlalchemy import func, select
 
-    from fairfax_kb.db.models import Document, Meeting
-    from fairfax_kb.db.session import get_session
+    from councillens.db.models import Document, Meeting
+    from councillens.db.session import get_session
 
     with get_session() as session:
         rows = session.execute(

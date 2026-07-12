@@ -30,8 +30,8 @@ from datetime import date, datetime
 
 from bs4 import BeautifulSoup
 
-from fairfax_kb import http
-from fairfax_kb.config import GRANICUS_BASE_URL
+from councillens import http
+from councillens.config import GRANICUS_BASE_URL
 
 log = logging.getLogger(__name__)
 

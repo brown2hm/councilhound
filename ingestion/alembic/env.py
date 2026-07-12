@@ -2,14 +2,14 @@
 embedded dev Postgres) and targets the SQLAlchemy models' metadata."""
 from alembic import context
 
-from fairfax_kb.db.models import Base
-from fairfax_kb.db.session import get_engine
+from councillens.db.models import Base
+from councillens.db.session import get_engine
 
 target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
-    from fairfax_kb.db.session import _resolve_database_url
+    from councillens.db.session import _resolve_database_url
 
     context.configure(
         url=_resolve_database_url(),

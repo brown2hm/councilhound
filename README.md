@@ -39,9 +39,9 @@ package) when `DATABASE_URL` is unset — data lives in `data/pgdev/`.
 uv venv .venv --python 3.12
 uv pip install -p .venv/bin/python -r ingestion/requirements-dev.txt
 cd ingestion
-PYTHONPATH=src ../.venv/bin/python -m fairfax_kb.cli init-db
-PYTHONPATH=src ../.venv/bin/python -m fairfax_kb.cli ingest --since 2024-07-01 --skip-media
-PYTHONPATH=src ../.venv/bin/python -m fairfax_kb.cli status
+PYTHONPATH=src ../.venv/bin/python -m councillens.cli init-db
+PYTHONPATH=src ../.venv/bin/python -m councillens.cli ingest --since 2024-07-01 --skip-media
+PYTHONPATH=src ../.venv/bin/python -m councillens.cli status
 ```
 
 Drop `--skip-media` to also download meeting MP3s (needed for transcription;
@@ -50,7 +50,7 @@ a full council meeting is ~80–150 MB, a 24-month backfill is roughly
 Apple Silicon (~35x realtime on GPU) and falls back to `faster-whisper` on
 CPU elsewhere.
 
-Schema changes: edit `ingestion/src/fairfax_kb/db/models.py`, then
+Schema changes: edit `ingestion/src/councillens/db/models.py`, then
 `cd ingestion && alembic revision --autogenerate -m "..."` and `init-db`.
 
 ### Docker (full stack)
@@ -58,7 +58,7 @@ Schema changes: edit `ingestion/src/fairfax_kb/db/models.py`, then
 ```
 cp .env.example .env   # fill in ANTHROPIC_API_KEY etc.
 docker compose up --build
-docker compose run ingestion python -m fairfax_kb.cli init-db
+docker compose run ingestion python -m councillens.cli init-db
 ```
 
 - Postgres (with pgvector) on :5432
@@ -77,7 +77,7 @@ per-city:
 2. **Archive section names → bodies** — cities name their archive sections
    differently ("City Council Meetings", "Board of Supervisors", ...). Edit
    `SECTION_BODIES` and `classify()` in
-   `ingestion/src/fairfax_kb/scraper/granicus.py` to map your city's section
+   `ingestion/src/councillens/scraper/granicus.py` to map your city's section
    headers and meeting-title patterns to the bodies you want to track.
 3. **Seeded entities** (Phase 3) — the LLM pass resolves people against a
    seeded list of council members / commissioners; seed your city's roster.
@@ -90,7 +90,7 @@ CouncilLens transcribes the MP3 audio rather than relying on captions.
 ## Order of work
 
 Follow the plan's phases in order. Implemented so far: Phase 1 (scraper +
-raw ingest: `fairfax_kb/scraper/granicus.py`, `fairfax_kb/pipeline.py`) and
-Phase 2 (text extraction: `fairfax_kb/extraction/pdf_text.py`, transcription:
-`fairfax_kb/extraction/transcript.py`). Next up: Phase 3 — entity seeding and
+raw ingest: `councillens/scraper/granicus.py`, `councillens/pipeline.py`) and
+Phase 2 (text extraction: `councillens/extraction/pdf_text.py`, transcription:
+`councillens/extraction/transcript.py`). Next up: Phase 3 — entity seeding and
 the LLM structuring pass.

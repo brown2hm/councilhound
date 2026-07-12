@@ -12,7 +12,7 @@ canonical_slug), APPEND to its running summary rather than overwriting, so
 """
 import json
 from anthropic import Anthropic
-from fairfax_kb.config import ANTHROPIC_API_KEY
+from councillens.config import ANTHROPIC_API_KEY
 
 client = Anthropic(api_key=ANTHROPIC_API_KEY)
 

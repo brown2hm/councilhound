@@ -10,7 +10,7 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from fairfax_kb.config import DATA_DIR, DATABASE_URL
+from councillens.config import DATA_DIR, DATABASE_URL
 
 _engine = None
 _SessionLocal = None

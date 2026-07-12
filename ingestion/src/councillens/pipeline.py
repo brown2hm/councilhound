@@ -17,10 +17,10 @@ from datetime import date, datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from fairfax_kb import http
-from fairfax_kb.config import RAW_DATA_DIR
-from fairfax_kb.db.models import Document, IngestRun, Meeting
-from fairfax_kb.scraper import granicus
+from councillens import http
+from councillens.config import RAW_DATA_DIR
+from councillens.db.models import Document, IngestRun, Meeting
+from councillens.scraper import granicus
 
 log = logging.getLogger(__name__)
 

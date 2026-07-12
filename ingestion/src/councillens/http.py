@@ -13,7 +13,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from fairfax_kb.config import GRANICUS_BASE_URL, REQUEST_DELAY_SECONDS, USER_AGENT
+from councillens.config import GRANICUS_BASE_URL, REQUEST_DELAY_SECONDS, USER_AGENT
 
 log = logging.getLogger(__name__)
 

@@ -14,4 +14,4 @@ COPY alembic.ini ./
 COPY alembic/ ./alembic/
 ENV PYTHONPATH=/app/src
 
-CMD ["python", "-m", "fairfax_kb.cli", "--help"]
+CMD ["python", "-m", "councillens.cli", "--help"]
