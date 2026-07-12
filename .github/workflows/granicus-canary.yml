@@ -1,0 +1,43 @@
+# Weekly canary against the live Granicus site. Unit tests pin the parser to
+# a fixture of today's HTML; this catches the failure mode fixtures can't —
+# Granicus changing their markup (or blocking us) under a working test suite.
+# Failure here means "the scraper will silently stop finding meetings," not
+# "a commit broke something."
+name: Granicus canary
+
+on:
+  schedule:
+    - cron: "0 12 * * 1" # Mondays 12:00 UTC
+  workflow_dispatch:
+
+jobs:
+  live-archive-parse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        working-directory: ingestion
+        run: |
+          uv venv
+          uv pip install -r requirements.txt
+      - name: Parse the live archive
+        working-directory: ingestion
+        env:
+          PYTHONPATH: src
+        run: |
+          uv run python - <<'EOF'
+          from councillens.scraper.granicus import list_meetings
+
+          meetings = list_meetings("13")
+          assert len(meetings) > 50, f"only {len(meetings)} in-scope meetings parsed - markup drift?"
+
+          recent = meetings[:10]
+          with_agenda = sum(1 for m in recent if m.agenda_url)
+          with_audio = sum(1 for m in recent if m.audio_url)
+          assert with_agenda >= 5, f"only {with_agenda}/10 recent meetings have agenda links"
+          assert with_audio >= 3, f"only {with_audio}/10 recent meetings have MP3 links"
+          print(f"OK: {len(meetings)} meetings; recent 10: {with_agenda} agendas, {with_audio} mp3s")
+          EOF

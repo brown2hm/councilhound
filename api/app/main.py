@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import meetings, entities, ask
 
-app = FastAPI(title="Fairfax Council KB API")
+app = FastAPI(title="CouncilLens API")
 
 app.add_middleware(
     CORSMiddleware,
