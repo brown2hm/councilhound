@@ -4,7 +4,7 @@ SQL and citation wiring, not the models."""
 import datetime
 
 from councillens.db.models import (
-    AgendaItem, Entity, EntityUpdate, Meeting, TranscriptChunk, Vote,
+    AgendaItem, Entity, EntityProfile, EntityUpdate, Meeting, TranscriptChunk, Vote,
 )
 
 
@@ -69,11 +69,41 @@ def test_entity_timeline(client, db):
 
     detail = client.get("/entities/george-snyder-trail").json()
     assert detail["current_status"] == "completed"
+    assert detail["profile"] is None  # not yet synthesized
     dates = [t["date"] for t in detail["timeline"]]
     assert dates == sorted(dates)  # chronological
     assert detail["timeline"][0]["status_after"] == "in_progress"
     assert detail["timeline"][1]["status_after"] == "completed"
     assert client.get("/entities/nope").status_code == 404
+
+
+def test_entity_profile_in_detail(client, db):
+    _seed(db)
+    from sqlalchemy import select
+    trail = db.scalar(select(Entity).where(Entity.canonical_slug == "george-snyder-trail"))
+    db.add(EntityProfile(
+        entity_id=trail.id,
+        summary="A trail project with a contested history.",
+        open_questions=["VDOT repayment amount not finalized."],
+        member_commentary=[{"member": "Councilmember Hall", "slug": "stacy-hall",
+                            "summary": "Requested cancellation cost analysis."}],
+    ))
+    db.commit()
+
+    detail = client.get("/entities/george-snyder-trail").json()
+    assert detail["profile"]["summary"].startswith("A trail project")
+    assert detail["profile"]["open_questions"] == ["VDOT repayment amount not finalized."]
+    assert detail["profile"]["member_commentary"][0]["slug"] == "stacy-hall"
+
+
+def test_hot_topics_endpoint(client, db):
+    _seed(db)
+    resp = client.get("/entities/hot")
+    assert resp.status_code == 200
+    data = resp.json()
+    # seeded transcript chunk mentions 'the trail' but not the entity name;
+    # shape is what matters here (scoring logic is unit-tested in ingestion)
+    assert "meetings" in data and "topics" in data
 
 
 def test_ask_with_mocked_llm(client, db, monkeypatch):

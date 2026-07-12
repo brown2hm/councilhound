@@ -4,15 +4,58 @@ import { api, formatDate } from "@/lib/api";
 
 const TYPES = ["project", "ordinance", "resolution", "case_number", "topic", "location", "person"];
 
+async function HotList() {
+  const hot = await api.hotTopics();
+  return (
+    <div>
+      <p className="mb-3 text-xs text-slate-500">
+        Ranked by named discussion time across the {hot.meetings.length} most recent
+        transcribed meetings (
+        {hot.meetings.map((m) => formatDate(m.date)).join(", ")}).
+      </p>
+      <ul className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
+        {hot.topics.map((t, i) => (
+          <li key={t.slug}>
+            <Link
+              href={`/topics/${t.slug}`}
+              className="flex items-center gap-4 px-4 py-3 hover:bg-slate-50"
+            >
+              <span className="w-6 shrink-0 text-right font-mono text-sm text-slate-400">
+                {i + 1}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-medium">{t.name}</div>
+                <div className="text-xs text-slate-500">
+                  {t.entity_type.replace("_", " ")} · {t.chunk_mentions} mentions
+                </div>
+              </div>
+              <span className="shrink-0 text-sm font-semibold text-orange-600">
+                {Math.round(t.seconds / 60)} min
+              </span>
+              <StatusBadge status={t.current_status} />
+            </Link>
+          </li>
+        ))}
+        {hot.topics.length === 0 && (
+          <li className="px-4 py-6 text-sm text-slate-500">
+            No transcribed meetings yet — hot topics appear once transcription lands.
+          </li>
+        )}
+      </ul>
+    </div>
+  );
+}
+
 export default async function TopicsPage({
   searchParams,
 }: {
   searchParams: { type?: string; q?: string };
 }) {
   const type = searchParams.type ?? "project";
+  const isHot = type === "hot";
   const params = new URLSearchParams({ entity_type: type, limit: "100" });
   if (searchParams.q) params.set("q", searchParams.q);
-  const entities = await api.entities(params);
+  const entities = isHot ? [] : await api.entities(params);
 
   return (
     <div>
@@ -23,6 +66,16 @@ export default async function TopicsPage({
       </p>
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
+        <Link
+          href="/topics?type=hot"
+          className={`rounded-full px-3 py-1 text-sm font-medium ${
+            isHot
+              ? "bg-orange-600 text-white"
+              : "bg-white text-orange-600 ring-1 ring-orange-200 hover:bg-orange-50"
+          }`}
+        >
+          🔥 Hot
+        </Link>
         {TYPES.map((t) => (
           <Link
             key={t}
@@ -36,17 +89,22 @@ export default async function TopicsPage({
             {t.replace("_", " ")}
           </Link>
         ))}
-        <form className="ml-auto" action="/topics">
-          <input type="hidden" name="type" value={type} />
-          <input
-            name="q"
-            defaultValue={searchParams.q ?? ""}
-            placeholder="Search names…"
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm"
-          />
-        </form>
+        {!isHot && (
+          <form className="ml-auto" action="/topics">
+            <input type="hidden" name="type" value={type} />
+            <input
+              name="q"
+              defaultValue={searchParams.q ?? ""}
+              placeholder="Search names…"
+              className="rounded-md border border-slate-300 px-3 py-1.5 text-sm"
+            />
+          </form>
+        )}
       </div>
 
+      {isHot ? (
+        <HotList />
+      ) : (
       <ul className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
         {entities.map((e) => (
           <li key={e.slug}>
@@ -69,6 +127,7 @@ export default async function TopicsPage({
           <li className="px-4 py-6 text-sm text-slate-500">Nothing here yet.</li>
         )}
       </ul>
+      )}
     </div>
   );
 }

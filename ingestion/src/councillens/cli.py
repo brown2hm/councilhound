@@ -163,6 +163,29 @@ def structure(limit, clip_id, force, reapply):
 
 @cli.command()
 @limit_option
+@click.option("--slug", default=None, help="synthesize one entity's profile by slug")
+@click.option("--all", "include_fresh", is_flag=True, help="regenerate even fresh profiles")
+def profile(limit, slug, include_fresh):
+    """Synthesize entity profiles (summary, open questions, member commentary)."""
+    from sqlalchemy import select
+
+    from councillens.db.models import Entity
+    from councillens.db.session import get_session
+    from councillens.extraction.entity_profile import profile_pending, synthesize_profile
+
+    with get_session() as session:
+        if slug:
+            entity = session.scalar(select(Entity).where(Entity.canonical_slug == slug))
+            if not entity:
+                raise click.ClickException(f"no entity with slug={slug}")
+            synthesize_profile(session, entity)
+            click.echo(f"profiled {slug}")
+        else:
+            click.echo(profile_pending(session, limit=limit, stale_only=not include_fresh))
+
+
+@cli.command()
+@limit_option
 def embed(limit):
     """Phase 4: embed transcript chunks + agenda items for RAG retrieval."""
     from councillens.db.session import get_session

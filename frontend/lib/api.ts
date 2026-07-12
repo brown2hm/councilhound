@@ -62,12 +62,41 @@ export interface TimelineEntry {
   minutes_url: string | null;
 }
 
+export interface MemberCommentary {
+  member: string;
+  slug: string | null;
+  summary: string;
+}
+
+export interface EntityProfileInfo {
+  summary: string | null;
+  open_questions: string[];
+  member_commentary: MemberCommentary[];
+  updated_at: string | null;
+}
+
 export interface EntityDetail {
   slug: string;
   name: string;
   entity_type: string;
   current_status: string | null;
+  profile: EntityProfileInfo | null;
   timeline: TimelineEntry[];
+}
+
+export interface HotTopic {
+  slug: string;
+  name: string;
+  entity_type: string;
+  current_status: string | null;
+  seconds: number;
+  chunk_mentions: number;
+  per_meeting: Record<string, number>;
+}
+
+export interface HotTopicsResponse {
+  meetings: { id: number; title: string; date: string }[];
+  topics: HotTopic[];
 }
 
 export interface Citation {
@@ -98,6 +127,7 @@ export const api = {
   meeting: (id: string) => get<MeetingDetail>(`/meetings/${id}`),
   entities: (params: URLSearchParams) => get<EntitySummary[]>(`/entities/?${params}`),
   entity: (slug: string) => get<EntityDetail>(`/entities/${encodeURIComponent(slug)}`),
+  hotTopics: () => get<HotTopicsResponse>(`/entities/hot`),
 };
 
 export const BODY_LABELS: Record<string, string> = {

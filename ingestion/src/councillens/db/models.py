@@ -107,6 +107,26 @@ class Entity(Base):
     current_status = Column(String)  # rolled up from latest EntityUpdate.status_after
 
 
+class EntityProfile(Base):
+    """LLM-synthesized rollup for an entity's detail page: overall summary,
+    open questions / options on the table, and commentary binned per council
+    member (from minutes-recorded positions, not diarization). A regenerable
+    CACHE derived from entity_updates + votes + transcript excerpts —
+    through_meeting_id marks freshness; regenerate when new updates land."""
+    __tablename__ = "entity_profiles"
+
+    id = Column(Integer, primary_key=True)
+    entity_id = Column(Integer, ForeignKey("entities.id", ondelete="CASCADE"),
+                       nullable=False, unique=True)
+    summary = Column(Text)
+    open_questions = Column(JSON)  # ["...", ...] pending decisions / options considered
+    member_commentary = Column(JSON)  # [{"member": "...", "slug": ..., "summary": "..."}]
+    through_meeting_id = Column(Integer, ForeignKey("meetings.id"))
+    model = Column(String)
+    prompt_version = Column(String)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
 class EntityAlias(Base):
     """Alternate names resolving to one entity ('Mayor Read' -> catherine-read)."""
     __tablename__ = "entity_aliases"

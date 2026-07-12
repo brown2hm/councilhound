@@ -4,11 +4,23 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from councillens.db.models import AgendaItem, Entity, EntityUpdate, Meeting
+from councillens.db.models import AgendaItem, Entity, EntityProfile, EntityUpdate, Meeting
+from councillens.hot_topics import hot_topics
 
 from app.db import db_session
 
 router = APIRouter()
+
+
+@router.get("/hot")
+def get_hot_topics(
+    n_meetings: int = Query(3, ge=1, le=10),
+    top: int = Query(30, le=100),
+    session: Session = Depends(db_session),
+):
+    """Topics ranked by named discussion time across the N most recent
+    transcribed meetings."""
+    return hot_topics(session, n_meetings=n_meetings, top=top)
 
 
 @router.get("/")
@@ -66,11 +78,20 @@ def get_entity(slug: str, session: Session = Depends(db_session)):
         .order_by(Meeting.meeting_date)
     ).all()
 
+    profile = session.scalar(
+        select(EntityProfile).where(EntityProfile.entity_id == entity.id)
+    )
     return {
         "slug": entity.canonical_slug,
         "name": entity.name,
         "entity_type": entity.entity_type,
         "current_status": entity.current_status,
+        "profile": {
+            "summary": profile.summary,
+            "open_questions": profile.open_questions or [],
+            "member_commentary": profile.member_commentary or [],
+            "updated_at": profile.updated_at.isoformat() if profile.updated_at else None,
+        } if profile else None,
         "timeline": [
             {
                 "date": m.meeting_date.isoformat(),
