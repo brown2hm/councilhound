@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { api, BODY_LABELS, formatDate } from "@/lib/api";
+import BodyTag from "@/components/BodyTag";
+import { api, formatDate } from "@/lib/api";
 
 const VOTE_COLORS: Record<string, string> = {
   yes: "text-tint-mint-text",
@@ -39,8 +40,8 @@ export default async function MeetingPage({ params }: { params: { id: string } }
       <Link href="/meetings" className="text-sm font-semibold text-muted hover:text-ink">
         ← All meetings
       </Link>
-      <div className="mb-1 mt-4 text-xs font-semibold uppercase tracking-[1.5px] text-muted">
-        {BODY_LABELS[meeting.body] ?? meeting.body} · {formatDate(meeting.date)}
+      <div className="mb-1 mt-4 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[1.5px] text-muted">
+        <BodyTag body={meeting.body} /> <span>· {formatDate(meeting.date)}</span>
       </div>
       <h1 className="mb-4 text-[32px] font-medium tracking-[-0.5px]">{meeting.title}</h1>
       <div className="mb-9 flex flex-wrap items-center gap-3 text-sm">

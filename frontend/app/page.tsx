@@ -1,12 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
-import { api, BODY_LABELS, formatDate, type MeetingDetail } from "@/lib/api";
+import BodyTag from "@/components/BodyTag";
+import { api, formatDate, type HotTopicsResponse, type MeetingDetail } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
 interface Decision {
   badge: string;
   tint: string;
+  body: string;
   meta: string;
   title: string;
   text: string;
@@ -23,8 +25,7 @@ const TINTS: Record<string, string> = {
 function deriveDecisions(details: MeetingDetail[]): Decision[] {
   const decisions: Decision[] = [];
   for (const m of details) {
-    const meta = (label: string) =>
-      `${BODY_LABELS[m.body] ?? m.body} · ${formatDate(m.date)} · item ${label}`;
+    const meta = (label: string) => `${formatDate(m.date)} · item ${label}`;
     for (const item of m.agenda_items) {
       if (!item.title) continue;
       // procedural housekeeping doesn't belong on the front page
@@ -52,6 +53,7 @@ function deriveDecisions(details: MeetingDetail[]): Decision[] {
         decisions.push({
           badge,
           tint,
+          body: m.body,
           meta: meta(item.label),
           title: item.title,
           text: item.outcome ?? vote.description ?? "",
@@ -61,6 +63,7 @@ function deriveDecisions(details: MeetingDetail[]): Decision[] {
         decisions.push({
           badge: "RECOMMENDED",
           tint: TINTS.proposed,
+          body: m.body,
           meta: meta(item.label),
           title: item.title,
           text: item.outcome,
@@ -89,16 +92,85 @@ function headline(decisions: Decision[]): string {
   return sentence.charAt(0).toUpperCase() + sentence.slice(1) + ".";
 }
 
+function HotPanel({
+  hot,
+  variant,
+  eyebrow,
+  heading,
+}: {
+  hot: HotTopicsResponse;
+  variant: "teal" | "cream";
+  eyebrow: string;
+  heading: string;
+}) {
+  const topics = hot.topics.slice(0, 5);
+  const max = Math.max(1, ...topics.map((t) => t.seconds));
+  const teal = variant === "teal";
+  return (
+    <section className={`rounded-3xl p-7 ${teal ? "bg-teal text-white" : "bg-card text-ink"}`}>
+      <div
+        className={`mb-2 text-xs font-semibold uppercase tracking-[1.5px] ${
+          teal ? "text-mint" : "text-tint-ochre-text"
+        }`}
+      >
+        {eyebrow}
+      </div>
+      <h2 className="mb-1 text-2xl font-medium leading-tight tracking-[-0.3px]">{heading}</h2>
+      <p className={`mb-5 text-[13px] ${teal ? "text-white/60" : "text-muted"}`}>
+        Named discussion time, last 60 days.
+      </p>
+      <div className="flex flex-col gap-3.5">
+        {topics.map((t, i) => (
+          <Link key={t.slug} href={`/topics/${t.slug}`} className="block">
+            <div className="mb-[5px] flex items-baseline justify-between gap-3">
+              <span className="text-sm font-semibold">
+                {i + 1}&nbsp; {t.name}
+              </span>
+              <span
+                className={`shrink-0 text-[13px] font-semibold ${
+                  teal ? "text-mint" : "text-tint-ochre-text"
+                }`}
+              >
+                {Math.round(t.seconds / 60)} min
+              </span>
+            </div>
+            <div className={`h-1.5 rounded-full ${teal ? "bg-white/[0.14]" : "bg-strong"}`}>
+              <div
+                className={`h-1.5 rounded-full ${teal ? "bg-mint" : "bg-ochre"}`}
+                style={{ width: `${Math.max(6, (t.seconds / max) * 100)}%` }}
+              />
+            </div>
+          </Link>
+        ))}
+        {topics.length === 0 && (
+          <p className={`text-sm ${teal ? "text-white/70" : "text-muted"}`}>
+            No transcribed meetings in the window yet.
+          </p>
+        )}
+      </div>
+      <div className="mt-5">
+        <Link
+          href="/topics?type=hot"
+          className={`inline-block rounded-xl px-5 py-3 text-sm font-semibold leading-none ${
+            teal ? "bg-canvas text-ink" : "bg-ink text-white"
+          }`}
+        >
+          See all hot topics
+        </Link>
+      </div>
+    </section>
+  );
+}
+
 export default async function Briefing() {
-  const [meetings, hot] = await Promise.all([
+  const [meetings, hotCouncil, hotPC] = await Promise.all([
     api.meetings(new URLSearchParams({ limit: "6" })),
-    api.hotTopics(),
+    api.hotTopics("city_council"),
+    api.hotTopics("planning_commission"),
   ]);
   const withItems = meetings.filter((m) => m.agenda_item_count > 0).slice(0, 4);
   const details = await Promise.all(withItems.map((m) => api.meeting(String(m.id))));
   const decisions = deriveDecisions(details);
-  const hotTop = hot.topics.slice(0, 5);
-  const maxSeconds = Math.max(1, ...hotTop.map((t) => t.seconds));
   const latest = meetings[0] ? formatDate(meetings[0].date) : "";
 
   return (
@@ -118,10 +190,11 @@ export default async function Briefing() {
                 href={`/meetings/${d.meetingId}`}
                 className="rounded-2xl border border-hairline bg-canvas p-4 px-5 hover:border-ink"
               >
-                <div className="mb-1.5 flex items-center gap-2">
+                <div className="mb-1.5 flex flex-wrap items-center gap-2">
                   <span className={`rounded-full px-2.5 py-[3px] text-xs font-semibold ${d.tint}`}>
                     {d.badge}
                   </span>
+                  <BodyTag body={d.body} className="text-[13px] text-muted" />
                   <span className="text-[13px] text-muted">{d.meta}</span>
                 </div>
                 <div className="mb-1 font-semibold">{d.title}</div>
@@ -135,42 +208,18 @@ export default async function Briefing() {
         </div>
 
         <div className="flex flex-col gap-5">
-          <section className="rounded-3xl bg-teal p-7 text-white">
-            <div className="mb-2 text-xs font-semibold uppercase tracking-[1.5px] text-mint">
-              Hot right now
-            </div>
-            <h2 className="mb-5 text-2xl font-medium leading-tight tracking-[-0.3px]">
-              What the council is spending its time on
-            </h2>
-            <div className="flex flex-col gap-3.5">
-              {hotTop.map((t, i) => (
-                <Link key={t.slug} href={`/topics/${t.slug}`} className="block">
-                  <div className="mb-[5px] flex items-baseline justify-between gap-3">
-                    <span className="text-sm font-semibold">
-                      {i + 1}&nbsp; {t.name}
-                    </span>
-                    <span className="shrink-0 text-[13px] font-semibold text-mint">
-                      {Math.round(t.seconds / 60)} min
-                    </span>
-                  </div>
-                  <div className="h-1.5 rounded-full bg-white/[0.14]">
-                    <div
-                      className="h-1.5 rounded-full bg-mint"
-                      style={{ width: `${Math.max(6, (t.seconds / maxSeconds) * 100)}%` }}
-                    />
-                  </div>
-                </Link>
-              ))}
-            </div>
-            <div className="mt-5">
-              <Link
-                href="/topics?type=hot"
-                className="inline-block rounded-xl bg-canvas px-5 py-3 text-sm font-semibold leading-none text-ink"
-              >
-                See all hot topics
-              </Link>
-            </div>
-          </section>
+          <HotPanel
+            hot={hotCouncil}
+            variant="teal"
+            eyebrow="Hot right now · City Council"
+            heading="What the council is spending its time on"
+          />
+          <HotPanel
+            hot={hotPC}
+            variant="cream"
+            eyebrow="Hot right now · Planning Commission"
+            heading="What the commission is spending its time on"
+          />
 
           <section className="rounded-3xl bg-card p-6">
             <div className="mb-2.5 flex items-center gap-2.5">

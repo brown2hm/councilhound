@@ -52,3 +52,32 @@ def test_hot_topics_ranks_by_discussion_seconds(db_session):
     assert by_slug["george-snyder-trail"]["chunk_mentions"] == 2
     assert by_slug["courthouse-plaza"]["seconds"] == 60
     assert by_slug["george-snyder-trail"]["per_meeting"] == {str(m1.id): 100, str(m2.id): 50}
+
+
+def test_hot_topics_body_and_window(db_session):
+    s = db_session
+    today = datetime.date.today()
+    council = _meeting(s, "10", today - datetime.timedelta(days=10))
+    pc = Meeting(granicus_clip_id="11", granicus_view_id="13", body="planning_commission",
+                 meeting_type="planning_commission", meeting_date=today - datetime.timedelta(days=5),
+                 title="PC Meeting", status="fetched")
+    old_council = _meeting(s, "12", today - datetime.timedelta(days=90))
+    s.add(pc)
+    s.flush()
+
+    trail = Entity(entity_type="project", name="George Snyder Trail",
+                   canonical_slug="george-snyder-trail")
+    s.add(trail)
+    s.flush()
+    for m, dur in ((council, 100), (pc, 40), (old_council, 999)):
+        s.add(TranscriptChunk(meeting_id=m.id, start_seconds=0, end_seconds=dur,
+                              text="George Snyder Trail discussion."))
+    s.commit()
+
+    council_hot = hot_topics(s, days=60, body="city_council")
+    assert [m["id"] for m in council_hot["meetings"]] == [council.id]  # 90-day-old excluded
+    assert council_hot["topics"][0]["seconds"] == 100
+
+    pc_hot = hot_topics(s, days=60, body="planning_commission")
+    assert [m["id"] for m in pc_hot["meetings"]] == [pc.id]
+    assert pc_hot["topics"][0]["seconds"] == 40

@@ -130,7 +130,8 @@ export const api = {
   meeting: (id: string) => get<MeetingDetail>(`/meetings/${id}`),
   entities: (params: URLSearchParams) => get<EntitySummary[]>(`/entities/?${params}`),
   entity: (slug: string) => get<EntityDetail>(`/entities/${encodeURIComponent(slug)}`),
-  hotTopics: () => get<HotTopicsResponse>(`/entities/hot`),
+  hotTopics: (body?: string, days = 60) =>
+    get<HotTopicsResponse>(`/entities/hot?days=${days}${body ? `&body=${body}` : ""}`),
 };
 
 export const BODY_LABELS: Record<string, string> = {

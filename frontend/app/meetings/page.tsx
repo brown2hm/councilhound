@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { api, BODY_LABELS, formatDate } from "@/lib/api";
+import BodyTag, { BODY_DOTS } from "@/components/BodyTag";
+import { api, formatDate } from "@/lib/api";
 
 const BODIES = [
   { key: "", label: "All bodies" },
@@ -29,12 +30,15 @@ export default async function MeetingsPage({
           <Link
             key={b.key}
             href={b.key ? `/meetings?body=${b.key}` : "/meetings"}
-            className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium ${
+            className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium ${
               b.key === body
                 ? "bg-ink text-canvas"
                 : "border border-hairline bg-canvas text-muted hover:text-ink"
             }`}
           >
+            {b.key && (
+              <span aria-hidden className={`inline-block h-2 w-2 rounded-full ${BODY_DOTS[b.key]}`} />
+            )}
             {b.label}
           </Link>
         ))}
@@ -50,10 +54,10 @@ export default async function MeetingsPage({
                   {formatDate(m.date)}
                 </span>
               </div>
-              <div className="text-[13px] text-muted">
-                {BODY_LABELS[m.body] ?? m.body}
-                {m.agenda_item_count > 0 ? ` · ${m.agenda_item_count} agenda items` : ""}
-                {m.duration_seconds ? ` · ${Math.round(m.duration_seconds / 60)} min` : ""}
+              <div className="flex items-center gap-1 text-[13px] text-muted">
+                <BodyTag body={m.body} />
+                {m.agenda_item_count > 0 ? <span>· {m.agenda_item_count} agenda items</span> : null}
+                {m.duration_seconds ? <span>· {Math.round(m.duration_seconds / 60)} min</span> : null}
               </div>
             </Link>
           </li>

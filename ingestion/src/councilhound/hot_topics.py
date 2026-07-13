@@ -32,8 +32,44 @@ def recent_transcribed_meetings(session: Session, n: int = 3) -> list[Meeting]:
     ))
 
 
-def hot_topics(session: Session, n_meetings: int = 3, top: int = 30) -> dict:
-    meetings = recent_transcribed_meetings(session, n_meetings)
+def transcribed_meetings_in_window(
+    session: Session,
+    days: int = 60,
+    body: str | None = None,
+    max_meetings: int = 12,
+) -> list[Meeting]:
+    """Transcribed meetings within the look-back window, optionally for one
+    body (city_council / planning_commission)."""
+    import datetime
+
+    cutoff = datetime.date.today() - datetime.timedelta(days=days)
+    sub = select(TranscriptChunk.meeting_id).distinct().subquery()
+    q = (
+        select(Meeting)
+        .join(sub, Meeting.id == sub.c.meeting_id)
+        .where(Meeting.meeting_date >= cutoff)
+        .order_by(Meeting.meeting_date.desc())
+        .limit(max_meetings)
+    )
+    if body:
+        q = q.where(Meeting.body == body)
+    return list(session.scalars(q))
+
+
+def hot_topics(
+    session: Session,
+    n_meetings: int | None = None,
+    top: int = 30,
+    days: int | None = None,
+    body: str | None = None,
+) -> dict:
+    """Rank topics by named discussion time. Two windowing modes:
+    n_meetings = N most recent transcribed meetings (legacy default), or
+    days (+ optional body) = all transcribed meetings in the look-back window."""
+    if days is not None or body is not None:
+        meetings = transcribed_meetings_in_window(session, days=days or 60, body=body)
+    else:
+        meetings = recent_transcribed_meetings(session, n_meetings or 3)
     if not meetings:
         return {"meetings": [], "topics": []}
     meeting_ids = [m.id for m in meetings]

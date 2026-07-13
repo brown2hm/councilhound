@@ -1,20 +1,33 @@
 import Link from "next/link";
 import StatusBadge from "@/components/StatusBadge";
-import { api, formatDate } from "@/lib/api";
+import { api, formatDate, type HotTopicsResponse } from "@/lib/api";
 
 const TYPES = ["project", "ordinance", "resolution", "case_number", "topic", "location", "person"];
 
-async function HotList() {
-  const hot = await api.hotTopics();
+function HotSection({
+  hot,
+  title,
+  dot,
+  barColor,
+}: {
+  hot: HotTopicsResponse;
+  title: string;
+  dot: string;
+  barColor: string;
+}) {
   const max = Math.max(1, ...hot.topics.map((t) => t.seconds));
   return (
-    <div>
+    <section className="mb-8">
+      <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold">
+        <span aria-hidden className={`inline-block h-2.5 w-2.5 rounded-full ${dot}`} />
+        {title}
+      </h2>
       <p className="mb-3 text-[13px] text-muted">
-        Ranked by named discussion time across the {hot.meetings.length} most recent transcribed
-        meetings ({hot.meetings.map((m) => formatDate(m.date)).join(", ")}).
+        Named discussion time across {hot.meetings.length} transcribed meeting
+        {hot.meetings.length === 1 ? "" : "s"} in the last 60 days.
       </p>
       <ul className="divide-y divide-hairline-soft rounded-2xl border border-hairline bg-canvas">
-        {hot.topics.map((t, i) => (
+        {hot.topics.slice(0, 15).map((t, i) => (
           <li key={t.slug}>
             <Link
               href={`/topics/${t.slug}`}
@@ -32,11 +45,11 @@ async function HotList() {
               <div className="hidden w-[220px] shrink-0 items-center gap-2.5 sm:flex">
                 <div className="h-1.5 flex-1 rounded-full bg-strong">
                   <div
-                    className="h-1.5 rounded-full bg-teal"
+                    className={`h-1.5 rounded-full ${barColor}`}
                     style={{ width: `${Math.max(4, (t.seconds / max) * 100)}%` }}
                   />
                 </div>
-                <span className="w-14 shrink-0 text-[13px] font-semibold text-tint-mint-text">
+                <span className="w-14 shrink-0 text-[13px] font-semibold text-body">
                   {Math.round(t.seconds / 60)} min
                 </span>
               </div>
@@ -46,10 +59,23 @@ async function HotList() {
         ))}
         {hot.topics.length === 0 && (
           <li className="px-5 py-6 text-sm text-muted">
-            No transcribed meetings yet — hot topics appear once transcription lands.
+            No transcribed meetings in the window yet.
           </li>
         )}
       </ul>
+    </section>
+  );
+}
+
+async function HotList() {
+  const [council, pc] = await Promise.all([
+    api.hotTopics("city_council"),
+    api.hotTopics("planning_commission"),
+  ]);
+  return (
+    <div>
+      <HotSection hot={council} title="City Council" dot="bg-teal" barColor="bg-teal" />
+      <HotSection hot={pc} title="Planning Commission" dot="bg-ochre" barColor="bg-ochre" />
     </div>
   );
 }

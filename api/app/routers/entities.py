@@ -15,13 +15,14 @@ router = APIRouter()
 
 @router.get("/hot")
 def get_hot_topics(
-    n_meetings: int = Query(3, ge=1, le=10),
+    days: int = Query(60, ge=7, le=730),
+    body: str | None = Query(None, description="city_council | planning_commission"),
     top: int = Query(30, le=100),
     session: Session = Depends(db_session),
 ):
-    """Topics ranked by named discussion time across the N most recent
-    transcribed meetings."""
-    return hot_topics(session, n_meetings=n_meetings, top=top)
+    """Topics ranked by named discussion time across transcribed meetings
+    in the look-back window, optionally per body."""
+    return hot_topics(session, days=days, body=body, top=top)
 
 
 @router.get("/")

@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import BodyTag from "@/components/BodyTag";
 import StatusBadge from "@/components/StatusBadge";
-import { api, BODY_LABELS, formatDate } from "@/lib/api";
+import { api, formatDate } from "@/lib/api";
 
 export default async function TopicDetail({ params }: { params: { slug: string } }) {
   let entity;
@@ -77,9 +78,12 @@ export default async function TopicDetail({ params }: { params: { slug: string }
               <span className="absolute -left-[31px] top-1 h-3 w-3 rounded-full border-2 border-canvas bg-teal" />
               <div className="mb-1 flex flex-wrap items-center gap-2 text-sm">
                 <span className="font-semibold">{formatDate(t.date)}</span>
-                <Link href={`/meetings/${t.meeting_id}`} className="text-ink underline underline-offset-2">
-                  {BODY_LABELS[t.body] ?? t.body}
-                  {t.agenda_item_label ? ` · item ${t.agenda_item_label}` : ""}
+                <Link
+                  href={`/meetings/${t.meeting_id}`}
+                  className="inline-flex items-center gap-1.5 text-ink underline underline-offset-2"
+                >
+                  <BodyTag body={t.body} />
+                  {t.agenda_item_label ? <span>· item {t.agenda_item_label}</span> : null}
                 </Link>
                 <StatusBadge status={t.status_after} />
               </div>
