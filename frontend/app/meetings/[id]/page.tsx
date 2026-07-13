@@ -1,31 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import BodyTag from "@/components/BodyTag";
+import VoteBlock from "@/components/VotePills";
 import { api, formatDate } from "@/lib/api";
-
-const VOTE_COLORS: Record<string, string> = {
-  yes: "text-tint-mint-text",
-  no: "text-tint-coral-text",
-  abstain: "text-tint-ochre-text",
-  absent: "text-muted-soft",
-};
-
-function VoteBreakdown({ breakdown }: { breakdown: Record<string, string> }) {
-  const entries = Object.entries(breakdown ?? {});
-  if (entries.length === 0) return null;
-  return (
-    <div className="mt-1.5 flex flex-wrap gap-x-3.5 gap-y-0.5">
-      {entries.map(([member, vote]) => (
-        <span
-          key={member}
-          className={`whitespace-nowrap text-[13px] font-medium ${VOTE_COLORS[vote] ?? "text-body"}`}
-        >
-          {member}: {vote}
-        </span>
-      ))}
-    </div>
-  );
-}
 
 export default async function MeetingPage({ params }: { params: { id: string } }) {
   let meeting;
@@ -106,21 +83,7 @@ export default async function MeetingPage({ params }: { params: { id: string } }
               </p>
             )}
             {item.votes.map((vote, i) => (
-              <div key={i} className="mt-2 rounded-xl bg-soft p-3 px-3.5 text-sm">
-                <span
-                  className={`mr-2 font-semibold ${
-                    vote.motion_result === "passed"
-                      ? "text-tint-mint-text"
-                      : vote.motion_result === "failed"
-                        ? "text-tint-coral-text"
-                        : "text-tint-ochre-text"
-                  }`}
-                >
-                  {vote.motion_result}
-                </span>
-                {vote.description}
-                <VoteBreakdown breakdown={vote.vote_breakdown} />
-              </div>
+              <VoteBlock key={i} vote={vote} />
             ))}
           </li>
         ))}

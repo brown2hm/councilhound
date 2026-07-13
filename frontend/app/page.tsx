@@ -1,7 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import BodyTag from "@/components/BodyTag";
-import { api, formatDate, type HotTopicsResponse, type MeetingDetail } from "@/lib/api";
+import {
+  api,
+  formatDate,
+  type HotTopicsResponse,
+  type MeetingDetail,
+  type MeetingStats,
+} from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
@@ -162,11 +168,36 @@ function HotPanel({
   );
 }
 
+function StatTiles({ stats }: { stats: MeetingStats }) {
+  const tiles = [
+    { value: stats.meetings_held, label: "meetings held" },
+    { value: stats.hours_of_meetings, label: "hours in session" },
+    { value: stats.votes_taken, label: "votes taken" },
+    {
+      value: `${stats.motions_passed}–${stats.motions_failed}`,
+      label: "passed vs. failed",
+    },
+  ];
+  return (
+    <div className="mb-7 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {tiles.map((t) => (
+        <div key={t.label} className="rounded-2xl border border-hairline bg-canvas p-4 px-5">
+          <div className="text-[26px] font-medium leading-none tracking-[-0.5px]">{t.value}</div>
+          <div className="mt-1.5 text-[13px] text-muted">
+            {t.label} <span className="text-muted-soft">· {stats.days} days</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default async function Briefing() {
-  const [meetings, hotCouncil, hotPC] = await Promise.all([
+  const [meetings, hotCouncil, hotPC, stats] = await Promise.all([
     api.meetings(new URLSearchParams({ limit: "6" })),
     api.hotTopics("city_council"),
     api.hotTopics("planning_commission"),
+    api.stats(30),
   ]);
   const withItems = meetings.filter((m) => m.agenda_item_count > 0).slice(0, 4);
   const details = await Promise.all(withItems.map((m) => api.meeting(String(m.id))));
@@ -178,6 +209,7 @@ export default async function Briefing() {
       <div className="mb-2 text-xs font-semibold uppercase tracking-[1.5px] text-muted">
         The briefing · Week of {latest} · City of Fairfax, VA
       </div>
+      <StatTiles stats={stats} />
       <div className="grid gap-8 md:grid-cols-[1.5fr_1fr]">
         <div>
           <h1 className="mb-5 text-[32px] font-medium leading-[1.15] tracking-[-0.5px]">

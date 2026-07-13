@@ -63,6 +63,22 @@ export interface TimelineEntry {
   agenda_url: string | null;
   minutes_url: string | null;
   watch_url: string | null;
+  votes: VoteInfo[];
+}
+
+export interface StatusSource {
+  date: string;
+  meeting_id: number;
+  meeting_title: string;
+  watch_url: string | null;
+}
+
+export interface RelatedEntity {
+  slug: string;
+  name: string;
+  entity_type: string;
+  current_status: string | null;
+  shared_meetings: number;
 }
 
 export interface MemberCommentary {
@@ -83,8 +99,19 @@ export interface EntityDetail {
   name: string;
   entity_type: string;
   current_status: string | null;
+  status_source: StatusSource | null;
   profile: EntityProfileInfo | null;
+  related: RelatedEntity[];
   timeline: TimelineEntry[];
+}
+
+export interface MeetingStats {
+  days: number;
+  meetings_held: number;
+  hours_of_meetings: number;
+  votes_taken: number;
+  motions_passed: number;
+  motions_failed: number;
 }
 
 export interface HotTopic {
@@ -132,6 +159,7 @@ export const api = {
   entity: (slug: string) => get<EntityDetail>(`/entities/${encodeURIComponent(slug)}`),
   hotTopics: (body?: string, days = 60) =>
     get<HotTopicsResponse>(`/entities/hot?days=${days}${body ? `&body=${body}` : ""}`),
+  stats: (days = 30) => get<MeetingStats>(`/meetings/stats?days=${days}`),
 };
 
 export const BODY_LABELS: Record<string, string> = {

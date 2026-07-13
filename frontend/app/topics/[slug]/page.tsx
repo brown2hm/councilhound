@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import BodyTag from "@/components/BodyTag";
 import StatusBadge from "@/components/StatusBadge";
+import VoteBlock from "@/components/VotePills";
 import { api, formatDate } from "@/lib/api";
 
 export default async function TopicDetail({ params }: { params: { slug: string } }) {
@@ -22,10 +23,36 @@ export default async function TopicDetail({ params }: { params: { slug: string }
       <div className="mb-1 mt-4 text-xs font-semibold uppercase tracking-[1.5px] text-muted">
         {entity.entity_type.replace("_", " ")}
       </div>
-      <div className="mb-8 flex flex-wrap items-center gap-3">
+      <div className="mb-1 flex flex-wrap items-center gap-3">
         <h1 className="text-[32px] font-medium tracking-[-0.5px]">{entity.name}</h1>
         <StatusBadge status={entity.current_status} />
       </div>
+      {entity.status_source ? (
+        <p className="mb-8 text-[13px] text-muted">
+          Status set at{" "}
+          <Link
+            href={`/meetings/${entity.status_source.meeting_id}`}
+            className="font-semibold text-muted underline underline-offset-2 hover:text-ink"
+          >
+            {entity.status_source.meeting_title}
+          </Link>{" "}
+          on {formatDate(entity.status_source.date)}
+          {entity.status_source.watch_url && (
+            <>
+              {" · "}
+              <a
+                href={entity.status_source.watch_url}
+                target="_blank"
+                className="font-semibold text-muted hover:text-ink"
+              >
+                ▶ watch the moment
+              </a>
+            </>
+          )}
+        </p>
+      ) : (
+        <div className="mb-8" />
+      )}
 
       {profile?.summary && (
         <section className="mb-8">
@@ -74,7 +101,7 @@ export default async function TopicDetail({ params }: { params: { slug: string }
         <h2 className="mb-4 text-lg font-semibold">Full history</h2>
         <ol className="relative flex flex-col gap-7 border-l-2 border-strong pl-6">
           {entity.timeline.map((t, i) => (
-            <li key={i} className="relative">
+            <li key={i} id={`m-${t.meeting_id}`} className="group relative scroll-mt-24">
               <span className="absolute -left-[31px] top-1 h-3 w-3 rounded-full border-2 border-canvas bg-teal" />
               <div className="mb-1 flex flex-wrap items-center gap-2 text-sm">
                 <span className="font-semibold">{formatDate(t.date)}</span>
@@ -86,8 +113,18 @@ export default async function TopicDetail({ params }: { params: { slug: string }
                   {t.agenda_item_label ? <span>· item {t.agenda_item_label}</span> : null}
                 </Link>
                 <StatusBadge status={t.status_after} />
+                <a
+                  href={`#m-${t.meeting_id}`}
+                  aria-label="Link to this update"
+                  className="text-muted-soft opacity-0 transition-opacity hover:text-ink group-hover:opacity-100"
+                >
+                  #
+                </a>
               </div>
               <p className="text-sm leading-[1.6] text-body">{t.update_text}</p>
+              {t.votes.map((vote, vi) => (
+                <VoteBlock key={vi} vote={vote} />
+              ))}
               <div className="mt-1 flex gap-3 text-[13px] text-muted-soft">
                 {t.watch_url && (
                   <a href={t.watch_url} target="_blank" className="font-semibold text-muted hover:text-ink">
@@ -112,6 +149,29 @@ export default async function TopicDetail({ params }: { params: { slug: string }
           )}
         </ol>
       </section>
+
+      {entity.related.length > 0 && (
+        <section className="mt-10">
+          <h2 className="mb-1 text-lg font-semibold">Discussed alongside</h2>
+          <p className="mb-3 text-[13px] text-muted-soft">
+            Topics that come up in the same meetings.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {entity.related.map((r) => (
+              <Link
+                key={r.slug}
+                href={`/topics/${r.slug}`}
+                className="rounded-full bg-card px-4 py-2 text-sm font-medium text-body hover:bg-strong"
+              >
+                {r.name}
+                <span className="ml-1.5 text-xs text-muted-soft">
+                  {r.shared_meetings} meetings
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
