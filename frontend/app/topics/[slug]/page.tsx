@@ -1,35 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import StatusBadge from "@/components/StatusBadge";
-import { api, BODY_LABELS, formatDate, type TimelineEntry } from "@/lib/api";
-
-function UpdateCard({ t }: { t: TimelineEntry }) {
-  return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
-      <div className="mb-1 flex flex-wrap items-center gap-2 text-sm">
-        <span className="font-medium">{formatDate(t.date)}</span>
-        <Link href={`/meetings/${t.meeting_id}`} className="text-sky-600 hover:underline">
-          {BODY_LABELS[t.body] ?? t.body}
-          {t.agenda_item_label ? ` · item ${t.agenda_item_label}` : ""}
-        </Link>
-        <StatusBadge status={t.status_after} />
-      </div>
-      <p className="text-sm leading-relaxed text-slate-700">{t.update_text}</p>
-      <div className="mt-1 flex gap-3 text-xs text-slate-400">
-        {t.minutes_url && (
-          <a href={t.minutes_url} target="_blank" className="hover:text-sky-600">
-            minutes ↗
-          </a>
-        )}
-        {t.agenda_url && (
-          <a href={t.agenda_url} target="_blank" className="hover:text-sky-600">
-            agenda ↗
-          </a>
-        )}
-      </div>
-    </div>
-  );
-}
+import { api, BODY_LABELS, formatDate } from "@/lib/api";
 
 export default async function TopicDetail({ params }: { params: { slug: string } }) {
   let entity;
@@ -39,23 +11,25 @@ export default async function TopicDetail({ params }: { params: { slug: string }
     notFound();
   }
 
-  const recent = entity.timeline.slice(-2).reverse();
   const profile = entity.profile;
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <div className="mb-1 text-xs uppercase tracking-wide text-slate-400">
+    <div className="mx-auto max-w-[860px] px-8 pb-16 pt-8">
+      <Link href="/topics" className="text-sm font-semibold text-muted hover:text-ink">
+        ← Topic tracker
+      </Link>
+      <div className="mb-1 mt-4 text-xs font-semibold uppercase tracking-[1.5px] text-muted">
         {entity.entity_type.replace("_", " ")}
       </div>
-      <div className="mb-6 flex items-center gap-3">
-        <h1 className="text-2xl font-semibold">{entity.name}</h1>
+      <div className="mb-8 flex flex-wrap items-center gap-3">
+        <h1 className="text-[32px] font-medium tracking-[-0.5px]">{entity.name}</h1>
         <StatusBadge status={entity.current_status} />
       </div>
 
       {profile?.summary && (
         <section className="mb-8">
-          <h2 className="mb-2 text-base font-semibold">Summary</h2>
-          <p className="rounded-lg border border-slate-200 bg-white p-4 text-sm leading-relaxed text-slate-700">
+          <h2 className="mb-2 text-lg font-semibold">Summary</h2>
+          <p className="rounded-2xl border border-hairline bg-canvas p-[18px] px-5 text-sm leading-[1.6] text-body">
             {profile.summary}
           </p>
         </section>
@@ -63,12 +37,12 @@ export default async function TopicDetail({ params }: { params: { slug: string }
 
       {profile && profile.open_questions.length > 0 && (
         <section className="mb-8">
-          <h2 className="mb-2 text-base font-semibold">Open questions & options on the table</h2>
+          <h2 className="mb-2 text-lg font-semibold">Open questions & options on the table</h2>
           <ul className="space-y-2">
             {profile.open_questions.map((q, i) => (
               <li
                 key={i}
-                className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm leading-relaxed text-amber-900"
+                className="rounded-2xl border border-ochre bg-callout p-3.5 px-[18px] text-sm leading-[1.6] text-tint-ochre-text"
               >
                 {q}
               </li>
@@ -77,29 +51,18 @@ export default async function TopicDetail({ params }: { params: { slug: string }
         </section>
       )}
 
-      {recent.length > 0 && (
-        <section className="mb-8">
-          <h2 className="mb-2 text-base font-semibold">Recent updates</h2>
-          <div className="space-y-3">
-            {recent.map((t, i) => (
-              <UpdateCard key={i} t={t} />
-            ))}
-          </div>
-        </section>
-      )}
-
       {profile && profile.member_commentary.length > 0 && (
         <section className="mb-8">
-          <h2 className="mb-2 text-base font-semibold">What members have said</h2>
+          <h2 className="mb-2 text-lg font-semibold">What members have said</h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {profile.member_commentary.map((m, i) => (
-              <div key={i} className="rounded-lg border border-slate-200 bg-white p-4">
+              <div key={i} className="rounded-2xl border border-hairline bg-canvas p-4">
                 <div className="mb-1 text-sm font-semibold">{m.member}</div>
-                <p className="text-sm leading-relaxed text-slate-700">{m.summary}</p>
+                <p className="text-sm leading-[1.6] text-body">{m.summary}</p>
               </div>
             ))}
           </div>
-          <p className="mt-2 text-xs text-slate-400">
+          <p className="mt-2 text-[13px] text-muted-soft">
             Positions as recorded in meeting minutes; votes without recorded comment aren’t
             summarized.
           </p>
@@ -107,31 +70,28 @@ export default async function TopicDetail({ params }: { params: { slug: string }
       )}
 
       <section>
-        <h2 className="mb-3 text-base font-semibold">Full history</h2>
-        <ol className="relative border-l border-slate-200 pl-6">
+        <h2 className="mb-4 text-lg font-semibold">Full history</h2>
+        <ol className="relative flex flex-col gap-7 border-l-2 border-strong pl-6">
           {entity.timeline.map((t, i) => (
-            <li key={i} className="relative mb-8">
-              <span className="absolute -left-[1.85rem] top-1.5 h-3 w-3 rounded-full border-2 border-white bg-sky-500" />
+            <li key={i} className="relative">
+              <span className="absolute -left-[31px] top-1 h-3 w-3 rounded-full border-2 border-canvas bg-teal" />
               <div className="mb-1 flex flex-wrap items-center gap-2 text-sm">
-                <span className="font-medium">{formatDate(t.date)}</span>
-                <Link
-                  href={`/meetings/${t.meeting_id}`}
-                  className="text-sky-600 hover:underline"
-                >
+                <span className="font-semibold">{formatDate(t.date)}</span>
+                <Link href={`/meetings/${t.meeting_id}`} className="text-ink underline underline-offset-2">
                   {BODY_LABELS[t.body] ?? t.body}
                   {t.agenda_item_label ? ` · item ${t.agenda_item_label}` : ""}
                 </Link>
                 <StatusBadge status={t.status_after} />
               </div>
-              <p className="text-sm leading-relaxed text-slate-700">{t.update_text}</p>
-              <div className="mt-1 flex gap-3 text-xs text-slate-400">
+              <p className="text-sm leading-[1.6] text-body">{t.update_text}</p>
+              <div className="mt-1 flex gap-3 text-[13px] text-muted-soft">
                 {t.minutes_url && (
-                  <a href={t.minutes_url} target="_blank" className="hover:text-sky-600">
+                  <a href={t.minutes_url} target="_blank" className="hover:text-ink">
                     minutes ↗
                   </a>
                 )}
                 {t.agenda_url && (
-                  <a href={t.agenda_url} target="_blank" className="hover:text-sky-600">
+                  <a href={t.agenda_url} target="_blank" className="hover:text-ink">
                     agenda ↗
                   </a>
                 )}
@@ -139,7 +99,7 @@ export default async function TopicDetail({ params }: { params: { slug: string }
             </li>
           ))}
           {entity.timeline.length === 0 && (
-            <li className="text-sm text-slate-500">No tracked updates yet.</li>
+            <li className="text-sm text-muted">No tracked updates yet.</li>
           )}
         </ol>
       </section>

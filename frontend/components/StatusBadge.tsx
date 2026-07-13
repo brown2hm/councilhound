@@ -1,18 +1,20 @@
 const STATUS_STYLES: Record<string, string> = {
-  proposed: "bg-sky-100 text-sky-800",
-  in_progress: "bg-amber-100 text-amber-800",
-  approved: "bg-emerald-100 text-emerald-800",
-  completed: "bg-emerald-200 text-emerald-900",
-  denied: "bg-rose-100 text-rose-800",
-  deferred: "bg-slate-200 text-slate-700",
-  withdrawn: "bg-slate-200 text-slate-500",
+  in_progress: "bg-tint-ochre text-tint-ochre-text",
+  proposed: "bg-tint-lavender text-tint-lavender-text",
+  approved: "bg-tint-mint text-tint-mint-text",
+  completed: "bg-tint-mint text-tint-mint-text",
+  denied: "bg-tint-coral text-tint-coral-text",
+  failed: "bg-tint-coral text-tint-coral-text",
+  deferred: "bg-strong text-body",
+  continued: "bg-strong text-body",
+  withdrawn: "bg-strong text-body",
 };
 
 export default function StatusBadge({ status }: { status: string | null }) {
   if (!status) return null;
-  const style = STATUS_STYLES[status] ?? "bg-slate-100 text-slate-700";
+  const style = STATUS_STYLES[status] ?? "bg-strong text-body";
   return (
-    <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${style}`}>
+    <span className={`inline-block whitespace-nowrap rounded-full px-2.5 py-[3px] text-xs font-medium ${style}`}>
       {status.replace("_", " ")}
     </span>
   );

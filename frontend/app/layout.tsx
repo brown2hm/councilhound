@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import Image from "next/image";
 import Link from "next/link";
 import "./globals.css";
+import NavLinks from "@/components/NavLinks";
+
+const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
 
 export const metadata: Metadata = {
   title: "CouncilHound — City of Fairfax",
@@ -8,34 +13,36 @@ export const metadata: Metadata = {
     "CouncilHound sniffs through City of Fairfax council and planning commission records so you can track projects, votes, and decisions over time.",
 };
 
-const nav = [
-  { href: "/topics", label: "Tracker" },
-  { href: "/meetings", label: "Meetings" },
-  { href: "/ask", label: "Ask" },
-];
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-slate-50 text-slate-900 antialiased">
-        <header className="border-b border-slate-200 bg-white">
-          <div className="mx-auto flex max-w-5xl items-center gap-8 px-4 py-3">
-            <Link href="/" className="text-lg font-semibold tracking-tight">
-              <span aria-hidden className="mr-1.5">🐕</span>Council<span className="text-amber-600">Hound</span>
+      <body className={`${inter.className} flex min-h-screen flex-col bg-canvas text-ink antialiased`}>
+        <header className="sticky top-0 z-10 border-b border-hairline-soft bg-canvas">
+          <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between px-8">
+            <div className="flex items-center gap-10">
+              <Link href="/" className="flex items-center gap-2.5">
+                <Image src="/brand/hound.png" alt="" width={41} height={36} className="h-9 w-auto" priority />
+                <span className="text-lg font-semibold tracking-[-0.4px]">CouncilHound</span>
+              </Link>
+              <NavLinks />
+            </div>
+            <Link
+              href="/ask"
+              className="rounded-xl bg-ink px-5 py-3 text-sm font-semibold leading-none text-white hover:bg-ink-active"
+            >
+              Ask a question
             </Link>
-            <nav className="flex gap-5 text-sm font-medium text-slate-600">
-              {nav.map((n) => (
-                <Link key={n.href} href={n.href} className="hover:text-slate-900">
-                  {n.label}
-                </Link>
-              ))}
-            </nav>
           </div>
         </header>
-        <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
-        <footer className="mx-auto max-w-5xl px-4 pb-8 text-xs text-slate-400">
-          CouncilHound fetches from public City of Fairfax, VA meeting records on Granicus.
-          Summaries are machine-generated — always verify against the linked source documents.
+        <main className="w-full flex-1">{children}</main>
+        <footer className="bg-soft px-8 py-6">
+          <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-4">
+            <p className="text-[13px] text-body">
+              CouncilHound fetches from public City of Fairfax, VA meeting records on Granicus.
+              Summaries are machine-generated — always verify against the linked source documents.
+            </p>
+            <Image src="/brand/hound.png" alt="" width={34} height={30} className="h-[30px] w-auto opacity-90" />
+          </div>
         </footer>
       </body>
     </html>

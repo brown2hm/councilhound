@@ -18,21 +18,21 @@ export default async function MeetingsPage({
   const meetings = await api.meetings(params);
 
   return (
-    <div>
-      <h1 className="mb-1 text-xl font-semibold">Meetings</h1>
-      <p className="mb-5 text-sm text-slate-500">
+    <div className="mx-auto max-w-[1280px] px-8 pb-16 pt-8">
+      <h1 className="mb-1 text-[32px] font-medium tracking-[-0.5px]">Meetings</h1>
+      <p className="mb-5 text-sm text-muted">
         Every archived meeting, newest first, with what was decided.
       </p>
 
-      <div className="mb-4 flex gap-2">
+      <div className="mb-4 flex flex-wrap gap-2">
         {BODIES.map((b) => (
           <Link
             key={b.key}
             href={b.key ? `/meetings?body=${b.key}` : "/meetings"}
-            className={`rounded-full px-3 py-1 text-sm ${
+            className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium ${
               b.key === body
-                ? "bg-slate-900 text-white"
-                : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100"
+                ? "bg-ink text-canvas"
+                : "border border-hairline bg-canvas text-muted hover:text-ink"
             }`}
           >
             {b.label}
@@ -40,20 +40,20 @@ export default async function MeetingsPage({
         ))}
       </div>
 
-      <ul className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
+      <ul className="divide-y divide-hairline-soft rounded-2xl border border-hairline bg-canvas">
         {meetings.map((m) => (
           <li key={m.id}>
-            <Link href={`/meetings/${m.id}`} className="block px-4 py-3 hover:bg-slate-50">
+            <Link href={`/meetings/${m.id}`} className="block px-5 py-3 hover:bg-soft">
               <div className="flex items-baseline justify-between gap-3">
-                <span className="font-medium">{m.title}</span>
-                <span className="shrink-0 text-sm text-slate-500">{formatDate(m.date)}</span>
+                <span className="text-sm font-semibold">{m.title}</span>
+                <span className="shrink-0 text-[13px] font-medium text-muted">
+                  {formatDate(m.date)}
+                </span>
               </div>
-              <div className="text-xs text-slate-500">
+              <div className="text-[13px] text-muted">
                 {BODY_LABELS[m.body] ?? m.body}
                 {m.agenda_item_count > 0 ? ` · ${m.agenda_item_count} agenda items` : ""}
-                {m.duration_seconds
-                  ? ` · ${Math.round(m.duration_seconds / 60)} min`
-                  : ""}
+                {m.duration_seconds ? ` · ${Math.round(m.duration_seconds / 60)} min` : ""}
               </div>
             </Link>
           </li>

@@ -6,38 +6,46 @@ const TYPES = ["project", "ordinance", "resolution", "case_number", "topic", "lo
 
 async function HotList() {
   const hot = await api.hotTopics();
+  const max = Math.max(1, ...hot.topics.map((t) => t.seconds));
   return (
     <div>
-      <p className="mb-3 text-xs text-slate-500">
-        Ranked by named discussion time across the {hot.meetings.length} most recent
-        transcribed meetings (
-        {hot.meetings.map((m) => formatDate(m.date)).join(", ")}).
+      <p className="mb-3 text-[13px] text-muted">
+        Ranked by named discussion time across the {hot.meetings.length} most recent transcribed
+        meetings ({hot.meetings.map((m) => formatDate(m.date)).join(", ")}).
       </p>
-      <ul className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
+      <ul className="divide-y divide-hairline-soft rounded-2xl border border-hairline bg-canvas">
         {hot.topics.map((t, i) => (
           <li key={t.slug}>
             <Link
               href={`/topics/${t.slug}`}
-              className="flex items-center gap-4 px-4 py-3 hover:bg-slate-50"
+              className="flex items-center gap-4 px-5 py-3 hover:bg-soft"
             >
-              <span className="w-6 shrink-0 text-right font-mono text-sm text-slate-400">
+              <span className="w-6 shrink-0 text-right text-[15px] font-semibold text-muted-soft">
                 {i + 1}
               </span>
               <div className="min-w-0 flex-1">
-                <div className="truncate font-medium">{t.name}</div>
-                <div className="text-xs text-slate-500">
+                <div className="truncate text-sm font-semibold">{t.name}</div>
+                <div className="text-[13px] text-muted">
                   {t.entity_type.replace("_", " ")} · {t.chunk_mentions} mentions
                 </div>
               </div>
-              <span className="shrink-0 text-sm font-semibold text-orange-600">
-                {Math.round(t.seconds / 60)} min
-              </span>
+              <div className="hidden w-[220px] shrink-0 items-center gap-2.5 sm:flex">
+                <div className="h-1.5 flex-1 rounded-full bg-strong">
+                  <div
+                    className="h-1.5 rounded-full bg-teal"
+                    style={{ width: `${Math.max(4, (t.seconds / max) * 100)}%` }}
+                  />
+                </div>
+                <span className="w-14 shrink-0 text-[13px] font-semibold text-tint-mint-text">
+                  {Math.round(t.seconds / 60)} min
+                </span>
+              </div>
               <StatusBadge status={t.current_status} />
             </Link>
           </li>
         ))}
         {hot.topics.length === 0 && (
-          <li className="px-4 py-6 text-sm text-slate-500">
+          <li className="px-5 py-6 text-sm text-muted">
             No transcribed meetings yet — hot topics appear once transcription lands.
           </li>
         )}
@@ -58,20 +66,18 @@ export default async function TopicsPage({
   const entities = isHot ? [] : await api.entities(params);
 
   return (
-    <div>
-      <h1 className="mb-1 text-xl font-semibold">Topic tracker</h1>
-      <p className="mb-5 text-sm text-slate-500">
-        Everything the council and planning commission have touched, with current status and
-        full history.
+    <div className="mx-auto max-w-[1280px] px-8 pb-16 pt-8">
+      <h1 className="mb-1 text-[32px] font-medium tracking-[-0.5px]">Topic tracker</h1>
+      <p className="mb-5 text-sm text-muted">
+        Everything the council and planning commission have touched, with current status and full
+        history.
       </p>
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <Link
           href="/topics?type=hot"
-          className={`rounded-full px-3 py-1 text-sm font-medium ${
-            isHot
-              ? "bg-orange-600 text-white"
-              : "bg-white text-orange-600 ring-1 ring-orange-200 hover:bg-orange-50"
+          className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium ${
+            isHot ? "bg-ink text-canvas" : "border border-hairline bg-canvas text-muted hover:text-ink"
           }`}
         >
           🔥 Hot
@@ -80,10 +86,10 @@ export default async function TopicsPage({
           <Link
             key={t}
             href={`/topics?type=${t}`}
-            className={`rounded-full px-3 py-1 text-sm ${
+            className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium ${
               t === type
-                ? "bg-slate-900 text-white"
-                : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100"
+                ? "bg-ink text-canvas"
+                : "border border-hairline bg-canvas text-muted hover:text-ink"
             }`}
           >
             {t.replace("_", " ")}
@@ -96,7 +102,7 @@ export default async function TopicsPage({
               name="q"
               defaultValue={searchParams.q ?? ""}
               placeholder="Search names…"
-              className="rounded-md border border-slate-300 px-3 py-1.5 text-sm"
+              className="w-[220px] rounded-xl border border-hairline bg-canvas px-4 py-2.5 text-sm outline-none placeholder:text-muted-soft focus:border-ink"
             />
           </form>
         )}
@@ -105,28 +111,28 @@ export default async function TopicsPage({
       {isHot ? (
         <HotList />
       ) : (
-      <ul className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
-        {entities.map((e) => (
-          <li key={e.slug}>
-            <Link
-              href={`/topics/${e.slug}`}
-              className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-slate-50"
-            >
-              <div>
-                <div className="font-medium">{e.name}</div>
-                <div className="text-xs text-slate-500">
-                  {e.update_count} update{e.update_count === 1 ? "" : "s"}
-                  {e.last_seen ? ` · last ${formatDate(e.last_seen)}` : ""}
+        <ul className="divide-y divide-hairline-soft rounded-2xl border border-hairline bg-canvas">
+          {entities.map((e) => (
+            <li key={e.slug}>
+              <Link
+                href={`/topics/${e.slug}`}
+                className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-soft"
+              >
+                <div>
+                  <div className="text-sm font-semibold">{e.name}</div>
+                  <div className="text-[13px] text-muted">
+                    {e.update_count} update{e.update_count === 1 ? "" : "s"}
+                    {e.last_seen ? ` · last ${formatDate(e.last_seen)}` : ""}
+                  </div>
                 </div>
-              </div>
-              <StatusBadge status={e.current_status} />
-            </Link>
-          </li>
-        ))}
-        {entities.length === 0 && (
-          <li className="px-4 py-6 text-sm text-slate-500">Nothing here yet.</li>
-        )}
-      </ul>
+                <StatusBadge status={e.current_status} />
+              </Link>
+            </li>
+          ))}
+          {entities.length === 0 && (
+            <li className="px-5 py-6 text-sm text-muted">Nothing here yet.</li>
+          )}
+        </ul>
       )}
     </div>
   );
