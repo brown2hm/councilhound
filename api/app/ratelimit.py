@@ -31,16 +31,18 @@ def check_ask_rate(request: Request) -> None:
     ip = client_ip(request)
     now = time.time()
     with _lock:
+        # day rollover FIRST — clearing _by_ip after taking the window
+        # reference would orphan this request's record
+        today = time.strftime("%Y-%m-%d")
+        if _day["date"] != today:
+            _day["date"], _day["count"] = today, 0
+            _by_ip.clear()
+
         window = _by_ip[ip]
         while window and window[0] < now - 60:
             window.popleft()
         if len(window) >= ASK_PER_MINUTE:
             raise HTTPException(429, "Too many questions — try again in a minute.")
-
-        today = time.strftime("%Y-%m-%d")
-        if _day["date"] != today:
-            _day["date"], _day["count"] = today, 0
-            _by_ip.clear()
         if _day["count"] >= ASK_GLOBAL_PER_DAY:
             raise HTTPException(429, "The hound is napping — daily question limit reached. Come back tomorrow.")
 

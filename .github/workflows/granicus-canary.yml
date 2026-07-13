@@ -29,7 +29,7 @@ jobs:
           PYTHONPATH: src
         run: |
           uv run python - <<'EOF'
-          from councilhound.scraper.granicus import list_meetings
+          from councilhound.scraper.granicus import fetch_index_points, list_meetings
 
           meetings = list_meetings("13")
           assert len(meetings) > 50, f"only {len(meetings)} in-scope meetings parsed - markup drift?"
@@ -39,5 +39,14 @@ jobs:
           with_audio = sum(1 for m in recent if m.audio_url)
           assert with_agenda >= 5, f"only {with_agenda}/10 recent meetings have agenda links"
           assert with_audio >= 3, f"only {with_audio}/10 recent meetings have MP3 links"
-          print(f"OK: {len(meetings)} meetings; recent 10: {with_agenda} agendas, {with_audio} mp3s")
+
+          # watch links depend on MediaPlayer index-point markup — check a
+          # recent long meeting still yields labeled markers
+          long_meeting = next(m for m in recent if (m.duration_seconds or 0) > 3600)
+          points = fetch_index_points(long_meeting.clip_id, long_meeting.view_id)
+          labeled = [p for p in points if p["label"]]
+          assert len(labeled) >= 3, f"only {len(labeled)} labeled index points on clip {long_meeting.clip_id}"
+
+          print(f"OK: {len(meetings)} meetings; recent 10: {with_agenda} agendas, "
+                f"{with_audio} mp3s; {len(labeled)} index points on clip {long_meeting.clip_id}")
           EOF

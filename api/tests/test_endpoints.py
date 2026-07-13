@@ -19,7 +19,7 @@ def _seed(db):
     db.flush()
 
     item = AgendaItem(meeting_id=m1.id, label="7a", title="Trail design contract",
-                      outcome="Approved 5-1", embedding=[0.1] * 768)
+                      outcome="Approved 5-1", start_seconds=439, embedding=[0.1] * 768)
     db.add(item)
     db.flush()
     db.add(Vote(meeting_id=m1.id, agenda_item_id=item.id, description="Approve contract",
@@ -56,9 +56,21 @@ def test_meetings_list_and_filters(client, db):
 def test_meeting_detail(client, db):
     m1, _ = _seed(db)
     detail = client.get(f"/meetings/{m1.id}").json()
-    assert detail["agenda_items"][0]["label"] == "7a"
-    assert detail["agenda_items"][0]["votes"][0]["motion_result"] == "passed"
+    item = detail["agenda_items"][0]
+    assert item["label"] == "7a"
+    assert item["votes"][0]["motion_result"] == "passed"
+    # official index-point timestamp -> Granicus deep link (never hosted video)
+    assert item["start_seconds"] == 439
+    assert item["watch_url"].endswith("MediaPlayer.php?view_id=13&clip_id=100&starttime=439")
     assert client.get("/meetings/999999").status_code == 404
+
+
+def test_timeline_watch_url(client, db):
+    _seed(db)
+    detail = client.get("/entities/george-snyder-trail").json()
+    linked = [t for t in detail["timeline"] if t["watch_url"]]
+    assert len(linked) == 1  # only the entry whose agenda item has a timestamp
+    assert linked[0]["watch_url"].endswith("&starttime=439")
 
 
 def test_entity_timeline(client, db):

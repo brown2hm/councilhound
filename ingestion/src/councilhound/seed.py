@@ -69,8 +69,12 @@ def parse_pc_header(raw_text: str) -> dict:
     m = _PC_RE.search(raw_text[:3000])
     if not m:
         return {"chair": None, "vice_chair": None, "commissioners": []}
-    commissioners = [c.strip() for c in m.group("rest").split(",")]
-    commissioners = [c for c in commissioners if _looks_like_name(c)]
+    commissioners = []
+    for c in m.group("rest").split(","):
+        # trim a glued-on agenda list ("Paul Cunningham 1. Pledge of...")
+        c = re.split(r"\s+\d+[.)]\s", c.strip() + " ")[0].strip()
+        if _looks_like_name(c):
+            commissioners.append(c)
     return {
         "chair": m.group("chair").strip(),
         "vice_chair": m.group("vice").strip(),
