@@ -8,6 +8,7 @@ from councilhound.db.models import AgendaItem, Entity, EntityProfile, EntityUpda
 from councilhound.hot_topics import hot_topics
 
 from app.db import db_session
+from app.links import clip_link
 
 router = APIRouter()
 
@@ -104,6 +105,8 @@ def get_entity(slug: str, session: Session = Depends(db_session)):
                 "status_after": u.status_after,
                 "agenda_url": m.agenda_url,
                 "minutes_url": m.minutes_url,
+                "watch_url": clip_link(m.granicus_view_id, m.granicus_clip_id, item.start_seconds)
+                if item and item.start_seconds is not None else None,
             }
             for u, m, item in timeline
         ],

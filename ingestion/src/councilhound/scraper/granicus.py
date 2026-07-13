@@ -208,6 +208,41 @@ def list_meetings(view_id: str) -> list[DiscoveredMeeting]:
     return meetings
 
 
+def parse_index_points(player_html: str) -> list[dict]:
+    """Parse the official agenda index points from a MediaPlayer page.
+    Granicus embeds human-indexed markers per agenda item:
+      <div class="index-point" time="9" ...>1. Call the regular meeting...</div>
+    Returns [{'label': '1', 'time': 9, 'text': ...}]; label is the leading
+    item number normalized to match our agenda_items labels ('7a.' -> '7a')."""
+    soup = BeautifulSoup(player_html, "lxml")
+    points = []
+    last_number = None
+    for div in soup.find_all("div", class_="index-point"):
+        time_attr = div.get("time")
+        text = div.get_text(" ", strip=True)
+        if time_attr is None or not text:
+            continue
+        label = None
+        m = re.match(r"^\s*(\d+)([a-z])?[.)]\s", text)
+        if m:
+            last_number = m.group(1)
+            label = (m.group(1) + (m.group(2) or "")).lower()
+        else:
+            # sub-items are indexed as bare letters ('a. Presentation...');
+            # they belong to the last numbered item -> '3' + 'a' = '3a'
+            sub = re.match(r"^\s*([a-z])[.)]\s", text, re.IGNORECASE)
+            if sub and last_number:
+                label = (last_number + sub.group(1)).lower()
+        points.append({"label": label, "time": int(time_attr), "text": text})
+    return points
+
+
+def fetch_index_points(clip_id: str, view_id: str) -> list[dict]:
+    """Fetch + parse a clip's official agenda index points."""
+    resp = http.get(f"{GRANICUS_BASE_URL}/MediaPlayer.php?view_id={view_id}&clip_id={clip_id}")
+    return parse_index_points(resp.text)
+
+
 def extract_agenda_item_links(agenda_html: str, base_url: str = GRANICUS_BASE_URL) -> list[dict]:
     """From a GeneratedAgendaViewer page, return the MetaViewer.php PDF links:
     [{'meta_id': ..., 'url': ..., 'label': <anchor text>}]."""

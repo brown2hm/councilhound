@@ -85,6 +85,11 @@ export default async function TopicDetail({ params }: { params: { slug: string }
               </div>
               <p className="text-sm leading-[1.6] text-body">{t.update_text}</p>
               <div className="mt-1 flex gap-3 text-[13px] text-muted-soft">
+                {t.watch_url && (
+                  <a href={t.watch_url} target="_blank" className="font-semibold text-muted hover:text-ink">
+                    ▶ Watch this moment
+                  </a>
+                )}
                 {t.minutes_url && (
                   <a href={t.minutes_url} target="_blank" className="hover:text-ink">
                     minutes ↗

@@ -224,9 +224,21 @@ def daily(days):
         click.echo(f"extract-text: {extract_pending(session)}")
         click.echo(f"transcribe:   {transcribe_pending(session)}")
         click.echo(f"structure:    {structure_pending(session)}")
+        click.echo(f"index-points: {pipeline.link_index_points_pending(session)}")
         click.echo(f"seed:         {seed_people(session)}")
         click.echo(f"profile:      {profile_pending(session)}")
         click.echo(f"embed:        {embed_pending(session)}")
+
+
+@cli.command("index-points")
+@limit_option
+def index_points(limit):
+    """Link agenda items to the official Granicus video index points."""
+    from councilhound import pipeline
+    from councilhound.db.session import get_session
+
+    with get_session() as session:
+        click.echo(pipeline.link_index_points_pending(session, limit=limit))
 
 
 @cli.command()

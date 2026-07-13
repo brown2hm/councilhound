@@ -57,6 +57,9 @@ class AgendaItem(Base):
     title = Column(Text)
     description = Column(Text)
     outcome = Column(Text)
+    # official Granicus index-point timestamp: seconds into the meeting
+    # video where this item was taken up; NULL when the city didn't index it
+    start_seconds = Column(Integer)
     # embeds label+title+description+outcome; part of the RAG corpus
     embedding = Column(Vector(768))
 

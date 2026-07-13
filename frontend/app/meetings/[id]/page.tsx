@@ -80,11 +80,20 @@ export default async function MeetingPage({ params }: { params: { id: string } }
       <ul className="space-y-3">
         {meeting.agenda_items.map((item) => (
           <li key={item.id} className="rounded-2xl border border-hairline bg-canvas p-[18px] px-5">
-            <div className="mb-1 flex items-baseline gap-2">
+            <div className="mb-1 flex flex-wrap items-baseline gap-2">
               <span className="rounded-md bg-card px-2 py-0.5 font-mono text-xs font-semibold text-muted">
                 {item.label}
               </span>
               <span className="text-[15px] font-semibold">{item.title}</span>
+              {item.watch_url && (
+                <a
+                  href={item.watch_url}
+                  target="_blank"
+                  className="ml-auto whitespace-nowrap text-[13px] font-semibold text-muted hover:text-ink"
+                >
+                  ▶ Watch this item
+                </a>
+              )}
             </div>
             {item.description && (
               <p className="mb-2 text-sm leading-[1.55] text-body">{item.description}</p>

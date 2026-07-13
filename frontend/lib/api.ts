@@ -28,6 +28,8 @@ export interface AgendaItemInfo {
   title: string | null;
   description: string | null;
   outcome: string | null;
+  start_seconds: number | null;
+  watch_url: string | null;
   votes: VoteInfo[];
 }
 
@@ -60,6 +62,7 @@ export interface TimelineEntry {
   status_after: string | null;
   agenda_url: string | null;
   minutes_url: string | null;
+  watch_url: string | null;
 }
 
 export interface MemberCommentary {

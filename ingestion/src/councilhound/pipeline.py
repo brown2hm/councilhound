@@ -149,6 +149,65 @@ def fetch_documents(session: Session, meeting: Meeting) -> int:
     return fetched
 
 
+def link_index_points(session: Session, meeting: Meeting) -> int:
+    """Fetch the clip's official agenda index points and set start_seconds on
+    matching agenda_items (matched by normalized label). Returns matches."""
+    from councilhound.db.models import AgendaItem
+
+    items = session.scalars(
+        select(AgendaItem).where(AgendaItem.meeting_id == meeting.id)
+    ).all()
+    if not items:
+        return 0
+    points = granicus.fetch_index_points(meeting.granicus_clip_id, meeting.granicus_view_id)
+    by_label: dict[str, int] = {}
+    for p in points:
+        if p["label"] is not None:
+            by_label.setdefault(p["label"], p["time"])  # first occurrence = item start
+    matched = 0
+    for item in items:
+        t = by_label.get(item.label.lower().rstrip("."))
+        if t is not None:
+            item.start_seconds = t
+            matched += 1
+    session.commit()
+    if points:
+        log.info("meeting %s: %d/%d agenda items matched to index points",
+                 meeting.granicus_clip_id, matched, len(items))
+    return matched
+
+
+def link_index_points_pending(session: Session, limit: int | None = None) -> dict:
+    """Run link_index_points for every meeting that has agenda items but no
+    timestamps yet."""
+    from councilhound.db.models import AgendaItem
+
+    timestamped = (
+        select(AgendaItem.meeting_id)
+        .where(AgendaItem.start_seconds.isnot(None))
+        .distinct()
+    )
+    has_items = select(AgendaItem.meeting_id).distinct()
+    q = (
+        select(Meeting)
+        .where(Meeting.id.in_(has_items), Meeting.id.not_in(timestamped))
+        .order_by(Meeting.meeting_date.desc())
+    )
+    if limit:
+        q = q.limit(limit)
+    meetings = session.scalars(q).all()
+    done = failed = 0
+    for meeting in meetings:
+        try:
+            link_index_points(session, meeting)
+            done += 1
+        except Exception:
+            session.rollback()
+            log.exception("index points failed for clip %s", meeting.granicus_clip_id)
+            failed += 1
+    return {"meetings": done, "failed": failed, "candidates": len(meetings)}
+
+
 def fetch_media(session: Session, meeting: Meeting) -> str | None:
     """Download the meeting MP3 (audio for Phase 2 transcription). Direct
     archive-video.granicus.com URLs work with our browser User-Agent."""

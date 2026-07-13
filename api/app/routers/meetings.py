@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from councilhound.db.models import AgendaItem, Document, Meeting, Vote
 
 from app.db import db_session
+from app.links import clip_link
 
 router = APIRouter()
 
@@ -86,6 +87,9 @@ def get_meeting(meeting_id: int, session: Session = Depends(db_session)):
                 "title": it.title,
                 "description": it.description,
                 "outcome": it.outcome,
+                "start_seconds": it.start_seconds,
+                "watch_url": clip_link(meeting.granicus_view_id, meeting.granicus_clip_id,
+                                       it.start_seconds) if it.start_seconds is not None else None,
                 "votes": votes_by_item.get(it.id, []),
             }
             for it in items

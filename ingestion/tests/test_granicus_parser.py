@@ -101,3 +101,19 @@ def test_extract_agenda_item_links():
     items = extract_agenda_item_links(html)
     assert [i["meta_id"] for i in items] == ["134013", "134016"]
     assert items[0]["label"] == "Staff report 7a"
+
+
+def test_parse_index_points():
+    from councilhound.scraper.granicus import parse_index_points
+
+    html = """
+    <div class="index-point" role="tab" time="9">1. Call the regular meeting to order.</div>
+    <div class="index-point" role="tab" time="32">2. Pledge of Allegiance.</div>
+    <div class="index-point" role="tab" time="60">a. Presentation of a proclamation.</div>
+    <div class="index-point" role="tab" time="439">7a. Rezoning application Z-25-01.</div>
+    <div class="index-point" role="tab" time="500">Unlabeled comment period</div>
+    """
+    pts = parse_index_points(html)
+    assert [(p["label"], p["time"]) for p in pts] == [
+        ("1", 9), ("2", 32), ("2a", 60), ("7a", 439), (None, 500),
+    ]
