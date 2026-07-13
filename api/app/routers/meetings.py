@@ -50,6 +50,35 @@ def list_meetings(
     ]
 
 
+@router.get("/stats")
+def get_stats(
+    days: int = Query(30, ge=7, le=365),
+    session: Session = Depends(db_session),
+):
+    """Aggregate counts for the briefing stat tiles."""
+    since = datetime.date.today() - datetime.timedelta(days=days)
+    meetings_held = session.scalar(
+        select(func.count(Meeting.id)).where(Meeting.meeting_date >= since)) or 0
+    hours = session.scalar(
+        select(func.coalesce(func.sum(Meeting.duration_seconds), 0))
+        .where(Meeting.meeting_date >= since)) or 0
+    vote_rows = session.execute(
+        select(Vote.motion_result, func.count())
+        .join(Meeting, Vote.meeting_id == Meeting.id)
+        .where(Meeting.meeting_date >= since)
+        .group_by(Vote.motion_result)
+    ).all()
+    by_result = {r or "other": n for r, n in vote_rows}
+    return {
+        "days": days,
+        "meetings_held": meetings_held,
+        "hours_of_meetings": round(hours / 3600, 1),
+        "votes_taken": sum(by_result.values()),
+        "motions_passed": by_result.get("passed", 0),
+        "motions_failed": by_result.get("failed", 0),
+    }
+
+
 @router.get("/{meeting_id}")
 def get_meeting(meeting_id: int, session: Session = Depends(db_session)):
     meeting = session.get(Meeting, meeting_id)
