@@ -46,7 +46,9 @@ def test_per_ip_isolation(monkeypatch):
 
 def test_global_daily_budget(monkeypatch):
     now = [1000.0]
+    day = ["day-1"]  # fully fake clock: never depends on the real date/timezone
     monkeypatch.setattr(ratelimit.time, "time", lambda: now[0])
+    monkeypatch.setattr(ratelimit.time, "strftime", lambda fmt: day[0])
     monkeypatch.setattr(ratelimit, "ASK_GLOBAL_PER_DAY", 3)
 
     for i in range(3):
@@ -58,6 +60,5 @@ def test_global_daily_budget(monkeypatch):
     assert "napping" in exc.value.detail
 
     # new day -> budget resets
-    days = iter(["2026-07-13", "2026-07-14"])
-    monkeypatch.setattr(ratelimit.time, "strftime", lambda fmt: next(days, "2026-07-14"))
+    day[0] = "day-2"
     ratelimit.check_ask_rate(FakeRequest("9.9.9.100"))
