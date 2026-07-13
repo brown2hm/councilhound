@@ -6,6 +6,7 @@ real Postgres 16 with pgvector, no Docker or managed instance needed for
 local development.
 """
 import os
+import threading
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -14,6 +15,10 @@ from councilhound.config import DATA_DIR, DATABASE_URL
 
 _engine = None
 _SessionLocal = None
+# Concurrent first requests (e.g. the API serving parallel page fetches)
+# must not race pgserver's pg_ctl start — the losers cache a dead handle
+# and every later request 500s.
+_init_lock = threading.RLock()  # reentrant: get_session -> get_engine nests it
 
 
 def _resolve_database_url() -> str:
@@ -34,12 +39,16 @@ def _resolve_database_url() -> str:
 def get_engine():
     global _engine
     if _engine is None:
-        _engine = create_engine(_resolve_database_url())
+        with _init_lock:
+            if _engine is None:
+                _engine = create_engine(_resolve_database_url())
     return _engine
 
 
 def get_session():
     global _SessionLocal
     if _SessionLocal is None:
-        _SessionLocal = sessionmaker(bind=get_engine())
+        with _init_lock:
+            if _SessionLocal is None:
+                _SessionLocal = sessionmaker(bind=get_engine())
     return _SessionLocal()
