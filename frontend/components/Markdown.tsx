@@ -19,14 +19,24 @@ export default function Markdown({ children }: { children: string }) {
           <ol className="mb-3 list-decimal space-y-1.5 pl-5 last:mb-0" {...props} />
         ),
         strong: ({ node, ...props }) => <strong className="font-semibold" {...props} />,
-        a: ({ node, ...props }) => (
-          <a
-            className="font-semibold text-ink underline underline-offset-2"
-            target="_blank"
-            rel="noopener noreferrer"
-            {...props}
-          />
-        ),
+        // in-page hash links are citation markers ([n] -> #source-n); style
+        // them like the chips on the source cards they jump to
+        a: ({ node, href, ...props }) =>
+          href?.startsWith("#") ? (
+            <a
+              href={href}
+              className="mx-px rounded-md bg-card px-1 font-mono text-[12px] font-medium text-body hover:bg-strong"
+              {...props}
+            />
+          ) : (
+            <a
+              href={href}
+              className="font-semibold text-ink underline underline-offset-2"
+              target="_blank"
+              rel="noopener noreferrer"
+              {...props}
+            />
+          ),
         h1: ({ node, ...props }) => (
           <h3 className="mb-2 mt-5 text-[16px] font-semibold first:mt-0" {...props} />
         ),

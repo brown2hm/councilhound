@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="scroll-smooth">
       <body className={`${inter.className} flex min-h-screen flex-col bg-canvas text-ink antialiased`}>
         <header className="sticky top-0 z-10 border-b border-hairline-soft bg-canvas">
           <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between px-8">

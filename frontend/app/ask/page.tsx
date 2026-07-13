@@ -18,6 +18,14 @@ function fmtTime(s: number) {
   return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 }
 
+/** Turn [n] citation markers into links to the source cards below the
+ * answer. Indexes without a returned citation stay plain text. */
+function linkifyCitations(answer: string, indexes: Set<number>): string {
+  return answer.replace(/\[(\d+)\]/g, (marker, n) =>
+    indexes.has(Number(n)) ? `[\\[${n}\\]](#source-${n})` : marker,
+  );
+}
+
 function AskInner() {
   const searchParams = useSearchParams();
   const [question, setQuestion] = useState(searchParams.get("q") ?? "");
@@ -115,7 +123,9 @@ function AskInner() {
       {result && (
         <div>
           <div className="mb-6 rounded-2xl border border-hairline bg-canvas p-[22px] px-6 text-[15px] leading-[1.6] text-body-strong">
-            <Markdown>{result.answer}</Markdown>
+            <Markdown>
+              {linkifyCitations(result.answer, new Set(result.citations.map((c) => c.index)))}
+            </Markdown>
           </div>
           {result.citations.length > 0 && (
             <div>
@@ -124,7 +134,11 @@ function AskInner() {
               </h2>
               <ul className="space-y-2">
                 {result.citations.map((c) => (
-                  <li key={c.index} className="rounded-2xl border border-hairline bg-canvas p-3.5 text-sm">
+                  <li
+                    key={c.index}
+                    id={`source-${c.index}`}
+                    className="scroll-mt-24 rounded-2xl border border-hairline bg-canvas p-3.5 text-sm transition-colors duration-500 target:border-mint"
+                  >
                     <div className="mb-1 flex flex-wrap items-center gap-2">
                       <span className="rounded-md bg-card px-1.5 font-mono text-xs">[{c.index}]</span>
                       <span className="font-semibold">{c.meeting_title}</span>
