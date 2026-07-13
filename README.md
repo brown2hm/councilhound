@@ -5,24 +5,63 @@
 
 *The good dog that reads your city council's paperwork so you don't have to.*
 
+**Live at [councilhound.net](https://councilhound.net)**, tracking the City of
+Fairfax, VA.
+
 Turns any [Granicus](https://granicus.com)-hosted public meeting archive —
 the platform behind hundreds of US city/county "view meetings online" pages —
-into a structured, searchable knowledge base: meeting history, project/topic
-progress over time, and natural-language Q&A with citations back to the
-original video timestamp or document.
-
-The reference deployment is City of Fairfax, VA (`fairfax.granicus.com`);
-`PLAN.md` is the phased build plan written against it. The pipeline itself is
+into a structured, searchable knowledge base. The pipeline is
 Granicus-generic: point it at a different city's Granicus subdomain and view
 IDs, and map that city's archive section names (see
-[Adapting to your city](#adapting-to-your-city)).
+[Adapting to your city](#adapting-to-your-city)). `PLAN.md` is the phased
+build plan written against the reference city.
 
-## Services
+## What it does
 
-- `ingestion/` — Phase 1-3: scraper, text extraction + transcription, LLM structuring pass. Python.
-- `api/` — Phase 4: FastAPI app, RAG query endpoint, serves data to front end.
-- `frontend/` — Phase 5: Next.js app (timeline, topic tracker, ask).
-- `infra/` — Phase 6: containerization + (later) k8s manifests.
+- **Briefing** — the latest decisions and votes across City Council and
+  Planning Commission, filtered of procedural noise.
+- **Topic tracker** — every project, ordinance, and development gets a
+  profile: LLM-synthesized summary, current status, recent updates, open
+  questions, and per-member commentary, rebuilt as new meetings land.
+- **Hot topics** — topics ranked by how much meeting time each body actually
+  spent discussing them over the last 60 days (measured from transcript
+  timestamps, not mention counts).
+- **Watch the moment** — agenda items, votes, and timeline entries deep-link
+  to the exact timestamp in the city's own Granicus video player. Videos are
+  never hosted or embedded here.
+- **Ask the hound** — natural-language Q&A over transcripts and agenda items
+  (pgvector retrieval + Claude), with citations that link back to the source
+  video or document. Rate-limited per IP and capped by a global daily budget.
+
+## How it works
+
+Meetings flow through a pipeline of idempotent stages, all runnable
+individually via the CLI or together via `councilhound.cli daily` (which the
+nightly job runs):
+
+1. **Scrape** — parse the Granicus archive for meetings, agendas, minutes,
+   and MP3 audio (`scraper/granicus.py`, `pipeline.py`).
+2. **Extract & transcribe** — pull text from PDFs; transcribe audio with
+   Whisper (`mlx-whisper` on Apple Silicon GPU, `faster-whisper` on CPU).
+   Granicus caption files exist but are empty, so transcription is mandatory.
+3. **Structure** — a Claude tool-use pass turns each meeting into agenda
+   items, votes, statuses, and entity mentions. Entity resolution
+   (slug → alias → create) is owned by code, never the LLM.
+4. **Link video** — official Granicus index points give per-agenda-item
+   timestamps for the deep links.
+5. **Profile & embed** — synthesize topic profiles; embed chunks and items
+   with `bge-base-en-v1.5` (local sentence-transformers, 768-dim, HNSW
+   cosine indexes) for retrieval.
+
+## Repo layout
+
+- `ingestion/` — scraper, transcription, LLM structuring, profiles,
+  embeddings. Python 3.12, SQLAlchemy 2 + pgvector, Alembic.
+- `api/` — FastAPI: meetings, topics, hot-topic rankings, and the
+  rate-limited `/ask` RAG endpoint.
+- `frontend/` — Next.js 14 App Router + Tailwind. Design system in
+  `frontend/DESIGN.md`; brand assets in `frontend/public/brand/`.
+- Each service carries its own `Dockerfile` and `fly.toml`.
 
 ## Configuration
 
@@ -33,7 +72,11 @@ Everything city-specific is environment config (`.env`, see `.env.example`):
 | `GRANICUS_BASE_URL` | Your city's Granicus subdomain, e.g. `https://<city>.granicus.com` |
 | `GRANICUS_VIEW_IDS` | Comma-separated archive view IDs (find them in the `?view_id=` param of the city's "view meetings" page) |
 | `DATABASE_URL` | Postgres connection string; leave unset for the embedded local dev DB |
-| `ANTHROPIC_API_KEY` | For the Phase 3 structuring pass and Phase 4 Q&A |
+| `ANTHROPIC_API_KEY` | For the structuring pass, topic profiles, and Q&A |
+
+API-only knobs: `ALLOWED_ORIGINS` (CORS), `ASK_RATE_PER_MINUTE` /
+`ASK_RATE_GLOBAL_PER_DAY` (defaults 6 and 500). Ingestion-only:
+`TRANSCRIBE_BACKEND` (`mlx` / `faster-whisper`) and `WHISPER_MODEL`.
 
 ## Local dev (no Docker needed for ingestion)
 
@@ -51,9 +94,9 @@ PYTHONPATH=src ../.venv/bin/python -m councilhound.cli status
 
 Drop `--skip-media` to also download meeting MP3s (needed for transcription;
 a full council meeting is ~80–150 MB, a 24-month backfill is roughly
-10–20 GB). Transcription (`... cli transcribe`) prefers `mlx-whisper` on
-Apple Silicon (~35x realtime on GPU) and falls back to `faster-whisper` on
-CPU elsewhere.
+10–20 GB). The remaining stages, in pipeline order: `extract-text`,
+`transcribe`, `structure`, `index-points`, `seed-entities`, `profile`,
+`embed` — or run `daily` to do all of it for recent meetings.
 
 Schema changes: edit `ingestion/src/councilhound/db/models.py`, then
 `cd ingestion && alembic revision --autogenerate -m "..."` and `init-db`.
@@ -70,6 +113,28 @@ docker compose run ingestion python -m councilhound.cli init-db
 - API on :8000 (http://localhost:8000/health)
 - Frontend on :3000
 
+## Deployment (Fly.io)
+
+The reference deployment runs four Fly apps:
+
+| App | What | Notes |
+|---|---|---|
+| `councilhound-web` | Next.js frontend | `flyctl deploy` from `frontend/` |
+| `councilhound-api` | FastAPI + embedding model | model baked into the image and warmed at startup; 4 GB VM |
+| `councilhound-db` | Postgres + pgvector | self-run `pgvector/pgvector:pg16` machine with a volume — Fly's managed Postgres images don't ship pgvector |
+| `councilhound-jobs` | nightly ingest | a `--schedule daily` machine that boots, runs `councilhound.cli daily`, and stops (see `ingestion/fly.toml` for setup) |
+
+DNS is on Cloudflare in DNS-only (gray-cloud) mode so Fly can issue
+Let's Encrypt certs. The API trusts `fly-client-ip` for rate limiting.
+
+## Testing
+
+`pytest` in `ingestion/` and `api/` (parser fixtures, entity resolution,
+hot-topic windowing, structuring idempotency, rate limiting, endpoint
+shapes). CI runs both suites against a real pgvector Postgres plus a
+frontend type-check/build. A separate weekly canary parses the live Granicus
+archive to catch markup drift that fixture-pinned tests can't.
+
 ## Adapting to your city
 
 Granicus archive pages share the same skeleton everywhere (`ViewPublisher.php`
@@ -84,18 +149,11 @@ per-city:
    `SECTION_BODIES` and `classify()` in
    `ingestion/src/councilhound/scraper/granicus.py` to map your city's section
    headers and meeting-title patterns to the bodies you want to track.
-3. **Seeded entities** (Phase 3) — the LLM pass resolves people against a
-   seeded list of council members / commissioners; seed your city's roster.
+3. **Seeded entities** — the LLM pass resolves people against a seeded
+   roster; `seed-entities` parses it from agenda headers, so check its
+   parsers match your city's agenda format (`councilhound/seed.py`).
 
 Two Granicus behaviors worth knowing, verified against the reference city:
 requests need a browser-ish User-Agent (bare curl gets 403s), and the
 caption endpoint (`/videos/<clip>/captions.vtt`) may exist but be empty —
 CouncilHound transcribes the MP3 audio rather than relying on captions.
-
-## Order of work
-
-Follow the plan's phases in order. Implemented so far: Phases 1-4 (scraper +
-raw ingest: `councilhound/scraper/granicus.py`, `councilhound/pipeline.py`) and
-text extraction, transcription, LLM structuring: `councilhound/extraction/`,
-embeddings + RAG API: `councilhound/embeddings/`, `api/app/`). Next up:
-Phase 5 — the Next.js frontend.
