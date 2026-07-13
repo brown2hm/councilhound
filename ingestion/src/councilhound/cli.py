@@ -128,6 +128,40 @@ def seed_entities():
         click.echo(seed_people(session))
 
 
+@cli.command("dedupe-entities")
+@click.option("--apply", "apply_", is_flag=True, help="perform the merges (default: dry-run print)")
+def dedupe_entities(apply_):
+    """Merge entities whose normalized slug matches an existing entity
+    (e.g. 'george-snyder-trail-project' -> 'george-snyder-trail')."""
+    from councilhound.db.session import get_session
+    from councilhound.dedupe import dedupe_pass
+
+    with get_session() as session:
+        proposals = dedupe_pass(session, apply=apply_)
+        for p in proposals:
+            click.echo(f"{p['source']} -> {p['target']} ({p['entity_type']})"
+                       + (f"  moved {p['moved']}" if apply_ else ""))
+        click.echo(f"{len(proposals)} merge(s) {'applied' if apply_ else 'proposed (use --apply)'}")
+
+
+@cli.command("merge-entity")
+@click.argument("source_slug")
+@click.argument("target_slug")
+@click.option("--force-cross-type", is_flag=True,
+              help="allow merging entities of different types")
+def merge_entity(source_slug, target_slug, force_cross_type):
+    """Fold SOURCE_SLUG into TARGET_SLUG (mentions, updates, aliases move;
+    the old name and slug become aliases of the survivor)."""
+    from councilhound.db.session import get_session
+    from councilhound.dedupe import merge_entities
+
+    with get_session() as session:
+        moved = merge_entities(session, source_slug, target_slug,
+                               force_cross_type=force_cross_type)
+        session.commit()
+        click.echo(f"merged {source_slug} -> {target_slug}: {moved}")
+
+
 @cli.command()
 @limit_option
 @click.option("--clip-id", default=None, help="structure a single meeting by Granicus clip_id")

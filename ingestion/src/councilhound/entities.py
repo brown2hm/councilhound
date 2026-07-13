@@ -66,8 +66,14 @@ def resolve_entity(
     create: bool = True,
     first_seen_meeting_id: int | None = None,
 ) -> Entity | None:
-    """Resolve a name to an Entity: slug match -> alias match -> create."""
+    """Resolve a name to an Entity: slug match -> alias match ->
+    normalized-base match (non-persons) -> create."""
+    from councilhound.dedupe import find_normalized_base, normalize_slug
+
     slug = slugify(name)
+    if slug and entity_type != "person":
+        # "X Project" / acronym twins canonicalize to the base slug
+        slug = normalize_slug(slug)
     if not slug:
         return None
     entity = session.scalar(select(Entity).where(Entity.canonical_slug == slug))
@@ -79,6 +85,11 @@ def resolve_entity(
         )
         if alias:
             return session.get(Entity, alias.entity_id)
+    if entity_type != "person":
+        base = find_normalized_base(session, entity_type, slug)
+        if base is not None:
+            add_alias(session, base, name)
+            return base
     if not create:
         return None
     entity = Entity(
