@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Markdown from "@/components/Markdown";
 import type { AskResponse } from "@/lib/api";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -113,8 +114,8 @@ function AskInner() {
 
       {result && (
         <div>
-          <div className="mb-6 whitespace-pre-wrap rounded-2xl border border-hairline bg-canvas p-[22px] px-6 text-[15px] leading-[1.6] text-body-strong">
-            {result.answer}
+          <div className="mb-6 rounded-2xl border border-hairline bg-canvas p-[22px] px-6 text-[15px] leading-[1.6] text-body-strong">
+            <Markdown>{result.answer}</Markdown>
           </div>
           {result.citations.length > 0 && (
             <div>

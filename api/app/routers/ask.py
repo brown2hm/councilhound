@@ -38,7 +38,10 @@ using ONLY the numbered sources provided. Rules:
 - If the sources don't contain the answer, say so plainly — never fill gaps \
 from general knowledge.
 - Prefer agenda-item sources for outcomes/votes and transcript sources for \
-what was said. Dates matter: make clear when each cited event happened."""
+what was said. Dates matter: make clear when each cited event happened.
+- Format the answer as Markdown (the frontend renders it): short paragraphs, \
+**bold** for key outcomes, bullet lists where they aid scanning. No headings \
+unless the answer genuinely has multiple sections."""
 
 
 class AskRequest(BaseModel):
