@@ -4,7 +4,8 @@ SQL and citation wiring, not the models."""
 import datetime
 
 from councilhound.db.models import (
-    AgendaItem, Entity, EntityProfile, EntityUpdate, Meeting, TranscriptChunk, Vote,
+    AgendaItem, Entity, EntityAlias, EntityMention, EntityProfile, EntityUpdate,
+    Meeting, TranscriptChunk, Vote,
 )
 
 
@@ -59,9 +60,11 @@ def test_meeting_detail(client, db):
     item = detail["agenda_items"][0]
     assert item["label"] == "7a"
     assert item["votes"][0]["motion_result"] == "passed"
-    # official index-point timestamp -> Granicus deep link (never hosted video)
+    # official index-point timestamp -> Granicus deep link (never hosted video);
+    # starttime seeks the legacy player, entrytime the modern /player/clip/ one
     assert item["start_seconds"] == 439
-    assert item["watch_url"].endswith("MediaPlayer.php?view_id=13&clip_id=100&starttime=439")
+    assert item["watch_url"].endswith(
+        "MediaPlayer.php?view_id=13&clip_id=100&starttime=439&entrytime=439")
     assert client.get("/meetings/999999").status_code == 404
 
 
@@ -70,7 +73,7 @@ def test_timeline_watch_url(client, db):
     detail = client.get("/entities/george-snyder-trail").json()
     linked = [t for t in detail["timeline"] if t["watch_url"]]
     assert len(linked) == 1  # only the entry whose agenda item has a timestamp
-    assert linked[0]["watch_url"].endswith("&starttime=439")
+    assert linked[0]["watch_url"].endswith("&starttime=439&entrytime=439")
 
 
 def test_entity_timeline(client, db):
@@ -87,6 +90,75 @@ def test_entity_timeline(client, db):
     assert detail["timeline"][0]["status_after"] == "in_progress"
     assert detail["timeline"][1]["status_after"] == "completed"
     assert client.get("/entities/nope").status_code == 404
+
+
+def test_entity_status_source_votes_and_alias_redirect(client, db):
+    m1, _m2 = _seed(db)
+    detail = client.get("/entities/george-snyder-trail").json()
+
+    # provenance: the latest status-bearing timeline entry
+    assert detail["status_source"]["meeting_title"] == "Planning Commission Meeting"
+    assert detail["status_source"]["date"] == "2025-06-03"
+
+    # votes ride along on the timeline entry whose agenda item has them
+    assert detail["timeline"][0]["votes"][0]["motion_result"] == "passed"
+    assert detail["timeline"][0]["votes"][0]["vote_breakdown"] == {"Read": "yes"}
+    assert detail["timeline"][1]["votes"] == []
+
+    # a merged-away slug lives on as an alias and keeps resolving
+    from sqlalchemy import select
+    trail = db.scalar(select(Entity).where(Entity.canonical_slug == "george-snyder-trail"))
+    db.add(EntityAlias(entity_id=trail.id, alias="george-snyder-trail-project"))
+    db.commit()
+    redirected = client.get("/entities/george-snyder-trail-project").json()
+    assert redirected["slug"] == "george-snyder-trail"
+
+
+def test_entity_related_by_co_mention(client, db):
+    m1, m2 = _seed(db)
+    from sqlalchemy import select
+    trail = db.scalar(select(Entity).where(Entity.canonical_slug == "george-snyder-trail"))
+    plaza = Entity(entity_type="project", name="Courthouse Plaza", canonical_slug="courthouse-plaza")
+    once = Entity(entity_type="topic", name="One Off", canonical_slug="one-off")
+    db.add_all([plaza, once])
+    db.flush()
+    db.add_all([
+        EntityMention(entity_id=trail.id, meeting_id=m1.id, role="discussed"),
+        EntityMention(entity_id=trail.id, meeting_id=m2.id, role="discussed"),
+        EntityMention(entity_id=plaza.id, meeting_id=m1.id, role="discussed"),
+        EntityMention(entity_id=plaza.id, meeting_id=m2.id, role="discussed"),
+        EntityMention(entity_id=once.id, meeting_id=m1.id, role="discussed"),
+    ])
+    db.commit()
+
+    detail = client.get("/entities/george-snyder-trail").json()
+    related = detail["related"]
+    assert [r["slug"] for r in related] == ["courthouse-plaza"]  # >= 2 shared meetings
+    assert related[0]["shared_meetings"] == 2
+
+
+def test_meeting_stats(client, db):
+    _seed(db)  # 2025 meetings fall outside the window
+    m = Meeting(granicus_clip_id="200", granicus_view_id="13", body="city_council",
+                meeting_type="council_regular", title="Recent Meeting", status="extracted",
+                meeting_date=datetime.date.today() - datetime.timedelta(days=3),
+                duration_seconds=7200)
+    db.add(m)
+    db.flush()
+    db.add_all([
+        Vote(meeting_id=m.id, description="Motion A", motion_result="passed",
+             vote_breakdown={"Read": "yes"}),
+        Vote(meeting_id=m.id, description="Motion B", motion_result="failed",
+             vote_breakdown={"Read": "no"}),
+    ])
+    db.commit()
+
+    stats = client.get("/meetings/stats").json()
+    assert stats["meetings_held"] == 1
+    assert stats["hours_of_meetings"] == 2.0
+    assert stats["votes_taken"] == 2
+    assert stats["motions_passed"] == 1
+    assert stats["motions_failed"] == 1
 
 
 def test_entity_profile_in_detail(client, db):

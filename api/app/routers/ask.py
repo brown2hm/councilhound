@@ -19,11 +19,12 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from councilhound.config import ANTHROPIC_API_KEY, GRANICUS_BASE_URL
+from councilhound.config import ANTHROPIC_API_KEY
 from councilhound.db.models import AgendaItem, Meeting, TranscriptChunk
 from councilhound.embeddings.embed import embed_query
 
 from app.db import db_session
+from app.links import clip_link
 from app.ratelimit import check_ask_rate
 
 router = APIRouter()
@@ -48,16 +49,6 @@ class AskRequest(BaseModel):
     question: str = Field(min_length=3, max_length=500)
 
 
-def _clip_link(meeting: Meeting, start_seconds: float | None = None) -> str | None:
-    if not meeting.granicus_clip_id:
-        return None
-    url = (f"{GRANICUS_BASE_URL}/MediaPlayer.php?view_id={meeting.granicus_view_id}"
-           f"&clip_id={meeting.granicus_clip_id}")
-    if start_seconds is not None:
-        url += f"&starttime={int(start_seconds)}"  # Granicus player seek param
-    return url
-
-
 def _retrieve(session: Session, vec: list[float]) -> list[dict]:
     sources = []
 
@@ -78,7 +69,8 @@ def _retrieve(session: Session, vec: list[float]) -> list[dict]:
             "date": meeting.meeting_date.isoformat(),
             "text": chunk.text,
             "start_seconds": float(chunk.start_seconds) if chunk.start_seconds is not None else None,
-            "link": _clip_link(meeting, float(chunk.start_seconds or 0)),
+            "link": clip_link(meeting.granicus_view_id, meeting.granicus_clip_id,
+                              float(chunk.start_seconds or 0)),
         })
 
     item_rows = session.execute(
