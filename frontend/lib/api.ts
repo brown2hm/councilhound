@@ -163,6 +163,24 @@ export interface MemberDetail {
   commentary: MemberCommentaryEntry[];
 }
 
+export interface SearchResult {
+  kind: "transcript" | "agenda_item";
+  match: "keyword" | "semantic";
+  meeting_id: number;
+  meeting_title: string;
+  body: string;
+  date: string;
+  item_label?: string | null;
+  text: string;
+  start_seconds: number | null;
+  watch_url: string | null;
+}
+
+export interface SearchResponse {
+  query: string;
+  results: SearchResult[];
+}
+
 export interface MeetingStats {
   days: number;
   meetings_held: number;
@@ -220,6 +238,8 @@ export const api = {
   stats: (days = 30) => get<MeetingStats>(`/meetings/stats?days=${days}`),
   members: () => get<MemberSummary[]>("/members/"),
   upcoming: () => get<UpcomingEvent[]>("/meetings/upcoming"),
+  search: (q: string, body?: string) =>
+    get<SearchResponse>(`/search/?q=${encodeURIComponent(q)}${body ? `&body=${body}` : ""}`),
   member: (slug: string) => get<MemberDetail>(`/members/${encodeURIComponent(slug)}`),
 };
 
