@@ -261,8 +261,21 @@ def daily(days):
         click.echo(f"structure:    {structure_pending(session)}")
         click.echo(f"index-points: {pipeline.link_index_points_pending(session)}")
         click.echo(f"seed:         {seed_people(session)}")
+        from councilhound.geocode import geocode_pending
+        click.echo(f"geocode:      {geocode_pending(session)}")
         click.echo(f"profile:      {profile_pending(session)}")
         click.echo(f"embed:        {embed_pending(session)}")
+
+
+@cli.command()
+@limit_option
+def geocode(limit):
+    """Geocode location entities (US Census, free) for the map view."""
+    from councilhound.db.session import get_session
+    from councilhound.geocode import geocode_pending
+
+    with get_session() as session:
+        click.echo(geocode_pending(session, limit=limit))
 
 
 @cli.command()

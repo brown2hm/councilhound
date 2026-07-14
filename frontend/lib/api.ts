@@ -163,6 +163,16 @@ export interface MemberDetail {
   commentary: MemberCommentaryEntry[];
 }
 
+export interface MapLocation {
+  slug: string;
+  name: string;
+  lat: number;
+  lng: number;
+  matched_address: string | null;
+  status_hint: string | null;
+  related: RelatedEntity[];
+}
+
 export interface SearchResult {
   kind: "transcript" | "agenda_item";
   match: "keyword" | "semantic";
@@ -238,6 +248,7 @@ export const api = {
   stats: (days = 30) => get<MeetingStats>(`/meetings/stats?days=${days}`),
   members: () => get<MemberSummary[]>("/members/"),
   upcoming: () => get<UpcomingEvent[]>("/meetings/upcoming"),
+  mapLocations: () => get<MapLocation[]>("/entities/map"),
   search: (q: string, body?: string) =>
     get<SearchResponse>(`/search/?q=${encodeURIComponent(q)}${body ? `&body=${body}` : ""}`),
   member: (slug: string) => get<MemberDetail>(`/members/${encodeURIComponent(slug)}`),

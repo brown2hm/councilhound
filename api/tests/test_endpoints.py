@@ -235,3 +235,33 @@ def test_upcoming_endpoint_and_topic_flag(client, db):
     # seeded chunk text doesn't name the entity -> empty series (the series
     # itself is unit-tested in ingestion/tests/test_hot_topics.py)
     assert detail["discussion"] == []
+
+
+def test_map_endpoint(client, db):
+    from councilhound.db.models import EntityGeocode, EntityMention
+
+    m1, m2 = _seed(db)
+    from sqlalchemy import select
+    trail = db.scalar(select(Entity).where(Entity.canonical_slug == "george-snyder-trail"))
+    place = Entity(entity_type="location", name="10300 Willard Way",
+                   canonical_slug="10300-willard-way")
+    nowhere = Entity(entity_type="location", name="Old Town", canonical_slug="old-town")
+    db.add_all([place, nowhere])
+    db.flush()
+    db.add(EntityGeocode(entity_id=place.id, status="ok", lat=38.85, lng=-77.31,
+                         matched_address="10300 WILLARD WAY"))
+    db.add(EntityGeocode(entity_id=nowhere.id, status="miss"))
+    db.add_all([  # co-mentions drive the pin's related topics + status hint
+        EntityMention(entity_id=place.id, meeting_id=m1.id, role="discussed"),
+        EntityMention(entity_id=place.id, meeting_id=m2.id, role="discussed"),
+        EntityMention(entity_id=trail.id, meeting_id=m1.id, role="discussed"),
+        EntityMention(entity_id=trail.id, meeting_id=m2.id, role="discussed"),
+    ])
+    db.commit()
+
+    pins = client.get("/entities/map").json()
+    assert len(pins) == 1  # misses don't pin
+    pin = pins[0]
+    assert pin["slug"] == "10300-willard-way" and pin["lat"] == 38.85
+    assert pin["related"][0]["slug"] == "george-snyder-trail"
+    assert pin["status_hint"] == "completed"  # from the related topic

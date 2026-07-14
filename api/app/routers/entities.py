@@ -5,8 +5,8 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from councilhound.db.models import (
-    AgendaItem, Entity, EntityAlias, EntityMention, EntityProfile, EntityUpdate,
-    Meeting, UpcomingMeeting, Vote,
+    AgendaItem, Entity, EntityAlias, EntityGeocode, EntityMention, EntityProfile,
+    EntityUpdate, Meeting, UpcomingMeeting, Vote,
 )
 from councilhound.hot_topics import MIN_VARIANT_LEN
 from councilhound.hot_topics import entity_discussion_series, hot_topics
@@ -27,6 +27,31 @@ def get_hot_topics(
     """Topics ranked by named discussion time across transcribed meetings
     in the look-back window, optionally per body."""
     return hot_topics(session, days=days, body=body, top=top)
+
+
+@router.get("/map")
+def map_locations(session: Session = Depends(db_session)):
+    """Geocoded location entities with their strongest co-mentioned topics —
+    the map page's pins. Pin color follows the top related topic's status."""
+    rows = session.execute(
+        select(Entity, EntityGeocode)
+        .join(EntityGeocode, EntityGeocode.entity_id == Entity.id)
+        .where(EntityGeocode.status == "ok")
+    ).all()
+    out = []
+    for entity, geo in rows:
+        related = [r for r in _related_entities(session, entity, top=4)
+                   if r["entity_type"] != "location"][:3]
+        out.append({
+            "slug": entity.canonical_slug,
+            "name": entity.name,
+            "lat": float(geo.lat),
+            "lng": float(geo.lng),
+            "matched_address": geo.matched_address,
+            "status_hint": related[0]["current_status"] if related else entity.current_status,
+            "related": related,
+        })
+    return out
 
 
 @router.get("/")

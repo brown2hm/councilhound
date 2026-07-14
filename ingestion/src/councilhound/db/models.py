@@ -130,6 +130,22 @@ class Entity(Base):
     current_status = Column(String)  # rolled up from latest EntityUpdate.status_after
 
 
+class EntityGeocode(Base):
+    """Coordinates for 'location' entities (US Census geocoder). A 'miss'
+    row records that geocoding was attempted and failed (area names like
+    'Old Town' don't geocode) so the nightly pass doesn't retry forever."""
+    __tablename__ = "entity_geocodes"
+
+    id = Column(Integer, primary_key=True)
+    entity_id = Column(Integer, ForeignKey("entities.id", ondelete="CASCADE"),
+                       nullable=False, unique=True)
+    status = Column(String, nullable=False)  # 'ok' | 'miss'
+    lat = Column(Numeric)
+    lng = Column(Numeric)
+    matched_address = Column(Text)
+    geocoded_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
 class EntityProfile(Base):
     """LLM-synthesized rollup for an entity's detail page: overall summary,
     open questions / options on the table, and commentary binned per council
