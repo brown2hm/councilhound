@@ -14,7 +14,9 @@ into a structured, searchable knowledge base. The pipeline is
 Granicus-generic: point it at a different city's Granicus subdomain and view
 IDs, and map that city's archive section names (see
 [Adapting to your city](#adapting-to-your-city)). `PLAN.md` is the phased
-build plan written against the reference city.
+build plan written against the reference city;
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) has the system diagrams, data
+model, and ops notes.
 
 ## What it does
 
