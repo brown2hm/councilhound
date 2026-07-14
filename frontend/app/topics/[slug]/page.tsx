@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import BodyTag from "@/components/BodyTag";
+import DiscussionSparkline from "@/components/DiscussionSparkline";
 import StatusBadge from "@/components/StatusBadge";
+import StatusStepper from "@/components/StatusStepper";
 import VoteBlock from "@/components/VotePills";
 import { api, formatDate } from "@/lib/api";
 
@@ -28,7 +30,7 @@ export default async function TopicDetail({ params }: { params: { slug: string }
         <StatusBadge status={entity.current_status} />
       </div>
       {entity.status_source ? (
-        <p className="mb-8 text-[13px] text-muted">
+        <p className="mb-5 text-[13px] text-muted">
           Status set at{" "}
           <Link
             href={`/meetings/${entity.status_source.meeting_id}`}
@@ -51,7 +53,32 @@ export default async function TopicDetail({ params }: { params: { slug: string }
           )}
         </p>
       ) : (
-        <div className="mb-8" />
+        <div className="mb-5" />
+      )}
+
+      <StatusStepper timeline={entity.timeline} currentStatus={entity.current_status} />
+
+      {entity.upcoming.length > 0 && (
+        <div className="mb-8 rounded-2xl border border-ochre bg-callout p-3.5 px-[18px] text-sm text-tint-ochre-text">
+          {entity.upcoming.map((u, i) => (
+            <div key={i}>
+              <span className="font-semibold">
+                {u.in_progress ? "Being discussed right now" : "On the upcoming agenda"}:
+              </span>{" "}
+              {u.title}
+              {u.starts_at &&
+                ` · ${new Date(u.starts_at).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}`}
+              {u.agenda_url && (
+                <>
+                  {" · "}
+                  <a href={u.agenda_url} target="_blank" className="font-semibold underline underline-offset-2">
+                    agenda ↗
+                  </a>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
       )}
 
       {profile?.summary && (
@@ -96,6 +123,8 @@ export default async function TopicDetail({ params }: { params: { slug: string }
           </p>
         </section>
       )}
+
+      <DiscussionSparkline points={entity.discussion} />
 
       <section>
         <h2 className="mb-4 text-lg font-semibold">Full history</h2>

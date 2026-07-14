@@ -7,6 +7,7 @@ import {
   type HotTopicsResponse,
   type MeetingDetail,
   type MeetingStats,
+  type UpcomingEvent,
 } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
@@ -112,6 +113,8 @@ function HotPanel({
   const topics = hot.topics.slice(0, 5);
   const max = Math.max(1, ...topics.map((t) => t.seconds));
   const teal = variant === "teal";
+  // chronological left -> right so the bar doubles as a mini trend
+  const meetingsAsc = [...hot.meetings].sort((a, b) => a.date.localeCompare(b.date));
   return (
     <section className={`rounded-3xl p-7 ${teal ? "bg-teal text-white" : "bg-card text-ink"}`}>
       <div
@@ -142,9 +145,21 @@ function HotPanel({
             </div>
             <div className={`h-1.5 rounded-full ${teal ? "bg-white/[0.14]" : "bg-strong"}`}>
               <div
-                className={`h-1.5 rounded-full ${teal ? "bg-mint" : "bg-ochre"}`}
+                className="flex h-1.5 gap-px"
                 style={{ width: `${Math.max(6, (t.seconds / max) * 100)}%` }}
-              />
+              >
+                {meetingsAsc
+                  .map((m) => ({ m, secs: t.per_meeting[String(m.id)] ?? 0 }))
+                  .filter(({ secs }) => secs > 0)
+                  .map(({ m, secs }, si, arr) => (
+                    <div
+                      key={m.id}
+                      title={`${Math.round(secs / 60)} min · ${m.title}`}
+                      className={`h-1.5 ${teal ? "bg-mint" : "bg-ochre"} ${si === 0 ? "rounded-l-full" : ""} ${si === arr.length - 1 ? "rounded-r-full" : ""}`}
+                      style={{ flexGrow: secs }}
+                    />
+                  ))}
+              </div>
             </div>
           </Link>
         ))}
@@ -192,12 +207,64 @@ function StatTiles({ stats }: { stats: MeetingStats }) {
   );
 }
 
+function fmtWhen(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  }) + " · " + new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+}
+
+function NextUp({ events }: { events: UpcomingEvent[] }) {
+  const shown = events.slice(0, 4);
+  if (shown.length === 0) return null;
+  return (
+    <section className="rounded-3xl border border-hairline bg-canvas p-6">
+      <div className="mb-3 text-xs font-semibold uppercase tracking-[1.5px] text-muted">
+        Next up
+      </div>
+      <ul className="space-y-3">
+        {shown.map((e) => (
+          <li key={e.event_id} className="flex items-baseline justify-between gap-3 text-sm">
+            <span className="flex min-w-0 items-baseline gap-2">
+              {e.body && (
+                <span
+                  className={`h-2 w-2 shrink-0 self-center rounded-full ${e.body === "planning_commission" ? "bg-ochre" : "bg-teal"}`}
+                />
+              )}
+              <span className="truncate font-medium">{e.title}</span>
+            </span>
+            <span className="shrink-0 text-[13px] text-muted">
+              {e.in_progress ? (
+                <span className="font-semibold text-tint-coral-text">● Live now</span>
+              ) : e.starts_at ? (
+                fmtWhen(e.starts_at)
+              ) : (
+                ""
+              )}
+              {e.agenda_url && (
+                <>
+                  {" · "}
+                  <a href={e.agenda_url} target="_blank" className="underline underline-offset-2 hover:text-ink">
+                    agenda
+                  </a>
+                </>
+              )}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 export default async function Briefing() {
-  const [meetings, hotCouncil, hotPC, stats] = await Promise.all([
+  const [meetings, hotCouncil, hotPC, stats, upcoming] = await Promise.all([
     api.meetings(new URLSearchParams({ limit: "6" })),
     api.hotTopics("city_council"),
     api.hotTopics("planning_commission"),
     api.stats(30),
+    api.upcoming().catch(() => []),
   ]);
   const withItems = meetings.filter((m) => m.agenda_item_count > 0).slice(0, 4);
   const details = await Promise.all(withItems.map((m) => api.meeting(String(m.id))));
@@ -240,6 +307,7 @@ export default async function Briefing() {
         </div>
 
         <div className="flex flex-col gap-5">
+          <NextUp events={upcoming} />
           <HotPanel
             hot={hotCouncil}
             variant="teal"

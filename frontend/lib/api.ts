@@ -33,7 +33,7 @@ export interface AgendaItemInfo {
   votes: VoteInfo[];
 }
 
-export interface MeetingDetail extends Omit<MeetingSummary, "agenda_item_count" | "duration_seconds" | "status"> {
+export interface MeetingDetail extends Omit<MeetingSummary, "agenda_item_count" | "status"> {
   granicus_clip_id: string;
   video_url: string | null;
   agenda_url: string | null;
@@ -94,6 +94,23 @@ export interface EntityProfileInfo {
   updated_at: string | null;
 }
 
+export interface UpcomingEvent {
+  event_id: string;
+  title: string;
+  body: string | null;
+  starts_at: string | null;
+  in_progress: boolean;
+  agenda_url: string | null;
+}
+
+export interface DiscussionPoint {
+  meeting_id: number;
+  date: string;
+  title: string;
+  body: string;
+  seconds: number;
+}
+
 export interface EntityDetail {
   slug: string;
   name: string;
@@ -102,7 +119,46 @@ export interface EntityDetail {
   status_source: StatusSource | null;
   profile: EntityProfileInfo | null;
   related: RelatedEntity[];
+  discussion: DiscussionPoint[];
+  upcoming: UpcomingEvent[];
   timeline: TimelineEntry[];
+}
+
+export interface MemberSummary {
+  slug: string;
+  name: string;
+  roles: string[];
+  votes_cast: number;
+  last_vote: string | null;
+}
+
+export interface MemberVote {
+  date: string;
+  meeting_id: number;
+  meeting_title: string;
+  body: string;
+  item_label: string | null;
+  item_title: string | null;
+  description: string | null;
+  motion_result: string | null;
+  vote: string;
+  watch_url: string | null;
+}
+
+export interface MemberCommentaryEntry {
+  topic_slug: string;
+  topic_name: string;
+  topic_status: string | null;
+  summary: string;
+}
+
+export interface MemberDetail {
+  slug: string;
+  name: string;
+  roles: string[];
+  vote_stats: Record<string, number>;
+  votes: MemberVote[];
+  commentary: MemberCommentaryEntry[];
 }
 
 export interface MeetingStats {
@@ -160,6 +216,9 @@ export const api = {
   hotTopics: (body?: string, days = 60) =>
     get<HotTopicsResponse>(`/entities/hot?days=${days}${body ? `&body=${body}` : ""}`),
   stats: (days = 30) => get<MeetingStats>(`/meetings/stats?days=${days}`),
+  members: () => get<MemberSummary[]>("/members/"),
+  upcoming: () => get<UpcomingEvent[]>("/meetings/upcoming"),
+  member: (slug: string) => get<MemberDetail>(`/members/${encodeURIComponent(slug)}`),
 };
 
 export const BODY_LABELS: Record<string, string> = {

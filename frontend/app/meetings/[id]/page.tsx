@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import BodyTag from "@/components/BodyTag";
+import ChapterBar from "@/components/ChapterBar";
 import VoteBlock from "@/components/VotePills";
 import { api, formatDate } from "@/lib/api";
 
@@ -53,6 +54,8 @@ export default async function MeetingPage({ params }: { params: { id: string } }
           {meeting.agenda_items.length > 0 ? `${meeting.agenda_items.length} agenda items` : ""}
         </span>
       </div>
+
+      <ChapterBar items={meeting.agenda_items} durationSeconds={meeting.duration_seconds} />
 
       <h2 className="mb-3 text-lg font-semibold">Agenda</h2>
       <ul className="space-y-3">
