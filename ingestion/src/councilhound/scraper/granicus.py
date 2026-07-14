@@ -69,6 +69,17 @@ class DiscoveredMeeting:
     extra_docs: list[DiscoveredDoc] = field(default_factory=list)
 
 
+@dataclass
+class UpcomingEvent:
+    event_id: str
+    view_id: str
+    title: str
+    body: str | None  # None = out-of-scope committee/board, still listed
+    starts_at: datetime | None  # city-local; None while the event is live
+    in_progress: bool
+    agenda_url: str | None
+
+
 def _absolute(url: str) -> str:
     if url.startswith("//"):
         return "https:" + url
@@ -206,6 +217,74 @@ def list_meetings(view_id: str) -> list[DiscoveredMeeting]:
     meetings = parse_archive(resp.text, view_id)
     meetings.sort(key=lambda m: m.meeting_date, reverse=True)
     return meetings
+
+
+def classify_upcoming_title(title: str) -> str | None:
+    t = title.lower()
+    if t.startswith("city council"):
+        return "city_council"
+    if t.startswith("planning commission"):
+        return "planning_commission"
+    return None
+
+
+def parse_upcoming(html: str, view_id: str) -> list[UpcomingEvent]:
+    """Parse the 'Upcoming and In Progress Events' table on the same
+    ViewPublisher page the archive lives on. Rows carry an event_id (clips
+    only exist after the meeting), a date like 'July 14, 2026 - 07:00 PM'
+    (or an 'In Progress' player link while live), and an AgendaViewer link."""
+    soup = BeautifulSoup(html, "lxml")
+    table = soup.find("table", id="upcoming")
+    if table is None:
+        return []
+    events = []
+    for tr in table.find_all("tr"):
+        name_td = tr.find("td", headers=re.compile(r"^EventName"))
+        if name_td is None:
+            continue
+        title = re.sub(r"\s+", " ", name_td.get_text(strip=True))
+
+        event_id = None
+        for a in tr.find_all("a"):
+            m = re.search(r"event_id=(\d+)", (a.get("href") or "") + (a.get("onclick") or ""))
+            if m:
+                event_id = m.group(1)
+                break
+        if not event_id:
+            continue
+
+        date_td = tr.find("td", headers=re.compile(r"^EventDate"))
+        date_text = re.sub(r"\s+", " ", date_td.get_text(" ", strip=True)) if date_td else ""
+        starts_at, in_progress = None, "in progress" in date_text.lower()
+        if not in_progress:
+            try:
+                starts_at = datetime.strptime(date_text, "%B %d, %Y - %I:%M %p")
+            except ValueError:
+                pass
+
+        agenda_a = tr.find("a", href=re.compile(r"AgendaViewer\.php"))
+        events.append(UpcomingEvent(
+            event_id=event_id,
+            view_id=view_id,
+            title=title,
+            body=classify_upcoming_title(title),
+            starts_at=starts_at,
+            in_progress=in_progress,
+            agenda_url=_absolute(agenda_a["href"]) if agenda_a else None,
+        ))
+    return events
+
+
+def list_upcoming(view_id: str) -> list[UpcomingEvent]:
+    resp = http.get(f"{GRANICUS_BASE_URL}/ViewPublisher.php?view_id={view_id}")
+    return parse_upcoming(resp.text, view_id)
+
+
+def fetch_agenda_text(agenda_url: str) -> str:
+    """Plain text of an AgendaViewer page, for matching tracked entities
+    against upcoming agendas."""
+    resp = http.get(agenda_url)
+    return BeautifulSoup(resp.text, "lxml").get_text(" ", strip=True)
 
 
 def parse_index_points(player_html: str) -> list[dict]:

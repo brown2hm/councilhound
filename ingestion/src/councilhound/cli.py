@@ -255,6 +255,7 @@ def daily(days):
             run = pipeline.run_ingest(session, view_id, since=since)
             click.echo(f"ingest view {view_id}: {run.meetings_processed} meetings, "
                        f"{len(run.errors or [])} errors")
+            click.echo(f"upcoming view {view_id}: {pipeline.sync_upcoming(session, view_id)}")
         click.echo(f"extract-text: {extract_pending(session)}")
         click.echo(f"transcribe:   {transcribe_pending(session)}")
         click.echo(f"structure:    {structure_pending(session)}")
@@ -262,6 +263,17 @@ def daily(days):
         click.echo(f"seed:         {seed_people(session)}")
         click.echo(f"profile:      {profile_pending(session)}")
         click.echo(f"embed:        {embed_pending(session)}")
+
+
+@cli.command()
+@view_id_option
+def upcoming(view_id):
+    """Refresh the upcoming/in-progress events list from Granicus."""
+    from councilhound import pipeline
+    from councilhound.db.session import get_session
+
+    with get_session() as session:
+        click.echo(pipeline.sync_upcoming(session, view_id))
 
 
 @cli.command("index-points")

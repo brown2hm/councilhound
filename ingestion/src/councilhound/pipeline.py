@@ -208,6 +208,43 @@ def link_index_points_pending(session: Session, limit: int | None = None) -> dic
     return {"meetings": done, "failed": failed, "candidates": len(meetings)}
 
 
+def sync_upcoming(session: Session, view_id: str) -> dict:
+    """Refresh the upcoming-events table from the ViewPublisher page. Full
+    replacement per view: past events graduate into real Meetings via the
+    archive, so there is no history to preserve here."""
+    from councilhound.db.models import UpcomingMeeting
+
+    events = granicus.list_upcoming(view_id)
+    old = {u.granicus_event_id: u for u in session.scalars(
+        select(UpcomingMeeting).where(UpcomingMeeting.granicus_view_id == view_id))}
+
+    agendas = 0
+    for ev in events:
+        agenda_text = None
+        if ev.agenda_url:
+            try:
+                agenda_text = granicus.fetch_agenda_text(ev.agenda_url)
+                agendas += 1
+            except Exception:
+                log.exception("agenda fetch failed for event %s", ev.event_id)
+        row = old.pop(ev.event_id, None) or UpcomingMeeting(granicus_event_id=ev.event_id)
+        row.granicus_view_id = ev.view_id
+        row.title = ev.title
+        row.body = ev.body
+        row.starts_at = ev.starts_at
+        row.in_progress = ev.in_progress
+        row.agenda_url = ev.agenda_url
+        row.agenda_text = agenda_text if agenda_text else row.agenda_text
+        row.synced_at = datetime.now(timezone.utc)
+        session.add(row)
+    for stale in old.values():  # no longer listed -> happened or was pulled
+        session.delete(stale)
+    session.commit()
+    result = {"upcoming": len(events), "agendas_fetched": agendas, "removed": len(old)}
+    log.info("sync_upcoming view %s: %s", view_id, result)
+    return result
+
+
 def fetch_media(session: Session, meeting: Meeting) -> str | None:
     """Download the meeting MP3 (audio for Phase 2 transcription). Direct
     archive-video.granicus.com URLs work with our browser User-Agent."""

@@ -4,6 +4,7 @@ Migrations are managed by Alembic (ingestion/alembic/); run
 from sqlalchemy import (
     JSON,
     BigInteger,
+    Boolean,
     Column,
     Date,
     DateTime,
@@ -43,6 +44,25 @@ class Meeting(Base):
 
     documents = relationship("Document", back_populates="meeting")
     agenda_items = relationship("AgendaItem", back_populates="meeting")
+
+
+class UpcomingMeeting(Base):
+    """Upcoming/in-progress events from the Granicus ViewPublisher page.
+    Fully refreshed each sync (no history — past events become real Meetings
+    via the archive). agenda_text is kept for matching tracked entities
+    against what's on the next agenda."""
+    __tablename__ = "upcoming_meetings"
+
+    id = Column(Integer, primary_key=True)
+    granicus_event_id = Column(String, unique=True, nullable=False)
+    granicus_view_id = Column(String, nullable=False)
+    title = Column(Text, nullable=False)
+    body = Column(String)  # NULL for out-of-scope committees/boards
+    starts_at = Column(DateTime)  # city-local; NULL while the event is live
+    in_progress = Column(Boolean, nullable=False, default=False)
+    agenda_url = Column(Text)
+    agenda_text = Column(Text)
+    synced_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
 class AgendaItem(Base):

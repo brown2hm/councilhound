@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from councilhound.db.models import AgendaItem, Document, Meeting, Vote
+from councilhound.db.models import AgendaItem, Document, Meeting, UpcomingMeeting, Vote
 
 from app.db import db_session
 from app.links import clip_link
@@ -47,6 +47,27 @@ def list_meetings(
             "agenda_item_count": item_counts.get(m.id, 0),
         }
         for m in meetings
+    ]
+
+
+@router.get("/upcoming")
+def list_upcoming(session: Session = Depends(db_session)):
+    """Upcoming and in-progress events, soonest first (live events lead)."""
+    rows = session.scalars(
+        select(UpcomingMeeting)
+        .order_by(UpcomingMeeting.in_progress.desc(),
+                  UpcomingMeeting.starts_at.asc().nulls_last())
+    ).all()
+    return [
+        {
+            "event_id": u.granicus_event_id,
+            "title": u.title,
+            "body": u.body,
+            "starts_at": u.starts_at.isoformat() if u.starts_at else None,
+            "in_progress": u.in_progress,
+            "agenda_url": u.agenda_url,
+        }
+        for u in rows
     ]
 
 
@@ -106,6 +127,7 @@ def get_meeting(meeting_id: int, session: Session = Depends(db_session)):
         "body": meeting.body,
         "meeting_type": meeting.meeting_type,
         "granicus_clip_id": meeting.granicus_clip_id,
+        "duration_seconds": meeting.duration_seconds,
         "video_url": meeting.video_url,
         "agenda_url": meeting.agenda_url,
         "minutes_url": meeting.minutes_url,

@@ -117,3 +117,45 @@ def test_parse_index_points():
     assert [(p["label"], p["time"]) for p in pts] == [
         ("1", 9), ("2", 32), ("2a", 60), ("7a", 439), (None, 500),
     ]
+
+
+def test_parse_upcoming():
+    from councilhound.scraper.granicus import parse_upcoming
+
+    html = """
+    <table class="listingTable" id="upcoming">
+      <tr>
+        <td class="listItem" headers="EventName" scope="row">Planning Commission Regular Meeting/Work Session</td>
+        <td class="listItem" headers="EventDate Planning-Commission">
+          <a href="javascript:void(0);" onClick="window.open('//fairfax.granicus.com/MediaPlayer.php?view_id=13&event_id=3537','player')">In Progress - View Event</a>
+        </td>
+        <td class="listItem" headers="EventAgendaLink Planning-Commission">
+          <a href="//fairfax.granicus.com/AgendaViewer.php?view_id=13&event_id=3537">Agenda</a>
+        </td>
+      </tr>
+      <tr>
+        <td class="listItem" headers="EventName" scope="row">City Council Meeting</td>
+        <td class="listItem" headers="EventDate City-Council-Meeting">July&nbsp;14,&nbsp;2026 - 07:00&nbsp;PM</td>
+        <td class="listItem" headers="EventAgendaLink City-Council-Meeting">
+          <a href="//fairfax.granicus.com/AgendaViewer.php?view_id=13&event_id=2872">Agenda</a>
+        </td>
+      </tr>
+      <tr>
+        <td class="listItem" headers="EventName" scope="row">Environmental Sustainability Committee</td>
+        <td class="listItem" headers="EventDate Env">July&nbsp;15,&nbsp;2026 - 07:00&nbsp;PM</td>
+        <td class="listItem" headers="EventAgendaLink Env">
+          <a href="//fairfax.granicus.com/AgendaViewer.php?view_id=13&event_id=3590">Agenda</a>
+        </td>
+      </tr>
+    </table>
+    """
+    events = parse_upcoming(html, "13")
+    assert [e.event_id for e in events] == ["3537", "2872", "3590"]
+
+    live, council, committee = events
+    assert live.in_progress and live.starts_at is None
+    assert live.body == "planning_commission"
+    assert council.body == "city_council"
+    assert council.starts_at.isoformat() == "2026-07-14T19:00:00"
+    assert council.agenda_url.startswith("https://fairfax.granicus.com/AgendaViewer.php")
+    assert committee.body is None  # out of scope, still listed
