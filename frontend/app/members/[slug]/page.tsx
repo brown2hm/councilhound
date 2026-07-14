@@ -29,6 +29,7 @@ export default async function MemberPage({ params }: { params: { slug: string } 
         ← All members
       </Link>
       <div className="mb-1 mt-4 text-xs font-semibold uppercase tracking-[1.5px] text-muted">
+        {member.is_current ? "" : "Former · "}
         {member.roles.join(" · ") || "Member"}
       </div>
       <h1 className="mb-4 text-[32px] font-medium tracking-[-0.5px]">{member.name}</h1>

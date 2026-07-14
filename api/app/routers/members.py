@@ -9,8 +9,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from councilhound.db.models import (
-    AgendaItem, Entity, EntityAlias, EntityProfile, Meeting, Vote,
+    AgendaItem, Document, Entity, EntityAlias, EntityProfile, Meeting, Vote,
 )
+from councilhound.entities import resolve_entity
+from councilhound.seed import parse_council_header, parse_pc_header
 
 from app.db import db_session
 from app.links import clip_link
@@ -51,6 +53,35 @@ def _roster(session: Session) -> dict[int, dict]:
     return members
 
 
+def _current_slugs(session: Session) -> set[str]:
+    """Slugs of people on each body's CURRENT roster, parsed from the most
+    recent agenda header that yields names (the 24-month window spans a
+    council turnover, so membership can't be assumed from aliases alone)."""
+    current: set[str] = set()
+    for body, parse in (("city_council", parse_council_header),
+                        ("planning_commission", parse_pc_header)):
+        docs = session.execute(
+            select(Document.raw_text)
+            .join(Meeting, Document.meeting_id == Meeting.id)
+            .where(Meeting.body == body, Document.doc_type == "agenda",
+                   Document.raw_text.isnot(None))
+            .order_by(Meeting.meeting_date.desc())
+            .limit(5)
+        ).scalars()
+        for raw_text in docs:
+            header = parse(raw_text)
+            names = [n for v in header.values()
+                     for n in (v if isinstance(v, list) else [v]) if n]
+            if not names:
+                continue  # malformed/special-meeting header; try the next one
+            for name in names:
+                entity = resolve_entity(session, "person", name, create=False)
+                if entity is not None:
+                    current.add(entity.canonical_slug)
+            break
+    return current
+
+
 def _last_name(name: str) -> str:
     tokens = [t for t in name.replace(",", " ").split()
               if t.lower().rstrip(".") not in _SUFFIXES]
@@ -80,6 +111,7 @@ def list_members(session: Session = Depends(db_session)):
             counts[member_name.lower()] += 1
             last_vote.setdefault(member_name.lower(), meeting.meeting_date.isoformat())
 
+    current = _current_slugs(session)
     out = []
     for m in members.values():
         e, roles = m["entity"], _sorted_roles(m["roles"])
@@ -88,10 +120,12 @@ def list_members(session: Session = Depends(db_session)):
             "slug": e.canonical_slug,
             "name": e.name,
             "roles": roles,
+            "is_current": e.canonical_slug in current,
             "votes_cast": counts.get(key, 0),
             "last_vote": last_vote.get(key),
         })
-    out.sort(key=lambda r: (_ROLE_ORDER.get(r["roles"][0], 9) if r["roles"] else 9,
+    out.sort(key=lambda r: (not r["is_current"],
+                            _ROLE_ORDER.get(r["roles"][0], 9) if r["roles"] else 9,
                             -r["votes_cast"], r["name"]))
     return out
 
@@ -151,6 +185,7 @@ def get_member(slug: str, session: Session = Depends(db_session)):
         "slug": entity.canonical_slug,
         "name": entity.name,
         "roles": roles,
+        "is_current": entity.canonical_slug in _current_slugs(session),
         "vote_stats": dict(stats),
         "votes": votes,
         "commentary": commentary,

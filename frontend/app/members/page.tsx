@@ -22,7 +22,9 @@ export default async function MembersPage() {
         <Link
           key={m.slug}
           href={`/members/${m.slug}`}
-          className="rounded-2xl border border-hairline bg-canvas p-4 px-5 hover:border-ink"
+          className={`rounded-2xl border border-hairline p-4 px-5 hover:border-ink ${
+            m.is_current ? "bg-canvas" : "bg-soft opacity-75 hover:opacity-100"
+          }`}
         >
           <div className="mb-1.5 font-semibold">{m.name}</div>
           <div className="mb-2 flex flex-wrap gap-1.5">
@@ -31,6 +33,11 @@ export default async function MembersPage() {
                 {r}
               </span>
             ))}
+            {!m.is_current && (
+              <span className="rounded-full bg-strong px-2 py-[3px] text-xs font-semibold text-muted">
+                Former
+              </span>
+            )}
           </div>
           <div className="text-[13px] text-muted">
             {m.votes_cast > 0 ? `${m.votes_cast} recorded votes` : "No recorded votes yet"}

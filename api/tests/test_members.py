@@ -3,8 +3,17 @@ last-name keys minutes use, commentary pulled from entity profiles."""
 import datetime
 
 from councilhound.db.models import (
-    AgendaItem, Entity, EntityAlias, EntityProfile, Meeting, Vote,
+    AgendaItem, Document, Entity, EntityAlias, EntityProfile, Meeting, Vote,
 )
+
+# latest council agenda header: Read is on the roster, Amos is not -> former
+ROSTER_HEADER = """City of Fairfax
+Mayor
+Catherine S. Read
+City Council
+Billy M. Bates
+Stacy R. Hall
+"""
 
 
 def _seed_members(db):
@@ -16,6 +25,8 @@ def _seed_members(db):
     item = AgendaItem(meeting_id=m.id, label="7a", title="Trail contract", start_seconds=100)
     db.add(item)
     db.flush()
+    db.add(Document(meeting_id=m.id, doc_type="agenda", source_url="x",
+                    raw_text=ROSTER_HEADER))
     db.add(Vote(meeting_id=m.id, agenda_item_id=item.id, description="Approve",
                 motion_result="passed",
                 vote_breakdown={"Read": "yes", "Amos": "no"}))
@@ -46,11 +57,16 @@ def test_member_list_roster_only(client, db):
     assert [m["slug"] for m in members] == ["catherine-read", "billy-amos"]
     assert members[0]["roles"] == ["Mayor"]
     assert members[0]["votes_cast"] == 1
+    # the latest agenda header names Read but not Amos
+    assert members[0]["is_current"] is True
+    assert members[1]["is_current"] is False
 
 
 def test_member_detail_votes_and_commentary(client, db):
     _seed_members(db)
     detail = client.get("/members/catherine-read").json()
+    assert detail["is_current"] is True
+    assert client.get("/members/billy-amos").json()["is_current"] is False
     assert detail["vote_stats"] == {"yes": 1}
     v = detail["votes"][0]
     assert v["vote"] == "yes" and v["item_label"] == "7a"

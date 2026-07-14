@@ -128,6 +128,7 @@ export interface MemberSummary {
   slug: string;
   name: string;
   roles: string[];
+  is_current: boolean;
   votes_cast: number;
   last_vote: string | null;
 }
@@ -156,6 +157,7 @@ export interface MemberDetail {
   slug: string;
   name: string;
   roles: string[];
+  is_current: boolean;
   vote_stats: Record<string, number>;
   votes: MemberVote[];
   commentary: MemberCommentaryEntry[];
