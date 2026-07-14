@@ -180,11 +180,51 @@ def _gather_texts(session: Session, meeting: Meeting) -> dict[str, str]:
     return texts
 
 
-def _build_prompt(meeting: Meeting, texts: dict[str, str]) -> str:
+def _known_entities(session: Session, texts: dict[str, str], top: int = 60) -> list[str]:
+    """Canonical names of already-tracked non-person entities that this
+    meeting's documents mention — handed to the model so recurring threads
+    keep one name instead of drifting ('Courthouse Plaza Redevelopment' when
+    'Courthouse Plaza' already exists). Matching mirrors hot_topics."""
+    from councilhound.db.models import Entity, EntityAlias
+    from councilhound.hot_topics import MIN_VARIANT_LEN
+
+    blob = " ".join(texts.values()).lower()
+    if not blob.strip():
+        return []
+    alias_rows = session.execute(select(EntityAlias.entity_id, EntityAlias.alias)).all()
+    aliases: dict[int, list[str]] = {}
+    for entity_id, alias in alias_rows:
+        aliases.setdefault(entity_id, []).append(alias)
+
+    known = []
+    for e in session.scalars(select(Entity).where(Entity.entity_type != "person")):
+        variants = {v.lower() for v in [e.name, *aliases.get(e.id, [])]
+                    if v and len(v) >= MIN_VARIANT_LEN}
+        if any(v in blob for v in variants):
+            known.append(e.name)
+        if len(known) >= top:
+            break
+    return known
+
+
+def _build_prompt(meeting: Meeting, texts: dict[str, str],
+                  known_entities: list[str] | None = None) -> str:
     parts = [
         f"Meeting: {meeting.title}",
         f"Body: {meeting.body}",
         f"Date: {meeting.meeting_date}",
+    ]
+    if known_entities:
+        parts += [
+            "",
+            "=== ALREADY-TRACKED ENTITIES ===",
+            "These entities exist in the tracker and appear in this meeting's "
+            "documents. When an agenda item concerns one of them, use EXACTLY "
+            "this name for the entity (do not append words like 'Project', "
+            "'Redevelopment', or an acronym):",
+            *(f"- {name}" for name in known_entities),
+        ]
+    parts += [
         "",
         "=== AGENDA ===",
         texts.get("agenda", "(no agenda text available)"),
@@ -219,7 +259,7 @@ def structure_meeting(session: Session, meeting: Meeting, force: bool = False,
         texts = _gather_texts(session, meeting)
         if "agenda" not in texts:
             raise ValueError(f"meeting {meeting.id} has no agenda text — run extract-text first")
-        data = _call_claude(_build_prompt(meeting, texts))
+        data = _call_claude(_build_prompt(meeting, texts, _known_entities(session, texts)))
         if extraction is None:
             extraction = Extraction(meeting_id=meeting.id, prompt_version=PROMPT_VERSION)
             session.add(extraction)

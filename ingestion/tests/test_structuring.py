@@ -139,3 +139,31 @@ def test_timeline_across_meetings_and_status_rollup(db_session):
     s.commit()
     s.refresh(trail)
     assert trail.current_status == "completed"
+
+
+def test_prompt_includes_known_entities(db_session):
+    from councilhound.db.models import Entity, Meeting
+    from councilhound.extraction.llm_structure import _build_prompt, _known_entities
+
+    s = db_session
+    m = Meeting(granicus_clip_id="900", granicus_view_id="13", body="city_council",
+                meeting_type="council_meeting", meeting_date="2026-06-01",
+                title="City Council Meeting", status="fetched")
+    s.add(m)
+    s.add(Entity(entity_type="project", name="Courthouse Plaza",
+                 canonical_slug="courthouse-plaza"))
+    s.add(Entity(entity_type="topic", name="Urban Agriculture",
+                 canonical_slug="urban-agriculture"))
+    s.flush()
+
+    texts = {"agenda": "Public hearing on the Courthouse Plaza redevelopment plan."}
+    known = _known_entities(s, texts)
+    assert known == ["Courthouse Plaza"]  # urban agriculture isn't mentioned
+
+    prompt = _build_prompt(m, texts, known)
+    assert "ALREADY-TRACKED ENTITIES" in prompt
+    assert "- Courthouse Plaza" in prompt
+    # candidates come before the documents so the model reads them first
+    assert prompt.index("ALREADY-TRACKED") < prompt.index("=== AGENDA ===")
+
+    assert "ALREADY-TRACKED" not in _build_prompt(m, texts, [])
