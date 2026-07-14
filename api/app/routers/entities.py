@@ -6,9 +6,10 @@ from sqlalchemy.orm import Session
 
 from councilhound.db.models import (
     AgendaItem, Entity, EntityAlias, EntityMention, EntityProfile, EntityUpdate,
-    Meeting, Vote,
+    Meeting, UpcomingMeeting, Vote,
 )
-from councilhound.hot_topics import hot_topics
+from councilhound.hot_topics import MIN_VARIANT_LEN
+from councilhound.hot_topics import entity_discussion_series, hot_topics
 
 from app.db import db_session
 from app.links import clip_link
@@ -92,6 +93,29 @@ def _related_entities(session: Session, entity: Entity, top: int = 6) -> list[di
     ]
 
 
+def _on_upcoming_agendas(session: Session, entity: Entity) -> list[dict]:
+    """Upcoming events whose fetched agenda text names this entity."""
+    variants = {v.lower() for v in [
+        entity.name,
+        *session.scalars(select(EntityAlias.alias).where(EntityAlias.entity_id == entity.id)),
+    ] if v and len(v) >= MIN_VARIANT_LEN}
+    if not variants:
+        return []
+    hits = []
+    for u in session.scalars(select(UpcomingMeeting)
+                             .where(UpcomingMeeting.agenda_text.isnot(None))):
+        text = u.agenda_text.lower()
+        if any(v in text for v in variants):
+            hits.append({
+                "title": u.title,
+                "body": u.body,
+                "starts_at": u.starts_at.isoformat() if u.starts_at else None,
+                "in_progress": u.in_progress,
+                "agenda_url": u.agenda_url,
+            })
+    return hits
+
+
 @router.get("/{slug}")
 def get_entity(slug: str, session: Session = Depends(db_session)):
     entity = session.scalar(select(Entity).where(Entity.canonical_slug == slug))
@@ -167,5 +191,8 @@ def get_entity(slug: str, session: Session = Depends(db_session)):
             "updated_at": profile.updated_at.isoformat() if profile.updated_at else None,
         } if profile else None,
         "related": _related_entities(session, entity),
+        "discussion": (entity_discussion_series(session, entity)
+                       if entity.entity_type != "person" else []),
+        "upcoming": _on_upcoming_agendas(session, entity),
         "timeline": timeline_out,
     }

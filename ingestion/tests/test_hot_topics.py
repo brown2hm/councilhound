@@ -81,3 +81,31 @@ def test_hot_topics_body_and_window(db_session):
     pc_hot = hot_topics(s, days=60, body="planning_commission")
     assert [m["id"] for m in pc_hot["meetings"]] == [pc.id]
     assert pc_hot["topics"][0]["seconds"] == 40
+
+
+def test_entity_discussion_series(db_session):
+    import datetime
+
+    from councilhound.hot_topics import entity_discussion_series
+
+    s = db_session
+    today = datetime.date.today()
+    m1 = _meeting(s, "20", today - datetime.timedelta(days=30))
+    m2 = _meeting(s, "21", today - datetime.timedelta(days=10))
+    trail = Entity(entity_type="project", name="George Snyder Trail",
+                   canonical_slug="george-snyder-trail")
+    s.add(trail)
+    s.flush()
+    s.add_all([
+        TranscriptChunk(meeting_id=m1.id, start_seconds=0, end_seconds=120,
+                        text="The George Snyder Trail came up."),
+        TranscriptChunk(meeting_id=m2.id, start_seconds=0, end_seconds=60,
+                        text="More george snyder trail talk."),
+        TranscriptChunk(meeting_id=m2.id, start_seconds=100, end_seconds=130,
+                        text="Unrelated business."),
+    ])
+    s.commit()
+
+    series = entity_discussion_series(s, trail)
+    assert [(p["meeting_id"], p["seconds"]) for p in series] == [(m1.id, 120), (m2.id, 60)]
+    assert series[0]["date"] < series[1]["date"]  # chronological

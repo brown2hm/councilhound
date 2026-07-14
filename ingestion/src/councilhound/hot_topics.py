@@ -56,6 +56,39 @@ def transcribed_meetings_in_window(
     return list(session.scalars(q))
 
 
+def entity_discussion_series(session: Session, entity: Entity, max_meetings: int = 24) -> list[dict]:
+    """Named discussion seconds per transcribed meeting for ONE entity —
+    the topic page's trend series. Matching happens in SQL (few variants)
+    instead of scanning every chunk in Python like the all-entities ranking."""
+    variants = {v.lower() for v in [
+        entity.name,
+        *session.scalars(select(EntityAlias.alias).where(EntityAlias.entity_id == entity.id)),
+    ] if v and len(v) >= MIN_VARIANT_LEN}
+    if not variants:
+        return []
+
+    match = None
+    for v in variants:
+        cond = func.lower(TranscriptChunk.text).contains(v, autoescape=True)
+        match = cond if match is None else match | cond
+    rows = session.execute(
+        select(Meeting.id, Meeting.meeting_date, Meeting.title, Meeting.body,
+               func.sum(TranscriptChunk.end_seconds - TranscriptChunk.start_seconds))
+        .join(TranscriptChunk, TranscriptChunk.meeting_id == Meeting.id)
+        .where(match,
+               TranscriptChunk.start_seconds.isnot(None),
+               TranscriptChunk.end_seconds.isnot(None))
+        .group_by(Meeting.id)
+        .order_by(Meeting.meeting_date.desc())
+        .limit(max_meetings)
+    ).all()
+    return [
+        {"meeting_id": mid, "date": date.isoformat(), "title": title,
+         "body": body, "seconds": round(float(secs or 0))}
+        for mid, date, title, body, secs in reversed(rows)
+    ]
+
+
 def hot_topics(
     session: Session,
     n_meetings: int | None = None,

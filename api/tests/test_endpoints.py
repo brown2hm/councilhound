@@ -204,3 +204,34 @@ def test_ask_with_mocked_llm(client, db, monkeypatch):
     cite = data["citations"][0]
     assert cite["index"] == 1
     assert cite["link"]  # every citation must link back to a source
+
+
+def test_upcoming_endpoint_and_topic_flag(client, db):
+    import datetime as dt
+
+    from councilhound.db.models import UpcomingMeeting
+
+    _seed(db)
+    db.add_all([
+        UpcomingMeeting(granicus_event_id="2872", granicus_view_id="13",
+                        title="City Council Meeting", body="city_council",
+                        starts_at=dt.datetime(2026, 7, 14, 19, 0), in_progress=False,
+                        agenda_url="https://x/AgendaViewer.php?view_id=13&event_id=2872",
+                        agenda_text="Public hearing on the George Snyder Trail cancellation."),
+        UpcomingMeeting(granicus_event_id="3537", granicus_view_id="13",
+                        title="Planning Commission Meeting", body="planning_commission",
+                        starts_at=None, in_progress=True,
+                        agenda_text="Zoning text amendments."),
+    ])
+    db.commit()
+
+    events = client.get("/meetings/upcoming").json()
+    assert [e["event_id"] for e in events] == ["3537", "2872"]  # live first
+    assert events[0]["in_progress"] is True
+
+    detail = client.get("/entities/george-snyder-trail").json()
+    assert [u["title"] for u in detail["upcoming"]] == ["City Council Meeting"]
+
+    # seeded chunk text doesn't name the entity -> empty series (the series
+    # itself is unit-tested in ingestion/tests/test_hot_topics.py)
+    assert detail["discussion"] == []
