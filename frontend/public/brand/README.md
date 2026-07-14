@@ -8,9 +8,13 @@
   (background is baked in). Keep for future vectorization or a higher-res
   background removal; don't ship it as-is.
 
+Shipped: favicon set generated from the mark (app/favicon.ico 16-48,
+app/icon.png 256, app/apple-icon.png 180 on cream) — regenerate with a
+simplified variant if the facets prove muddy at 16px.
+
 Still needed (see DESIGN.md for the system):
 - SVG vectorization of the mark (it's flat geometric shapes — very traceable)
-- Favicon set with a simplified small-size variant (the facets mush below ~32px)
+- Simplified small-size favicon variant if needed (the facets mush below ~32px)
 - Social/OG card
 
 Logo palette (matches DESIGN.md tokens):
