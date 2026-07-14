@@ -9,7 +9,7 @@ import anyio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import meetings, entities, ask
+from app.routers import meetings, entities, ask, members
 
 
 @asynccontextmanager
@@ -38,6 +38,7 @@ app.add_middleware(
 app.include_router(meetings.router, prefix="/meetings", tags=["meetings"])
 app.include_router(entities.router, prefix="/entities", tags=["entities"])
 app.include_router(ask.router, prefix="/ask", tags=["ask"])
+app.include_router(members.router, prefix="/members", tags=["members"])
 
 
 @app.get("/health")
