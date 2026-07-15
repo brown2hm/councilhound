@@ -291,8 +291,6 @@ def run_ingest(
     for meeting in meetings:
         try:
             fetch_documents(session, meeting)
-            if not skip_media:
-                fetch_media(session, meeting)
             meeting.status = "fetched"
             session.commit()
             processed += 1
@@ -300,6 +298,21 @@ def run_ingest(
             session.rollback()
             log.exception("ingest failed for meeting clip_id=%s", meeting.granicus_clip_id)
             errors.append({"clip_id": meeting.granicus_clip_id, "error": str(exc)})
+            continue
+        # Audio is best-effort and NOT a gate: a meeting can be structured
+        # from its agenda/minutes text without it, and a just-happened
+        # meeting often has documents posted before the MP3 is downloadable.
+        # A failure here leaves the meeting 'fetched' so structuring proceeds;
+        # transcription retries on the next run once the audio is available.
+        if not skip_media:
+            try:
+                fetch_media(session, meeting)
+            except Exception as exc:
+                session.rollback()
+                log.warning("media fetch deferred for clip_id=%s: %s",
+                            meeting.granicus_clip_id, exc)
+                errors.append({"clip_id": meeting.granicus_clip_id,
+                               "error": f"media: {exc}"})
 
     run.finished_at = datetime.now(timezone.utc)
     run.meetings_processed = processed

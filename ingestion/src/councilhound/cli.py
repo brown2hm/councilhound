@@ -268,6 +268,39 @@ def daily(days):
 
 
 @cli.command()
+@click.option("--days", default=5, show_default=True,
+              help="look-back window for new/updated meetings")
+def catchup(days):
+    """Lightweight hourly pass: get newly-posted meetings into the tracker
+    fast. Discovers, fetches documents (NOT audio), extracts text, structures,
+    links index points, seeds rosters, and embeds — everything cheap. The
+    heavy stages (audio download, transcription, profile regeneration) stay on
+    the nightly `daily` run, so this exits in seconds when nothing is new."""
+    import datetime
+
+    from councilhound import pipeline
+    from councilhound.config import GRANICUS_VIEW_IDS
+    from councilhound.db.session import get_session
+    from councilhound.embeddings.embed import embed_pending
+    from councilhound.extraction.llm_structure import structure_pending
+    from councilhound.extraction.pdf_text import extract_pending
+    from councilhound.seed import seed_people
+
+    since = datetime.date.today() - datetime.timedelta(days=days)
+    with get_session() as session:
+        for view_id in GRANICUS_VIEW_IDS:
+            run = pipeline.run_ingest(session, view_id, since=since, skip_media=True)
+            click.echo(f"ingest view {view_id}: {run.meetings_processed} meetings, "
+                       f"{len(run.errors or [])} errors")
+            click.echo(f"upcoming view {view_id}: {pipeline.sync_upcoming(session, view_id)}")
+        click.echo(f"extract-text: {extract_pending(session)}")
+        click.echo(f"structure:    {structure_pending(session)}")
+        click.echo(f"index-points: {pipeline.link_index_points_pending(session)}")
+        click.echo(f"seed:         {seed_people(session)}")
+        click.echo(f"embed:        {embed_pending(session)}")
+
+
+@cli.command()
 @limit_option
 def geocode(limit):
     """Geocode location entities (US Census, free) for the map view."""
