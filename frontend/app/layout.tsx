@@ -35,13 +35,26 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </header>
         <main className="w-full flex-1">{children}</main>
-        <footer className="bg-soft px-8 py-6">
-          <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-4">
-            <p className="text-[13px] text-body">
+        <footer className="bg-soft px-8 py-7">
+          <div className="mx-auto flex max-w-[1280px] items-end justify-between gap-5">
+            <Image
+              src="/brand/hunting.png"
+              alt=""
+              width={816}
+              height={306}
+              className="hidden h-auto w-[150px] shrink-0 self-end sm:block"
+            />
+            <p className="max-w-[520px] text-center text-[13px] text-body">
               CouncilHound fetches from public City of Fairfax, VA meeting records on Granicus.
               Summaries are machine-generated — always verify against the linked source documents.
             </p>
-            <Image src="/brand/hound.png" alt="" width={34} height={30} className="h-[30px] w-auto opacity-90" />
+            <Image
+              src="/brand/fox.png"
+              alt=""
+              width={610}
+              height={409}
+              className="hidden h-auto w-[96px] shrink-0 self-end sm:block"
+            />
           </div>
         </footer>
       </body>
