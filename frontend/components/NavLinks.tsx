@@ -19,12 +19,17 @@ export default function NavLinks() {
     <nav className="flex gap-1">
       {NAV.map((n) => {
         const active = n.href === "/" ? pathname === "/" : pathname.startsWith(n.href);
+        const isAsk = n.href === "/ask";
         return (
           <Link
             key={n.href}
             href={n.href}
-            className={`rounded-full px-4 py-2 text-sm font-medium ${
-              active ? "bg-card text-ink" : "text-muted hover:text-ink"
+            className={`rounded-full px-4 py-2 text-sm ${
+              isAsk
+                ? `font-semibold text-hound ${active ? "bg-card" : "hover:bg-soft"}`
+                : active
+                  ? "bg-card font-medium text-ink"
+                  : "font-medium text-muted hover:text-ink"
             }`}
           >
             {n.label}

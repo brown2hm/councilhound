@@ -21,6 +21,7 @@ const config: Config = {
         teal: "#1a3a3a",
         mint: "#a4d4c5",
         ochre: "#e8b94a",
+        hound: "#c65a32", // burnt orange from the hound mark, darkened for legibility
         // status tints (derived from the brand palette)
         "tint-ochre": "#f7e5b8",
         "tint-ochre-text": "#5c4708",

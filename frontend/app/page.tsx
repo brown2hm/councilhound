@@ -207,6 +207,34 @@ function StatTiles({ stats }: { stats: MeetingStats }) {
   );
 }
 
+function AskHound() {
+  return (
+    <section className="mb-7 rounded-3xl bg-card p-6">
+      <div className="mb-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+        <Image src="/brand/hound.png" alt="" width={34} height={30} className="h-[30px] w-auto" />
+        <span className="font-semibold">Ask the hound</span>
+        <span className="text-[13px] text-muted">
+          Answers drawn from the meeting record, with citations you can verify.
+        </span>
+      </div>
+      <form
+        action="/ask"
+        method="get"
+        className="flex items-center justify-between gap-2 rounded-xl border border-hairline bg-canvas p-1.5 pl-4"
+      >
+        <input
+          name="q"
+          placeholder="e.g. What's the status of the George Snyder Trail?"
+          className="min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-muted-soft"
+        />
+        <button className="shrink-0 rounded-lg bg-ink px-5 py-2.5 text-sm font-semibold text-white hover:bg-ink-active">
+          Ask
+        </button>
+      </form>
+    </section>
+  );
+}
+
 function fmtWhen(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
     weekday: "short",
@@ -276,6 +304,7 @@ export default async function Briefing() {
       <div className="mb-2 text-xs font-semibold uppercase tracking-[1.5px] text-muted">
         The briefing · Week of {latest} · City of Fairfax, VA
       </div>
+      <AskHound />
       <StatTiles stats={stats} />
       <div className="grid gap-8 md:grid-cols-[1.5fr_1fr]">
         <div>
@@ -320,27 +349,6 @@ export default async function Briefing() {
             eyebrow="Hot right now · Planning Commission"
             heading="What the commission is spending its time on"
           />
-
-          <section className="rounded-3xl bg-card p-6">
-            <div className="mb-2.5 flex items-center gap-2.5">
-              <Image src="/brand/hound.png" alt="" width={34} height={30} className="h-[30px] w-auto" />
-              <span className="font-semibold">Ask the hound</span>
-            </div>
-            <form
-              action="/ask"
-              method="get"
-              className="flex items-center justify-between gap-2 rounded-xl border border-hairline bg-canvas p-1.5 pl-4"
-            >
-              <input
-                name="q"
-                placeholder="Search the meeting record…"
-                className="min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-muted-soft"
-              />
-              <button className="shrink-0 rounded-lg bg-ink px-3.5 py-2 text-[13px] font-semibold text-white">
-                Ask
-              </button>
-            </form>
-          </section>
         </div>
       </div>
     </div>

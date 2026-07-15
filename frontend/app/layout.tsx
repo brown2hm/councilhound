@@ -26,12 +26,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </Link>
               <NavLinks />
             </div>
-            <Link
-              href="/ask"
-              className="rounded-xl bg-ink px-5 py-3 text-sm font-semibold leading-none text-white hover:bg-ink-active"
-            >
-              Ask a question
-            </Link>
           </div>
         </header>
         <main className="w-full flex-1">{children}</main>
