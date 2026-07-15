@@ -13,18 +13,20 @@ const ROLE_TINTS: Record<string, string> = {
 
 export default async function MembersPage() {
   const members = await api.members();
-  const council = members.filter((m) => m.roles.some((r) => r === "Mayor" || r === "Councilmember"));
-  const commission = members.filter((m) => !council.includes(m));
+  type Member = (typeof members)[number];
+  const isCouncil = (m: Member) => m.roles.some((r) => r === "Mayor" || r === "Councilmember");
+  const current = members.filter((m) => m.is_current);
+  const council = current.filter(isCouncil);
+  const commission = current.filter((m) => !isCouncil(m));
+  const former = members.filter((m) => !m.is_current);
 
-  const Grid = ({ list }: { list: typeof members }) => (
+  const Grid = ({ list }: { list: Member[] }) => (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {list.map((m) => (
         <Link
           key={m.slug}
           href={`/members/${m.slug}`}
-          className={`rounded-2xl border border-hairline p-4 px-5 hover:border-ink ${
-            m.is_current ? "bg-canvas" : "bg-soft opacity-75 hover:opacity-100"
-          }`}
+          className="rounded-2xl border border-hairline bg-canvas p-4 px-5 hover:border-ink"
         >
           <div className="mb-1.5 font-semibold">{m.name}</div>
           <div className="mb-2 flex flex-wrap gap-1.5">
@@ -33,14 +35,27 @@ export default async function MembersPage() {
                 {r}
               </span>
             ))}
-            {!m.is_current && (
-              <span className="rounded-full bg-strong px-2 py-[3px] text-xs font-semibold text-muted">
-                Former
-              </span>
-            )}
           </div>
           <div className="text-[13px] text-muted">
             {m.votes_cast > 0 ? `${m.votes_cast} recorded votes` : "No recorded votes yet"}
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+
+  const FormerGrid = ({ list }: { list: Member[] }) => (
+    <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-4">
+      {list.map((m) => (
+        <Link
+          key={m.slug}
+          href={`/members/${m.slug}`}
+          className="rounded-xl border border-hairline bg-soft px-3.5 py-2.5 hover:border-ink"
+        >
+          <div className="text-sm font-semibold">{m.name}</div>
+          <div className="text-[13px] text-muted">
+            {m.roles[0] ?? "Member"}
+            {m.votes_cast > 0 ? ` · ${m.votes_cast} votes` : ""}
           </div>
         </Link>
       ))}
@@ -61,6 +76,16 @@ export default async function MembersPage() {
         <span className="h-2.5 w-2.5 rounded-full bg-ochre" /> Planning Commission & boards
       </h2>
       <Grid list={commission} />
+
+      {former.length > 0 && (
+        <>
+          <h2 className="mb-1 mt-12 text-lg font-semibold text-muted">Former members</h2>
+          <p className="mb-3 text-[13px] text-muted-soft">
+            No longer on the current roster — voting history preserved.
+          </p>
+          <FormerGrid list={former} />
+        </>
+      )}
     </div>
   );
 }

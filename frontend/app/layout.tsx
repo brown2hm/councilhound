@@ -53,7 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               alt=""
               width={610}
               height={409}
-              className="hidden h-auto w-[96px] shrink-0 self-end sm:block"
+              className="hidden h-auto w-[48px] shrink-0 self-end sm:block"
             />
           </div>
         </footer>
