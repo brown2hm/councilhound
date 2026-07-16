@@ -9,8 +9,8 @@ export default async function MapPage() {
     <div className="mx-auto max-w-[1280px] px-8 pb-10 pt-8">
       <h1 className="mb-1 text-[32px] font-medium tracking-[-0.5px]">Around the city</h1>
       <p className="mb-6 text-sm text-muted">
-        {locations.length} places named in council and commission business. Pin color follows the
-        strongest related project’s status.
+        {locations.length} locations and projects named in council and commission business.
+        Pin color follows the strongest related project’s status.
       </p>
       <MapClient locations={locations} />
     </div>

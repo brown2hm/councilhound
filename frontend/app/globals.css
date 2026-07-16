@@ -1,3 +1,63 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.map-pin-dot {
+  display: block;
+  border-radius: 9999px;
+}
+
+.map-pin-dot--project {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #fffaf0;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 35%);
+}
+
+.map-pin-dot--official {
+  width: 16px;
+  height: 16px;
+  transform: rotate(45deg);
+  border: 2px solid #fffaf0;
+  border-radius: 3px;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 40%);
+}
+
+.map-pin-dot--mention {
+  width: 11px;
+  height: 11px;
+  border: 1.5px solid #fffaf0;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 35%);
+  opacity: 0.9;
+}
+
+.leaflet-tooltip.map-marker-preview {
+  width: 290px;
+  max-width: calc(100vw - 64px);
+  padding: 10px;
+  border: 1px solid rgb(10 10 10 / 18%);
+  border-radius: 4px;
+  background: rgb(255 250 240 / 94%);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 16%);
+  color: #1a1a1a;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: normal;
+}
+
+.leaflet-tooltip-right.map-marker-preview::before {
+  border-right-color: rgb(10 10 10 / 18%);
+}
+
+.leaflet-tooltip-left.map-marker-preview::before {
+  border-left-color: rgb(10 10 10 / 18%);
+}
+
+.map-hover-summary {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}

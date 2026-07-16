@@ -90,6 +90,52 @@ export default async function TopicDetail({ params }: { params: { slug: string }
         </section>
       )}
 
+      {entity.official && (
+        <section className="mb-8 rounded-2xl border border-hairline bg-canvas p-5">
+          <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold">Official city record</h2>
+              <p className="text-[13px] text-muted">
+                {[entity.official.project_type, entity.official.division].filter(Boolean).join(" · ")}
+              </p>
+            </div>
+            {entity.official.official_status && (
+              <span className="rounded-full bg-strong px-3 py-1 text-xs font-semibold text-body">
+                {entity.official.official_status}
+              </span>
+            )}
+          </div>
+          {entity.official.description && (
+            <p className="mb-3 text-sm leading-[1.6] text-body">{entity.official.description}</p>
+          )}
+          <div className="grid gap-3 text-[13px] text-muted sm:grid-cols-2">
+            {entity.official.address && <div><span className="font-semibold text-body">Location:</span> {entity.official.address}</div>}
+            {entity.official.applicant && <div><span className="font-semibold text-body">Applicant:</span> {entity.official.applicant}</div>}
+            {entity.official.planner_name && <div><span className="font-semibold text-body">Planner:</span> {entity.official.planner_name}</div>}
+            {entity.official.planner_email && (
+              <a href={`mailto:${entity.official.planner_email}`} className="font-semibold text-muted underline underline-offset-2 hover:text-ink">
+                {entity.official.planner_email}
+              </a>
+            )}
+          </div>
+          {entity.official.documents.length > 0 && (
+            <div className="mt-4">
+              <div className="mb-2 text-sm font-semibold">Submitted materials</div>
+              <div className="flex flex-wrap gap-2">
+                {entity.official.documents.slice(0, 6).map((doc, i) => (
+                  <a key={i} href={doc.url} target="_blank" className="rounded-full bg-card px-3 py-1.5 text-[13px] font-medium text-body hover:bg-strong">
+                    {doc.label}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+          <a href={entity.official.detail_url} target="_blank" className="mt-4 inline-block text-sm font-semibold text-muted underline underline-offset-2 hover:text-ink">
+            View city project page
+          </a>
+        </section>
+      )}
+
       {profile && profile.open_questions.length > 0 && (
         <section className="mb-8">
           <h2 className="mb-2 text-lg font-semibold">Open questions & options on the table</h2>

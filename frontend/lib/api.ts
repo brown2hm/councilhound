@@ -118,10 +118,50 @@ export interface EntityDetail {
   current_status: string | null;
   status_source: StatusSource | null;
   profile: EntityProfileInfo | null;
+  official: CityProjectOfficial | null;
   related: RelatedEntity[];
   discussion: DiscussionPoint[];
   upcoming: UpcomingEvent[];
   timeline: TimelineEntry[];
+}
+
+export interface CityProjectOfficial {
+  name: string;
+  project_type: string | null;
+  division: string | null;
+  official_status: string | null;
+  description: string | null;
+  requests: string | null;
+  address: string | null;
+  applicant: string | null;
+  planner_name: string | null;
+  planner_phone: string | null;
+  planner_email: string | null;
+  detail_url: string;
+  image_url: string | null;
+  documents: { label: string; url: string }[];
+  official_timeline: string[];
+  lat: number | null;
+  lng: number | null;
+  synced_at: string | null;
+}
+
+export interface CityProjectSummary {
+  slug: string;
+  name: string;
+  project_type: string | null;
+  division: string | null;
+  official_status: string | null;
+  description: string | null;
+  address: string | null;
+  applicant: string | null;
+  detail_url: string;
+  image_url: string | null;
+  entity_slug: string | null;
+  entity_status: string | null;
+  lat: number | null;
+  lng: number | null;
+  synced_at: string | null;
 }
 
 export interface MemberSummary {
@@ -166,9 +206,15 @@ export interface MemberDetail {
 export interface MapLocation {
   slug: string;
   name: string;
+  entity_type: string;
+  is_official_project: boolean;
   lat: number;
   lng: number;
   matched_address: string | null;
+  address: string | null;
+  current_status: string | null;
+  official_status: string | null;
+  summary: string | null;
   status_hint: string | null;
   related: RelatedEntity[];
 }
@@ -249,6 +295,8 @@ export const api = {
   members: () => get<MemberSummary[]>("/members/"),
   upcoming: () => get<UpcomingEvent[]>("/meetings/upcoming"),
   mapLocations: () => get<MapLocation[]>("/entities/map"),
+  developmentProjects: (params: URLSearchParams) =>
+    get<CityProjectSummary[]>(`/development/?${params}`),
   search: (q: string, body?: string) =>
     get<SearchResponse>(`/search/?q=${encodeURIComponent(q)}${body ? `&body=${body}` : ""}`),
   member: (slug: string) => get<MemberDetail>(`/members/${encodeURIComponent(slug)}`),
