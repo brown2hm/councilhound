@@ -4,7 +4,7 @@ structured from its agenda/minutes — audio is best-effort, not a gate."""
 import datetime
 
 from councilhound import pipeline
-from councilhound.db.models import Meeting
+from councilhound.db.models import CityProject, Entity, EntityGeocode, Meeting
 
 
 def _discovered(session, clip="900", day=14):
@@ -50,3 +50,59 @@ def test_skip_media_never_fetches_audio(db_session, monkeypatch):
     s.refresh(m)
     assert m.status == "fetched"
     assert called["media"] is False  # the hourly catchup path skips audio
+
+
+def test_sync_projects_links_entities_and_geocodes(db_session, monkeypatch):
+    from councilhound.scraper.fairfax_projects import DiscoveredProject
+
+    s = db_session
+    projects = [
+        DiscoveredProject(
+            external_slug="Courthouse-Plaza",
+            name="Courthouse Plaza",
+            detail_url="https://example.test/Courthouse-Plaza",
+            project_type="Private Development",
+            division="Community & Development",
+            official_status="Under Review",
+            description="Official summary.",
+            address="10300 Willard Way",
+            lat=38.8476,
+            lng=-77.3025,
+        )
+    ]
+    monkeypatch.setattr(pipeline.fairfax_projects, "list_projects", lambda fetch_details=True: projects)
+
+    result = pipeline.sync_projects(s)
+    assert result["created"] == 1
+    row = s.query(CityProject).one()
+    assert row.name == "Courthouse Plaza"
+    assert row.entity_id is not None
+    geo = s.query(EntityGeocode).filter_by(entity_id=row.entity_id).one()
+    assert float(geo.lat) == 38.8476
+    assert geo.matched_address == "10300 Willard Way"
+
+
+def test_sync_projects_promotes_linked_location_entity(db_session, monkeypatch):
+    from councilhound.scraper.fairfax_projects import DiscoveredProject
+
+    s = db_session
+    entity = Entity(
+        entity_type="location",
+        name="10340 Democracy Lane",
+        canonical_slug="10340-democracy-lane",
+    )
+    s.add(entity)
+    s.flush()
+    monkeypatch.setattr(
+        pipeline.fairfax_projects,
+        "list_projects",
+        lambda fetch_details=True: [DiscoveredProject(
+            external_slug="10340-Democracy-Lane",
+            name="10340 Democracy Lane",
+            detail_url="https://example.test/10340-Democracy-Lane",
+        )],
+    )
+
+    pipeline.sync_projects(s)
+    s.refresh(entity)
+    assert entity.entity_type == "project"

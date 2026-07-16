@@ -61,6 +61,14 @@ def get(url: str, timeout: int = 60, **kwargs) -> requests.Response:
 
 
 @_retry
+def post(url: str, timeout: int = 60, **kwargs) -> requests.Response:
+    _throttle()
+    resp = get_http_session().post(url, timeout=timeout, **kwargs)
+    resp.raise_for_status()
+    return resp
+
+
+@_retry
 def download(url: str, dest_path: str, timeout: int = 120) -> str:
     """Stream url to dest_path. Skips if dest already exists non-empty;
     writes to a .part file and renames, so a killed run never leaves a

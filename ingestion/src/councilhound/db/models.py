@@ -146,6 +146,36 @@ class EntityGeocode(Base):
     geocoded_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
+class CityProject(Base):
+    """Official City of Fairfax development-project directory record.
+    This is durable external context keyed by the city's project URL/slug,
+    linked to an Entity when the tracker has or creates a matching project."""
+    __tablename__ = "city_projects"
+
+    id = Column(Integer, primary_key=True)
+    external_slug = Column(String, unique=True, nullable=False)
+    entity_id = Column(Integer, ForeignKey("entities.id", ondelete="SET NULL"), unique=True)
+    name = Column(Text, nullable=False)
+    project_type = Column(String)
+    division = Column(String)
+    official_status = Column(String)
+    status_code = Column(Integer)
+    description = Column(Text)
+    requests = Column(Text)
+    address = Column(Text)
+    applicant = Column(Text)
+    planner_name = Column(Text)
+    planner_phone = Column(Text)
+    planner_email = Column(Text)
+    detail_url = Column(Text, nullable=False)
+    image_url = Column(Text)
+    documents = Column(JSON, default=list)
+    official_timeline = Column(JSON, default=list)
+    lat = Column(Numeric)
+    lng = Column(Numeric)
+    synced_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
 class EntityProfile(Base):
     """LLM-synthesized rollup for an entity's detail page: overall summary,
     open questions / options on the table, and commentary binned per council

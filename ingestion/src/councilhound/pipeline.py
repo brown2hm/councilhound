@@ -19,8 +19,10 @@ from sqlalchemy.orm import Session
 
 from councilhound import http
 from councilhound.config import RAW_DATA_DIR
-from councilhound.db.models import Document, IngestRun, Meeting
+from councilhound.db.models import CityProject, Document, EntityGeocode, IngestRun, Meeting
+from councilhound.entities import resolve_entity
 from councilhound.scraper import granicus
+from councilhound.scraper import fairfax_projects
 
 log = logging.getLogger(__name__)
 
@@ -242,6 +244,89 @@ def sync_upcoming(session: Session, view_id: str) -> dict:
     session.commit()
     result = {"upcoming": len(events), "agendas_fetched": agendas, "removed": len(old)}
     log.info("sync_upcoming view %s: %s", view_id, result)
+    return result
+
+
+def _upsert_project_geocode(session: Session, entity_id: int, lat, lng, address: str | None) -> None:
+    if lat is None or lng is None:
+        return
+    geo = session.scalar(select(EntityGeocode).where(EntityGeocode.entity_id == entity_id))
+    if geo is None:
+        geo = EntityGeocode(entity_id=entity_id)
+        session.add(geo)
+    geo.status = "ok"
+    geo.lat = lat
+    geo.lng = lng
+    geo.matched_address = address
+    geo.geocoded_at = datetime.now(timezone.utc)
+
+
+def sync_projects(session: Session, fetch_details: bool = True) -> dict:
+    """Refresh official City of Fairfax development-project records.
+
+    The city directory is the set of records; ArcGIS/detail coordinates are
+    mirrored into EntityGeocode for map pins. Unmatched official projects are
+    created as tracker project entities so the directory can cross-link
+    uniformly to topic pages.
+    """
+    discovered = fairfax_projects.list_projects(fetch_details=fetch_details)
+    old = {p.external_slug: p for p in session.scalars(select(CityProject))}
+
+    created = updated = linked = geocoded = 0
+    now = datetime.now(timezone.utc)
+    for d in discovered:
+        entity = resolve_entity(session, "project", d.name, create=True)
+        if entity:
+            entity.entity_type = "project"
+        if entity and d.official_status and not entity.current_status:
+            entity.current_status = d.official_status.lower().replace("-", "_").replace(" ", "_")
+        row = old.pop(d.external_slug, None)
+        if row is None:
+            row = CityProject(external_slug=d.external_slug)
+            session.add(row)
+            created += 1
+        else:
+            updated += 1
+        if entity:
+            row.entity_id = entity.id
+            linked += 1
+        row.name = d.name
+        row.project_type = d.project_type
+        row.division = d.division
+        row.official_status = d.official_status
+        row.status_code = d.status_code
+        row.description = d.description
+        row.requests = d.requests
+        row.address = d.address
+        row.applicant = d.applicant
+        row.planner_name = d.planner_name
+        row.planner_phone = d.planner_phone
+        row.planner_email = d.planner_email
+        row.detail_url = d.detail_url
+        row.image_url = d.image_url
+        row.documents = d.documents
+        row.official_timeline = d.official_timeline
+        row.lat = d.lat
+        row.lng = d.lng
+        row.synced_at = now
+        if entity:
+            _upsert_project_geocode(session, entity.id, d.lat, d.lng, d.address)
+            if d.lat is not None and d.lng is not None:
+                geocoded += 1
+
+    removed = len(old)
+    for stale in old.values():
+        session.delete(stale)
+    session.commit()
+    result = {
+        "projects": len(discovered),
+        "created": created,
+        "updated": updated,
+        "linked": linked,
+        "geocoded": geocoded,
+        "removed": removed,
+    }
+    log.info("sync_projects: %s", result)
     return result
 
 

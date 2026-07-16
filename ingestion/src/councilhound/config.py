@@ -10,6 +10,15 @@ DATABASE_URL = os.environ.get("DATABASE_URL", "")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 GRANICUS_BASE_URL = os.environ.get("GRANICUS_BASE_URL", "https://fairfax.granicus.com")
 GRANICUS_VIEW_IDS = [v.strip() for v in os.environ.get("GRANICUS_VIEW_IDS", "13").split(",") if v.strip()]
+FAIRFAX_PROJECTS_URL = os.environ.get(
+    "FAIRFAX_PROJECTS_URL",
+    "https://www.fairfaxva.gov/Property-Business/Development/Projects",
+)
+FAIRFAX_PROJECTS_ARCGIS_URL = os.environ.get(
+    "FAIRFAX_PROJECTS_ARCGIS_URL",
+    "https://services2.arcgis.com/DANcyjLcCCpGk8Ri/arcgis/rest/services/"
+    "Major_Developments_Project_Map_v2/FeatureServer/0/query",
+)
 # Anchor default data dir to the repo root (ingestion/src/councilhound/config.py
 # -> three parents up), so CLI behavior doesn't depend on cwd. Overridden by
 # env in Docker/cloud.

@@ -256,6 +256,7 @@ def daily(days):
             click.echo(f"ingest view {view_id}: {run.meetings_processed} meetings, "
                        f"{len(run.errors or [])} errors")
             click.echo(f"upcoming view {view_id}: {pipeline.sync_upcoming(session, view_id)}")
+        click.echo(f"projects:     {pipeline.sync_projects(session)}")
         click.echo(f"extract-text: {extract_pending(session)}")
         click.echo(f"transcribe:   {transcribe_pending(session)}")
         click.echo(f"structure:    {structure_pending(session)}")
@@ -293,6 +294,7 @@ def catchup(days):
             click.echo(f"ingest view {view_id}: {run.meetings_processed} meetings, "
                        f"{len(run.errors or [])} errors")
             click.echo(f"upcoming view {view_id}: {pipeline.sync_upcoming(session, view_id)}")
+        click.echo(f"projects:     {pipeline.sync_projects(session)}")
         click.echo(f"extract-text: {extract_pending(session)}")
         click.echo(f"structure:    {structure_pending(session)}")
         click.echo(f"index-points: {pipeline.link_index_points_pending(session)}")
@@ -320,6 +322,17 @@ def upcoming(view_id):
 
     with get_session() as session:
         click.echo(pipeline.sync_upcoming(session, view_id))
+
+
+@cli.command()
+@click.option("--skip-details", is_flag=True, help="only use list page + ArcGIS fields")
+def projects(skip_details):
+    """Refresh official City of Fairfax development-project records."""
+    from councilhound import pipeline
+    from councilhound.db.session import get_session
+
+    with get_session() as session:
+        click.echo(pipeline.sync_projects(session, fetch_details=not skip_details))
 
 
 @cli.command("index-points")
