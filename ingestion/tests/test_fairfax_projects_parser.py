@@ -115,7 +115,8 @@ def test_list_projects_merges_arcgis_stale_name(monkeypatch):
         },
     )
 
-    projects = list_projects(fetch_details=False)
+    projects, complete = list_projects(fetch_details=False)
+    assert complete is True  # HTML list reachable
     democracy = [p for p in projects if "Democracy" in p.name]
     assert len(democracy) == 1
     assert democracy[0].name == "10340 Democracy Lane"

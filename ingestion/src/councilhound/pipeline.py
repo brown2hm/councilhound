@@ -269,7 +269,7 @@ def sync_projects(session: Session, fetch_details: bool = True) -> dict:
     created as tracker project entities so the directory can cross-link
     uniformly to topic pages.
     """
-    discovered = fairfax_projects.list_projects(fetch_details=fetch_details)
+    discovered, html_complete = fairfax_projects.list_projects(fetch_details=fetch_details)
     old = {p.external_slug: p for p in session.scalars(select(CityProject))}
 
     created = updated = linked = geocoded = 0
@@ -290,33 +290,34 @@ def sync_projects(session: Session, fetch_details: bool = True) -> dict:
         if entity:
             row.entity_id = entity.id
             linked += 1
-        row.name = d.name
-        row.project_type = d.project_type
-        row.division = d.division
-        row.official_status = d.official_status
-        row.status_code = d.status_code
-        row.description = d.description
-        row.requests = d.requests
-        row.address = d.address
-        row.applicant = d.applicant
-        row.planner_name = d.planner_name
-        row.planner_phone = d.planner_phone
-        row.planner_email = d.planner_email
-        row.detail_url = d.detail_url
-        row.image_url = d.image_url
-        row.documents = d.documents
-        row.official_timeline = d.official_timeline
-        row.lat = d.lat
-        row.lng = d.lng
+        fields = {
+            "name": d.name, "project_type": d.project_type, "division": d.division,
+            "official_status": d.official_status, "status_code": d.status_code,
+            "description": d.description, "requests": d.requests, "address": d.address,
+            "applicant": d.applicant, "planner_name": d.planner_name,
+            "planner_phone": d.planner_phone, "planner_email": d.planner_email,
+            "detail_url": d.detail_url, "image_url": d.image_url,
+            "documents": d.documents, "official_timeline": d.official_timeline,
+            "lat": d.lat, "lng": d.lng,
+        }
+        for key, value in fields.items():
+            # A partial (ArcGIS-only) sync must not blank out the richer HTML
+            # fields seeded by a full local run — only overwrite what it has.
+            if html_complete or value not in (None, "", [], {}):
+                setattr(row, key, value)
         row.synced_at = now
         if entity:
             _upsert_project_geocode(session, entity.id, d.lat, d.lng, d.address)
             if d.lat is not None and d.lng is not None:
                 geocoded += 1
 
-    removed = len(old)
-    for stale in old.values():
-        session.delete(stale)
+    # Only an authoritative full-HTML sync prunes; a partial ArcGIS-only run
+    # leaves HTML-only projects alone (and never wipes everything on a miss).
+    removed = 0
+    if html_complete and discovered:
+        removed = len(old)
+        for stale in old.values():
+            session.delete(stale)
     session.commit()
     result = {
         "projects": len(discovered),
@@ -325,6 +326,7 @@ def sync_projects(session: Session, fetch_details: bool = True) -> dict:
         "linked": linked,
         "geocoded": geocoded,
         "removed": removed,
+        "complete": html_complete,
     }
     log.info("sync_projects: %s", result)
     return result

@@ -70,7 +70,8 @@ def test_sync_projects_links_entities_and_geocodes(db_session, monkeypatch):
             lng=-77.3025,
         )
     ]
-    monkeypatch.setattr(pipeline.fairfax_projects, "list_projects", lambda fetch_details=True: projects)
+    monkeypatch.setattr(pipeline.fairfax_projects, "list_projects",
+                        lambda fetch_details=True: (projects, True))
 
     result = pipeline.sync_projects(s)
     assert result["created"] == 1
@@ -96,13 +97,51 @@ def test_sync_projects_promotes_linked_location_entity(db_session, monkeypatch):
     monkeypatch.setattr(
         pipeline.fairfax_projects,
         "list_projects",
-        lambda fetch_details=True: [DiscoveredProject(
+        lambda fetch_details=True: ([DiscoveredProject(
             external_slug="10340-Democracy-Lane",
             name="10340 Democracy Lane",
             detail_url="https://example.test/10340-Democracy-Lane",
-        )],
+        )], True),
     )
 
     pipeline.sync_projects(s)
     s.refresh(entity)
     assert entity.entity_type == "project"
+
+
+def test_sync_projects_partial_preserves_seeded_detail(db_session, monkeypatch):
+    """A partial (ArcGIS-only, html_complete=False) sync must update coords/
+    status but neither prune HTML-only rows nor blank their rich detail."""
+    from councilhound.scraper.fairfax_projects import DiscoveredProject
+    from councilhound.db.models import CityProject
+
+    s = db_session
+    # a fully-seeded row (as a local run would leave it) + an HTML-only row
+    seeded = CityProject(external_slug="Courthouse-Plaza", name="Courthouse Plaza",
+                         detail_url="https://x/Courthouse-Plaza", planner_email="p@fairfaxva.gov",
+                         documents=[{"label": "MDP", "url": "https://x/mdp"}],
+                         official_status="Under Review")
+    html_only = CityProject(external_slug="Sidewalk-Project", name="Sidewalk Project",
+                           detail_url="https://x/Sidewalk-Project")
+    s.add_all([seeded, html_only])
+    s.flush()
+
+    # ArcGIS-only view: just Courthouse Plaza, no detail fields, html incomplete
+    monkeypatch.setattr(
+        pipeline.fairfax_projects, "list_projects",
+        lambda fetch_details=True: ([DiscoveredProject(
+            external_slug="Courthouse-Plaza", name="Courthouse Plaza",
+            detail_url="https://x/Courthouse-Plaza",
+            official_status="Approved", lat=38.85, lng=-77.30,
+        )], False),
+    )
+
+    result = pipeline.sync_projects(s)
+    assert result["complete"] is False
+    assert result["removed"] == 0  # HTML-only row NOT pruned
+    assert s.query(CityProject).filter_by(external_slug="Sidewalk-Project").one()
+    row = s.query(CityProject).filter_by(external_slug="Courthouse-Plaza").one()
+    assert row.official_status == "Approved"          # ArcGIS field updated
+    assert float(row.lat) == 38.85                    # coords updated
+    assert row.planner_email == "p@fairfaxva.gov"     # HTML detail preserved
+    assert row.documents == [{"label": "MDP", "url": "https://x/mdp"}]

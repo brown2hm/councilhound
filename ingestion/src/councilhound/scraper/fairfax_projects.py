@@ -7,6 +7,7 @@ structured status + point geometry for major private developments.
 """
 from __future__ import annotations
 
+import logging
 import re
 from dataclasses import dataclass, field
 from urllib.parse import urljoin, urlparse
@@ -15,6 +16,8 @@ from bs4 import BeautifulSoup
 
 from councilhound import http
 from councilhound.config import FAIRFAX_PROJECTS_ARCGIS_URL, FAIRFAX_PROJECTS_URL
+
+log = logging.getLogger(__name__)
 
 BASE = "https://www.fairfaxva.gov"
 FAIRFAX_HEADERS = {
@@ -270,10 +273,20 @@ def fetch_arcgis_projects() -> dict[str, dict]:
     return out
 
 
-def list_projects(fetch_details: bool = True) -> list[DiscoveredProject]:
-    projects = []
-    for html in _fetch_project_list_pages():
-        projects.extend(parse_project_list(html))
+def list_projects(fetch_details: bool = True) -> tuple[list[DiscoveredProject], bool]:
+    """Return (projects, html_complete). html_complete is False when the city
+    HTML directory was unreachable (it IP-blocks datacenter ranges, so our
+    cloud jobs fall back to the ArcGIS FeatureServer — major developments with
+    status + geometry only). Callers use the flag to avoid pruning/overwriting
+    the fuller data seeded from an unblocked (local) run."""
+    projects: list[DiscoveredProject] = []
+    html_ok = True
+    try:
+        for html in _fetch_project_list_pages():
+            projects.extend(parse_project_list(html))
+    except Exception as exc:
+        html_ok = False
+        log.warning("project list HTML unavailable (%s); using ArcGIS only", exc)
     arcgis = fetch_arcgis_projects()
     by_slug = {p.external_slug: p for p in projects}
     by_name: dict[str, list[DiscoveredProject]] = {}
@@ -301,7 +314,7 @@ def list_projects(fetch_details: bool = True) -> list[DiscoveredProject]:
                 setattr(project, key, value)
 
     merged = list(by_slug.values())
-    if fetch_details:
+    if fetch_details and html_ok:  # detail pages share the HTML host's block
         detailed = []
         for project in merged:
             try:
@@ -309,4 +322,4 @@ def list_projects(fetch_details: bool = True) -> list[DiscoveredProject]:
             except Exception:
                 detailed.append(project)
         merged = detailed
-    return sorted(merged, key=lambda p: p.name.lower())
+    return sorted(merged, key=lambda p: p.name.lower()), html_ok
