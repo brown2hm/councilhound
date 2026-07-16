@@ -4,7 +4,7 @@ SQL and citation wiring, not the models."""
 import datetime
 
 from councilhound.db.models import (
-    AgendaItem, Entity, EntityAlias, EntityMention, EntityProfile, EntityUpdate,
+    AgendaItem, CityProject, Entity, EntityAlias, EntityMention, EntityProfile, EntityUpdate,
     Meeting, TranscriptChunk, Vote,
 )
 
@@ -263,5 +263,48 @@ def test_map_endpoint(client, db):
     assert len(pins) == 1  # misses don't pin
     pin = pins[0]
     assert pin["slug"] == "10300-willard-way" and pin["lat"] == 38.85
+    assert pin["is_official_project"] is False
     assert pin["related"][0]["slug"] == "george-snyder-trail"
     assert pin["status_hint"] == "completed"  # from the related topic
+
+
+def test_city_project_api_and_map_pin(client, db):
+    _seed(db)
+    from councilhound.db.models import EntityGeocode
+    from sqlalchemy import select
+
+    trail = db.scalar(select(Entity).where(Entity.canonical_slug == "george-snyder-trail"))
+    db.add(CityProject(
+        external_slug="George-Snyder-Trail",
+        entity_id=trail.id,
+        name="George Snyder Trail",
+        project_type="City Project",
+        division="Transportation",
+        official_status="Under Construction",
+        description="Official city project record.",
+        address="Fairfax Boulevard",
+        applicant="City of Fairfax",
+        detail_url="https://www.fairfaxva.gov/Property-Business/Development/Projects/George-Snyder-Trail",
+        documents=[{"label": "Plan", "url": "https://example.test/plan.pdf"}],
+        official_timeline=["Construction notice issued."],
+        lat=38.85,
+        lng=-77.31,
+    ))
+    db.add(EntityGeocode(entity_id=trail.id, status="ok", lat=38.85, lng=-77.31,
+                         matched_address="Fairfax Boulevard"))
+    db.commit()
+
+    listing = client.get("/development/").json()
+    assert listing[0]["entity_slug"] == "george-snyder-trail"
+    assert listing[0]["official_status"] == "Under Construction"
+
+    detail = client.get("/entities/george-snyder-trail").json()
+    assert detail["official"]["description"] == "Official city project record."
+    assert detail["official"]["documents"][0]["label"] == "Plan"
+
+    pins = client.get("/entities/map").json()
+    project_pin = [p for p in pins if p["slug"] == "george-snyder-trail"][0]
+    assert project_pin["entity_type"] == "project"
+    assert project_pin["is_official_project"] is True
+    assert project_pin["summary"] == "Official city project record."
+    assert project_pin["address"] == "Fairfax Boulevard"

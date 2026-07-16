@@ -5,7 +5,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from councilhound.db.models import (
-    AgendaItem, Entity, EntityAlias, EntityGeocode, EntityMention, EntityProfile,
+    AgendaItem, CityProject, Entity, EntityAlias, EntityGeocode, EntityMention, EntityProfile,
     EntityUpdate, Meeting, UpcomingMeeting, Vote,
 )
 from councilhound.hot_topics import MIN_VARIANT_LEN
@@ -34,20 +34,29 @@ def map_locations(session: Session = Depends(db_session)):
     """Geocoded location entities with their strongest co-mentioned topics —
     the map page's pins. Pin color follows the top related topic's status."""
     rows = session.execute(
-        select(Entity, EntityGeocode)
+        select(Entity, EntityGeocode, CityProject, EntityProfile)
         .join(EntityGeocode, EntityGeocode.entity_id == Entity.id)
+        .outerjoin(CityProject, CityProject.entity_id == Entity.id)
+        .outerjoin(EntityProfile, EntityProfile.entity_id == Entity.id)
         .where(EntityGeocode.status == "ok")
     ).all()
     out = []
-    for entity, geo in rows:
+    for entity, geo, city_project, profile in rows:
         related = [r for r in _related_entities(session, entity, top=4)
                    if r["entity_type"] != "location"][:3]
         out.append({
             "slug": entity.canonical_slug,
             "name": entity.name,
+            "entity_type": entity.entity_type,
+            "is_official_project": city_project is not None,
             "lat": float(geo.lat),
             "lng": float(geo.lng),
             "matched_address": geo.matched_address,
+            "address": city_project.address if city_project else geo.matched_address,
+            "current_status": entity.current_status,
+            "official_status": city_project.official_status if city_project else None,
+            "summary": (city_project.description if city_project else
+                        profile.summary if profile else None),
             "status_hint": related[0]["current_status"] if related else entity.current_status,
             "related": related,
         })
@@ -141,6 +150,32 @@ def _on_upcoming_agendas(session: Session, entity: Entity) -> list[dict]:
     return hits
 
 
+def _city_record(session: Session, entity: Entity) -> dict | None:
+    row = session.scalar(select(CityProject).where(CityProject.entity_id == entity.id))
+    if row is None:
+        return None
+    return {
+        "name": row.name,
+        "project_type": row.project_type,
+        "division": row.division,
+        "official_status": row.official_status,
+        "description": row.description,
+        "requests": row.requests,
+        "address": row.address,
+        "applicant": row.applicant,
+        "planner_name": row.planner_name,
+        "planner_phone": row.planner_phone,
+        "planner_email": row.planner_email,
+        "detail_url": row.detail_url,
+        "image_url": row.image_url,
+        "documents": row.documents or [],
+        "official_timeline": row.official_timeline or [],
+        "lat": float(row.lat) if row.lat is not None else None,
+        "lng": float(row.lng) if row.lng is not None else None,
+        "synced_at": row.synced_at.isoformat() if row.synced_at else None,
+    }
+
+
 @router.get("/{slug}")
 def get_entity(slug: str, session: Session = Depends(db_session)):
     entity = session.scalar(select(Entity).where(Entity.canonical_slug == slug))
@@ -216,6 +251,7 @@ def get_entity(slug: str, session: Session = Depends(db_session)):
             "updated_at": profile.updated_at.isoformat() if profile.updated_at else None,
         } if profile else None,
         "related": _related_entities(session, entity),
+        "official": _city_record(session, entity),
         "discussion": (entity_discussion_series(session, entity)
                        if entity.entity_type != "person" else []),
         "upcoming": _on_upcoming_agendas(session, entity),
