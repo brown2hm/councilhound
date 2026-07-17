@@ -31,33 +31,28 @@
   opacity: 0.9;
 }
 
-.leaflet-tooltip.map-marker-preview {
-  width: 290px;
-  max-width: calc(100vw - 64px);
-  padding: 10px;
-  border: 1px solid rgb(10 10 10 / 18%);
-  border-radius: 4px;
-  background: rgb(255 250 240 / 94%);
+/* the clicked pin: a ring + full opacity so the selection reads at a glance */
+.map-pin-dot--selected {
+  opacity: 1;
+  box-shadow: 0 0 0 2px #fffaf0, 0 0 0 4px #1a3a3a;
+}
+
+/* hover affordance: a compact name label only — the full record lives in the
+   detail pane, so nothing competes with it */
+.leaflet-tooltip.map-marker-label {
+  padding: 3px 8px;
+  border: 1px solid rgb(10 10 10 / 14%);
+  border-radius: 9999px;
+  background: rgb(255 250 240 / 96%);
   box-shadow: 0 1px 3px rgb(0 0 0 / 16%);
   color: #1a1a1a;
   font-family: inherit;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
-  line-height: 1.25;
-  white-space: normal;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
-.leaflet-tooltip-right.map-marker-preview::before {
-  border-right-color: rgb(10 10 10 / 18%);
-}
-
-.leaflet-tooltip-left.map-marker-preview::before {
-  border-left-color: rgb(10 10 10 / 18%);
-}
-
-.map-hover-summary {
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+.leaflet-tooltip-top.map-marker-label::before {
+  border-top-color: rgb(10 10 10 / 14%);
 }
