@@ -98,7 +98,15 @@ export default async function DevelopmentAnalysisPage({
         <span className="font-semibold">Screening estimates.</span> These figures rank
         likely magnitudes with stated assumptions and ranges — they are decision-support
         context, not predictions. Every number traces to a source or a named assumption
-        in the appendices below.
+        in the appendices below. Formulas, citations, and limitations:{" "}
+        <a
+          href="/impact-methodology.pdf"
+          target="_blank"
+          className="font-semibold underline underline-offset-2"
+        >
+          methodology report (PDF)
+        </a>
+        .
       </div>
 
       {headlines.length > 0 && (

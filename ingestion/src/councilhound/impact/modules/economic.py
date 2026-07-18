@@ -498,6 +498,16 @@ def _capture_points_layer(dest, capture, walk_dollars) -> dict:
     return {"type": "FeatureCollection", "features": features}
 
 
+def _city_boundary_layer(boundary) -> dict:
+    from shapely.geometry import mapping
+
+    return {"type": "FeatureCollection", "features": [{
+        "type": "Feature",
+        "geometry": mapping(boundary),
+        "properties": {"role": "city_boundary"},
+    }]}
+
+
 def _cluster_layer(ctx, rolled: dict) -> dict:
     import pyproj
     to4326 = pyproj.Transformer.from_crs(ctx.cfg.crs_projected, "EPSG:4326", always_xy=True)
@@ -716,14 +726,24 @@ def run(spec, ctx, prior=None):
         "how much of its projected gain depends on being within walking "
         "distance of the project.")
 
+    # street-routed walking dollars: kept in the payload for API consumers
+    # and future overlays even though the current map doesn't render it
+    dollar_amounts: dict = {}
+    for i, node in enumerate(dest["walk_nodes"]):  # excludes the own destination
+        if node in sub:
+            dollar_amounts[node] = dollar_amounts.get(node, 0.0) + float(walk_dollars[0][i])
+    dollar_flows = route_edge_amounts(sub, dest["walk_origin"], dollar_amounts)
+
     layers = {
         "site": {"type": "FeatureCollection", "features": [{
             "type": "Feature", "geometry": spec.geometry, "properties": {"role": "site"}}]},
+        "city_boundary": _city_boundary_layer(ctx.boundary),
         "capture_points": _capture_points_layer(dest, capture, walk_dollars),
         "capture_clusters": _cluster_layer(ctx, rolled),
         "commercial_retail_zones": ctx.commercial_retail_zones,
         "foot_traffic_delta": _street_layer(sub, flows, "trips_per_day",
                                             secondary=pct, secondary_prop="delta_pct"),
+        "walk_dollars": _street_layer(sub, dollar_flows, "dollars_per_year", decimals=0),
     }
     result = ModuleResult(
         module="economic", metrics=metrics,

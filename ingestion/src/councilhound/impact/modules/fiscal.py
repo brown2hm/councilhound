@@ -215,9 +215,12 @@ def run(spec, ctx, prior=None):
         budget_prov = prov("City General Fund budget", gf.source or "", gf.fy or "",
                            f"${gf.value:,.0f} / {pop.value:,.0f} residents = "
                            f"${per_capita:,.0f} per capita")
+        # students_per_unit informs only the school-impact NOTE below — it is
+        # deliberately absent from metric assumption lists so provenance
+        # never claims an input that doesn't enter the arithmetic
         metrics.append(metric(
             "Annual service cost — naive per-capita method", naive, "$/yr",
-            [budget_prov], [a["students_per_unit"]],
+            [budget_prov], [],
             "new residents x GF expenditure per capita (upper-bound framing; "
             "includes fixed costs that don't scale)"))
         marginal = naive * Interval.from_assumption(a["marginal_cost_factor"])
@@ -235,12 +238,16 @@ def run(spec, ctx, prior=None):
                 units * a["students_per_unit"].low,
                 units * a["students_per_unit"].high))
 
-        # net fiscal impact: revenue metrics minus the cost range
-        revenue_names = ("Projected real estate tax",
-                         "Personal property tax (new households)",
+        # net fiscal impact: INCREMENTAL revenue minus the cost range. The RE
+        # component prefers the tax increase over the projected total — the
+        # site's current tax is revenue the city already collects, so only
+        # the increase belongs in a net-impact figure.
+        re_component = (next((x for x in metrics if x.name == "Real estate tax increase"), None)
+                        or next((x for x in metrics if x.name == "Projected real estate tax"), None))
+        revenue_names = ("Personal property tax (new households)",
                          "Meals tax on captured in-city dining",
                          "Local sales tax share on captured in-city retail")
-        revenue = None
+        revenue = _interval_from_metric(re_component) if re_component else None
         for name in revenue_names:
             m = next((x for x in metrics if x.name == name), None)
             if m:
@@ -258,8 +265,8 @@ def run(spec, ctx, prior=None):
                 net = revenue - cost
                 metrics.append(metric(
                     f"Net annual fiscal impact — {method_name}", net, "$/yr",
-                    [budget_prov], [a["marginal_cost_factor"], a["students_per_unit"]],
-                    f"total new recurring revenue minus service cost ({note})"))
+                    [budget_prov], [a["marginal_cost_factor"]],
+                    f"incremental new recurring revenue minus service cost ({note})"))
             net_low = revenue.low - naive.high      # most conservative
             net_high = revenue.high - marginal.low  # most favorable
             net_mid = revenue.value - (naive.value + marginal.value) / 2
@@ -267,8 +274,8 @@ def run(spec, ctx, prior=None):
                 name="Net annual fiscal impact (range across both cost methods)",
                 value=round(net_mid), unit="$/yr", low=round(net_low), high=round(net_high),
                 provenance=[budget_prov],
-                assumptions=["marginal_cost_factor", "students_per_unit"],
-                method="total new recurring revenue minus service-cost range "
+                assumptions=["marginal_cost_factor"],
+                method="incremental new recurring revenue minus service-cost range "
                        "(naive per-capita upper, marginal lower)", headline=True))
             notes.append("The net fiscal range spans both cost framings on purpose: "
                          "the naive per-capita method overstates costs for infill "

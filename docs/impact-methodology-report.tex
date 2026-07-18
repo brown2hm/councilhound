@@ -1,0 +1,475 @@
+% CouncilLens Development Impact Methodology
+% Build: tectonic docs/impact-methodology-report.tex
+\documentclass[11pt]{article}
+
+\usepackage[margin=1.1in]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+\setlist{itemsep=2pt, topsep=4pt}
+
+\newcommand{\assum}[1]{\texttt{#1}}
+\title{CouncilLens Development Impact Methodology}
+\author{CouncilLens (CouncilHound) --- impact analysis subsystem}
+\date{July 2026 \\ \small model version: joint destination--mode Huff, census-block weights}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+CouncilLens produces screening-level impact estimates for proposed local development
+projects. A deterministic economic module (spatial-interaction retail capture,
+walking activity, an employment ledger) and a deterministic fiscal module
+(revenue and service-cost ranges) generate every number; a language model is used
+only to extract project facts from public documents under a verbatim-quote
+firewall and to write a narrative that a validator constrains to the structured
+outputs. This note documents each displayed metric's formula, its academic or
+statistical basis, the assumptions that drive its uncertainty range, and the
+implementation decisions behind the current system. The estimates rank likely
+orders of magnitude under stated assumptions; they are decision-support
+evidence, not forecasts.
+\end{abstract}
+
+\section{Scope and design principles}
+
+\begin{enumerate}
+\item \textbf{Deterministic quantities.} All numbers are produced by closed-form
+      models over open data. The language model never supplies a quantity: extracted
+      project facts require a verbatim source quote ($\leq$15 words) that is verified
+      against the document text in code, and fields without one are nulled. The
+      narrative report is post-validated so that every number it contains matches a
+      published metric, a stated assumption, a provenance string, or a deterministic
+      module note.
+\item \textbf{Assumption transparency.} Every contestable parameter is a named
+      assumption with a central value, low/high bounds, and a recorded basis. Bounds
+      propagate through all formulas by interval arithmetic, so each metric carries a
+      range derived from the same assumptions it cites.
+\item \textbf{Fail loudly.} Missing inputs (an unpinned tax rate, an absent
+      assessment record) degrade the affected metric to ``not computed --- reason,''
+      never to a silent default.
+\item \textbf{Screening honesty.} Capture, walking, and foot-traffic figures are
+      screening estimates in the spatial-interaction tradition; the report states
+      this in plain language and names the most sensitivity-driving assumptions.
+\end{enumerate}
+
+\section{Notation and data inputs}
+
+\begin{tabular}{ll}
+$U$        & proposed dwelling units (extracted from project documents) \\
+$\rho$     & occupancy rate at stabilization (\assum{occupancy\_rate}) \\
+$\bar{s}$  & average renter household size (ACS B25010, population-weighted) \\
+$y$        & median household income of the site's census tract (ACS B19013) \\
+$\pi$      & new-construction income premium (\assum{income\_premium\_new\_construction}) \\
+$e_c$      & CES average annual expenditure for category $c$ (BLS CE 2023) \\
+$y_{\mathrm{CES}}$ & CES average pre-tax income per consumer unit (\$101{,}805, 2023) \\
+$\kappa$   & CES scaling factor (\assum{ces\_scale}) \\
+$A_j$      & attractiveness of destination $j$ (POI count~$=1$ per business) \\
+$t^w_j,\ t^d_j$ & walk / drive travel time (minutes) from the site to $j$ \\
+$\beta_w,\ \beta_d$ & walk / drive impedance decay per minute \\
+$w_c$      & zero-impedance walk preference for category $c$ \\
+$\tau$     & daily walk trips per resident (\assum{walk\_trips\_per\_resident\_day}) \\
+\end{tabular}
+
+\medskip
+\noindent
+Networks are OpenStreetMap walk and drive graphs built with OSMnx
+\cite{boeing2017}; walk edge times use 4.8\,km/h. Population weights use 2020
+Census (PL~94-171) block centroids. Points of interest merge Overture Maps,
+OpenStreetMap, and (when licensed) Foursquare OS Places into a nine-class
+taxonomy. Travel times come from single-source Dijkstra runs over edge minutes;
+each business inherits the time of its nearest network node.
+
+\section{Demand module}
+
+\subsection{New households and residents}
+\begin{align}
+N_{hh}  &= U \cdot \rho \\
+N_{res} &= N_{hh} \cdot \bar{s}
+\end{align}
+Occupancy at stabilization is benchmarked against the Census Housing Vacancies
+and Homeownership series \cite{hvs}; $\bar{s}$ is estimated from ACS B25010
+(renter-occupied) over the city's populated block groups with population
+weighting, carried with a $\pm 0.3$ sensitivity band. \emph{Limitation:} this
+tenure-level average is blind to unit mix; bedroom-mix demographic multipliers
+in the tradition of Listokin et al.~\cite{listokin2006} would lower resident
+estimates for studio/one-bedroom-heavy multifamily and are the recommended
+refinement (\S\ref{sec:limitations}).
+
+\subsection{Aggregate income and category spending}
+\begin{align}
+Y   &= N_{hh} \cdot y \cdot \pi \\
+S_c &= Y \cdot \frac{e_c}{y_{\mathrm{CES}}} \cdot \kappa
+\end{align}
+Tract selection follows the site polygon; when tract medians are suppressed the
+model falls back to the citywide population-weighted mean and records the
+substitution. Category shares come from the BLS Consumer Expenditure Survey
+2023 tables \cite{blsces}, income-scaled linearly from the CES average
+consumer unit. Linear scaling overstates necessity spending at high incomes
+(Engel effects visible in the CE income-quintile tables); $\kappa$'s
+$\pm 15\%$ band partially absorbs this (\S\ref{sec:limitations}).
+
+\section{Retail capture: joint destination--mode choice}
+\label{sec:capture}
+
+Retail capture follows the probabilistic trade-area tradition of Huff
+\cite{huff1963, huff1964} with the exponential impedance of the
+entropy-maximizing spatial-interaction family \cite{wilson1971}. Destination
+and mode are chosen \emph{jointly}, as a multinomial logit \cite{mcfadden1974,
+benakiva1985} over (business, mode) pairs. For category $c$, business $j$, and
+mode $m \in \{w, d\}$:
+\begin{equation}
+P_c(j, m) \;=\;
+\frac{A_j^{\alpha}\, \omega_{c,m}\, e^{-\beta_m t^m_j}}
+     {\sum_k A_k^{\alpha} \left( \omega_{c,w}\, e^{-\beta_w t^w_k}
+       + \omega_{c,d}\, e^{-\beta_d t^d_k} \right)},
+\qquad
+\omega_{c,w} = w_c,\ \ \omega_{c,d} = 1 - w_c,
+\label{eq:joint}
+\end{equation}
+with $\alpha = 1$. The mode preference $w_c$ has a clean interpretation: at
+zero travel time for both modes, the walk share is exactly $w_c$; as walk time
+grows, walking loses utility to driving and the trip (and its dollars) arrives
+by car instead. Annual capture and walk-arriving capture at business $j$:
+\begin{equation}
+C_j = \sum_c S_c \sum_m P_c(j, m), \qquad
+C^{walk}_j = \sum_c S_c \, P_c(j, w).
+\end{equation}
+Two invariants are pinned by unit tests: $\sum_j C_j = \sum_c S_c$ (joint
+probabilities sum to one), and $\sum_j C^{walk}_j \leq \sum_c S_c w_c$ with
+equality only when every destination is at zero travel time --- the walk total
+is \emph{endogenous}, not an assumption restated.
+
+\paragraph{Own-retail destination.} The project's ground floor competes inside
+the model rather than being appended outside it. Its retail square footage is
+converted to POI-count-equivalent attractiveness
+($A_{own} = \mathrm{sqft} / \assum{own\_retail\_sqft\_per\_equiv\_poi}$),
+distributed across a fixed category mix (50\% restaurant/bar, 15\% comparison,
+15\% convenience, 20\% personal services), at zero travel time from the site.
+Huff's original attractiveness variable was selling area \cite{huff1963};
+competitor attractiveness here is POI count because open POI data lacks floor
+area, so the own-retail conversion reconciles the two units.
+
+\paragraph{In-city shares.} For food-away and for all-retail, the in-city
+capture share is the probability mass at destinations inside the city boundary,
+$\theta = \sum_{j \in \mathrm{city}} \sum_m P(j,m)$. These shares are the
+cross-module inputs to the meals-tax and sales-tax lines.
+
+\paragraph{Reporting rollup.} Businesses are grouped for display by DBSCAN
+\cite{ester1996} ($\varepsilon = 150$\,m, $\mathrm{minPts} = 3$) and each
+cluster is labeled with the name of the member business nearest its centroid;
+cluster values are sums of member-business captures and play no role in the
+allocation itself.
+
+\section{Walking activity}
+
+\subsection{Resident walk trips and exact marginal flows}
+Daily walk trips are $T = N_{res} \cdot \tau$. These all-purpose trips are
+allocated over POI-weighted walk-network nodes with exponential decay and
+routed along shortest paths --- deterministically, with no sampling --- giving
+per-street-segment flows:
+\begin{equation}
+f_e \;=\; \sum_{v} T \cdot
+\frac{g_v\, e^{-\beta_w t_v}}{\sum_u g_u\, e^{-\beta_w t_u}}
+\cdot \mathbb{1}\!\left[ e \in \mathrm{SP}(\mathrm{site} \to v) \right],
+\end{equation}
+where $g_v$ is the POI weight at node $v$ and $\mathrm{SP}$ is the shortest
+path. The change caused by the project \emph{is} the trips its residents
+generate, so no baseline differencing (and no sampling noise) enters the
+numerator.
+
+\subsection{Baseline index and percent comparison}
+The comparison baseline is a seeded, sampled, weighted betweenness index
+\cite{freeman1977, brandes2001} of today's walkers: $k = 2000$
+origin--destination pairs drawn with origins proportional to census-block
+population within 400\,m of each node and destinations proportional to POI
+weight, routed by shortest paths. Scaling the sampled counts by
+$(\mathrm{total\ population\ weight} \times \tau) / k$ expresses the baseline
+in the same trips units, and the trip rate $\tau$ cancels from the percentage:
+\begin{equation}
+\Delta_e \;=\; 100 \cdot
+\frac{f_e}{n_e \cdot \bar{P}\, \tau / k}
+\quad \text{(reported only where } n_e \geq 5\text{)},
+\end{equation}
+with $n_e$ the sampled baseline count on edge $e$ and $\bar{P}$ the total
+population weight. The headline metric averages $\Delta_e$ over the ten
+commercial street segments nearest the site. Without calibrated pedestrian
+counts this is an index comparison, not a volume estimate; the correlation of
+betweenness-type indices with observed pedestrian volumes is supported by the
+network-analysis literature but is context-dependent.
+
+\subsection{Consistency diagnostic}
+\begin{equation}
+\text{spending per walk trip} = \frac{\sum_j C^{walk}_j}{365\, T}.
+\end{equation}
+Because $T$ counts \emph{all} walking (exercise, transit access, dog walks)
+while the numerator is shopping only, a plausible value is a few dollars per
+average trip (implying \$5--\$15 per actual shopping trip). Values outside
+\$0.25--\$30 add a consistency flag to the report.
+
+\section{Employment ledger}
+
+\begin{equation}
+J^- = \frac{\mathrm{existing\ commercial\ sqft}}{\assum{sqft\_per\_office\_job}},
+\qquad
+J^+ = \frac{\mathrm{proposed\ retail\ sqft}}{\assum{sqft\_per\_retail\_job}},
+\qquad
+\Delta J = J^+ - J^-.
+\end{equation}
+Space-per-worker values (300 [200--450] office; 500 [400--700] retail, gross)
+sit between dense workplace-utilization benchmarks and the building-stock
+averages observable in CBECS \cite{cbecs}. These are site-activity screens
+only; no indirect or induced employment is modeled.
+
+\section{Fiscal module}
+
+The module reports both of the two canonical fiscal-impact framings ---
+average(per-capita) cost and marginal cost --- following Burchell \&
+Listokin's classification \cite{burchell1978} and the planning literature's
+standard caution that neither is universally correct for infill
+\cite{kotval2006}.
+
+\subsection{Revenue}
+\begin{align}
+\text{current RE tax} &= AV_{now} \cdot r / 100 \\
+AV_{proj} &= \mathrm{median}\!\left(\tfrac{AV_i}{\mathrm{units}_i}\right)
+             \cdot U \;+\; \mathrm{retail\ sqft} \cdot p_{sqft}
+             \qquad \text{(bounds: comp 25th--75th pct)} \\
+\text{projected RE tax} &= AV_{proj} \cdot r / 100 \\
+\text{RE tax increase} &= (AV_{proj} - AV_{now}) \cdot r / 100 \\
+\text{meals tax} &= S_{\mathrm{food\ away}} \cdot \theta_{\mathrm{food}} \cdot r_{\mathrm{meals}} \\
+\text{local sales tax} &= \left( S_{\mathrm{grocery}} + S_{\mathrm{comparison}}
+                          + S_{\mathrm{convenience}} \right) \cdot \theta_{\mathrm{all}}
+                          \cdot r_{\mathrm{sales}} \\
+\text{personal property} &= N_{hh} \cdot p_{pp}
+    \qquad \text{(not computed until $p_{pp}$ is pinned)}
+\end{align}
+Comparables are apartment-class parcels (land-use code 352) built within a
+15-year lookback, pulled from the city's public assessment database with
+per-unit values $AV_i / \mathrm{units}_i$; fewer than three comps degrades the
+metric with a low-confidence flag. All rates ($r$, $r_{\mathrm{meals}}$,
+$r_{\mathrm{sales}}$) are jurisdiction configuration pinned with source URL and
+fiscal year. Virginia's 1\% local-option sales tax applies to food for home
+consumption, so grocery is correctly in the taxable base; personal services are
+excluded as generally non-taxable. Business-license (BPOL) revenue is not
+computed in this version.
+
+\subsection{Service costs and net impact}
+\begin{align}
+\text{naive per-capita cost} &= N_{res} \cdot \frac{GF}{P} \\
+\text{marginal cost} &= \text{naive} \cdot \mu, \qquad
+\mu = \assum{marginal\_cost\_factor} \\
+\text{net}_{\,method} &= R_{inc} - \text{cost}_{\,method}
+\end{align}
+where $GF/P$ is General Fund expenditure per capita and $R_{inc}$ is
+\emph{incremental} recurring revenue (the real-estate component is the tax
+\emph{increase} when the current tax is known). The naive method is an
+intentional upper bound: it allocates fixed citywide costs to incremental
+residents. The marginal framing scales only the cost share expected to grow
+and can understate costs if capacity thresholds are crossed. The headline range
+spans both framings; per-method nets are also published. School impact is
+reported as a note --- $U \times \assum{students\_per\_unit}$ students, per
+multifamily generation-rate evidence \cite{listokin2006} --- and deliberately
+does not enter the arithmetic of either cost method (per-capita costing already
+embeds average school costs).
+
+\section{Assumptions}
+
+Central values with propagated bounds; every metric lists the assumption keys
+that touched it.
+
+\begin{center}
+\small
+\begin{tabular}{@{}llll@{}}
+\toprule
+Key & Value & Range & Basis \\
+\midrule
+\assum{occupancy\_rate} & 0.95 & 0.90--0.97 & stabilized MF occupancy; cf.\ HVS vacancy \cite{hvs} \\
+\assum{avg\_hh\_size\_renter} & ACS-derived & $\pm 0.3$ & ACS B25010 renter-occupied, pop-weighted \\
+\assum{income\_premium\_new\_construction} & 1.125 & 1.0--1.25 & screening premium, stated openly \\
+\assum{ces\_scale} & 1.0 & 0.85--1.15 & CES national-average drift allowance \cite{blsces} \\
+\assum{beta\_walk} (min$^{-1}$) & 0.15 & 0.07--0.15 & impedance decay; set to top of band (2026-07) \\
+$\beta_d$ (min$^{-1}$, fixed) & 0.15 & --- & drive impedance decay \\
+\assum{walk\_share\_neighborhood} & 0.60 & 0.40--0.80 & zero-impedance walk preference \\
+\assum{walk\_share\_comparison} & 0.10 & 0.00--0.30 & comparison goods travel by car \\
+\assum{walk\_share\_grocery\_entertainment} & 0.30 & 0.10--0.50 & interpolated \\
+\assum{walk\_trips\_per\_resident\_day} & 2.0 & 1.0--3.0 & see calibration flag, \S\ref{sec:limitations} \\
+\assum{sqft\_per\_office\_job} & 300 & 200--450 & planning standard; cf.\ CBECS \cite{cbecs} \\
+\assum{sqft\_per\_retail\_job} & 500 & 400--700 & planning standard; cf.\ CBECS \cite{cbecs} \\
+\assum{own\_retail\_sqft\_per\_equiv\_poi} & 2{,}000 & 1{,}500--3{,}000 & typical inline suite size \\
+\assum{commercial\_value\_per\_sqft} & \$275 & \$200--\$400 & screening; replace with comps \\
+\assum{students\_per\_unit} & 0.175 & 0.10--0.25 & MF generation rates \cite{listokin2006} \\
+\assum{marginal\_cost\_factor} & 0.40 & 0.25--0.60 & share of average cost that scales \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+Structural constants: walk speed 4.8\,km/h; DBSCAN $\varepsilon=150$\,m,
+$\mathrm{minPts}=3$; network extent = city boundary + 3\,km; POI study area =
+boundary + 2\,mi; node population radius 400\,m; baseline sampling $k = 2000$,
+fixed seed; comp lookback 15 years.
+
+\section{Implementation decisions}
+
+\begin{itemize}
+\item \textbf{Per-business destinations.} The Huff run treats every retail POI
+      as an individual destination (a single-source Dijkstra makes per-POI times
+      free); DBSCAN clusters exist only as reporting rollups. Capture is therefore
+      spatially resolved to business locations, and map heat layers consume real
+      per-business weights rather than interpolated cluster centroids.
+\item \textbf{Joint rather than nested choice.} Equation~\eqref{eq:joint} is a
+      single multinomial logit over (destination, mode) pairs. A nested logit would
+      relax the independence-of-irrelevant-alternatives property across modes; the
+      joint form was chosen for transparency and because screening bounds on $w_c$
+      and $\beta_w$ dominate the error budget.
+\item \textbf{Exact marginal flows.} Project-caused foot traffic is computed as
+      the shortest-path routing of the residents' own trips, replacing an earlier
+      sampled before/after betweenness difference whose noise exceeded the signal at
+      this project scale. Sampling now appears only in the baseline denominator.
+\item \textbf{Census-block population.} Node population weights use 2020 census
+      block centroids (the finest published geography) fetched by spatial envelope,
+      which also extends the baseline beyond the city line that the county-scoped
+      ACS layer stopped at.
+\item \textbf{Determinism.} All sampling is seeded; two evaluations on a warm
+      cache produce identical metric values.
+\item \textbf{LLM firewall.} Document extraction demands a verbatim
+      $\leq$15-word quote per numeric field, verified in code against the document
+      text; unverifiable values are nulled. Parcel identifiers are verified the
+      same way.
+\item \textbf{Narrative validator.} The generated report is scanned for
+      numbers; each must match a metric value/bound, spec quantity, assumption, or
+      deterministic note within rounding, else the draft is regenerated once and
+      then hard-fails.
+\item \textbf{Assessment data.} The city publishes no bulk assessment layer, so
+      site values and multifamily comparables come from the public Patriot WebPro
+      search interface, throttled to $\sim$1 request/s and cached; owner names are
+      neither parsed nor stored.
+\item \textbf{Map scales.} Heat layers are clipped to commercial-retail zoning
+      polygons and colored on dollar-pinned viridis ramps (nice-number ceilings),
+      so a color means the same dollars regardless of layer toggling; capture and
+      walk-in capture share one scale to make their comparison meaningful.
+\end{itemize}
+
+\section{Known limitations and audit notes}
+\label{sec:limitations}
+
+\begin{enumerate}
+\item \textbf{Household size is unit-mix-blind.} ACS renter-average
+      $\bar{s} \approx 3.1$ for this city likely overstates residents of a
+      studio/1BR/2BR multifamily building; bedroom-mix multipliers
+      \cite{listokin2006} typically imply 1.5--2.1. Resident-scaled quantities
+      (spending, walk trips, per-capita costs) inherit this bias; the naive-cost
+      side inflates faster than revenue, making the fiscal range conservative.
+\item \textbf{Median $\times$ households $\neq$ aggregate income.} Using tract
+      B19013 understates aggregate income under right-skewed distributions; ACS
+      B19025 (aggregate income) or mean income would be the better estimator.
+\item \textbf{Linear CES scaling.} Category spending scales linearly with
+      income; Engel effects mean necessity categories are overstated at high
+      incomes. Income-quintile CE tables would refine this.
+\item \textbf{Walk-trip rate calibration flag.} $\tau = 2.0$ trips/resident/day
+      exceeds national NHTS person-level walking rates (roughly 0.3--0.7 in
+      metropolitan samples \cite{nhts}); walkable mixed-use contexts run higher,
+      but 2.0 should be treated as an upper-range choice pending local evidence.
+      The foot-traffic \emph{percentage} is unaffected ($\tau$ cancels), and
+      walk-in dollars are independent of $\tau$; the trips metric and street-flow
+      magnitudes scale with it.
+\item \textbf{IIA.} The joint logit imposes proportional substitution across all
+      (destination, mode) pairs; a nested structure would be more standard.
+\item \textbf{One-sided $\beta_w$ band.} The central value sits at the top of
+      its sensitivity range (analyst calibration), so sensitivity sweeps only
+      explore gentler decay.
+\item \textbf{Attractiveness proxy.} Competitor attractiveness is POI count
+      (floor area being unavailable in open POI data), while own-retail
+      attractiveness is derived from square footage; the conversion constant
+      carries the reconciliation and its bounds.
+\item \textbf{Sales-tax base share.} The taxable base applies the all-retail
+      in-city share to the three taxable categories; a category-specific share
+      would be marginally more precise.
+\item \textbf{Foot-traffic index is uncalibrated.} Percent changes compare
+      modeled flows to a sampled opportunity index, not to counted pedestrians;
+      local counts would convert the layer to volumes.
+\item \textbf{Fiscal method dependence.} The net range spans average-cost and
+      marginal-cost framings on purpose; the midpoint of that range is a
+      presentation convenience, not an estimate with independent standing.
+\end{enumerate}
+
+\section{Data sources}
+
+City of Fairfax GeoHub ArcGIS services (boundary, parcels, zoning); City of
+Fairfax public assessment database (Patriot WebPro); City budget pages (tax
+rates, General Fund, pinned with fiscal year); Census ACS 5-year (B01003,
+B19013, B25010, B25044, B08301) and 2020 PL~94-171 block population via
+TIGERweb; LEHD LODES~8; OpenStreetMap via OSMnx \cite{boeing2017}; Overture
+Maps places; BLS Consumer Expenditure Survey 2023 \cite{blsces}; FHWA National
+Household Travel Survey \cite{nhts}; Virginia Code \S 58.1-605 (local-option
+sales tax).
+
+\begin{thebibliography}{99}\small
+
+\bibitem{huff1963} Huff, D.~L. (1963). A probabilistic analysis of shopping
+center trade areas. \emph{Land Economics}, 39(1), 81--90.
+
+\bibitem{huff1964} Huff, D.~L. (1964). Defining and estimating a trading area.
+\emph{Journal of Marketing}, 28(3), 34--38.
+
+\bibitem{wilson1971} Wilson, A.~G. (1971). A family of spatial interaction
+models, and associated developments. \emph{Environment and Planning A}, 3(1),
+1--32.
+
+\bibitem{mcfadden1974} McFadden, D. (1974). Conditional logit analysis of
+qualitative choice behavior. In P.~Zarembka (Ed.), \emph{Frontiers in
+Econometrics} (pp.~105--142). Academic Press.
+
+\bibitem{benakiva1985} Ben-Akiva, M., \& Lerman, S.~R. (1985). \emph{Discrete
+Choice Analysis: Theory and Application to Travel Demand}. MIT Press.
+
+\bibitem{freeman1977} Freeman, L.~C. (1977). A set of measures of centrality
+based on betweenness. \emph{Sociometry}, 40(1), 35--41.
+
+\bibitem{brandes2001} Brandes, U. (2001). A faster algorithm for betweenness
+centrality. \emph{Journal of Mathematical Sociology}, 25(2), 163--177.
+
+\bibitem{ester1996} Ester, M., Kriegel, H.-P., Sander, J., \& Xu, X. (1996). A
+density-based algorithm for discovering clusters in large spatial databases
+with noise. \emph{Proceedings of KDD-96}, 226--231.
+
+\bibitem{boeing2017} Boeing, G. (2017). OSMnx: A Python package to work with
+graph-theoretic OpenStreetMap street networks. \emph{Journal of Open Source
+Software}, 2(12), 215.
+
+\bibitem{burchell1978} Burchell, R.~W., \& Listokin, D. (1978). \emph{The
+Fiscal Impact Handbook: Estimating Local Costs and Revenues of Land
+Development}. Center for Urban Policy Research, Rutgers University.
+
+\bibitem{kotval2006} Kotval, Z., \& Mullin, J. (2006). \emph{Fiscal Impact
+Analysis: Methods, Cases, and Intellectual Debate}. Lincoln Institute of Land
+Policy working paper WP06ZK2.
+
+\bibitem{listokin2006} Listokin, D., Voicu, I., Dolphin, W., \& Camp, M.
+(2006). \emph{Who Lives in New Jersey Housing? Updated New Jersey Demographic
+Multipliers}. Center for Urban Policy Research, Rutgers University.
+
+\bibitem{blsces} U.S. Bureau of Labor Statistics. \emph{Consumer Expenditure
+Surveys}, 2023 tables. \url{https://www.bls.gov/cex/}
+
+\bibitem{nhts} Federal Highway Administration. \emph{National Household Travel
+Survey}, 2022. \url{https://nhts.ornl.gov/}
+
+\bibitem{hvs} U.S. Census Bureau. \emph{Housing Vacancies and Homeownership
+(CPS/HVS)}. \url{https://www.census.gov/housing/hvs/}
+
+\bibitem{cbecs} U.S. Energy Information Administration. \emph{Commercial
+Buildings Energy Consumption Survey (CBECS)}, 2018 building characteristics
+tables. \url{https://www.eia.gov/consumption/commercial/}
+
+\bibitem{ewing2010} Ewing, R., \& Cervero, R. (2010). Travel and the built
+environment: A meta-analysis. \emph{Journal of the American Planning
+Association}, 76(3), 265--294.
+
+\end{thebibliography}
+
+\end{document}

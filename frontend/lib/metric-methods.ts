@@ -33,13 +33,13 @@ export const METRIC_METHODS: MetricMethod[] = [
   {
     name: "Annual capture at a destination",
     description: "Estimates how much of the new spending individual businesses or commercial areas are likely to receive.",
-    method: "Huff model over individual retail POIs: destination probability; blended walk/drive impedance and CES category spending; named clusters are reporting rollups and on-site retail competes as a destination",
+    method: "Huff model over individual retail POIs: joint destination and mode choice with exponential travel-time decay, applied to CES category spending; named clusters are reporting rollups and on-site retail competes as a destination",
     assumptions: ["Destination attractiveness", "Walk impedance decay", "Mode share by spending category", "CES scaling factor"],
   },
   {
     name: "In-city capture share",
     description: "Shows what portion of new spending is expected to remain inside the city instead of flowing elsewhere.",
-    method: "Huff model over individual retail POIs: destination probability; blended walk/drive impedance and CES category spending; share of capture assigned to destinations inside the city boundary",
+    method: "Huff model over individual retail POIs: joint destination and mode choice with exponential travel-time decay; share of capture assigned to destinations inside the city boundary",
     assumptions: ["City boundary", "Destination attractiveness", "Walk impedance decay", "Mode share by spending category"],
   },
   {
@@ -142,7 +142,7 @@ export const METRIC_METHODS: MetricMethod[] = [
     name: "Annual service cost - naive per-capita method",
     description: "Provides a conservative upper estimate by assigning each new resident the city's current average service cost.",
     method: "New residents allocated the current general-fund expenditure per resident",
-    assumptions: ["New residents", "General-fund expenditure per resident", "Students per housing unit"],
+    assumptions: ["New residents", "General-fund expenditure per resident"],
   },
   {
     name: "Annual service cost - marginal framing",

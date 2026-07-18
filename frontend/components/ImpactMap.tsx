@@ -150,11 +150,13 @@ function HeatCanvas({
   points,
   radius,
   blur,
+  minOpacity = 0.55,
   clipZones,
 }: {
   points: HeatPoint[];
   radius: number;
   blur: number;
+  minOpacity?: number;
   clipZones?: GeoJSON.FeatureCollection;
 }) {
   const context = useLeafletContext();
@@ -163,7 +165,7 @@ function HeatCanvas({
       .heatLayer(points, {
         radius,
         blur,
-        minOpacity: 0.55,
+        minOpacity,
         maxZoom: 16,
         max: 1.0,
         gradient: VIRIDIS_GRADIENT,
@@ -182,7 +184,7 @@ function HeatCanvas({
       if (originalRedraw) layer._redraw = originalRedraw;
       container.removeLayer(layer);
     };
-  }, [context, points, radius, blur, clipZones]);
+  }, [context, points, radius, blur, minOpacity, clipZones]);
   return null;
 }
 
@@ -256,6 +258,7 @@ export default function ImpactMap({
   const capturePoints = layers.capture_points;
   const footTraffic = layers.foot_traffic_delta;
   const commercialRetailZones = layers.commercial_retail_zones;
+  const cityBoundary = layers.city_boundary;
 
   const defaultBounds: L.LatLngBoundsLiteral = [[38.83, -77.33], [38.87, -77.27]];
 
@@ -311,8 +314,8 @@ export default function ImpactMap({
     [capturePoints, captureScaleMax],
   );
   const captureBounds = useMemo(
-    () => boundsFor([site, capturePoints ?? clusters, commercialRetailZones], defaultBounds, 0.18),
-    [site, capturePoints, clusters, commercialRetailZones],
+    () => boundsFor([cityBoundary], defaultBounds, 0.04),
+    [cityBoundary],
   );
   const walkBounds = useMemo(
     () => boundsFor([site, walkPointsForBounds, footTraffic], defaultBounds, 0.12),
@@ -488,6 +491,7 @@ function WalkMap({
                   points={walkInHeat}
                   radius={22}
                   blur={16}
+                  minOpacity={0.75}
                   clipZones={commercialRetailZones}
                 />
               </LayerGroup>
@@ -568,7 +572,7 @@ function FootTrafficLayer({
             trips_per_day?: number;
             delta_pct?: number;
           };
-          return { color: viridis(flowScale(props)), weight: 3, opacity: 0.85 };
+          return { color: viridis(flowScale(props)), weight: 2.5, opacity: 0.55 };
         }}
         onEachFeature={(feature, layer) => {
           const props = (feature.properties ?? {}) as {
