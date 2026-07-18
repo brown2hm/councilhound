@@ -706,21 +706,15 @@ def run(spec, ctx, prior=None):
                      "sampled index of today's walkers, not calibrated "
                      "pedestrian counts.")
 
-    # route the walk-arriving dollars over the same street tree the trips use
-    dollar_amounts: dict = {}
-    for i, node in enumerate(dest["walk_nodes"]):  # excludes the own destination
-        if node in sub:
-            dollar_amounts[node] = dollar_amounts.get(node, 0.0) + float(walk_dollars[0][i])
-    dollar_flows = route_edge_amounts(sub, dest["walk_origin"], dollar_amounts)
     notes.append(
-        "Walk-in capture per business (and its street-routed form) is the "
-        "walk-arriving share of the NEW residents' spending under a joint "
-        "destination-and-mode choice: walking competes with driving per "
-        "destination, so businesses beyond practical walking range receive "
-        "effectively none of it and the rest of the spending arrives by car. "
-        "It is not total pedestrian commerce. Comparing a business's walk-in "
-        "capture to its total capture shows how much of its projected gain "
-        "depends on being within walking distance of the project.")
+        "Walk-in capture per business is the walk-arriving share of the NEW "
+        "residents' spending under a joint destination-and-mode choice: "
+        "walking competes with driving per destination, so businesses beyond "
+        "practical walking range receive effectively none of it and the rest "
+        "of the spending arrives by car. It is not total pedestrian commerce. "
+        "Comparing a business's walk-in capture to its total capture shows "
+        "how much of its projected gain depends on being within walking "
+        "distance of the project.")
 
     layers = {
         "site": {"type": "FeatureCollection", "features": [{
@@ -730,7 +724,6 @@ def run(spec, ctx, prior=None):
         "commercial_retail_zones": ctx.commercial_retail_zones,
         "foot_traffic_delta": _street_layer(sub, flows, "trips_per_day",
                                             secondary=pct, secondary_prop="delta_pct"),
-        "walk_dollars": _street_layer(sub, dollar_flows, "dollars_per_year", decimals=0),
     }
     result = ModuleResult(
         module="economic", metrics=metrics,

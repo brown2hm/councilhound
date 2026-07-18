@@ -4,6 +4,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import "leaflet.heat";
 import { useEffect, useMemo } from "react";
+import type { ReactNode } from "react";
 import { useLeafletContext } from "@react-leaflet/core";
 import {
   CircleMarker,
@@ -213,6 +214,38 @@ function captureHeatPoints(
     .map(({ coords: [lng, lat], value }): HeatPoint => [lat, lng, dollarT(value, scaleMax)]);
 }
 
+function pointFeaturesForValue(
+  source: GeoJSON.FeatureCollection | undefined,
+  key: string,
+  minValue = 0,
+): GeoJSON.FeatureCollection {
+  return {
+    type: "FeatureCollection",
+    features: (source?.features ?? []).filter((f) => {
+      const props = (f.properties ?? {}) as Record<string, unknown>;
+      return f.geometry.type === "Point" && typeof props[key] === "number" && props[key] > minValue;
+    }),
+  };
+}
+
+function boundsFor(
+  layers: Array<GeoJSON.FeatureCollection | undefined>,
+  fallback: L.LatLngBoundsLiteral,
+  pad: number,
+): L.LatLngBounds {
+  const b = L.latLngBounds([]);
+  for (const fc of layers) {
+    fc?.features.forEach((f) => {
+      try {
+        b.extend(L.geoJSON(f as GeoJSON.GeoJsonObject).getBounds());
+      } catch {
+        /* skip malformed feature */
+      }
+    });
+  }
+  return b.isValid() ? b.pad(pad) : L.latLngBounds(fallback);
+}
+
 export default function ImpactMap({
   layers,
 }: {
@@ -222,23 +255,9 @@ export default function ImpactMap({
   const clusters = layers.capture_clusters;
   const capturePoints = layers.capture_points;
   const footTraffic = layers.foot_traffic_delta;
-  const walkDollars = layers.walk_dollars;
   const commercialRetailZones = layers.commercial_retail_zones;
 
-  const bounds = useMemo(() => {
-    const b = L.latLngBounds([]);
-    const extend = (fc?: GeoJSON.FeatureCollection) =>
-      fc?.features.forEach((f) => {
-        try {
-          b.extend(L.geoJSON(f as GeoJSON.GeoJsonObject).getBounds());
-        } catch {
-          /* skip malformed feature */
-        }
-      });
-    extend(site);
-    extend(commercialRetailZones ?? clusters);
-    return b.isValid() ? b.pad(0.4) : L.latLngBounds([[38.83, -77.33], [38.87, -77.27]]);
-  }, [site, clusters, commercialRetailZones]);
+  const defaultBounds: L.LatLngBoundsLiteral = [[38.83, -77.33], [38.87, -77.27]];
 
   const maxCapture = useMemo(
     () =>
@@ -257,10 +276,6 @@ export default function ImpactMap({
   const captureScaleMax = useMemo(
     () => niceCeil(maxDollar(capturePoints ?? clusters, ["capture_usd", "annual_capture_usd"])),
     [capturePoints, clusters],
-  );
-  const walkScaleMax = useMemo(
-    () => niceCeil(maxDollar(walkDollars, ["dollars_per_year"])),
-    [walkDollars],
   );
 
   const emptyFc: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
@@ -291,6 +306,18 @@ export default function ImpactMap({
     [capturePoints, captureScaleMax, commercialRetailZones],
   );
   const hasWalkIn = walkInHeat.length > 0;
+  const walkPointsForBounds = useMemo(
+    () => pointFeaturesForValue(capturePoints, "walk_usd", captureScaleMax * 0.005),
+    [capturePoints, captureScaleMax],
+  );
+  const captureBounds = useMemo(
+    () => boundsFor([site, capturePoints ?? clusters, commercialRetailZones], defaultBounds, 0.18),
+    [site, capturePoints, clusters, commercialRetailZones],
+  );
+  const walkBounds = useMemo(
+    () => boundsFor([site, walkPointsForBounds, footTraffic], defaultBounds, 0.12),
+    [site, walkPointsForBounds, footTraffic],
+  );
 
   // trips styling for the optional street-lines overlay
   const flowScale = useMemo(() => {
@@ -313,11 +340,66 @@ export default function ImpactMap({
   }, [footTraffic]);
 
   return (
-    <div className="relative">
+    <div className="grid gap-4 lg:grid-cols-2">
+      <MapPanel title="Overall Economic Impact">
+        <CaptureMap
+          bounds={captureBounds}
+          site={site}
+          clusters={clusters}
+          maxCapture={maxCapture}
+          commercialRetailZones={commercialRetailZones}
+          spendingHeat={spendingHeat}
+          captureScaleMax={captureScaleMax}
+        />
+      </MapPanel>
+      <MapPanel title="Walk-Based Impact">
+        <WalkMap
+          bounds={walkBounds}
+          site={site}
+          footTraffic={footTraffic}
+          flowScale={flowScale}
+          commercialRetailZones={commercialRetailZones}
+          walkInHeat={walkInHeat}
+          hasWalkIn={hasWalkIn}
+          captureScaleMax={captureScaleMax}
+        />
+      </MapPanel>
+    </div>
+  );
+}
+
+function MapPanel({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div>
+      <h3 className="mb-2 text-sm font-semibold text-body">{title}</h3>
+      <div className="relative">{children}</div>
+    </div>
+  );
+}
+
+function CaptureMap({
+  bounds,
+  site,
+  clusters,
+  maxCapture,
+  commercialRetailZones,
+  spendingHeat,
+  captureScaleMax,
+}: {
+  bounds: L.LatLngBoundsExpression;
+  site?: GeoJSON.FeatureCollection;
+  clusters?: GeoJSON.FeatureCollection;
+  maxCapture: number;
+  commercialRetailZones?: GeoJSON.FeatureCollection;
+  spendingHeat: HeatPoint[];
+  captureScaleMax: number;
+}) {
+  return (
+    <>
       <MapContainer
         bounds={bounds}
         scrollWheelZoom={false}
-        className="h-[440px] w-full rounded-3xl border border-hairline"
+        className="h-[420px] w-full rounded-2xl border border-hairline"
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -333,26 +415,6 @@ export default function ImpactMap({
                 clipZones={commercialRetailZones}
               />
             </LayerGroup>
-          </LayersControl.Overlay>
-          {hasWalkIn && (
-            <LayersControl.Overlay name="Walk-in capture (heatmap)">
-              <LayerGroup>
-                <HeatCanvas
-                  points={walkInHeat}
-                  radius={22}
-                  blur={16}
-                  clipZones={commercialRetailZones}
-                />
-              </LayerGroup>
-            </LayersControl.Overlay>
-          )}
-          {walkDollars && (
-            <LayersControl.Overlay name="Walking $ routed on streets">
-              <WalkDollarsLayer walkDollars={walkDollars} scaleMax={walkScaleMax} />
-            </LayersControl.Overlay>
-          )}
-          <LayersControl.Overlay name="Foot traffic (trips/day)">
-            <FootTrafficLayer footTraffic={footTraffic} flowScale={flowScale} />
           </LayersControl.Overlay>
           <LayersControl.Overlay name="Cluster details">
             <ClusterMarkers clusters={clusters} maxCapture={maxCapture} />
@@ -375,16 +437,92 @@ export default function ImpactMap({
       </MapContainer>
       <div className="pointer-events-none absolute bottom-3 left-3 z-[500] rounded-xl border border-hairline bg-canvas/90 px-3 py-2 text-[11px] leading-relaxed text-muted">
         <DollarScaleRow
-          label={hasWalkIn ? "$ /business/yr (capture & walk-in)" : "$ captured /business/yr"}
+          label="$ captured /business/yr"
           scaleMax={captureScaleMax}
         />
         <span className="mr-3">
           <span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm border-2 border-[#1a3a3a] bg-white/60 align-middle" />
           project site
         </span>
-        <span>overlapping sources render brighter · layers top-right</span>
+        <span>overlapping sources render brighter</span>
       </div>
-    </div>
+    </>
+  );
+}
+
+function WalkMap({
+  bounds,
+  site,
+  footTraffic,
+  flowScale,
+  commercialRetailZones,
+  walkInHeat,
+  hasWalkIn,
+  captureScaleMax,
+}: {
+  bounds: L.LatLngBoundsExpression;
+  site?: GeoJSON.FeatureCollection;
+  footTraffic?: GeoJSON.FeatureCollection;
+  flowScale: (props: { trips_per_day?: number; delta_pct?: number }) => number;
+  commercialRetailZones?: GeoJSON.FeatureCollection;
+  walkInHeat: HeatPoint[];
+  hasWalkIn: boolean;
+  captureScaleMax: number;
+}) {
+  return (
+    <>
+      <MapContainer
+        bounds={bounds}
+        scrollWheelZoom={false}
+        className="h-[420px] w-full rounded-2xl border border-hairline"
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+        />
+        <LayersControl position="topright">
+          {hasWalkIn && (
+            <LayersControl.Overlay checked name="Walk-in capture (heatmap)">
+              <LayerGroup>
+                <HeatCanvas
+                  points={walkInHeat}
+                  radius={22}
+                  blur={16}
+                  clipZones={commercialRetailZones}
+                />
+              </LayerGroup>
+            </LayersControl.Overlay>
+          )}
+          <LayersControl.Overlay checked name="Foot traffic (trips/day)">
+            <FootTrafficLayer footTraffic={footTraffic} flowScale={flowScale} />
+          </LayersControl.Overlay>
+          {commercialRetailZones && (
+            <LayersControl.Overlay name="Commercial Retail zoning (CR)">
+              <GeoJSON
+                data={commercialRetailZones}
+                style={{ color: "#1a3a3a", weight: 1.5, dashArray: "5 4", fillOpacity: 0 }}
+              />
+            </LayersControl.Overlay>
+          )}
+        </LayersControl>
+        {site && (
+          <GeoJSON
+            data={site}
+            style={{ color: "#1a3a3a", weight: 2.5, fillColor: "#ffffff", fillOpacity: 0.35 }}
+          />
+        )}
+      </MapContainer>
+      <div className="pointer-events-none absolute bottom-3 left-3 z-[500] rounded-xl border border-hairline bg-canvas/90 px-3 py-2 text-[11px] leading-relaxed text-muted">
+        {hasWalkIn && (
+          <DollarScaleRow label="$ arriving on foot /business/yr" scaleMax={captureScaleMax} />
+        )}
+        <span className="mr-3">
+          <span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm border-2 border-[#1a3a3a] bg-white/60 align-middle" />
+          project site
+        </span>
+        <span>street color ranks new walk trips/day</span>
+      </div>
+    </>
   );
 }
 
@@ -410,32 +548,6 @@ function DollarScaleRow({ label, scaleMax }: { label: string; scaleMax: number }
       </span>
       <span>{label}</span>
     </div>
-  );
-}
-
-function WalkDollarsLayer({
-  walkDollars,
-  scaleMax,
-}: {
-  walkDollars: GeoJSON.FeatureCollection;
-  scaleMax: number;
-}) {
-  return (
-    <LayerGroup>
-      <GeoJSON
-        data={walkDollars}
-        style={(feature) => {
-          const dollars =
-            (feature?.properties as { dollars_per_year?: number })?.dollars_per_year ?? 0;
-          return { color: viridis(dollarT(dollars, scaleMax)), weight: 3.5, opacity: 0.85 };
-        }}
-        onEachFeature={(feature, layer) => {
-          const dollars =
-            (feature.properties as { dollars_per_year?: number })?.dollars_per_year ?? 0;
-          layer.bindTooltip(`${fmtDollars(dollars)}/yr in new pedestrian spending`);
-        }}
-      />
-    </LayerGroup>
   );
 }
 

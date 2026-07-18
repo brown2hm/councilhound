@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
+import "katex/dist/katex.min.css";
 import "./globals.css";
 import NavLinks from "@/components/NavLinks";
 

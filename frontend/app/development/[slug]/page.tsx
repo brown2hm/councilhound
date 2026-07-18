@@ -60,7 +60,7 @@ export default async function DevelopmentAnalysisPage({
   ].filter(Boolean);
 
   return (
-    <div className="mx-auto max-w-[860px] px-8 pb-16 pt-8">
+    <div className="mx-auto max-w-[1180px] px-8 pb-16 pt-8">
       <Link href="/development" className="text-sm font-semibold text-muted hover:text-ink">
         ← Development directory
       </Link>
@@ -125,19 +125,24 @@ export default async function DevelopmentAnalysisPage({
           <h2 className="mb-2 text-lg font-semibold">Where the effects land</h2>
           <ImpactMapClient layers={evaluation.map_layers} />
           <p className="mt-2 text-[12px] text-muted">
-            Layers (toggle top-right): spending captured and walk-in capture as
-            heatmaps modeled per business location — both on the same dollar scale, so
-            toggling between them shows how much of each business&apos;s projected gain
-            arrives on foot from the new development. Street overlays show the walking
-            dollars routed over sidewalks and walk trips/day. Named shopping areas are
-            rolled up for reporting, sized by dollars. Heatmaps are clipped to CR
-            (Commercial Retail) zoning.
+            The economic map shows total captured spending by business location and
+            named reporting clusters. The walk map uses a tighter extent around
+            walk-arriving capture and the street segments assigned new resident walk
+            trips. Dollar heatmaps are clipped to CR (Commercial Retail) zoning.
           </p>
         </section>
       )}
 
       <section className="mb-8">
         <Markdown>{evaluation.report_markdown}</Markdown>
+        {evaluation.metrics.length > 0 && (
+          <Link
+            href="/development/methods"
+            className="mt-4 inline-flex text-[13px] font-semibold underline underline-offset-4 hover:text-muted"
+          >
+            View metric methods and calculations →
+          </Link>
+        )}
       </section>
 
       {evaluation.narrative_notes.length > 0 && (

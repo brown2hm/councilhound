@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+.metric-formula .katex-display {
+  margin: 0;
+  text-align: left;
+}
+
+.metric-formula .katex-display > .katex {
+  text-align: left;
+}
+
 .map-pin-dot {
   display: block;
   border-radius: 9999px;
