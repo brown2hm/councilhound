@@ -387,5 +387,101 @@ def status():
             click.echo("entities: " + ", ".join(f"{t}={c}" for t, c in ents))
 
 
+# --- impact analysis (councilhound.impact) -------------------------------
+# LOCAL-RUN stages: heavy geo deps (requirements-impact.txt) + fairfaxva.gov
+# IP-blocking keep these out of the cloud `daily`/`catchup` flows.
+
+jurisdiction_option = click.option(
+    "--jurisdiction", default="fairfax_city_va", show_default=True,
+    help="jurisdiction config stem under ingestion/jurisdictions/",
+)
+
+
+@cli.command("impact-context")
+@jurisdiction_option
+@click.option("--refresh", default=None, metavar="LAYER",
+              help="delete + rebuild one layer (boundary|networks|census|lodes|pois|transit|parcels|all)")
+def impact_context(jurisdiction, refresh):
+    """Build/refresh the jurisdiction context cache (networks, census, POIs...)."""
+    from councilhound.impact.context.build import build_context
+
+    build_context(jurisdiction, refresh=refresh, echo=click.echo)
+
+
+@cli.command("impact-extract")
+@click.argument("slug")
+@jurisdiction_option
+@click.option("--force", is_flag=True, help="re-extract over an existing evaluation row")
+def impact_extract(slug, jurisdiction, force):
+    """Extract a ProjectSpec from a city project's documents (LLM + parcel resolution)."""
+    from councilhound.db.session import get_session
+    from councilhound.impact.evaluate import extract
+
+    with get_session() as session:
+        click.echo(extract(session, slug, jurisdiction=jurisdiction, force=force))
+
+
+@cli.command("impact-confirm")
+@click.argument("slug")
+@click.option("--file", "spec_path", type=click.Path(exists=True), default=None,
+              help="hand-edited spec YAML to confirm (defaults to the emitted one)")
+@click.option("--yes", is_flag=True, help="skip the interactive review prompt")
+def impact_confirm(slug, spec_path, yes):
+    """Human-in-the-loop gate: confirm an extracted ProjectSpec."""
+    from councilhound.db.session import get_session
+    from councilhound.impact.evaluate import confirm
+
+    with get_session() as session:
+        click.echo(confirm(session, slug, spec_path=spec_path, assume_yes=yes))
+
+
+@cli.command("impact-evaluate")
+@click.argument("slug")
+@click.option("--modules", "module_names", default=None,
+              help="comma-separated module list (default: economic,fiscal)")
+@click.option("--skip-synthesis", is_flag=True, help="stop after deterministic modules")
+@click.option("--force", is_flag=True, help="recompute even if already synthesized")
+def impact_evaluate(slug, module_names, skip_synthesis, force):
+    """Run analysis modules + report synthesis for a confirmed project."""
+    from councilhound.db.session import get_session
+    from councilhound.impact.evaluate import evaluate
+
+    modules = tuple(m.strip() for m in module_names.split(",")) if module_names else None
+    with get_session() as session:
+        click.echo(evaluate(session, slug, modules=modules,
+                            skip_synthesis=skip_synthesis, force=force))
+
+
+@cli.command("impact-setup-jurisdiction")
+@jurisdiction_option
+def impact_setup_jurisdiction(jurisdiction):
+    """Guided pinning of tax/budget rates + data-source URLs into the YAML."""
+    from councilhound.impact.setup import run_setup
+
+    run_setup(jurisdiction, echo=click.echo)
+
+
+@cli.command("impact-status")
+def impact_status():
+    """List impact evaluations and their lifecycle state."""
+    from sqlalchemy import select
+
+    from councilhound.db.models import CityProject, ProjectEvaluation
+    from councilhound.db.session import get_session
+
+    with get_session() as session:
+        rows = session.execute(
+            select(CityProject.external_slug, CityProject.name, ProjectEvaluation)
+            .join(ProjectEvaluation, ProjectEvaluation.city_project_id == CityProject.id)
+            .order_by(CityProject.external_slug)
+        ).all()
+        if not rows:
+            click.echo("no evaluations yet — run impact-extract <slug>")
+            return
+        for slug, name, ev in rows:
+            stamp = ev.synthesized_at or ev.computed_at or ev.confirmed_at or ev.created_at
+            click.echo(f"{slug:40} {ev.status:12} {stamp:%Y-%m-%d %H:%M} {name}")
+
+
 if __name__ == "__main__":
     cli()

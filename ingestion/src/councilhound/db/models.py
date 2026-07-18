@@ -176,6 +176,36 @@ class CityProject(Base):
     synced_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
+class ProjectEvaluation(Base):
+    """Impact-analysis lifecycle + artifacts for one city project (the
+    councilhound.impact subsystem). Written by the LOCAL impact-* CLI stages
+    (heavy geo deps + fairfaxva.gov IP-blocking keep this off the cloud
+    jobs); the DB is the only store shared with the cloud API, so everything
+    the frontend needs — including size-capped map GeoJSON — lives here.
+    Lifecycle: extracted -> confirmed (human gate) -> computed -> synthesized."""
+    __tablename__ = "project_evaluations"
+
+    id = Column(Integer, primary_key=True)
+    city_project_id = Column(Integer, ForeignKey("city_projects.id", ondelete="CASCADE"),
+                             nullable=False, unique=True)
+    status = Column(String, nullable=False, default="extracted")
+    spec = Column(JSON)  # ProjectSpec dump incl. per-field confidence + source quotes
+    extraction_model = Column(String)
+    extraction_prompt_version = Column(String)
+    confirmed_at = Column(DateTime(timezone=True))
+    module_results = Column(JSON)  # [ModuleResult dumps] — metrics w/ provenance + bounds
+    map_layers = Column(JSON)  # {label: GeoJSON FeatureCollection}, size-capped at write
+    assumptions = Column(JSON)  # deduped Assumption dumps (deterministic report appendix)
+    sources = Column(JSON)  # deduped Provenance dumps (deterministic report appendix)
+    report_markdown = Column(Text)
+    report_model = Column(String)
+    report_prompt_version = Column(String)
+    computed_at = Column(DateTime(timezone=True))
+    synthesized_at = Column(DateTime(timezone=True))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
 class EntityProfile(Base):
     """LLM-synthesized rollup for an entity's detail page: overall summary,
     open questions / options on the table, and commentary binned per council

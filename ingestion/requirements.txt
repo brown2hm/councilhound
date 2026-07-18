@@ -15,3 +15,7 @@ yt-dlp>=2026.1.1
 tenacity>=8.2
 click>=8.1
 python-dotenv>=1.0
+# Light deps of councilhound.impact.* (schemas/config only — the heavy geo
+# stack lives in requirements-impact.txt and is local-run only)
+pydantic>=2.7
+pyyaml>=6.0
