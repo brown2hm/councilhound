@@ -198,6 +198,53 @@ def _demand(spec, ctx, a: dict[str, Assumption], site_pt_4326):
 
 # --- destinations: every retail POI, individually ---------------------------
 
+INTERSECTION_NAME_RADIUS_FT = 1_500.0  # ~450 m: how far a cluster may borrow a name
+
+
+def _intersection_index(ctx, crs):
+    """(cKDTree, labels) over walk-graph nodes where two or more NAMED
+    streets meet — used to give capture clusters recognizable names like
+    'Fairfax Blvd & Chain Bridge Rd' instead of an arbitrary member
+    business."""
+    import numpy as np
+    import osmnx as ox
+    from scipy.spatial import cKDTree
+
+    graph = ctx.walk_graph
+    names_by_node: dict = {}
+    for u, v, data in graph.edges(data=True):
+        name = data.get("name")
+        if not name:
+            continue
+        for street in (name if isinstance(name, list) else [name]):
+            if isinstance(street, str) and street.strip():
+                names_by_node.setdefault(u, set()).add(street.strip())
+                names_by_node.setdefault(v, set()).add(street.strip())
+
+    nodes = ox.convert.graph_to_gdfs(graph, edges=False)[["geometry"]].to_crs(crs)
+    coords, labels = [], []
+    for node, streets in names_by_node.items():
+        if len(streets) < 2 or node not in nodes.index:
+            continue
+        point = nodes.loc[node].geometry
+        two = sorted(streets)[:2]
+        coords.append((point.x, point.y))
+        labels.append(" & ".join(two))
+    if not coords:
+        return None
+    return cKDTree(np.asarray(coords)), labels
+
+
+def _intersection_name(index, x: float, y: float) -> str | None:
+    if index is None:
+        return None
+    tree, labels = index
+    distance, i = tree.query((x, y))
+    if distance > INTERSECTION_NAME_RADIUS_FT:
+        return None
+    return labels[int(i)]
+
+
 def _destinations(ctx, site_pt_4326, site_projected, own_retail_equiv):
     """Per-POI destination table + cluster rollup metadata.
 
@@ -222,15 +269,19 @@ def _destinations(ctx, site_pt_4326, site_projected, own_retail_equiv):
     labels = DBSCAN(eps=DBSCAN_EPS_M * M_TO_FT,
                     min_samples=DBSCAN_MIN_SAMPLES).fit_predict(coords)
 
+    intersections = _intersection_index(ctx, crs)
     cluster_meta: dict[int, dict] = {}
     for label in set(labels):
         if label < 0:
             continue
         members = np.where(labels == label)[0]
         cx, cy = float(coords[members, 0].mean()), float(coords[members, 1].mean())
-        d2 = ((coords[members, 0] - cx) ** 2 + (coords[members, 1] - cy) ** 2)
-        anchor = retail.iloc[members[int(np.argmin(d2))]]["name"]
-        cluster_meta[int(label)] = {"name": f"{anchor} area", "x": cx, "y": cy,
+        name = _intersection_name(intersections, cx, cy)
+        if name is None:
+            # no named intersection nearby: fall back to the central business
+            d2 = ((coords[members, 0] - cx) ** 2 + (coords[members, 1] - cy) ** 2)
+            name = f"{retail.iloc[members[int(np.argmin(d2))]]['name']} area"
+        cluster_meta[int(label)] = {"name": name, "x": cx, "y": cy,
                                     "poi_count": int(len(members)), "own": False}
     cluster_meta[-2] = {"name": "Project ground-floor retail (this project)",
                         "x": float(site_projected.x), "y": float(site_projected.y),

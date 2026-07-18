@@ -169,9 +169,10 @@ cross-module inputs to the meals-tax and sales-tax lines.
 
 \paragraph{Reporting rollup.} Businesses are grouped for display by DBSCAN
 \cite{ester1996} ($\varepsilon = 150$\,m, $\mathrm{minPts} = 3$) and each
-cluster is labeled with the name of the member business nearest its centroid;
-cluster values are sums of member-business captures and play no role in the
-allocation itself.
+cluster is labeled by the named street intersection nearest its centroid
+(from the OSM walk graph, within $\sim$450\,m), falling back to the central
+member business where no named intersection is close; cluster values are sums
+of member-business captures and play no role in the allocation itself.
 
 \section{Walking activity}
 

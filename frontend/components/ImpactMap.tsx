@@ -634,7 +634,7 @@ function ClusterMarkers({
               {props.own
                 ? " · this project"
                 : props.poi_count
-                  ? ` · ${props.poi_count} businesses (named for the one nearest the cluster center)`
+                  ? ` · ${props.poi_count} businesses near this intersection`
                   : ""}
             </Tooltip>
           </CircleMarker>
