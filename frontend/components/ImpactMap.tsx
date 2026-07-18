@@ -193,7 +193,12 @@ function captureHeatPoints(
   valueKeys: string[],
   scaleMax: number,
   zones?: GeoJSON.FeatureCollection,
+  minValue = 0,
 ): HeatPoint[] {
+  // minValue guards against the additive-kernel artifact: hundreds of
+  // near-zero points in a dense cluster would otherwise SUM to a bright
+  // blob, misreading as real dollars (bit us on the walk-in layer, where
+  // distant businesses each get a sliver)
   return source.features
     .filter((f) => f.geometry.type === "Point")
     .map((f) => {
@@ -204,7 +209,7 @@ function captureHeatPoints(
         value: key ? (props[key] as number) : 0,
       };
     })
-    .filter(({ coords, value }) => value > 0 && pointInZones(coords, zones))
+    .filter(({ coords, value }) => value > minValue && pointInZones(coords, zones))
     .map(({ coords: [lng, lat], value }): HeatPoint => [lat, lng, dollarT(value, scaleMax)]);
 }
 
@@ -280,6 +285,7 @@ export default function ImpactMap({
         ["walk_usd"],
         captureScaleMax,
         commercialRetailZones,
+        captureScaleMax * 0.005, // drop the long near-zero tail (see above)
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [capturePoints, captureScaleMax, commercialRetailZones],

@@ -267,9 +267,12 @@ def _destinations(ctx, site_pt_4326, site_projected, own_retail_equiv):
 
 def _capture(dest, spend, a):
     """Per-destination capture and walk-arriving dollars (value/low/high),
-    plus in-city share accumulators. Probabilities per category sum to 1, so
-    total capture = total spend and total walk dollars = sum(spend x walk
-    share) — both invariants are pinned by unit tests."""
+    plus in-city share accumulators, from a JOINT destination+mode choice.
+
+    Invariants pinned by unit tests: total capture = total spend (the joint
+    probabilities sum to 1); walk dollars <= spend x walk preference, with
+    equality only when every destination is at zero travel time — dollars
+    only arrive on foot where walking actually competes with driving."""
     import numpy as np
 
     n = dest["n"]
@@ -287,19 +290,16 @@ def _capture(dest, spend, a):
             (a["beta_walk"].high, ws.low, spend[category].low),
             (a["beta_walk"].low, ws.high, spend[category].high),
         )):
-            p = huff.blended_probabilities(attractiveness, dest["walk_min"],
-                                           dest["drive_min"], walk_share=ws_value,
-                                           alpha=ALPHA, beta_walk=beta,
-                                           beta_drive=BETA_DRIVE)
-            capture[slot] += huff.allocate_spend(spend_value, p)
-            # walk-mode component only: the dollars that arrive on foot
-            p_walk = huff.huff_probabilities(attractiveness, dest["walk_min"],
-                                             alpha=ALPHA, beta=beta)
-            walk_dollars[slot] += huff.allocate_spend(spend_value * ws_value, p_walk)
-            in_mass = p[dest["in_city"]].sum()
-            share_all[slot] += (in_mass, p.sum())
+            p_total, p_walk = huff.joint_mode_probabilities(
+                attractiveness, dest["walk_min"], dest["drive_min"],
+                walk_pref=ws_value, alpha=ALPHA, beta_walk=beta,
+                beta_drive=BETA_DRIVE)
+            capture[slot] += huff.allocate_spend(spend_value, p_total)
+            walk_dollars[slot] += huff.allocate_spend(spend_value, p_walk)
+            in_mass = p_total[dest["in_city"]].sum()
+            share_all[slot] += (in_mass, p_total.sum())
             if category == "restaurant_bar":
-                share_food[slot] += (in_mass, p.sum())
+                share_food[slot] += (in_mass, p_total.sum())
     return capture, walk_dollars, share_food, share_all
 
 
@@ -631,26 +631,27 @@ def run(spec, ctx, prior=None):
                      "originated on-site today is assumed negligible relative to "
                      "the new residential demand.")
 
-    # walking expenditures: the walk-mode share of capture, totaled exactly
-    # (per-category walk probabilities sum to 1, so the per-POI allocation
-    # sums back to spend x walk share) and routed over the streets below
-    walk_total = None
-    for category in RETAIL_CLASSES:
-        term = spend[category] * Interval.from_assumption(_walk_share_for(category, a))
-        walk_total = term if walk_total is None else walk_total + term
+    # walking expenditures: the walk-arriving side of the joint destination+
+    # mode choice. The total is ENDOGENOUS — walking loses to driving for far
+    # destinations, so this is less than spend x walk preference and
+    # concentrates on businesses actually within walking range.
+    walk_slot_sums = [float(walk_dollars[slot].sum()) for slot in range(3)]
+    walk_total = Interval(walk_slot_sums[0],
+                          min(walk_slot_sums), max(walk_slot_sums))
     ces_mode_assumptions = [a["walk_share_neighborhood"], a["walk_share_comparison"],
                             a["walk_share_grocery_entertainment"], a["ces_scale"]]
     metrics.append(metric(
         "New annual spending arriving on foot", walk_total, "$/yr",
-        [ces_prov], ces_mode_assumptions,
-        "sum over categories of spend x walk mode share; allocated per business "
-        "by walk-time Huff probabilities", headline=True))
+        [ces_prov], [*ces_mode_assumptions, a["beta_walk"]],
+        "walk-mode share of the joint destination+mode Huff choice, summed "
+        "over businesses; walking loses to driving with walk time, so the "
+        "remainder of the mode-split budget arrives by car", headline=True))
     metrics.append(MetricValue(
         name="Spending arriving on foot at project's own retail",
         value=float(walk_dollars[0][-1]), unit="$/yr",
         low=float(walk_dollars[1][-1]), high=float(walk_dollars[2][-1]),
         provenance=[ces_prov],
-        method="walk-mode Huff allocation at the own-retail destination",
+        method="walk-mode share of the joint Huff choice at the own-retail destination",
         assumptions=["own_retail_sqft_per_equiv_poi", "beta_walk",
                      "walk_share_neighborhood"],
     ))
@@ -667,14 +668,15 @@ def run(spec, ctx, prior=None):
     metrics.append(metric(
         "Implied spending per resident walk trip", per_trip, "$/trip",
         [ces_prov], [a["walk_trips_per_resident_day"], *ces_mode_assumptions],
-        "walking spend total / (daily walk trips x 365) — consistency check "
-        "between the mode-split and trip-rate assumptions"))
-    if not (2.0 <= per_trip.value <= 60.0):
+        "walk-arriving spend total / (daily walk trips x 365); trips count ALL "
+        "walking (exercise, transit access, ...), not only shopping, so a few "
+        "dollars per average trip implies a plausible $5-15 per shopping trip"))
+    if not (0.25 <= per_trip.value <= 30.0):
         notes.append(
             f"CONSISTENCY FLAG: implied spending per walk trip is "
-            f"${per_trip.value:,.2f}, outside the plausible $2-60 range — the "
-            "mode-split and walk-trip-rate assumptions disagree; revisit them "
-            "before leaning on the walking-expenditure figures.")
+            f"${per_trip.value:,.2f}, outside the plausible $0.25-30 range — "
+            "the mode-split and walk-trip-rate assumptions disagree; revisit "
+            "them before leaning on the walking-expenditure figures.")
     trips_prov = prov("Derived: new residents x NHTS walking trip rate",
                       "https://nhts.ornl.gov", "2022")
     osm_prov = prov("OpenStreetMap walk network + ACS population + merged POI layer",
@@ -710,11 +712,13 @@ def run(spec, ctx, prior=None):
     dollar_flows = route_edge_amounts(sub, dest["walk_origin"], dollar_amounts)
     notes.append(
         "Walk-in capture per business (and its street-routed form) is the "
-        "walk-arriving share of the NEW residents' spending — not total "
-        "pedestrian commerce, and not incremental sales (some walk-arriving "
-        "dollars would otherwise have arrived by car). Comparing a business's "
-        "walk-in capture to its total capture shows how much of its projected "
-        "gain depends on being within walking distance of the project.")
+        "walk-arriving share of the NEW residents' spending under a joint "
+        "destination-and-mode choice: walking competes with driving per "
+        "destination, so businesses beyond practical walking range receive "
+        "effectively none of it and the rest of the spending arrives by car. "
+        "It is not total pedestrian commerce. Comparing a business's walk-in "
+        "capture to its total capture shows how much of its projected gain "
+        "depends on being within walking distance of the project.")
 
     layers = {
         "site": {"type": "FeatureCollection", "features": [{

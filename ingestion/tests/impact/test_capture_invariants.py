@@ -39,18 +39,43 @@ def test_capture_sums_to_spend_per_slot():
         assert capture[slot].sum() == pytest.approx(expected, rel=1e-9)
 
 
-def test_walk_dollars_sum_to_spend_times_walk_share():
+def test_walk_dollars_bounded_by_mode_split_budget():
+    """Joint mode choice: walking loses to driving with distance, so walk
+    dollars stay strictly below spend x walk preference when travel costs
+    anything…"""
     from councilhound.impact.modules.economic import _walk_share_for
 
     a = _assumptions(_Ctx())
     spend = _spend()
     _, walk_dollars, _, _ = _capture(_dest(), spend, a)
-    for slot, spend_pick, ws_pick in ((0, "value", "value"), (1, "low", "low"),
-                                      (2, "high", "high")):
-        expected = sum(getattr(spend[c], spend_pick)
-                       * getattr(_walk_share_for(c, a), ws_pick)
-                       for c in RETAIL_CLASSES)
-        assert walk_dollars[slot].sum() == pytest.approx(expected, rel=1e-9)
+    budget = sum(spend[c].value * _walk_share_for(c, a).value for c in RETAIL_CLASSES)
+    assert 0 < walk_dollars[0].sum() < budget
+
+
+def test_walk_dollars_equal_budget_at_zero_travel_time():
+    """…and equal it exactly when every destination is at t=0 (the walk
+    preference is defined as the zero-impedance walk share)."""
+    from councilhound.impact.modules.economic import _walk_share_for
+
+    a = _assumptions(_Ctx())
+    spend = _spend()
+    dest = _dest()
+    dest["walk_min"][:] = 0.0
+    dest["drive_min"][:] = 0.0
+    _, walk_dollars, _, _ = _capture(dest, spend, a)
+    budget = sum(spend[c].value * _walk_share_for(c, a).value for c in RETAIL_CLASSES)
+    assert walk_dollars[0].sum() == pytest.approx(budget, rel=1e-9)
+
+
+def test_far_destinations_get_effectively_no_walk_dollars():
+    a = _assumptions(_Ctx())
+    dest = _dest()
+    dest["walk_min"][2] = 90.0  # a 90-minute walk; drive stays short
+    _, walk_dollars, _, _ = _capture(dest, _spend(), a)
+    capture, _, _, _ = _capture(dest, _spend(), a)
+    # that business still captures (by car) but walk-in is a sliver of it
+    assert capture[0][2] > 0
+    assert walk_dollars[0][2] < 0.01 * capture[0][2]
 
 
 def test_walk_dollars_never_exceed_capture_totals():
