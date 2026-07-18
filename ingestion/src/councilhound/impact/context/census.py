@@ -22,6 +22,8 @@ log = logging.getLogger(__name__)
 ACS_TABLES = {
     "B01003_001E": "population",
     "B19013_001E": "median_hh_income",
+    "B19025_001E": "aggregate_hh_income",  # with B11001: mean income (better than median x count)
+    "B11001_001E": "households",
     "B25010_001E": "avg_hh_size",
     "B25010_003E": "avg_hh_size_renter",
     "B25044_001E": "hh_total_tenure",

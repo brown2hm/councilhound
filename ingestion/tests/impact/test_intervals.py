@@ -45,6 +45,19 @@ def test_chained_formula_propagation():
     assert res.high == pytest.approx(261 * 0.97 * 2.3)
 
 
+def test_power_monotonic_endpoints():
+    r = Interval(1.5, 1.2, 1.8)
+    p = r ** 0.45
+    assert p.value == pytest.approx(1.5 ** 0.45)
+    assert p.low == pytest.approx(1.2 ** 0.45)
+    assert p.high == pytest.approx(1.8 ** 0.45)
+    assert (r ** 0).value == 1.0
+    with pytest.raises(ValueError):
+        Interval(0.5, -0.1, 1.0) ** 0.5
+    with pytest.raises(ValueError):
+        r ** -1.0
+
+
 def test_sensitivity_ranking_orders_by_impact():
     a1 = Assumption(key="occupancy", value=0.95, low=0.90, high=0.97, basis="b", rationale="r")
     a2 = Assumption(key="hh_size", value=2.0, low=1.7, high=2.3, basis="b", rationale="r")

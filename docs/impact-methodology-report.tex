@@ -61,11 +61,12 @@ evidence, not forecasts.
 \begin{tabular}{ll}
 $U$        & proposed dwelling units (extracted from project documents) \\
 $\rho$     & occupancy rate at stabilization (\assum{occupancy\_rate}) \\
-$\bar{s}$  & average renter household size (ACS B25010, population-weighted) \\
-$y$        & median household income of the site's census tract (ACS B19013) \\
+$\bar{s}$  & persons per occupied multifamily unit (\assum{avg\_hh\_size\_multifamily}) \\
+$y$        & mean household income of the site's census tract (ACS B19025/B11001) \\
 $\pi$      & new-construction income premium (\assum{income\_premium\_new\_construction}) \\
 $e_c$      & CES average annual expenditure for category $c$ (BLS CE 2023) \\
 $y_{\mathrm{CES}}$ & CES average pre-tax income per consumer unit (\$101{,}805, 2023) \\
+$\varepsilon_c$ & expenditure--income elasticity for category $c$ (Engel scaling) \\
 $\kappa$   & CES scaling factor (\assum{ces\_scale}) \\
 $A_j$      & attractiveness of destination $j$ (POI count~$=1$ per business) \\
 $t^w_j,\ t^d_j$ & walk / drive travel time (minutes) from the site to $j$ \\
@@ -91,26 +92,34 @@ N_{hh}  &= U \cdot \rho \\
 N_{res} &= N_{hh} \cdot \bar{s}
 \end{align}
 Occupancy at stabilization is benchmarked against the Census Housing Vacancies
-and Homeownership series \cite{hvs}; $\bar{s}$ is estimated from ACS B25010
-(renter-occupied) over the city's populated block groups with population
-weighting, carried with a $\pm 0.3$ sensitivity band. \emph{Limitation:} this
-tenure-level average is blind to unit mix; bedroom-mix demographic multipliers
-in the tradition of Listokin et al.~\cite{listokin2006} would lower resident
-estimates for studio/one-bedroom-heavy multifamily and are the recommended
-refinement (\S\ref{sec:limitations}).
+and Homeownership series \cite{hvs}. Household size uses a multifamily
+bedroom-mix demographic multiplier in the tradition of Listokin et
+al.~\cite{listokin2006} ($\bar{s} = 1.8$, range 1.5--2.2, for a typical
+studio/1BR/2BR mix): the ACS B25010 tenure-level renter average
+($\approx 3.1$ locally) was evaluated and rejected as an estimator because it
+is dominated by single-family renter households and is blind to unit mix.
+When a project's bedroom mix is known, the multiplier should be set from it
+(\S\ref{sec:limitations}).
 
 \subsection{Aggregate income and category spending}
 \begin{align}
-Y   &= N_{hh} \cdot y \cdot \pi \\
-S_c &= Y \cdot \frac{e_c}{y_{\mathrm{CES}}} \cdot \kappa
+Y   &= N_{hh} \cdot y \cdot \pi, \qquad r = \frac{y\,\pi}{y_{\mathrm{CES}}} \\
+S_c &= N_{hh} \cdot e_c \cdot r^{\,\varepsilon_c} \cdot \kappa
+\label{eq:engel}
 \end{align}
-Tract selection follows the site polygon; when tract medians are suppressed the
-model falls back to the citywide population-weighted mean and records the
-substitution. Category shares come from the BLS Consumer Expenditure Survey
-2023 tables \cite{blsces}, income-scaled linearly from the CES average
-consumer unit. Linear scaling overstates necessity spending at high incomes
-(Engel effects visible in the CE income-quintile tables); $\kappa$'s
-$\pm 15\%$ band partially absorbs this (\S\ref{sec:limitations}).
+The tract income $y$ is the \emph{mean} (ACS aggregate household income
+B19025 divided by households B11001, summed over the site tract's block
+groups) --- the correct estimator for total purchasing power, since
+median~$\times$~count understates aggregate income under right-skewed
+distributions. When the aggregate tables are suppressed the model falls back
+to the population-weighted median and records the substitution. Category
+spending uses BLS Consumer Expenditure Survey 2023 levels \cite{blsces}
+scaled by the income ratio $r$ raised to a per-category expenditure
+elasticity $\varepsilon_c$ (grocery 0.45, restaurant/bar 0.85, comparison
+0.95, convenience 0.60, personal services 0.90, entertainment 1.05),
+consistent with the Engel gradients in the CE income-quintile tables:
+necessity spending grows sublinearly with income, so a high-income tract no
+longer implies proportionally more grocery spending.
 
 \section{Retail capture: joint destination--mode choice}
 \label{sec:capture}
@@ -288,7 +297,7 @@ that touched it.
 Key & Value & Range & Basis \\
 \midrule
 \assum{occupancy\_rate} & 0.95 & 0.90--0.97 & stabilized MF occupancy; cf.\ HVS vacancy \cite{hvs} \\
-\assum{avg\_hh\_size\_renter} & ACS-derived & $\pm 0.3$ & ACS B25010 renter-occupied, pop-weighted \\
+\assum{avg\_hh\_size\_multifamily} & 1.8 & 1.5--2.2 & bedroom-mix multipliers \cite{listokin2006} \\
 \assum{income\_premium\_new\_construction} & 1.125 & 1.0--1.25 & screening premium, stated openly \\
 \assum{ces\_scale} & 1.0 & 0.85--1.15 & CES national-average drift allowance \cite{blsces} \\
 \assum{beta\_walk} (min$^{-1}$) & 0.15 & 0.07--0.15 & impedance decay; set to top of band (2026-07) \\
@@ -296,7 +305,7 @@ $\beta_d$ (min$^{-1}$, fixed) & 0.15 & --- & drive impedance decay \\
 \assum{walk\_share\_neighborhood} & 0.60 & 0.40--0.80 & zero-impedance walk preference \\
 \assum{walk\_share\_comparison} & 0.10 & 0.00--0.30 & comparison goods travel by car \\
 \assum{walk\_share\_grocery\_entertainment} & 0.30 & 0.10--0.50 & interpolated \\
-\assum{walk\_trips\_per\_resident\_day} & 2.0 & 1.0--3.0 & see calibration flag, \S\ref{sec:limitations} \\
+\assum{walk\_trips\_per\_resident\_day} & 1.0 & 0.5--2.0 & NHTS metro rates + walkability uplift \cite{nhts, ewing2010} \\
 \assum{sqft\_per\_office\_job} & 300 & 200--450 & planning standard; cf.\ CBECS \cite{cbecs} \\
 \assum{sqft\_per\_retail\_job} & 500 & 400--700 & planning standard; cf.\ CBECS \cite{cbecs} \\
 \assum{own\_retail\_sqft\_per\_equiv\_poi} & 2{,}000 & 1{,}500--3{,}000 & typical inline suite size \\
@@ -357,26 +366,31 @@ fixed seed; comp lookback 15 years.
 \section{Known limitations and audit notes}
 \label{sec:limitations}
 
+Four limitations identified in the July 2026 audit have been addressed in this
+version; their adopted resolutions and residual caveats:
 \begin{enumerate}
-\item \textbf{Household size is unit-mix-blind.} ACS renter-average
-      $\bar{s} \approx 3.1$ for this city likely overstates residents of a
-      studio/1BR/2BR multifamily building; bedroom-mix multipliers
-      \cite{listokin2006} typically imply 1.5--2.1. Resident-scaled quantities
-      (spending, walk trips, per-capita costs) inherit this bias; the naive-cost
-      side inflates faster than revenue, making the fiscal range conservative.
-\item \textbf{Median $\times$ households $\neq$ aggregate income.} Using tract
-      B19013 understates aggregate income under right-skewed distributions; ACS
-      B19025 (aggregate income) or mean income would be the better estimator.
-\item \textbf{Linear CES scaling.} Category spending scales linearly with
-      income; Engel effects mean necessity categories are overstated at high
-      incomes. Income-quintile CE tables would refine this.
-\item \textbf{Walk-trip rate calibration flag.} $\tau = 2.0$ trips/resident/day
-      exceeds national NHTS person-level walking rates (roughly 0.3--0.7 in
-      metropolitan samples \cite{nhts}); walkable mixed-use contexts run higher,
-      but 2.0 should be treated as an upper-range choice pending local evidence.
-      The foot-traffic \emph{percentage} is unaffected ($\tau$ cancels), and
-      walk-in dollars are independent of $\tau$; the trips metric and street-flow
-      magnitudes scale with it.
+\item \textbf{Household size (addressed).} The unit-mix-blind ACS renter
+      average ($\approx 3.1$) was replaced by a multifamily bedroom-mix
+      multiplier, $\bar{s} = 1.8$ [1.5--2.2] \cite{listokin2006}.
+      \emph{Residual:} the multiplier assumes a typical studio/1BR/2BR mix;
+      when a project's actual bedroom program is extracted it should set
+      $\bar{s}$ directly.
+\item \textbf{Aggregate income (addressed).} Tract income now uses the mean
+      (B19025/B11001) rather than median~$\times$~households, with a median
+      fallback under suppression. \emph{Residual:} tract means still smooth
+      over building-level differences; the new-construction premium carries
+      that uncertainty.
+\item \textbf{CES income scaling (addressed).} Category spending scales by
+      $r^{\varepsilon_c}$ per Equation~\eqref{eq:engel} instead of linearly.
+      \emph{Residual:} the elasticities are national approximations read from
+      CE quintile gradients, not locally estimated.
+\item \textbf{Walk-trip rate (addressed).} $\tau$ reduced from 2.0 to 1.0
+      [0.5--2.0], anchored to NHTS metro person-level walking rates with a
+      walkability uplift consistent with the built-environment literature
+      \cite{nhts, ewing2010}. The foot-traffic \emph{percentage} is unaffected
+      ($\tau$ cancels) and walk-in dollars are independent of $\tau$; trips and
+      street-flow magnitudes scale with it. \emph{Residual:} local counts
+      remain the real calibration.
 \item \textbf{IIA.} The joint logit imposes proportional substitution across all
       (destination, mode) pairs; a nested structure would be more standard.
 \item \textbf{One-sided $\beta_w$ band.} The central value sits at the top of

@@ -140,8 +140,7 @@ def run(spec, ctx, prior=None):
             metrics.append(metric(
                 "Projected assessed value", projected_av, "$",
                 [comp_prov], [a["commercial_value_per_sqft"]],
-                "median comp $/unit x units (25th-75th pct bounds) + retail sqft x $/sqft",
-                headline=True))
+                "median comp $/unit x units (25th-75th pct bounds) + retail sqft x $/sqft"))
         elif comps is not None:
             notes.append(f"LOW CONFIDENCE: only {len(comps)} multifamily comps found "
                          "(<3) — projected value not computed; extend the lookback or "
@@ -152,15 +151,14 @@ def run(spec, ctx, prior=None):
         projected_tax = projected_av * (re_rate.value / 100.0)
         metrics.append(metric("Projected real estate tax", projected_tax, "$/yr",
                               [comp_prov, rate_prov], [a["commercial_value_per_sqft"]],
-                              "projected assessed value x RE rate / 100", headline=True))
+                              "projected assessed value x RE rate / 100"))
         if site_av is not None:
             metrics.append(metric("Real estate tax increase", projected_tax - site_av * (re_rate.value / 100.0),
                                   "$/yr", [comp_prov, rate_prov, site_prov], [],
-                                  "projected minus current RE tax"))
+                                  "projected minus current RE tax", headline=True))
         if acres:
             metrics.append(metric("Projected value per acre", projected_av * (1 / acres),
-                                  "$/acre", [comp_prov], [], "projected AV / site acres",
-                                  headline=True))
+                                  "$/acre", [comp_prov], [], "projected AV / site acres"))
 
     households_m = _prior_metric(prior, "New households")
     pp_rate = _rate(cfg, "tax.personal_property_per_household", notes)
@@ -182,7 +180,7 @@ def run(spec, ctx, prior=None):
             "Meals tax on captured in-city dining", meals_base * meals_rate.value, "$/yr",
             [prov("City meals tax rate", meals_rate.source or "", meals_rate.fy or "")],
             [], "restaurant spending x in-city capture share x meals tax rate "
-                "(cross-module link from the economic Huff run)", headline=True))
+                "(cross-module link from the economic Huff run)"))
     elif meals_rate and not food_away_m:
         notes.append("Meals tax not computed: economic module results unavailable")
 
@@ -266,7 +264,8 @@ def run(spec, ctx, prior=None):
                 metrics.append(metric(
                     f"Net annual fiscal impact — {method_name}", net, "$/yr",
                     [budget_prov], [a["marginal_cost_factor"]],
-                    f"incremental new recurring revenue minus service cost ({note})"))
+                    f"incremental new recurring revenue minus service cost ({note})",
+                    headline=True))
             net_low = revenue.low - naive.high      # most conservative
             net_high = revenue.high - marginal.low  # most favorable
             net_mid = revenue.value - (naive.value + marginal.value) / 2
@@ -276,7 +275,7 @@ def run(spec, ctx, prior=None):
                 provenance=[budget_prov],
                 assumptions=["marginal_cost_factor"],
                 method="incremental new recurring revenue minus service-cost range "
-                       "(naive per-capita upper, marginal lower)", headline=True))
+                       "(naive per-capita upper, marginal lower)"))
             notes.append("The net fiscal range spans both cost framings on purpose: "
                          "the naive per-capita method overstates costs for infill "
                          "(it allocates fixed citywide costs to new residents); the "

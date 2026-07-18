@@ -60,9 +60,13 @@ def _assumptions(ctx) -> dict[str, Assumption]:
         Assumption(key="occupancy_rate", value=0.95, low=0.90, high=0.97,
                    basis="stabilized multifamily occupancy, industry norm",
                    rationale="share of proposed units occupied at stabilization"),
-        Assumption(key="avg_hh_size_renter", value=0.0, low=0.0, high=0.0,  # filled from ACS
-                   basis="ACS B25010 (renter-occupied), city block groups",
-                   rationale="persons per new household; ±0.3 sensitivity"),
+        Assumption(key="avg_hh_size_multifamily", value=1.8, low=1.5, high=2.2,
+                   basis="Rutgers CUPR residential demographic multipliers "
+                         "(Listokin et al. 2006), multifamily by bedroom mix; the "
+                         "ACS B25010 tenure average (~3.1 locally) is unit-mix-"
+                         "blind and rejected as an estimator for new 1-2BR product",
+                   rationale="persons per occupied new multifamily unit for a "
+                             "typical studio/1BR/2BR mix"),
         Assumption(key="income_premium_new_construction", value=1.125, low=1.0, high=1.25,
                    basis="documented openly per the methodology brief",
                    rationale="new-construction multifamily rents draw higher-income "
@@ -86,11 +90,12 @@ def _assumptions(ctx) -> dict[str, Assumption]:
         Assumption(key="walk_share_grocery_entertainment", value=0.30, low=0.10, high=0.50,
                    basis="interpolated between the brief's neighborhood and comparison splits",
                    rationale="grocery/entertainment trips mix walk and drive"),
-        Assumption(key="walk_trips_per_resident_day", value=2.0, low=1.0, high=3.0,
-                   basis="NHTS 2022 daily walking trip rates for residents of "
-                         "walkable mixed-use areas",
-                   rationale="scales new residents into daily walk trips for the "
-                             "foot-traffic flow allocation"),
+        Assumption(key="walk_trips_per_resident_day", value=1.0, low=0.5, high=2.0,
+                   basis="NHTS metro person-level walking runs ~0.3-0.7 trips/day; "
+                         "walkable mixed-use contexts run higher (Ewing & Cervero "
+                         "2010) — 1.0 is a mid estimate for this setting",
+                   rationale="scales new residents into all-purpose daily walk "
+                             "trips for the foot-traffic flow allocation"),
         Assumption(key="sqft_per_office_job", value=300.0, low=200.0, high=450.0,
                    basis="office space-per-worker planning standard",
                    rationale="existing commercial sqft -> displaced jobs"),
@@ -124,22 +129,26 @@ def _acs_vintage(ctx) -> str:
     return (entry["provenance"].get("vintage") if entry else None) or "latest"
 
 
-def _hh_size(ctx) -> float:
-    bg = ctx.census_bg
-    populated = bg[bg["population"].fillna(0) > 0]
-    hh_renter = populated["avg_hh_size_renter"].dropna()
-    weights = populated.loc[hh_renter.index, "population"]
-    return float((hh_renter * weights).sum() / weights.sum())
-
-
 def _site_income(ctx, site_pt_4326) -> tuple[float, str]:
-    """Median household income for the site's census TRACT (population-
-    weighted over the tract's block groups, brief §6.2.1); falls back to the
-    citywide mean when the tract's medians are suppressed."""
+    """MEAN household income for the site's census tract: ACS B19025
+    (aggregate income) / B11001 (households), summed over the tract's block
+    groups. The mean is the right estimator for total purchasing power —
+    median x household count understates aggregate income under right-skewed
+    distributions. Falls back to the population-weighted median (tract, then
+    citywide) when the aggregate tables are suppressed."""
     bg = ctx.census_bg
     populated = bg[bg["population"].fillna(0) > 0]
 
-    def weighted_income(frame):
+    def mean_income(frame):
+        if "aggregate_hh_income" not in frame.columns or "households" not in frame.columns:
+            return None
+        rows = frame[frame["aggregate_hh_income"].notna()
+                     & frame["households"].notna() & (frame["households"] > 0)]
+        if not len(rows) or rows["households"].sum() <= 0:
+            return None
+        return float(rows["aggregate_hh_income"].sum() / rows["households"].sum())
+
+    def weighted_median(frame):
         rows = frame[frame["median_hh_income"].notna() & (frame["population"] > 0)]
         if not len(rows):
             return None
@@ -149,40 +158,41 @@ def _site_income(ctx, site_pt_4326) -> tuple[float, str]:
     hit = bg[bg.contains(site_pt_4326)]
     if len(hit):
         tract = hit.iloc[0]["geoid"][:11]
-        tract_income = weighted_income(populated[populated["geoid"].str[:11] == tract])
-        if tract_income is not None:
-            return tract_income, f"site tract {tract}"
-    citywide = weighted_income(populated)
-    if citywide is None:
-        raise ValueError("no usable median income in the census layer")
-    return citywide, "citywide (site tract suppressed)"
+        tract_rows = populated[populated["geoid"].str[:11] == tract]
+        income = mean_income(tract_rows)
+        if income is not None:
+            return income, f"mean income of site tract {tract} (B19025/B11001)"
+        income = weighted_median(tract_rows)
+        if income is not None:
+            return income, f"median income of site tract {tract} (aggregate suppressed)"
+    income = mean_income(populated) or weighted_median(populated)
+    if income is None:
+        raise ValueError("no usable household income in the census layer")
+    return income, "citywide (site tract suppressed)"
 
 
 def _demand(spec, ctx, a: dict[str, Assumption], site_pt_4326):
-    """Households, residents, income, per-category spend — all Intervals."""
+    """Households, residents, income, per-category spend — all Intervals.
+    Category spending scales with income by per-category Engel elasticities
+    (ces_shares.CATEGORY_ELASTICITY), not linearly: at an income ratio r,
+    spend_c = households x e_c x r^elasticity_c x ces_scale."""
     units = spec.proposed.units
-    acs_year = _acs_vintage(ctx)
-    hh_size = _hh_size(ctx)
     income_base, income_scope = _site_income(ctx, site_pt_4326)
-    a["avg_hh_size_renter"] = Assumption(
-        key="avg_hh_size_renter", value=round(hh_size, 2),
-        low=round(max(hh_size - 0.3, 0.5), 2), high=round(hh_size + 0.3, 2),
-        basis=prov(f"Census ACS 5-yr {acs_year}, table B25010 (renter-occupied)",
-                   "https://api.census.gov", str(acs_year)),
-        rationale="persons per new household; ±0.3 sensitivity")
 
     households = Interval.point(units) * Interval.from_assumption(a["occupancy_rate"])
-    residents = households * Interval.from_assumption(a["avg_hh_size_renter"])
+    residents = households * Interval.from_assumption(a["avg_hh_size_multifamily"])
     hh_income = (Interval.point(income_base)
                  * Interval.from_assumption(a["income_premium_new_construction"]))
     aggregate_income = households * hh_income
 
+    income_ratio = hh_income * (1.0 / ces_shares.CES_AVG_PRETAX_INCOME)
     spend = {}
     for category in RETAIL_CLASSES:
-        # CES line item as a share of CES pre-tax income, applied to the
-        # aggregate income of the new households
-        share = ces_shares.CATEGORY_SPEND[category][0] / ces_shares.CES_AVG_PRETAX_INCOME
-        spend[category] = aggregate_income * share * Interval.from_assumption(a["ces_scale"])
+        per_cu = ces_shares.CATEGORY_SPEND[category][0]
+        elasticity = ces_shares.CATEGORY_ELASTICITY[category]
+        spend[category] = (households * per_cu
+                           * (income_ratio ** elasticity)
+                           * Interval.from_assumption(a["ces_scale"]))
     return households, residents, aggregate_income, spend, income_base, income_scope
 
 
@@ -561,31 +571,36 @@ def run(spec, ctx, prior=None):
 
     metrics: list[MetricValue] = []
     ces_prov = ces_shares.provenance()
-    acs_prov = a["avg_hh_size_renter"].basis
-    huff_method = ("Huff model over individual retail POIs: P_ij = A_j^a * "
-                   "exp(-b*t_ij) / sum_k, blended walk/drive impedance, CES "
+    docs_prov = prov("Project documents (extracted spec)", spec.source_url, "current")
+    cupr_prov = prov("Rutgers CUPR residential demographic multipliers "
+                     "(Listokin et al. 2006), multifamily",
+                     "https://cupr.rutgers.edu", "2006")
+    acs_prov = prov(f"Census ACS 5-yr {_acs_vintage(ctx)} (B19025/B11001, "
+                    "site tract)", "https://api.census.gov", str(_acs_vintage(ctx)))
+    huff_method = ("Huff model over individual retail POIs: joint destination+"
+                   "mode choice, P(j,m) ~ A_j * w_m * exp(-b_m t_mj), CES "
                    "category spend; clusters are a reporting rollup")
 
     metrics.append(metric("New households", households, "households",
-                          [acs_prov] if not isinstance(acs_prov, str) else [],
-                          [a["occupancy_rate"]],
-                          "proposed units x occupancy_rate", headline=True))
+                          [docs_prov], [a["occupancy_rate"]],
+                          "proposed units x occupancy_rate"))
     metrics.append(metric("New residents", residents, "residents",
-                          [acs_prov] if not isinstance(acs_prov, str) else [],
-                          [a["occupancy_rate"], a["avg_hh_size_renter"]],
-                          "households x avg household size (ACS B25010 renter)",
-                          headline=True))
+                          [cupr_prov],
+                          [a["occupancy_rate"], a["avg_hh_size_multifamily"]],
+                          "households x persons per multifamily unit (Rutgers "
+                          "CUPR bedroom-mix multipliers)", headline=True))
     metrics.append(metric(
         "Aggregate household income", aggregate_income, "$/yr",
-        [ces_prov], [a["income_premium_new_construction"], a["occupancy_rate"]],
-        f"households x median income of the {income_scope} "
-        f"(${income_base:,.0f}, ACS B19013) x new-construction premium"))
+        [acs_prov], [a["income_premium_new_construction"], a["occupancy_rate"]],
+        f"households x {income_scope} (${income_base:,.0f}) "
+        "x new-construction premium"))
 
     for category in RETAIL_CLASSES:
         metrics.append(metric(
             f"New annual spending: {category}", spend[category], "$/yr",
             [ces_prov], [a["ces_scale"], a["income_premium_new_construction"]],
-            "aggregate income x CES category share"))
+            "households x CES category spend x (income ratio)^elasticity "
+            "(Engel scaling, sublinear for necessities)"))
 
     named = [c for label, c in rolled.items() if label >= 0]
     for c in sorted(named, key=lambda c: -c["value"])[:5]:
@@ -637,7 +652,7 @@ def run(spec, ctx, prior=None):
                           "proposed retail sqft / sqft-per-retail-job"))
     metrics.append(metric("Net on-site job change", net_jobs, "jobs",
                           [site_prov], [a["sqft_per_office_job"], a["sqft_per_retail_job"]],
-                          "retail jobs added - existing jobs removed", headline=True))
+                          "retail jobs added - existing jobs removed"))
     if spec.existing.use:
         notes.append(f"Displaced use: {spec.existing.use}. Any spending that "
                      "originated on-site today is assumed negligible relative to "
@@ -697,7 +712,7 @@ def run(spec, ctx, prior=None):
                     f"betweenness k={BASELINE_PAIRS}, seeded")
     metrics.append(metric(
         "New resident walk trips per day", trips, "trips/day",
-        [trips_prov], [a["walk_trips_per_resident_day"], a["avg_hh_size_renter"],
+        [trips_prov], [a["walk_trips_per_resident_day"], a["avg_hh_size_multifamily"],
                        a["occupancy_rate"]],
         "new residents x daily walk trips per resident"))
     metrics.append(MetricValue(
@@ -707,8 +722,8 @@ def run(spec, ctx, prior=None):
         method=("exact marginal trip flows from the site (POI-weighted "
                 "destinations, exp(-b*t) walk decay, shortest paths) vs. the "
                 "seeded sampled baseline betweenness of today's population"),
-        assumptions=["occupancy_rate", "avg_hh_size_renter",
-                     "walk_trips_per_resident_day", "beta_walk"], headline=True,
+        assumptions=["occupancy_rate", "avg_hh_size_multifamily",
+                     "walk_trips_per_resident_day", "beta_walk"],
     ))
     if ctx.cfg.calibration_counts is None:
         notes.append("Foot-traffic flows are exact allocations of the new "

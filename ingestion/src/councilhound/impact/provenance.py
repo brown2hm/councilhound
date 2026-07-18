@@ -69,6 +69,17 @@ class Interval:
     def scale(self, k: float) -> "Interval":
         return self * Interval.point(k)
 
+    def __pow__(self, exponent: float) -> "Interval":
+        """Positive-base power (used for Engel income-elasticity scaling);
+        monotonic for base > 0 and exponent >= 0, so endpoints map to
+        endpoints."""
+        if self.low <= 0:
+            raise ValueError("interval power requires a strictly positive base")
+        if exponent < 0:
+            raise ValueError("interval power supports non-negative exponents only")
+        return Interval(self.value ** exponent, self.low ** exponent,
+                        self.high ** exponent)
+
 
 def metric(
     name: str,

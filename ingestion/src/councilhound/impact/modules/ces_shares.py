@@ -29,12 +29,30 @@ CATEGORY_SPEND: dict[str, tuple[float, str]] = {
     "entertainment": (3_635.0, "Entertainment"),
 }
 
+# Approximate expenditure-income elasticities per category, consistent with
+# the income gradients visible in the CE quintile tables (Engel tradition:
+# necessities scale sublinearly with income, discretionary categories about
+# linearly). Category spend scales as (income ratio)^elasticity rather than
+# linearly, so a high-income tract no longer implies proportionally more
+# grocery spending.
+CATEGORY_ELASTICITY: dict[str, float] = {
+    "grocery": 0.45,
+    "restaurant_bar": 0.85,
+    "retail_comparison": 0.95,
+    "retail_convenience": 0.60,
+    "personal_services": 0.90,
+    "entertainment": 1.05,
+}
+
 
 def provenance() -> Provenance:
     return prov(
         f"BLS Consumer Expenditure Survey {CES_YEAR}, average annual expenditures "
         "per consumer unit", CES_URL, CES_YEAR,
-        "line items: " + "; ".join(f"{k}: {v[1]}" for k, v in CATEGORY_SPEND.items()),
+        "line items: " + "; ".join(f"{k}: {v[1]}" for k, v in CATEGORY_SPEND.items())
+        + "; income scaling uses per-category expenditure elasticities "
+        + ", ".join(f"{k}={v}" for k, v in CATEGORY_ELASTICITY.items())
+        + " (Engel gradients per CE quintile tables)",
     )
 
 
