@@ -86,6 +86,7 @@ export default function ImpactMap({
   const clusters = layers.capture_clusters;
   const capturePoints = layers.capture_points;
   const footTraffic = layers.foot_traffic_delta;
+  const walkDollars = layers.walk_dollars;
 
   const bounds = useMemo(() => {
     const b = L.latLngBounds([]);
@@ -149,9 +150,14 @@ export default function ImpactMap({
           <LayersControl.Overlay checked name="Spending captured (heatmap)">
             <SpendingHeatLayerWrapper source={capturePoints ?? clusters} />
           </LayersControl.Overlay>
-          <LayersControl.Overlay checked name="Foot-traffic change (streets)">
+          <LayersControl.Overlay checked={!walkDollars} name="Foot traffic (trips/day)">
             <FootTrafficLayer footTraffic={footTraffic} flowScale={flowScale} />
           </LayersControl.Overlay>
+          {walkDollars && (
+            <LayersControl.Overlay checked name="Walking expenditures ($/yr)">
+              <WalkDollarsLayer walkDollars={walkDollars} />
+            </LayersControl.Overlay>
+          )}
           <LayersControl.Overlay checked name="Cluster details">
             <ClusterMarkers clusters={clusters} maxCapture={maxCapture} />
           </LayersControl.Overlay>
@@ -179,7 +185,7 @@ export default function ImpactMap({
           <span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm border-2 border-[#1a3a3a] bg-white/60 align-middle" />
           project site
         </span>
-        <span>blur: $ captured per business · lines: new walk trips/day</span>
+        <span>blur: $ captured per business · lines: walking $/yr (toggle for trips)</span>
       </div>
     </div>
   );
@@ -226,6 +232,32 @@ function FootTrafficLayer({
           if (props.delta_pct != null)
             parts.push(`${props.delta_pct >= 0 ? "+" : ""}${props.delta_pct}% vs baseline`);
           layer.bindTooltip(parts.join(" · ") || "foot traffic");
+        }}
+      />
+    </LayerGroup>
+  );
+}
+
+function WalkDollarsLayer({ walkDollars }: { walkDollars: GeoJSON.FeatureCollection }) {
+  const max = Math.max(
+    1e-9,
+    ...walkDollars.features.map(
+      (f) => (f.properties as { dollars_per_year?: number })?.dollars_per_year ?? 0,
+    ),
+  );
+  return (
+    <LayerGroup>
+      <GeoJSON
+        data={walkDollars}
+        style={(feature) => {
+          const dollars =
+            (feature?.properties as { dollars_per_year?: number })?.dollars_per_year ?? 0;
+          return { color: viridis(Math.sqrt(dollars / max)), weight: 3.5, opacity: 0.85 };
+        }}
+        onEachFeature={(feature, layer) => {
+          const dollars =
+            (feature.properties as { dollars_per_year?: number })?.dollars_per_year ?? 0;
+          layer.bindTooltip(`${fmtDollars(dollars)}/yr in new pedestrian spending`);
         }}
       />
     </LayerGroup>

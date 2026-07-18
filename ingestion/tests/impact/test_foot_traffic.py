@@ -5,7 +5,10 @@ import pytest
 
 nx = pytest.importorskip("networkx")
 
-from councilhound.impact.modules.economic import marginal_edge_flows  # noqa: E402
+from councilhound.impact.modules.economic import (  # noqa: E402
+    marginal_edge_flows,
+    route_edge_amounts,
+)
 
 
 def _toy_graph():
@@ -60,6 +63,22 @@ def test_deterministic():
                   beta=0.12, total_trips=123.4)
     assert (marginal_edge_flows(g, "O", **kwargs)
             == marginal_edge_flows(g, "O", **kwargs))
+
+
+def test_route_edge_amounts_aggregates_along_shared_edges():
+    g = _toy_graph()
+    flows = route_edge_amounts(g, "O", {"D1": 300.0, "D2": 100.0})
+    assert flows[("O", "M")] == pytest.approx(400.0)
+    assert flows[("M", "D1")] == pytest.approx(300.0)
+    assert flows[("M", "D2")] == pytest.approx(100.0)
+
+
+def test_route_edge_amounts_skips_unroutable():
+    g = _toy_graph()
+    g.add_node("island")
+    flows = route_edge_amounts(g, "O", {"D1": 50.0, "island": 999.0,
+                                        "O": 42.0, "D2": 0.0})
+    assert flows == {("O", "M"): 50.0, ("M", "D1"): 50.0}
 
 
 def test_population_within_radius():

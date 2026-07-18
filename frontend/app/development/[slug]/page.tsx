@@ -126,9 +126,9 @@ export default async function DevelopmentAnalysisPage({
           <ImpactMapClient layers={evaluation.map_layers} />
           <p className="mt-2 text-[12px] text-muted">
             Heat: projected annual spending captured, modeled per business location.
-            Lines: the new residents&apos; modeled walk trips routed over nearby streets.
-            Circles (toggleable): named shopping areas rolled up for reporting, sized by
-            dollars.
+            Lines: the walk-arriving share of new residents&apos; spending routed over
+            nearby streets (toggle the layer control for walk trips/day instead).
+            Circles: named shopping areas rolled up for reporting, sized by dollars.
           </p>
         </section>
       )}
