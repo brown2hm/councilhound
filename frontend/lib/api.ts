@@ -126,6 +126,8 @@ export interface EntityDetail {
 }
 
 export interface CityProjectOfficial {
+  slug: string;
+  has_evaluation: boolean;
   name: string;
   project_type: string | null;
   division: string | null;
@@ -162,6 +164,63 @@ export interface CityProjectSummary {
   lat: number | null;
   lng: number | null;
   synced_at: string | null;
+  has_evaluation: boolean;
+}
+
+export interface ImpactProvenance {
+  source_name: string;
+  url: string;
+  vintage: string;
+  retrieved_at: string;
+  notes: string | null;
+}
+
+export interface ImpactAssumption {
+  key: string;
+  value: number;
+  low: number;
+  high: number;
+  basis: ImpactProvenance | string;
+  rationale: string;
+}
+
+export interface ImpactMetric {
+  module: string;
+  name: string;
+  value: number;
+  unit: string;
+  low: number | null;
+  high: number | null;
+  provenance: ImpactProvenance[];
+  assumptions: string[];
+  method: string;
+  headline: boolean;
+}
+
+export interface ProjectEvaluation {
+  slug: string;
+  name: string;
+  entity_slug: string | null;
+  official_status: string | null;
+  detail_url: string;
+  status: string;
+  spec: {
+    proposed: Record<string, number | null> & { corridor?: unknown };
+    existing: Record<string, number | string | null>;
+    extraction_confidence: Record<string, string>;
+    extraction_quotes: Record<string, string>;
+    extraction_notes: string[];
+    parcels: string[];
+  } & Record<string, unknown>;
+  report_markdown: string;
+  metrics: ImpactMetric[];
+  narrative_notes: string[];
+  assumptions: ImpactAssumption[];
+  sources: ImpactProvenance[];
+  map_layers: Record<string, GeoJSON.FeatureCollection>;
+  report_model: string | null;
+  report_prompt_version: string | null;
+  synthesized_at: string | null;
 }
 
 export interface MemberSummary {
@@ -297,6 +356,8 @@ export const api = {
   mapLocations: () => get<MapLocation[]>("/entities/map"),
   developmentProjects: (params: URLSearchParams) =>
     get<CityProjectSummary[]>(`/development/?${params}`),
+  developmentEvaluation: (slug: string) =>
+    get<ProjectEvaluation>(`/development/${encodeURIComponent(slug)}/evaluation`),
   search: (q: string, body?: string) =>
     get<SearchResponse>(`/search/?q=${encodeURIComponent(q)}${body ? `&body=${body}` : ""}`),
   member: (slug: string) => get<MemberDetail>(`/members/${encodeURIComponent(slug)}`),

@@ -25,12 +25,21 @@ class ParcelResolutionError(RuntimeError):
 
 def resolve_site(ctx, project, stated_pins: list[str]) -> tuple[list[str], dict, float, str]:
     """Returns (pins, geojson_geometry_4326, acres, method)."""
+    import re
+
     parcels = ctx.parcels  # GeoDataFrame with pin/geometry, EPSG:4326
 
     if stated_pins:
-        matched = parcels[parcels["pin"].isin(stated_pins)]
+        # PIN whitespace padding varies between the assessment DB, documents,
+        # and the GIS layer — compare collapsed forms
+        def norm(pin):
+            return re.sub(r"\s+", " ", str(pin)).strip()
+
+        normalized = parcels["pin"].map(norm)
+        targets = {norm(p) for p in stated_pins}
+        matched = parcels[normalized.isin(targets)]
         if len(matched):
-            missing = set(stated_pins) - set(matched["pin"])
+            missing = targets - set(normalized)
             if missing:
                 log.warning("PINs not found in parcel layer: %s", sorted(missing))
             return _dissolve(ctx, matched, "document_pins")

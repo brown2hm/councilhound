@@ -77,6 +77,14 @@ export default async function DevelopmentPage({
                     {project.official_status}
                   </span>
                 )}
+                {project.has_evaluation && (
+                  <Link
+                    href={`/development/${project.slug}`}
+                    className="rounded-full border border-ink px-3 py-1 text-xs font-semibold text-ink hover:bg-ink hover:text-canvas"
+                  >
+                    impact analysis
+                  </Link>
+                )}
                 <a href={project.detail_url} target="_blank" className="text-[13px] font-semibold text-muted underline underline-offset-2 hover:text-ink">
                   city record
                 </a>

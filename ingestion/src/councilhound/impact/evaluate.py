@@ -180,6 +180,24 @@ def confirm(session: Session, slug: str, spec_path: str | None = None,
         raise SystemExit(f"spec YAML not found at {path} — re-run impact-extract") from None
     spec = ProjectSpec.model_validate(data)  # re-validate hand edits
 
+    # a human editing the parcel list is the expected fix for a wrong/partial
+    # site polygon — re-resolve geometry from the (possibly edited) PINs
+    stored = (evaluation.spec or {}).get("parcels") or []
+    if spec.parcels and (spec.parcels != stored or spec.geometry is None):
+        from councilhound.impact.intake.parcels import ParcelResolutionError, resolve_site
+        from councilhound.impact.jurisdiction import JurisdictionContext
+        try:
+            pins, geometry, acres, method = resolve_site(
+                JurisdictionContext(spec.jurisdiction), project, spec.parcels)
+            spec.parcels, spec.geometry = pins, geometry
+            spec.extraction_notes.append(
+                f"geometry re-resolved at confirm from edited parcels via {method}: "
+                f"{acres:.2f} ac")
+            path_obj = _spec_yaml_path(slug)
+            path_obj.write_text(_spec_to_yaml(spec))
+        except ParcelResolutionError as exc:
+            raise SystemExit(f"edited parcels failed to resolve: {exc}") from None
+
     if not assume_yes:
         click.echo(_confidence_summary(spec))
         low = [f for f, c in spec.extraction_confidence.items() if c == "low"]

@@ -195,8 +195,13 @@ def parse_project_detail(html: str, fallback: DiscoveredProject) -> DiscoveredPr
         timeline.extend(_text(li) for li in node.find_all("li"))
     project.official_timeline = [t for t in timeline if t]
     project.description = _section_text(sections, "background") or project.description
-    project.requests = _section_text(sections, "requests")
-    project.documents = _section_links(sections, "plans")
+    project.requests = _section_text(sections, "requests") or _section_text(sections, "potential requests")
+    # document sections vary by page: "Plans", "Concept Plans", "Documents", ...
+    documents = []
+    for label in sections:
+        if "plan" in label or "document" in label:
+            documents.extend(_section_links(sections, label))
+    project.documents = documents
 
     location_text = _section_text(sections, "location")
     if location_text:

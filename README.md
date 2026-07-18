@@ -34,6 +34,11 @@ model, and ops notes.
 - **Ask the hound** — natural-language Q&A over transcripts and agenda items
   (pgvector retrieval + Claude), with citations that link back to the source
   video or document. Rate-limited per IP and capped by a global daily budget.
+- **Impact analysis** — per-project economic (Huff retail capture +
+  foot-traffic index) and fiscal (revenue/cost ranges, comps-based projected
+  value) screening estimates over open data, with every number carrying
+  provenance and named assumptions with sensitivity bounds. See
+  [Impact analysis](#impact-analysis-local-run-stage) below.
 
 ## How it works
 
@@ -102,6 +107,31 @@ a full council meeting is ~80–150 MB, a 24-month backfill is roughly
 
 Schema changes: edit `ingestion/src/councilhound/db/models.py`, then
 `cd ingestion && alembic revision --autogenerate -m "..."` and `init-db`.
+
+### Impact analysis (local-run stage)
+
+`councilhound.impact` evaluates development projects across economic and
+fiscal lenses (methodology: deterministic models over open data; the LLM
+only extracts document facts under a verbatim-quote firewall and writes the
+narrative over computed JSON). It runs **locally only** — the geo stack
+lives in `ingestion/requirements-impact.txt`, fairfaxva.gov IP-blocks
+datacenter ranges, and results are persisted to Postgres where the deployed
+API serves them read-only:
+
+```
+uv pip install -p .venv/bin/python -r ingestion/requirements-impact.txt
+export CENSUS_API_KEY=...   # free: https://api.census.gov/data/key_signup.html
+cd ingestion
+PYTHONPATH=src ../.venv/bin/python -m councilhound.cli impact-setup-jurisdiction  # pin tax rates (one-time, interactive)
+PYTHONPATH=src ../.venv/bin/python -m councilhound.cli impact-context             # build cached context layers
+PYTHONPATH=src ../.venv/bin/python -m councilhound.cli impact-extract <slug>      # LLM spec extraction
+PYTHONPATH=src ../.venv/bin/python -m councilhound.cli impact-confirm <slug>      # human gate: review the YAML
+PYTHONPATH=src ../.venv/bin/python -m councilhound.cli impact-evaluate <slug>     # modules + synthesized report
+```
+
+Jurisdiction-specific values (FIPS, CRS, layer URLs, tax rates with source +
+fiscal year) live in `ingestion/jurisdictions/<slug>.yaml`; unpinned rates
+make the dependent metrics refuse to run rather than guess.
 
 ### Docker (full stack)
 

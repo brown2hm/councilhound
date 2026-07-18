@@ -144,10 +144,20 @@ def enforce_firewall(raw: dict, corpus: str) -> tuple[dict, list[str]]:
     cleaned: dict[str, dict] = {}
     for field in NUMERIC_FIELDS:
         key = field.replace(".", "_")
-        entry = raw.get(key) or {}
+        entry = raw.get(key)
+        if not isinstance(entry, dict):  # malformed output -> treat as absent
+            if entry is not None:
+                notes.append(f"{field}: malformed extraction entry ({entry!r}) — nulled")
+            entry = {}
         value = entry.get("value")
         quote = entry.get("source_quote")
         confidence = entry.get("confidence", "low")
+        if isinstance(value, str):
+            try:
+                value = float(value.replace(",", ""))
+            except ValueError:
+                notes.append(f"{field}: non-numeric value {value!r} — nulled")
+                value = None
         if value is not None:
             reason = None
             if not quote:

@@ -154,7 +154,14 @@ def _city_record(session: Session, entity: Entity) -> dict | None:
     row = session.scalar(select(CityProject).where(CityProject.entity_id == entity.id))
     if row is None:
         return None
+    from councilhound.db.models import ProjectEvaluation
+    has_evaluation = session.scalar(
+        select(ProjectEvaluation.id).where(
+            ProjectEvaluation.city_project_id == row.id,
+            ProjectEvaluation.status == "synthesized")) is not None
     return {
+        "slug": row.external_slug,
+        "has_evaluation": has_evaluation,
         "name": row.name,
         "project_type": row.project_type,
         "division": row.division,
