@@ -57,7 +57,8 @@ def load_graph(ctx, kind: str):
             {"nodes": graph.number_of_nodes(), "edges": graph.number_of_edges()},
         )
         return graph
-    return ox.load_graphml(path)
+    # GraphML stores custom attrs as strings; declare the dtype on load
+    return ox.load_graphml(path, edge_dtypes={"travel_min": float})
 
 
 def load_node_weights(ctx):

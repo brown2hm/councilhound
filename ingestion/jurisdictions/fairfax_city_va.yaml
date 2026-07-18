@@ -12,30 +12,30 @@ development_review_map_source: https://services2.arcgis.com/DANcyjLcCCpGk8Ri/arc
 geohub_portal_url: https://www.fairfaxva.gov/Services/Maps-and-GIS-Data/City-of-Fairfax-GeoHub
 tax:
   real_estate_rate_per_100:
-    value: null
-    source: null
-    fy: null
+    value: 1.0725
+    source: https://www.fairfaxva.gov/Government/Finance/Budget
+    fy: FY2027
   meals_tax_rate:
-    value: null
-    source: null
-    fy: null
+    value: 0.045
+    source: https://www.fairfaxva.gov/Government/Finance/Budget
+    fy: FY2027
   sales_tax_local_share:
-    value: null
-    source: null
-    fy: null
+    value: 0.01
+    source: https://law.lis.virginia.gov/vacode/title58.1/section58.1-605/
+    fy: statutory (Va. Code § 58.1-605)
   personal_property_per_household:
     value: null
     source: null
     fy: null
 budget:
   general_fund_expenditure:
-    value: null
-    source: null
-    fy: null
+    value: 207912496
+    source: https://www.fairfaxva.gov/Government/Finance/Budget
+    fy: FY2027
   population_basis:
-    value: null
-    source: null
-    fy: null
+    value: 25026
+    source: https://api.census.gov/data/2024/acs/acs5
+    fy: ACS 2024 5-yr
 transit_feeds: []
 fringe_reference_blockgroup: null
 calibration_counts: null

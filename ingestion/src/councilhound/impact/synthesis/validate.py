@@ -7,14 +7,18 @@ from __future__ import annotations
 
 import re
 
-# numbers with optional $ , % . and thousands separators / magnitude suffixes
-_NUMBER = re.compile(r"\$?(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s*(million|M\b|k\b|thousand|%)?",
-                     re.IGNORECASE)
+# numbers with optional sign (ASCII or U+2212), $ , % and magnitude suffixes
+_NUMBER = re.compile(r"([-−+]?)\s*\$?(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s*"
+                     r"(million|M\b|k\b|thousand|%)?", re.IGNORECASE)
 
 _MAGNITUDE = {"million": 1e6, "m": 1e6, "k": 1e3, "thousand": 1e3}
 
 # numbers that read as prose, not quantities
 _IGNORED = {1, 2, 3, 4, 5, 10, 15, 100}  # "three lenses", "10-minute walk", percent bases
+
+
+def _is_year(value: float) -> bool:
+    return value == int(value) and 1900 <= value <= 2100
 
 
 def allowed_values(bundle) -> set[float]:
@@ -48,6 +52,21 @@ def allowed_values(bundle) -> set[float]:
             add(m.value * 100)
             add(m.low * 100 if m.low is not None else None)
             add(m.high * 100 if m.high is not None else None)
+    # numbers already present in deterministic module text are quotable:
+    # narrative_notes (e.g. the computed students range), provenance notes
+    # (e.g. comp per-unit values), extraction quotes, and method strings
+    quotable: list[str] = []
+    for result in bundle.results:
+        quotable.extend(result.narrative_notes)
+        for m in result.metrics:
+            quotable.append(m.method)
+            quotable.extend(p.notes or "" for p in m.provenance)
+    quotable.extend(p.notes or "" for p in bundle.all_sources())
+    quotable.extend(bundle.spec.extraction_quotes.values())
+    quotable.extend(bundle.spec.extraction_notes)
+    for text in quotable:
+        for value, _context in extract_numbers(text):
+            add(value)
     return allowed
 
 
@@ -57,10 +76,18 @@ def extract_numbers(markdown: str) -> list[tuple[float, str]]:
     text = re.sub(r"```.*?```", "", markdown, flags=re.S)
     found = []
     for match in _NUMBER.finditer(text):
-        raw, suffix = match.group(1), (match.group(2) or "").lower()
+        sign, raw, suffix = match.group(1), match.group(2), (match.group(3) or "").lower()
         value = float(raw.replace(",", ""))
         if suffix in _MAGNITUDE:
             value *= _MAGNITUDE[suffix]
+        if sign == "−":  # true minus
+            value = -value
+        elif sign == "-":
+            # a hyphen directly after a digit is a range separator ("234.9-253.2"),
+            # not a negative sign
+            prev = text[match.start() - 1] if match.start() > 0 else ""
+            if not prev.isdigit():
+                value = -value
         context = text[max(0, match.start() - 40):match.end() + 20].replace("\n", " ")
         found.append((value, context.strip()))
     return found
@@ -85,6 +112,8 @@ def validate_report(markdown: str, bundle) -> list[str]:
     violations = []
     for value, context in extract_numbers(markdown):
         if value in _IGNORED and value == int(value):
+            continue
+        if _is_year(value):
             continue
         if not _matches(value, allowed):
             violations.append(f"{value:g} (in: \"...{context}...\")")
