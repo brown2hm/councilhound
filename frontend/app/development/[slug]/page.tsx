@@ -125,9 +125,10 @@ export default async function DevelopmentAnalysisPage({
           <h2 className="mb-2 text-lg font-semibold">Where the effects land</h2>
           <ImpactMapClient layers={evaluation.map_layers} />
           <p className="mt-2 text-[12px] text-muted">
-            Circles: projected annual spending captured per destination cluster (sized by
-            dollars). Lines: modeled change in the relative foot-traffic index on nearby
-            street segments.
+            Heat: projected annual spending captured, modeled per business location.
+            Lines: the new residents&apos; modeled walk trips routed over nearby streets.
+            Circles (toggleable): named shopping areas rolled up for reporting, sized by
+            dollars.
           </p>
         </section>
       )}

@@ -40,27 +40,32 @@ function fmtDollars(x: number): string {
   return `$${Math.round(x)}`;
 }
 
-/** Kernel heatmap of spending capture (leaflet.heat with a viridis gradient). */
-function SpendingHeatLayer({ clusters }: { clusters: GeoJSON.FeatureCollection }) {
+/** Kernel heatmap of spending capture (leaflet.heat with a viridis gradient).
+ * Prefers the per-POI capture_points layer (one weighted point per business);
+ * falls back to cluster centroids for evaluations computed before it existed. */
+function SpendingHeatLayer({ source }: { source: GeoJSON.FeatureCollection }) {
   const map = useMap();
   useEffect(() => {
-    const captures = clusters.features
+    const captures = source.features
       .filter((f) => f.geometry.type === "Point")
-      .map((f) => ({
-        coords: (f.geometry as GeoJSON.Point).coordinates as [number, number],
-        capture: (f.properties as { annual_capture_usd?: number })?.annual_capture_usd ?? 0,
-      }));
+      .map((f) => {
+        const props = f.properties as { capture_usd?: number; annual_capture_usd?: number };
+        return {
+          coords: (f.geometry as GeoJSON.Point).coordinates as [number, number],
+          capture: props?.capture_usd ?? props?.annual_capture_usd ?? 0,
+        };
+      });
     const max = Math.max(1, ...captures.map((c) => c.capture));
-    // sqrt scaling keeps mid-size clusters visible next to the top one
+    // sqrt scaling keeps mid-size destinations visible next to the top one
     const points = captures.map(
       ({ coords: [lng, lat], capture }) =>
         [lat, lng, Math.sqrt(capture / max)] as [number, number, number],
     );
     const layer = (L as unknown as { heatLayer: (pts: unknown, opts: unknown) => L.Layer })
       .heatLayer(points, {
-        radius: 32,
-        blur: 24,
-        maxZoom: 15,
+        radius: 22,
+        blur: 16,
+        maxZoom: 16,
         max: 1.0,
         gradient: VIRIDIS_GRADIENT,
       });
@@ -68,7 +73,7 @@ function SpendingHeatLayer({ clusters }: { clusters: GeoJSON.FeatureCollection }
     return () => {
       map.removeLayer(layer);
     };
-  }, [map, clusters]);
+  }, [map, source]);
   return null;
 }
 
@@ -79,6 +84,7 @@ export default function ImpactMap({
 }) {
   const site = layers.site;
   const clusters = layers.capture_clusters;
+  const capturePoints = layers.capture_points;
   const footTraffic = layers.foot_traffic_delta;
 
   const bounds = useMemo(() => {
@@ -107,19 +113,26 @@ export default function ImpactMap({
     [clusters],
   );
 
-  // foot-traffic delta -> viridis over the observed range
-  const deltaRange = useMemo(() => {
-    const deltas = (footTraffic?.features ?? []).map(
+  // foot-traffic -> viridis by exact marginal trips (sqrt-scaled); older
+  // evaluations without trips_per_day fall back to the delta_pct range
+  const flowScale = useMemo(() => {
+    const features = footTraffic?.features ?? [];
+    const trips = features.map(
+      (f) => (f.properties as { trips_per_day?: number })?.trips_per_day,
+    );
+    if (trips.some((t) => t != null)) {
+      const max = Math.max(1e-9, ...trips.map((t) => t ?? 0));
+      return (props: { trips_per_day?: number; delta_pct?: number }) =>
+        Math.sqrt((props.trips_per_day ?? 0) / max);
+    }
+    const deltas = features.map(
       (f) => (f.properties as { delta_pct?: number })?.delta_pct ?? 0,
     );
-    if (!deltas.length) return { min: 0, max: 1 };
-    return { min: Math.min(...deltas), max: Math.max(...deltas) };
+    const min = Math.min(0, ...deltas);
+    const max = Math.max(1, ...deltas);
+    return (props: { trips_per_day?: number; delta_pct?: number }) =>
+      ((props.delta_pct ?? 0) - min) / (max - min);
   }, [footTraffic]);
-
-  const deltaToT = (d: number) =>
-    deltaRange.max === deltaRange.min
-      ? 0.5
-      : (d - deltaRange.min) / (deltaRange.max - deltaRange.min);
 
   return (
     <div className="relative">
@@ -134,10 +147,10 @@ export default function ImpactMap({
         />
         <LayersControl position="topright">
           <LayersControl.Overlay checked name="Spending captured (heatmap)">
-            <SpendingHeatLayerWrapper clusters={clusters} />
+            <SpendingHeatLayerWrapper source={capturePoints ?? clusters} />
           </LayersControl.Overlay>
           <LayersControl.Overlay checked name="Foot-traffic change (streets)">
-            <FootTrafficLayer footTraffic={footTraffic} deltaToT={deltaToT} />
+            <FootTrafficLayer footTraffic={footTraffic} flowScale={flowScale} />
           </LayersControl.Overlay>
           <LayersControl.Overlay checked name="Cluster details">
             <ClusterMarkers clusters={clusters} maxCapture={maxCapture} />
@@ -166,7 +179,7 @@ export default function ImpactMap({
           <span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm border-2 border-[#1a3a3a] bg-white/60 align-middle" />
           project site
         </span>
-        <span>blur: $ captured · lines: foot-traffic index Δ on streets</span>
+        <span>blur: $ captured per business · lines: new walk trips/day</span>
       </div>
     </div>
   );
@@ -174,21 +187,21 @@ export default function ImpactMap({
 
 // react-leaflet's LayersControl needs layer-ish children; wrap the imperative
 // heat layer and the marker groups in components it can toggle
-function SpendingHeatLayerWrapper({ clusters }: { clusters?: GeoJSON.FeatureCollection }) {
-  if (!clusters) return <LayerGroup />;
+function SpendingHeatLayerWrapper({ source }: { source?: GeoJSON.FeatureCollection }) {
+  if (!source) return <LayerGroup />;
   return (
     <LayerGroup>
-      <SpendingHeatLayer clusters={clusters} />
+      <SpendingHeatLayer source={source} />
     </LayerGroup>
   );
 }
 
 function FootTrafficLayer({
   footTraffic,
-  deltaToT,
+  flowScale,
 }: {
   footTraffic?: GeoJSON.FeatureCollection;
-  deltaToT: (d: number) => number;
+  flowScale: (props: { trips_per_day?: number; delta_pct?: number }) => number;
 }) {
   if (!footTraffic) return <LayerGroup />;
   return (
@@ -196,12 +209,23 @@ function FootTrafficLayer({
       <GeoJSON
         data={footTraffic}
         style={(feature) => {
-          const delta = (feature?.properties as { delta_pct?: number })?.delta_pct ?? 0;
-          return { color: viridis(deltaToT(delta)), weight: 3, opacity: 0.85 };
+          const props = (feature?.properties ?? {}) as {
+            trips_per_day?: number;
+            delta_pct?: number;
+          };
+          return { color: viridis(flowScale(props)), weight: 3, opacity: 0.85 };
         }}
         onEachFeature={(feature, layer) => {
-          const delta = (feature.properties as { delta_pct?: number })?.delta_pct ?? 0;
-          layer.bindTooltip(`foot-traffic index ${delta >= 0 ? "+" : ""}${delta}%`);
+          const props = (feature.properties ?? {}) as {
+            trips_per_day?: number;
+            delta_pct?: number;
+          };
+          const parts = [];
+          if (props.trips_per_day != null)
+            parts.push(`≈${props.trips_per_day} new walk trips/day`);
+          if (props.delta_pct != null)
+            parts.push(`${props.delta_pct >= 0 ? "+" : ""}${props.delta_pct}% vs baseline`);
+          layer.bindTooltip(parts.join(" · ") || "foot traffic");
         }}
       />
     </LayerGroup>

@@ -1,17 +1,29 @@
-"""Economic module: new demand, Huff retail capture, foot-traffic index,
+"""Economic module: new demand, Huff retail capture, foot-traffic flows,
 displacement ledger (brief §6.2).
 
 `run(spec, ctx, prior=None) -> (ModuleResult, {label: geojson})`.
 
+Granularity model:
+- The Huff run treats every retail POI as an individual destination (single-
+  source Dijkstra from the site makes per-POI travel times free); DBSCAN
+  clusters exist only as a REPORTING rollup for the "top destinations"
+  metrics, so capture is spatially resolved to business locations.
+- Foot traffic is computed exactly, not sampled: the change caused by the
+  project is precisely the walk trips its residents generate, so those trips
+  are allocated over POI-weighted destinations with distance decay and routed
+  along shortest paths, giving deterministic per-edge flows. A seeded sampled
+  betweenness baseline provides the "% vs. today" denominator only.
+- Demand income uses the site's own census tract (brief §6.2.1), not the
+  citywide mean.
+
 Every quantity flows through provenance.Interval so the Assumption bounds
-land on the MetricValues; the Huff invariant (cluster captures sum to the
-category spend) is pinned by unit tests. The foot-traffic output is a
-RELATIVE index (sampled weighted betweenness), labeled as such — it becomes
-counts only if calibration counts are ever configured.
+land on the MetricValues; the Huff invariant (captures sum to the category
+spend) is pinned by unit tests.
 """
 from __future__ import annotations
 
 import logging
+import math
 
 from councilhound.impact.provenance import Interval, metric, prov
 from councilhound.impact.schemas import Assumption, MetricValue, ModuleResult
@@ -22,10 +34,12 @@ log = logging.getLogger(__name__)
 WALK_SPEED_KMH = 4.8
 DBSCAN_EPS_M = 150.0
 DBSCAN_MIN_SAMPLES = 3
-BETWEENNESS_PAIRS = 2000
-BETWEENNESS_SEED = 20260718
+BASELINE_PAIRS = 2000
+BASELINE_SEED = 20260718
+BASELINE_MIN_COUNT = 5  # sampled-baseline noise floor for % comparisons
 FOOT_TRAFFIC_RADIUS_FT = 3_280.0 * 3  # ~3 km study subgraph around the site
 TOP_EDGES_IN_LAYER = 300
+MIN_POINT_CAPTURE_USD = 200  # trim the long tail out of the heat layer
 M_TO_FT = 3.28084
 
 # Huff parameters (brief §6.2.2)
@@ -70,6 +84,11 @@ def _assumptions(ctx) -> dict[str, Assumption]:
         Assumption(key="walk_share_grocery_entertainment", value=0.30, low=0.10, high=0.50,
                    basis="interpolated between the brief's neighborhood and comparison splits",
                    rationale="grocery/entertainment trips mix walk and drive"),
+        Assumption(key="walk_trips_per_resident_day", value=2.0, low=1.0, high=3.0,
+                   basis="NHTS 2022 daily walking trip rates for residents of "
+                         "walkable mixed-use areas",
+                   rationale="scales new residents into daily walk trips for the "
+                             "foot-traffic flow allocation"),
         Assumption(key="sqft_per_office_job", value=300.0, low=200.0, high=450.0,
                    basis="office space-per-worker planning standard",
                    rationale="existing commercial sqft -> displaced jobs"),
@@ -98,81 +117,51 @@ def _site_point(spec, ctx):
     return shape(spec.geometry).centroid  # EPSG:4326
 
 
-def _city_income_and_hh_size(ctx):
+def _acs_vintage(ctx) -> str:
+    entry = ctx.manifest.get("census_bg")
+    return (entry["provenance"].get("vintage") if entry else None) or "latest"
+
+
+def _hh_size(ctx) -> float:
     bg = ctx.census_bg
     populated = bg[bg["population"].fillna(0) > 0]
-    weights = populated["population"]
-    income = float((populated["median_hh_income"] * weights).sum() / weights.sum())
     hh_renter = populated["avg_hh_size_renter"].dropna()
-    hh_weights = populated.loc[hh_renter.index, "population"]
-    hh_size = float((hh_renter * hh_weights).sum() / hh_weights.sum())
-    year = None
-    entry = ctx.manifest.get("census_bg")
-    if entry:
-        year = entry["provenance"].get("vintage")
-    return income, hh_size, year or "latest"
+    weights = populated.loc[hh_renter.index, "population"]
+    return float((hh_renter * weights).sum() / weights.sum())
 
 
-def _clusters(ctx, site_pt_projected, own_retail_equiv: dict[str, float]):
-    """DBSCAN clusters over retail-class POIs (projected CRS). Returns a list
-    of dicts: {name, x, y, counts: {class: n}, own: bool}."""
-    import numpy as np
-    from sklearn.cluster import DBSCAN
+def _site_income(ctx, site_pt_4326) -> tuple[float, str]:
+    """Median household income for the site's census TRACT (population-
+    weighted over the tract's block groups, brief §6.2.1); falls back to the
+    citywide mean when the tract's medians are suppressed."""
+    bg = ctx.census_bg
+    populated = bg[bg["population"].fillna(0) > 0]
 
-    pois = ctx.pois.to_crs(ctx.cfg.crs_projected)
-    retail = pois[pois["taxonomy"].isin(RETAIL_CLASSES)].copy()
-    coords = np.column_stack([retail.geometry.x, retail.geometry.y])
-    labels = DBSCAN(eps=DBSCAN_EPS_M * M_TO_FT, min_samples=DBSCAN_MIN_SAMPLES).fit_predict(coords)
-    retail["cluster"] = labels
+    def weighted_income(frame):
+        rows = frame[frame["median_hh_income"].notna() & (frame["population"] > 0)]
+        if not len(rows):
+            return None
+        return float((rows["median_hh_income"] * rows["population"]).sum()
+                     / rows["population"].sum())
 
-    clusters = []
-    for label, group in retail[retail["cluster"] >= 0].groupby("cluster"):
-        cx, cy = float(group.geometry.x.mean()), float(group.geometry.y.mean())
-        # deterministic name: the member POI nearest the centroid stands in
-        # for the whole cluster (the poi_count on the map layer makes the
-        # one-of-many relationship explicit)
-        d2 = (group.geometry.x - cx) ** 2 + (group.geometry.y - cy) ** 2
-        anchor = group.loc[d2.idxmin(), "name"]
-        clusters.append({
-            "name": f"{anchor} area",
-            "x": cx, "y": cy,
-            "counts": group["taxonomy"].value_counts().to_dict(),
-            "poi_count": int(len(group)),
-            "own": False,
-        })
-    clusters.append({
-        "name": "Project ground-floor retail (this project)",
-        "x": float(site_pt_projected.x), "y": float(site_pt_projected.y),
-        "counts": own_retail_equiv,
-        "own": True,
-    })
-    return clusters
+    hit = bg[bg.contains(site_pt_4326)]
+    if len(hit):
+        tract = hit.iloc[0]["geoid"][:11]
+        tract_income = weighted_income(populated[populated["geoid"].str[:11] == tract])
+        if tract_income is not None:
+            return tract_income, f"site tract {tract}"
+    citywide = weighted_income(populated)
+    if citywide is None:
+        raise ValueError("no usable median income in the census layer")
+    return citywide, "citywide (site tract suppressed)"
 
 
-def _travel_times(ctx, site_pt_4326, clusters):
-    """(walk_min, drive_min) arrays site -> each cluster centroid via the
-    cached graphs; unreachable -> inf."""
-    import networkx as nx
-    import numpy as np
-    import osmnx as ox
-    import pyproj
-
-    to4326 = pyproj.Transformer.from_crs(ctx.cfg.crs_projected, "EPSG:4326", always_xy=True)
-    lons, lats = zip(*[to4326.transform(c["x"], c["y"]) for c in clusters])
-
-    out = []
-    for graph in (ctx.walk_graph, ctx.drive_graph):
-        origin = ox.distance.nearest_nodes(graph, site_pt_4326.x, site_pt_4326.y)
-        targets = ox.distance.nearest_nodes(graph, list(lons), list(lats))
-        times = nx.single_source_dijkstra_path_length(graph, origin, weight="travel_min")
-        out.append(np.array([times.get(t, np.inf) for t in targets]))
-    return out[0], out[1]
-
-
-def _demand(spec, ctx, a: dict[str, Assumption]):
+def _demand(spec, ctx, a: dict[str, Assumption], site_pt_4326):
     """Households, residents, income, per-category spend — all Intervals."""
     units = spec.proposed.units
-    income_base, hh_size, acs_year = _city_income_and_hh_size(ctx)
+    acs_year = _acs_vintage(ctx)
+    hh_size = _hh_size(ctx)
+    income_base, income_scope = _site_income(ctx, site_pt_4326)
     a["avg_hh_size_renter"] = Assumption(
         key="avg_hh_size_renter", value=round(hh_size, 2),
         low=round(max(hh_size - 0.3, 0.5), 2), high=round(hh_size + 0.3, 2),
@@ -192,12 +181,165 @@ def _demand(spec, ctx, a: dict[str, Assumption]):
         # aggregate income of the new households
         share = ces_shares.CATEGORY_SPEND[category][0] / ces_shares.CES_AVG_PRETAX_INCOME
         spend[category] = aggregate_income * share * Interval.from_assumption(a["ces_scale"])
-    return households, residents, hh_income, aggregate_income, spend, income_base
+    return households, residents, aggregate_income, spend, income_base, income_scope
 
 
-def _foot_traffic(ctx, spec, new_residents: float):
-    """Sampled weighted betweenness, baseline vs. site-loaded. Returns
-    (delta_by_edge {(u,v): pct}, nearest_commercial_delta_pct, edges_gdf)."""
+# --- destinations: every retail POI, individually ---------------------------
+
+def _destinations(ctx, site_pt_4326, site_projected, own_retail_equiv):
+    """Per-POI destination table + cluster rollup metadata.
+
+    Returns dict with parallel arrays over destinations (all retail POIs plus
+    the project's own retail as the last entry): taxonomy/name arrays,
+    walk/drive minutes from the site, in_city mask, lon/lat, cluster label
+    (-1 = DBSCAN noise, own = -2), and {label: meta} for named reporting."""
+    import networkx as nx
+    import numpy as np
+    import osmnx as ox
+    import pyproj
+    from shapely.geometry import Point
+    from shapely.ops import transform as shp_transform
+    from sklearn.cluster import DBSCAN
+
+    crs = ctx.cfg.crs_projected
+    pois = ctx.pois
+    retail = pois[pois["taxonomy"].isin(RETAIL_CLASSES)].reset_index(drop=True)
+    projected = retail.to_crs(crs)
+
+    coords = np.column_stack([projected.geometry.x, projected.geometry.y])
+    labels = DBSCAN(eps=DBSCAN_EPS_M * M_TO_FT,
+                    min_samples=DBSCAN_MIN_SAMPLES).fit_predict(coords)
+
+    cluster_meta: dict[int, dict] = {}
+    for label in set(labels):
+        if label < 0:
+            continue
+        members = np.where(labels == label)[0]
+        cx, cy = float(coords[members, 0].mean()), float(coords[members, 1].mean())
+        d2 = ((coords[members, 0] - cx) ** 2 + (coords[members, 1] - cy) ** 2)
+        anchor = retail.iloc[members[int(np.argmin(d2))]]["name"]
+        cluster_meta[int(label)] = {"name": f"{anchor} area", "x": cx, "y": cy,
+                                    "poi_count": int(len(members)), "own": False}
+    cluster_meta[-2] = {"name": "Project ground-floor retail (this project)",
+                        "x": float(site_projected.x), "y": float(site_projected.y),
+                        "poi_count": 0, "own": True}
+
+    # travel times: one Dijkstra per graph gives every POI's time via its
+    # nearest network node
+    lons = retail.geometry.x.to_numpy()
+    lats = retail.geometry.y.to_numpy()
+    times = []
+    for graph in (ctx.walk_graph, ctx.drive_graph):
+        origin = ox.distance.nearest_nodes(graph, site_pt_4326.x, site_pt_4326.y)
+        nearest = ox.distance.nearest_nodes(graph, list(lons), list(lats))
+        dist = nx.single_source_dijkstra_path_length(graph, origin, weight="travel_min")
+        times.append(np.array([dist.get(n, np.inf) for n in nearest]))
+    walk_min, drive_min = times
+
+    tx = pyproj.Transformer.from_crs("EPSG:4326", crs, always_xy=True)
+    boundary_projected = shp_transform(tx.transform, ctx.boundary)
+    in_city = np.array([boundary_projected.contains(Point(x, y)) for x, y in coords])
+
+    # append the project's own retail as the final destination (t = 0: it is
+    # the origin), attractiveness supplied per category by own_retail_equiv
+    n = len(retail)
+    return {
+        "n": n + 1,
+        "taxonomy": np.append(retail["taxonomy"].to_numpy(), "__own__"),
+        "walk_min": np.append(walk_min, 0.0),
+        "drive_min": np.append(drive_min, 0.0),
+        "in_city": np.append(in_city, True),  # the site is inside the city
+        "lon": np.append(lons, site_pt_4326.x),
+        "lat": np.append(lats, site_pt_4326.y),
+        "cluster": np.append(labels, -2),
+        "cluster_meta": cluster_meta,
+        "own_retail_equiv": own_retail_equiv,
+    }
+
+
+def _capture(dest, spend, a):
+    """Per-destination capture (value/low/high) + in-city share accumulators.
+    Probabilities per category sum to 1, so total capture = total spend."""
+    import numpy as np
+
+    n = dest["n"]
+    capture = {slot: np.zeros(n) for slot in range(3)}
+    share_food = np.zeros((3, 2))    # [slot][num, den] for food_away
+    share_all = np.zeros((3, 2))
+
+    for category in RETAIL_CLASSES:
+        attractiveness = (dest["taxonomy"] == category).astype(float)
+        attractiveness[-1] = dest["own_retail_equiv"].get(category, 0.0)
+        ws = _walk_share_for(category, a)
+        for slot, (beta, ws_value, spend_value) in enumerate((
+            (a["beta_walk"].value, ws.value, spend[category].value),
+            (a["beta_walk"].high, ws.low, spend[category].low),
+            (a["beta_walk"].low, ws.high, spend[category].high),
+        )):
+            p = huff.blended_probabilities(attractiveness, dest["walk_min"],
+                                           dest["drive_min"], walk_share=ws_value,
+                                           alpha=ALPHA, beta_walk=beta,
+                                           beta_drive=BETA_DRIVE)
+            capture[slot] += huff.allocate_spend(spend_value, p)
+            in_mass = p[dest["in_city"]].sum()
+            share_all[slot] += (in_mass, p.sum())
+            if category == "restaurant_bar":
+                share_food[slot] += (in_mass, p.sum())
+    return capture, share_food, share_all
+
+
+def _rollup(dest, capture):
+    """Sum per-POI capture into named clusters for the reporting metrics."""
+    import numpy as np
+
+    labels = dest["cluster"]
+    rolled = {}
+    for label, meta in dest["cluster_meta"].items():
+        members = np.where(labels == label)[0]
+        rolled[label] = {
+            **meta,
+            "value": float(capture[0][members].sum()),
+            "low": float(capture[1][members].sum()),
+            "high": float(capture[2][members].sum()),
+        }
+    return rolled
+
+
+# --- foot traffic: exact marginal flows -------------------------------------
+
+def marginal_edge_flows(sub, origin, dest_weights: dict, beta: float,
+                        total_trips: float) -> dict:
+    """Exact per-edge walk flows generated by `total_trips` starting at
+    `origin`: destination choice ∝ weight × exp(-beta × t), routed along
+    shortest paths. Deterministic — no sampling. Pure networkx; unit-tested
+    against a hand-computed toy case."""
+    import networkx as nx
+
+    dists, paths = nx.single_source_dijkstra(sub, origin, weight="travel_min")
+    utilities = {}
+    for node, weight in dest_weights.items():
+        t = dists.get(node)
+        if t is None or weight <= 0 or node == origin:
+            continue
+        utilities[node] = weight * math.exp(-beta * t)
+    total = sum(utilities.values())
+    flows: dict[tuple, float] = {}
+    if total <= 0:
+        return flows
+    for node, utility in utilities.items():
+        trips = total_trips * utility / total
+        path = paths[node]
+        for edge in zip(path[:-1], path[1:]):
+            flows[edge] = flows.get(edge, 0.0) + trips
+    return flows
+
+
+def _foot_traffic(ctx, spec, total_trips: float, trip_rate: float, beta: float):
+    """(flows {edge: trips/day}, pct {edge: %Δ vs baseline}, nearest-10
+    commercial mean %Δ, subgraph). The marginal flows are exact; the baseline
+    is the seeded sampled betweenness of today's population, used only as the
+    denominator. Both sides carry the same trip_rate, so it cancels out of
+    the percentage — the % is rate-assumption-free."""
     import networkx as nx
     import numpy as np
     import osmnx as ox
@@ -207,7 +349,6 @@ def _foot_traffic(ctx, spec, new_residents: float):
     site = _site_point(spec, ctx)
     site_node = ox.distance.nearest_nodes(graph, site.x, site.y)
 
-    # study subgraph: nodes within the euclidean radius of the site (projected)
     nodes_gdf = ox.convert.graph_to_gdfs(graph, edges=False)[["geometry"]].to_crs(
         ctx.cfg.crs_projected)
     tx = ctx.transformer()
@@ -224,74 +365,112 @@ def _foot_traffic(ctx, spec, new_residents: float):
     poi = w[poi_cols].sum(axis=1).to_numpy(dtype=float)
     nodes = list(near.index)
     index_of = {n: i for i, n in enumerate(nodes)}
+    if pop.sum() == 0 or poi.sum() == 0:
+        raise ValueError("no population or POI weight in study area")
 
-    def sample_counts(extra_pop_at_site: float):
-        rng = np.random.default_rng(BETWEENNESS_SEED)
-        p = pop.copy()
-        p[index_of[site_node]] += extra_pop_at_site
-        if p.sum() == 0 or poi.sum() == 0:
-            raise ValueError("no population or POI weight in study area")
-        origins = rng.choice(len(nodes), size=BETWEENNESS_PAIRS, p=p / p.sum())
-        dests = rng.choice(len(nodes), size=BETWEENNESS_PAIRS, p=poi / poi.sum())
-        counts: dict[tuple, float] = {}
-        by_origin: dict[int, list[int]] = {}
-        for o, d in zip(origins, dests):
-            by_origin.setdefault(int(o), []).append(int(d))
-        for o, ds in by_origin.items():
-            try:
-                paths = nx.single_source_dijkstra_path(sub, nodes[o], weight="travel_min")
-            except Exception:
-                continue
-            for d in ds:
-                path = paths.get(nodes[d])
-                if not path:
-                    continue
-                for u, v in zip(path[:-1], path[1:]):
-                    counts[(u, v)] = counts.get((u, v), 0) + 1
-        return counts
+    # exact marginal flows from the site
+    dest_weights = {node: poi[i] for node, i in index_of.items() if poi[i] > 0}
+    flows = marginal_edge_flows(sub, site_node, dest_weights, beta, total_trips)
 
-    base = sample_counts(0.0)
-    loaded = sample_counts(new_residents)
-    all_edges = set(base) | set(loaded)
-    delta = {}
-    for edge in all_edges:
-        b, l = base.get(edge, 0), loaded.get(edge, 0)
-        if b + l < 5:  # noise floor for the sampled index
+    # seeded sampled baseline (today's walkers), for the % comparison only
+    rng = np.random.default_rng(BASELINE_SEED)
+    origins = rng.choice(len(nodes), size=BASELINE_PAIRS, p=pop / pop.sum())
+    dests = rng.choice(len(nodes), size=BASELINE_PAIRS, p=poi / poi.sum())
+    baseline: dict[tuple, float] = {}
+    by_origin: dict[int, list[int]] = {}
+    for o, d in zip(origins, dests):
+        by_origin.setdefault(int(o), []).append(int(d))
+    for o, ds in by_origin.items():
+        try:
+            paths = nx.single_source_dijkstra_path(sub, nodes[o], weight="travel_min")
+        except Exception:
             continue
-        delta[edge] = 100.0 * (l - b) / b if b else 100.0
+        for d in ds:
+            path = paths.get(nodes[d])
+            if not path:
+                continue
+            for u, v in zip(path[:-1], path[1:]):
+                baseline[(u, v)] = baseline.get((u, v), 0) + 1
 
-    # nearest commercial segments: edges whose endpoints carry POI weight,
-    # ranked by distance to the site
+    # baseline sample count -> trips/day at the SAME trip rate the marginal
+    # flows use: baseline_trips_e = count_e x (pop_total x rate / k)
+    baseline_scale = pop.sum() * trip_rate / BASELINE_PAIRS
+
+    pct: dict[tuple, float] = {}
+    for edge, marginal in flows.items():
+        count = baseline.get(edge, 0)
+        if count >= BASELINE_MIN_COUNT:
+            pct[edge] = 100.0 * marginal / (count * baseline_scale)
+
     commercial = []
-    for (u, v), pct in delta.items():
+    for edge, p in pct.items():
+        u, v = edge
         if poi[index_of[u]] + poi[index_of[v]] > 0:
             ux, uy = nodes_gdf.loc[u].geometry.x, nodes_gdf.loc[u].geometry.y
             dist = ((ux - sx) ** 2 + (uy - sy) ** 2) ** 0.5
-            commercial.append((dist, pct, (u, v)))
+            commercial.append((dist, p))
     commercial.sort()
-    nearest10 = [pct for _, pct, _ in commercial[:10]]
-    nearest_delta = float(np.mean(nearest10)) if nearest10 else 0.0
-    return delta, nearest_delta, sub
+    nearest = [p for _, p in commercial[:10]]
+    nearest_delta = float(np.mean(nearest)) if nearest else 0.0
+    return flows, pct, nearest_delta, sub
 
 
-def _foot_traffic_layer(ctx, delta: dict, sub) -> dict:
-    """Top-N |% change| edges as a GeoJSON FeatureCollection (EPSG:4326)."""
+def _foot_traffic_layer(flows: dict, pct: dict, sub) -> dict:
+    """Top-N edges by marginal trips as GeoJSON (EPSG:4326)."""
     import osmnx as ox
 
     edges_gdf = ox.convert.graph_to_gdfs(sub, nodes=False).reset_index()
     lookup = {(row.u, row.v): row.geometry for row in edges_gdf.itertuples()}
-    ranked = sorted(delta.items(), key=lambda kv: abs(kv[1]), reverse=True)[:TOP_EDGES_IN_LAYER]
+    ranked = sorted(flows.items(), key=lambda kv: kv[1], reverse=True)[:TOP_EDGES_IN_LAYER]
     features = []
-    for (u, v), pct in ranked:
-        geom = lookup.get((u, v)) or lookup.get((v, u))
+    for edge, trips in ranked:
+        geom = lookup.get(edge) or lookup.get((edge[1], edge[0]))
         if geom is None:
             continue
         geom = geom.simplify(0.00005)
         coords = [[round(x, 6), round(y, 6)] for x, y in geom.coords]
+        properties = {"trips_per_day": round(trips, 1)}
+        if edge in pct:
+            properties["delta_pct"] = round(pct[edge], 1)
         features.append({
             "type": "Feature",
             "geometry": {"type": "LineString", "coordinates": coords},
-            "properties": {"delta_pct": round(pct, 1)},
+            "properties": properties,
+        })
+    return {"type": "FeatureCollection", "features": features}
+
+
+def _capture_points_layer(dest, capture) -> dict:
+    """Per-POI capture as weighted points — the heatmap's real input."""
+    features = []
+    for i in range(dest["n"]):
+        dollars = float(capture[0][i])
+        if dollars < MIN_POINT_CAPTURE_USD:
+            continue
+        features.append({
+            "type": "Feature",
+            "geometry": {"type": "Point",
+                         "coordinates": [round(float(dest["lon"][i]), 6),
+                                         round(float(dest["lat"][i]), 6)]},
+            "properties": {"capture_usd": round(dollars),
+                           "own": bool(dest["cluster"][i] == -2)},
+        })
+    return {"type": "FeatureCollection", "features": features}
+
+
+def _cluster_layer(ctx, rolled: dict) -> dict:
+    import pyproj
+    to4326 = pyproj.Transformer.from_crs(ctx.cfg.crs_projected, "EPSG:4326", always_xy=True)
+    features = []
+    for label, c in rolled.items():
+        if c["value"] <= 0:
+            continue
+        lon, lat = to4326.transform(c["x"], c["y"])
+        features.append({
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [round(lon, 6), round(lat, 6)]},
+            "properties": {"name": c["name"], "annual_capture_usd": round(c["value"]),
+                           "poi_count": c["poi_count"], "own": c["own"]},
         })
     return {"type": "FeatureCollection", "features": features}
 
@@ -299,10 +478,10 @@ def _foot_traffic_layer(ctx, delta: dict, sub) -> dict:
 def run(spec, ctx, prior=None):
     a = _assumptions(ctx)
     notes = [
-        "Huff capture and the foot-traffic index are screening estimates, not "
-        "predictions: they rank where new spending and walking activity are "
-        "likely to land, with sensitivity bounds, and should be read as "
-        "relative magnitudes.",
+        "Huff capture is a screening estimate computed per business location "
+        "(every retail POI is an individual destination) and aggregated to "
+        "named areas for reporting; it ranks where new spending is likely to "
+        "land, with sensitivity bounds — it is not a prediction.",
     ]
 
     if spec.proposed.units is None:
@@ -313,9 +492,10 @@ def run(spec, ctx, prior=None):
             assumptions=[],
         ), {})
 
-    households, residents, hh_income, aggregate_income, spend, income_base = _demand(spec, ctx, a)
-
     site = _site_point(spec, ctx)
+    households, residents, aggregate_income, spend, income_base, income_scope = \
+        _demand(spec, ctx, a, site)
+
     tx = ctx.transformer()
     sx, sy = tx.transform(site.x, site.y)
     from shapely.geometry import Point
@@ -323,32 +503,17 @@ def run(spec, ctx, prior=None):
 
     own_equiv_total = (spec.proposed.retail_sqft or 0) / a["own_retail_sqft_per_equiv_poi"].value
     own_retail_equiv = {cls: own_equiv_total * share for cls, share in OWN_RETAIL_MIX.items()}
-    clusters = _clusters(ctx, site_projected, own_retail_equiv)
-    walk_min, drive_min = _travel_times(ctx, site, clusters)
 
-    import numpy as np
-    capture_by_cluster = np.zeros(len(clusters))
-    capture_low = np.zeros(len(clusters))
-    capture_high = np.zeros(len(clusters))
-    for category in RETAIL_CLASSES:
-        attractiveness = np.array([c["counts"].get(category, 0.0) for c in clusters])
-        ws = _walk_share_for(category, a)
-        for target, beta, ws_value, spend_value in (
-            (capture_by_cluster, a["beta_walk"].value, ws.value, spend[category].value),
-            (capture_low, a["beta_walk"].high, ws.low, spend[category].low),
-            (capture_high, a["beta_walk"].low, ws.high, spend[category].high),
-        ):
-            p = huff.blended_probabilities(attractiveness, walk_min, drive_min,
-                                           walk_share=ws_value, alpha=ALPHA,
-                                           beta_walk=beta, beta_drive=BETA_DRIVE)
-            target += huff.allocate_spend(spend_value, p)
+    dest = _destinations(ctx, site, site_projected, own_retail_equiv)
+    capture, share_food, share_all = _capture(dest, spend, a)
+    rolled = _rollup(dest, capture)
 
-    order = np.argsort(-capture_by_cluster)
     metrics: list[MetricValue] = []
     ces_prov = ces_shares.provenance()
     acs_prov = a["avg_hh_size_renter"].basis
-    huff_method = ("Huff model: P_ij = A_j^a * exp(-b*t_ij) / sum_k, blended "
-                   "walk/drive impedance, CES category spend")
+    huff_method = ("Huff model over individual retail POIs: P_ij = A_j^a * "
+                   "exp(-b*t_ij) / sum_k, blended walk/drive impedance, CES "
+                   "category spend; clusters are a reporting rollup")
 
     metrics.append(metric("New households", households, "households",
                           [acs_prov] if not isinstance(acs_prov, str) else [],
@@ -362,7 +527,8 @@ def run(spec, ctx, prior=None):
     metrics.append(metric(
         "Aggregate household income", aggregate_income, "$/yr",
         [ces_prov], [a["income_premium_new_construction"], a["occupancy_rate"]],
-        f"households x city median income (${income_base:,.0f}) x new-construction premium"))
+        f"households x median income of the {income_scope} "
+        f"(${income_base:,.0f}, ACS B19013) x new-construction premium"))
 
     for category in RETAIL_CLASSES:
         metrics.append(metric(
@@ -370,53 +536,31 @@ def run(spec, ctx, prior=None):
             [ces_prov], [a["ces_scale"], a["income_premium_new_construction"]],
             "aggregate income x CES category share"))
 
-    top = [i for i in order if not clusters[i]["own"]][:5]
-    for i in top:
+    named = [c for label, c in rolled.items() if label >= 0]
+    for c in sorted(named, key=lambda c: -c["value"])[:5]:
         metrics.append(MetricValue(
-            name=f"Annual capture: {clusters[i]['name']}",
-            value=float(capture_by_cluster[i]), unit="$/yr",
-            low=float(capture_low[i]), high=float(capture_high[i]),
+            name=f"Annual capture: {c['name']}",
+            value=c["value"], unit="$/yr", low=c["low"], high=c["high"],
             provenance=[ces_prov], method=huff_method,
             assumptions=["beta_walk", "walk_share_neighborhood", "ces_scale"],
         ))
-    # in-city capture shares — the fiscal module's meals/sales-tax link:
-    # only spending that lands inside city limits generates city tax revenue
-    from shapely.geometry import Point as _Point
-    from shapely.ops import transform as _shp_transform
-    boundary_projected = _shp_transform(tx.transform, ctx.boundary)
-    in_city = np.array([boundary_projected.contains(_Point(c["x"], c["y"])) for c in clusters])
-    for category, label in (("restaurant_bar", "food_away"),
-                            (None, "all_retail")):
-        share_num = np.zeros(3)  # value, low, high accumulators
-        share_den = np.zeros(3)
-        cats = [category] if category else list(RETAIL_CLASSES)
-        for cat in cats:
-            attractiveness = np.array([c["counts"].get(cat, 0.0) for c in clusters])
-            ws = _walk_share_for(cat, a)
-            for slot, (beta, ws_value) in enumerate((
-                    (a["beta_walk"].value, ws.value),
-                    (a["beta_walk"].high, ws.low),
-                    (a["beta_walk"].low, ws.high))):
-                p = huff.blended_probabilities(attractiveness, walk_min, drive_min,
-                                               walk_share=ws_value, alpha=ALPHA,
-                                               beta_walk=beta, beta_drive=BETA_DRIVE)
-                share_num[slot] += p[in_city].sum()
-                share_den[slot] += p.sum()
-        shares = np.divide(share_num, share_den, out=np.zeros(3), where=share_den > 0)
-        lo, hi = float(min(shares)), float(max(shares))
+
+    for label, shares in (("food_away", share_food), ("all_retail", share_all)):
+        import numpy as np
+        ratio = [float(shares[slot][0] / shares[slot][1]) if shares[slot][1] > 0 else 0.0
+                 for slot in range(3)]
         metrics.append(MetricValue(
             name=f"In-city capture share: {label}",
-            value=float(shares[0]), unit="fraction", low=lo, high=hi,
-            provenance=[ces_prov], method=huff_method + "; share of capture landing "
-            "at clusters inside the city boundary",
+            value=ratio[0], unit="fraction", low=min(ratio), high=max(ratio),
+            provenance=[ces_prov], method=huff_method + "; share of capture at "
+            "destinations inside the city boundary",
             assumptions=["beta_walk", "walk_share_neighborhood"],
         ))
 
-    own_idx = next(i for i, c in enumerate(clusters) if c["own"])
+    own = rolled[-2]
     metrics.append(MetricValue(
         name="Annual capture: project's own ground-floor retail",
-        value=float(capture_by_cluster[own_idx]), unit="$/yr",
-        low=float(capture_low[own_idx]), high=float(capture_high[own_idx]),
+        value=own["value"], unit="$/yr", low=own["low"], high=own["high"],
         provenance=[ces_prov], method=huff_method + "; own retail competes as a destination",
         assumptions=["own_retail_sqft_per_equiv_poi", "beta_walk"], headline=True,
     ))
@@ -448,28 +592,45 @@ def run(spec, ctx, prior=None):
                      "originated on-site today is assumed negligible relative to "
                      "the new residential demand.")
 
-    # foot-traffic index
-    delta, nearest_delta, sub = _foot_traffic(ctx, spec, residents.value)
+    # foot traffic: exact marginal flows
+    trips = residents * Interval.from_assumption(a["walk_trips_per_resident_day"])
+    flows, pct, nearest_delta, sub = _foot_traffic(
+        ctx, spec, total_trips=trips.value,
+        trip_rate=a["walk_trips_per_resident_day"].value,
+        beta=a["beta_walk"].value)
+    trips_prov = prov("Derived: new residents x NHTS walking trip rate",
+                      "https://nhts.ornl.gov", "2022")
     osm_prov = prov("OpenStreetMap walk network + ACS population + merged POI layer",
                     "https://www.openstreetmap.org", "current",
-                    f"sampled weighted betweenness, k={BETWEENNESS_PAIRS}, seeded")
+                    f"exact shortest-path flow allocation; baseline sampled "
+                    f"betweenness k={BASELINE_PAIRS}, seeded")
+    metrics.append(metric(
+        "New resident walk trips per day", trips, "trips/day",
+        [trips_prov], [a["walk_trips_per_resident_day"], a["avg_hh_size_renter"],
+                       a["occupancy_rate"]],
+        "new residents x daily walk trips per resident"))
     metrics.append(MetricValue(
         name="Foot-traffic index change, 10 nearest commercial street segments",
         value=round(nearest_delta, 1), unit="% (relative index)",
         low=None, high=None, provenance=[osm_prov],
-        method=("weighted betweenness (population-weighted origins x POI-weighted "
-                "destinations), baseline vs. site loaded with new residents"),
-        assumptions=["occupancy_rate", "avg_hh_size_renter"], headline=True,
+        method=("exact marginal trip flows from the site (POI-weighted "
+                "destinations, exp(-b*t) walk decay, shortest paths) vs. the "
+                "seeded sampled baseline betweenness of today's population"),
+        assumptions=["occupancy_rate", "avg_hh_size_renter",
+                     "walk_trips_per_resident_day", "beta_walk"], headline=True,
     ))
     if ctx.cfg.calibration_counts is None:
-        notes.append("Foot-traffic figures are a relative index (no pedestrian "
-                     "calibration counts are configured), not people-per-day.")
+        notes.append("Foot-traffic flows are exact allocations of the new "
+                     "residents' modeled walk trips; the % comparison uses a "
+                     "sampled index of today's walkers, not calibrated "
+                     "pedestrian counts.")
 
     layers = {
         "site": {"type": "FeatureCollection", "features": [{
             "type": "Feature", "geometry": spec.geometry, "properties": {"role": "site"}}]},
-        "capture_clusters": _cluster_layer(ctx, clusters, capture_by_cluster),
-        "foot_traffic_delta": _foot_traffic_layer(ctx, delta, sub),
+        "capture_points": _capture_points_layer(dest, capture),
+        "capture_clusters": _cluster_layer(ctx, rolled),
+        "foot_traffic_delta": _foot_traffic_layer(flows, pct, sub),
     }
     result = ModuleResult(
         module="economic", metrics=metrics,
@@ -478,20 +639,3 @@ def run(spec, ctx, prior=None):
         assumptions=list(a.values()),
     )
     return result, layers
-
-
-def _cluster_layer(ctx, clusters, capture) -> dict:
-    import pyproj
-    to4326 = pyproj.Transformer.from_crs(ctx.cfg.crs_projected, "EPSG:4326", always_xy=True)
-    features = []
-    for c, dollars in zip(clusters, capture):
-        if dollars <= 0:
-            continue
-        lon, lat = to4326.transform(c["x"], c["y"])
-        features.append({
-            "type": "Feature",
-            "geometry": {"type": "Point", "coordinates": [round(lon, 6), round(lat, 6)]},
-            "properties": {"name": c["name"], "annual_capture_usd": round(float(dollars)),
-                           "poi_count": c.get("poi_count", 0), "own": c["own"]},
-        })
-    return {"type": "FeatureCollection", "features": features}
