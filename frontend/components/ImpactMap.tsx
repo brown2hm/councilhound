@@ -4,6 +4,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import "leaflet.heat";
 import { useEffect, useMemo } from "react";
+import { useLeafletContext } from "@react-leaflet/core";
 import {
   CircleMarker,
   GeoJSON,
@@ -12,7 +13,6 @@ import {
   MapContainer,
   TileLayer,
   Tooltip,
-  useMap,
 } from "react-leaflet";
 
 // viridis control points (matplotlib); linear interpolation between stops
@@ -34,47 +34,92 @@ const VIRIDIS_GRADIENT = Object.fromEntries(
   VIRIDIS.map((rgb, i) => [i / (VIRIDIS.length - 1), `rgb(${rgb.join(",")})`]),
 );
 
+type HeatPoint = [number, number, number]; // lat, lng, weight 0..1
+
 function fmtDollars(x: number): string {
   if (x >= 1_000_000) return `$${(x / 1_000_000).toFixed(1)}M`;
   if (x >= 1_000) return `$${Math.round(x / 1_000)}k`;
   return `$${Math.round(x)}`;
 }
 
-/** Kernel heatmap of spending capture (leaflet.heat with a viridis gradient).
- * Prefers the per-POI capture_points layer (one weighted point per business);
- * falls back to cluster centroids for evaluations computed before it existed. */
-function SpendingHeatLayer({ source }: { source: GeoJSON.FeatureCollection }) {
-  const map = useMap();
+/** leaflet.heat canvas attached to the PARENT layer container (the
+ * LayersControl overlay's LayerGroup), so the checkbox actually adds and
+ * removes it — attaching straight to the map made it un-toggleable. */
+function HeatCanvas({
+  points,
+  radius,
+  blur,
+}: {
+  points: HeatPoint[];
+  radius: number;
+  blur: number;
+}) {
+  const context = useLeafletContext();
   useEffect(() => {
-    const captures = source.features
-      .filter((f) => f.geometry.type === "Point")
-      .map((f) => {
-        const props = f.properties as { capture_usd?: number; annual_capture_usd?: number };
-        return {
-          coords: (f.geometry as GeoJSON.Point).coordinates as [number, number],
-          capture: props?.capture_usd ?? props?.annual_capture_usd ?? 0,
-        };
-      });
-    const max = Math.max(1, ...captures.map((c) => c.capture));
-    // sqrt scaling keeps mid-size destinations visible next to the top one
-    const points = captures.map(
-      ({ coords: [lng, lat], capture }) =>
-        [lat, lng, Math.sqrt(capture / max)] as [number, number, number],
-    );
     const layer = (L as unknown as { heatLayer: (pts: unknown, opts: unknown) => L.Layer })
       .heatLayer(points, {
-        radius: 22,
-        blur: 16,
+        radius,
+        blur,
         maxZoom: 16,
         max: 1.0,
         gradient: VIRIDIS_GRADIENT,
       });
-    layer.addTo(map);
+    const container = context.layerContainer ?? context.map;
+    container.addLayer(layer);
     return () => {
-      map.removeLayer(layer);
+      container.removeLayer(layer);
     };
-  }, [map, source]);
+  }, [context, points, radius, blur]);
   return null;
+}
+
+/** Per-POI capture -> heat points (sqrt-scaled so mid-size destinations stay
+ * visible next to the top one). Accepts the legacy cluster layer as a
+ * fallback for evaluations computed before capture_points existed. */
+function captureHeatPoints(source: GeoJSON.FeatureCollection): HeatPoint[] {
+  const captures = source.features
+    .filter((f) => f.geometry.type === "Point")
+    .map((f) => {
+      const props = f.properties as { capture_usd?: number; annual_capture_usd?: number };
+      return {
+        coords: (f.geometry as GeoJSON.Point).coordinates as [number, number],
+        value: props?.capture_usd ?? props?.annual_capture_usd ?? 0,
+      };
+    });
+  const max = Math.max(1, ...captures.map((c) => c.value));
+  return captures.map(({ coords: [lng, lat], value }) => [lat, lng, Math.sqrt(value / max)]);
+}
+
+/** Street dollar flows -> heat points: walk each LineString and emit a point
+ * every ~50 m carrying the edge's weight, so a hot street reads as a glowing
+ * corridor rather than two endpoint blobs. */
+function streetHeatPoints(source: GeoJSON.FeatureCollection): HeatPoint[] {
+  const edges = source.features
+    .filter((f) => f.geometry.type === "LineString")
+    .map((f) => ({
+      coords: (f.geometry as GeoJSON.LineString).coordinates as [number, number][],
+      value: (f.properties as { dollars_per_year?: number })?.dollars_per_year ?? 0,
+    }));
+  const max = Math.max(1e-9, ...edges.map((e) => e.value));
+  const points: HeatPoint[] = [];
+  const STEP_M = 50;
+  for (const { coords, value } of edges) {
+    if (value <= 0) continue;
+    const weight = Math.sqrt(value / max);
+    for (let i = 0; i < coords.length - 1; i++) {
+      const [lng0, lat0] = coords[i];
+      const [lng1, lat1] = coords[i + 1];
+      // equirectangular segment length in meters (fine at city scale)
+      const dx = (lng1 - lng0) * 111_320 * Math.cos((lat0 * Math.PI) / 180);
+      const dy = (lat1 - lat0) * 110_540;
+      const steps = Math.max(1, Math.round(Math.hypot(dx, dy) / STEP_M));
+      for (let s = 0; s <= steps; s++) {
+        const t = s / steps;
+        points.push([lat0 + t * (lat1 - lat0), lng0 + t * (lng1 - lng0), weight]);
+      }
+    }
+  }
+  return points;
 }
 
 export default function ImpactMap({
@@ -114,8 +159,16 @@ export default function ImpactMap({
     [clusters],
   );
 
-  // foot-traffic -> viridis by exact marginal trips (sqrt-scaled); older
-  // evaluations without trips_per_day fall back to the delta_pct range
+  const spendingHeat = useMemo(
+    () => captureHeatPoints(capturePoints ?? clusters ?? { type: "FeatureCollection", features: [] }),
+    [capturePoints, clusters],
+  );
+  const walkingHeat = useMemo(
+    () => (walkDollars ? streetHeatPoints(walkDollars) : []),
+    [walkDollars],
+  );
+
+  // trips styling for the optional street-lines overlay
   const flowScale = useMemo(() => {
     const features = footTraffic?.features ?? [];
     const trips = features.map(
@@ -148,16 +201,25 @@ export default function ImpactMap({
         />
         <LayersControl position="topright">
           <LayersControl.Overlay checked name="Spending captured (heatmap)">
-            <SpendingHeatLayerWrapper source={capturePoints ?? clusters} />
-          </LayersControl.Overlay>
-          <LayersControl.Overlay checked={!walkDollars} name="Foot traffic (trips/day)">
-            <FootTrafficLayer footTraffic={footTraffic} flowScale={flowScale} />
+            <LayerGroup>
+              <HeatCanvas points={spendingHeat} radius={22} blur={16} />
+            </LayerGroup>
           </LayersControl.Overlay>
           {walkDollars && (
-            <LayersControl.Overlay checked name="Walking expenditures ($/yr)">
+            <LayersControl.Overlay name="Walking expenditures (heatmap)">
+              <LayerGroup>
+                <HeatCanvas points={walkingHeat} radius={14} blur={10} />
+              </LayerGroup>
+            </LayersControl.Overlay>
+          )}
+          {walkDollars && (
+            <LayersControl.Overlay name="Walking expenditures (streets)">
               <WalkDollarsLayer walkDollars={walkDollars} />
             </LayersControl.Overlay>
           )}
+          <LayersControl.Overlay name="Foot traffic (trips/day)">
+            <FootTrafficLayer footTraffic={footTraffic} flowScale={flowScale} />
+          </LayersControl.Overlay>
           <LayersControl.Overlay checked name="Cluster details">
             <ClusterMarkers clusters={clusters} maxCapture={maxCapture} />
           </LayersControl.Overlay>
@@ -179,25 +241,40 @@ export default function ImpactMap({
                 .join(", ")})`,
             }}
           />
-          <span>low → high (both layers)</span>
+          <span>low → high (all layers)</span>
         </div>
         <span className="mr-3">
           <span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm border-2 border-[#1a3a3a] bg-white/60 align-middle" />
           project site
         </span>
-        <span>blur: $ captured per business · lines: walking $/yr (toggle for trips)</span>
+        <span>pick layers top-right: $ captured · walking $ · trips</span>
       </div>
     </div>
   );
 }
 
-// react-leaflet's LayersControl needs layer-ish children; wrap the imperative
-// heat layer and the marker groups in components it can toggle
-function SpendingHeatLayerWrapper({ source }: { source?: GeoJSON.FeatureCollection }) {
-  if (!source) return <LayerGroup />;
+function WalkDollarsLayer({ walkDollars }: { walkDollars: GeoJSON.FeatureCollection }) {
+  const max = Math.max(
+    1e-9,
+    ...walkDollars.features.map(
+      (f) => (f.properties as { dollars_per_year?: number })?.dollars_per_year ?? 0,
+    ),
+  );
   return (
     <LayerGroup>
-      <SpendingHeatLayer source={source} />
+      <GeoJSON
+        data={walkDollars}
+        style={(feature) => {
+          const dollars =
+            (feature?.properties as { dollars_per_year?: number })?.dollars_per_year ?? 0;
+          return { color: viridis(Math.sqrt(dollars / max)), weight: 3.5, opacity: 0.85 };
+        }}
+        onEachFeature={(feature, layer) => {
+          const dollars =
+            (feature.properties as { dollars_per_year?: number })?.dollars_per_year ?? 0;
+          layer.bindTooltip(`${fmtDollars(dollars)}/yr in new pedestrian spending`);
+        }}
+      />
     </LayerGroup>
   );
 }
@@ -232,32 +309,6 @@ function FootTrafficLayer({
           if (props.delta_pct != null)
             parts.push(`${props.delta_pct >= 0 ? "+" : ""}${props.delta_pct}% vs baseline`);
           layer.bindTooltip(parts.join(" · ") || "foot traffic");
-        }}
-      />
-    </LayerGroup>
-  );
-}
-
-function WalkDollarsLayer({ walkDollars }: { walkDollars: GeoJSON.FeatureCollection }) {
-  const max = Math.max(
-    1e-9,
-    ...walkDollars.features.map(
-      (f) => (f.properties as { dollars_per_year?: number })?.dollars_per_year ?? 0,
-    ),
-  );
-  return (
-    <LayerGroup>
-      <GeoJSON
-        data={walkDollars}
-        style={(feature) => {
-          const dollars =
-            (feature?.properties as { dollars_per_year?: number })?.dollars_per_year ?? 0;
-          return { color: viridis(Math.sqrt(dollars / max)), weight: 3.5, opacity: 0.85 };
-        }}
-        onEachFeature={(feature, layer) => {
-          const dollars =
-            (feature.properties as { dollars_per_year?: number })?.dollars_per_year ?? 0;
-          layer.bindTooltip(`${fmtDollars(dollars)}/yr in new pedestrian spending`);
         }}
       />
     </LayerGroup>
