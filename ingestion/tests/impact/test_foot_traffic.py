@@ -60,3 +60,17 @@ def test_deterministic():
                   beta=0.12, total_trips=123.4)
     assert (marginal_edge_flows(g, "O", **kwargs)
             == marginal_edge_flows(g, "O", **kwargs))
+
+
+def test_population_within_radius():
+    pytest.importorskip("scipy")
+    from councilhound.impact.context.networks import population_within_radius
+
+    nodes = [(0.0, 0.0), (100.0, 0.0)]
+    blocks = [(10.0, 0.0), (60.0, 0.0), (95.0, 0.0), (500.0, 0.0)]
+    pops = [50.0, 30.0, 20.0, 999.0]
+    result = population_within_radius(nodes, blocks, pops, radius=50.0)
+    assert result[0] == pytest.approx(50.0)          # only the 10-away block
+    assert result[1] == pytest.approx(30.0 + 20.0)   # 60 and 95 within 50 of x=100
+    empty = population_within_radius(nodes, [], [], radius=50.0)
+    assert list(empty) == [0.0, 0.0]

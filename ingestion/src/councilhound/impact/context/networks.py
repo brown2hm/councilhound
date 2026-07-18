@@ -61,38 +61,56 @@ def load_graph(ctx, kind: str):
     return ox.load_graphml(path, edge_dtypes={"travel_min": float})
 
 
+def population_within_radius(node_xy, point_xy, point_pop, radius: float):
+    """Sum point populations within `radius` of each node (cKDTree ball
+    query). Pure numpy/scipy — unit-tested against a hand-built layout."""
+    import numpy as np
+    from scipy.spatial import cKDTree
+
+    node_xy = np.asarray(node_xy, dtype=float)
+    point_xy = np.asarray(point_xy, dtype=float)
+    point_pop = np.asarray(point_pop, dtype=float)
+    if not len(point_xy):
+        return np.zeros(len(node_xy))
+    tree = cKDTree(point_xy)
+    neighborhoods = tree.query_ball_point(node_xy, r=radius)
+    return np.array([point_pop[idx].sum() for idx in neighborhoods])
+
+
 def load_node_weights(ctx):
     """DataFrame indexed by walk-graph node id: population within 400 m
-    (area-apportioned from block groups) and POI count within 400 m per
-    taxonomy class. Used as trip-endpoint weights for betweenness sampling."""
+    (2020 census-block centroids — the finest published population
+    geography) and POI count within 400 m per taxonomy class. Used as
+    trip-endpoint weights for the foot-traffic baseline."""
     import geopandas as gpd
+    import numpy as np
     import osmnx as ox
     import pandas as pd
 
     slug = ctx.cfg.slug
-    path = context_dir(slug) / "node_weights.parquet"
+    # v2: block-based population (v1 area-apportioned block groups)
+    path = context_dir(slug) / "node_weights_v2.parquet"
     if path.exists():
         return pd.read_parquet(path)
 
     graph = ctx.walk_graph
     crs = ctx.cfg.crs_projected
     nodes = ox.convert.graph_to_gdfs(graph, edges=False)[["geometry"]].to_crs(crs)
-    discs = nodes.copy()
-    discs["geometry"] = discs.geometry.buffer(400 * 3.28084)  # 400 m in US ft
 
-    # population: share of each block group's population proportional to the
-    # fraction of the BG's area covered by the node's 400 m disc
-    bg = ctx.census_bg.to_crs(crs)
-    bg["bg_area"] = bg.geometry.area
-    inter = gpd.overlay(
-        discs.reset_index()[["osmid", "geometry"]],
-        bg[["geoid", "population", "bg_area", "geometry"]],
-        how="intersection", keep_geom_type=False,
+    blocks = ctx.blocks
+    block_points = gpd.GeoSeries(gpd.points_from_xy(blocks["lon"], blocks["lat"]),
+                                 crs="EPSG:4326").to_crs(crs)
+    pop_values = population_within_radius(
+        np.column_stack([nodes.geometry.x, nodes.geometry.y]),
+        np.column_stack([block_points.x, block_points.y]),
+        blocks["pop"].to_numpy(),
+        radius=400 * 3.28084,  # 400 m in US survey ft
     )
-    inter["pop_share"] = inter["population"] * inter.geometry.area / inter["bg_area"]
-    pop = inter.groupby("osmid")["pop_share"].sum().rename("pop_400m")
+    pop = pd.Series(pop_values, index=nodes.index, name="pop_400m")
 
     pois = ctx.pois.to_crs(crs)
+    discs = nodes.copy()
+    discs["geometry"] = discs.geometry.buffer(400 * 3.28084)
     joined = gpd.sjoin(pois[["taxonomy", "geometry"]], discs.reset_index()[["osmid", "geometry"]],
                        predicate="within")
     poi_counts = (joined.groupby(["osmid", "taxonomy"]).size().unstack(fill_value=0)
@@ -102,9 +120,9 @@ def load_node_weights(ctx):
     out.to_parquet(path)
     Manifest(slug).record(
         "node_weights",
-        prov("Derived: ACS block groups + merged POI layer over OSM walk nodes",
+        prov("Derived: 2020 census-block population + merged POI layer over OSM walk nodes",
              "(derived)", date.today().isoformat(),
-             "population area-apportioned to 400 m node discs").model_dump(),
+             "block-centroid population within 400 m of each node").model_dump(),
         {"nodes": len(out), "total_pop_weight": float(out["pop_400m"].sum())},
     )
     return out

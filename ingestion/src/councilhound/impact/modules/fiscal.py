@@ -247,6 +247,19 @@ def run(spec, ctx, prior=None):
                 interval = _interval_from_metric(m)
                 revenue = interval if revenue is None else revenue + interval
         if revenue is not None:
+            # per-method nets published explicitly so the narrative can cite
+            # either framing without deriving arithmetic of its own
+            for method_name, cost, note in (
+                ("naive per-capita method", naive,
+                 "upper-bound cost framing; allocates fixed citywide costs"),
+                ("marginal framing", marginal,
+                 "only services that scale with new residents"),
+            ):
+                net = revenue - cost
+                metrics.append(metric(
+                    f"Net annual fiscal impact — {method_name}", net, "$/yr",
+                    [budget_prov], [a["marginal_cost_factor"], a["students_per_unit"]],
+                    f"total new recurring revenue minus service cost ({note})"))
             net_low = revenue.low - naive.high      # most conservative
             net_high = revenue.high - marginal.low  # most favorable
             net_mid = revenue.value - (naive.value + marginal.value) / 2

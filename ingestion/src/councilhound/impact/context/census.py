@@ -31,10 +31,15 @@ ACS_TABLES = {
     "B08301_010E": "commute_transit",
     "B08301_019E": "commute_walk",
 }
-# TIGERweb "Tracts_Blocks" service; layer 1 = 2020+ block groups
+# TIGERweb "Tracts_Blocks" service; layer 1 = 2020+ block groups,
+# layer 2 = 2020 census blocks (rows carry POP100 + centroid fields)
 TIGERWEB_BG_URL = (
     "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Tracts_Blocks/MapServer/1"
 )
+TIGERWEB_BLOCKS_URL = (
+    "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Tracts_Blocks/MapServer/2"
+)
+BLOCKS_BUFFER_M = 3_000  # match the walk-graph buffer so edge-of-city nodes get weights
 LODES_BASE = "https://lehd.ces.census.gov/data/lodes/LODES8"
 EXPECTED_CITY_POP = 24_500  # gate: within ±10% (brief §8)
 
@@ -129,6 +134,52 @@ def load_blockgroups(ctx):
     )
     log.info("census_bg built: %d block groups, pop %s", len(merged), f"{city_pop:,.0f}")
     return merged
+
+
+def load_blocks(ctx):
+    """2020 census-block population points: {geoid, pop, lon, lat}.
+
+    Blocks are the finest published population geography (~100x smaller than
+    block groups), so a block's population can be treated as sitting at its
+    centroid with error far below the 400 m radii the node weights use.
+    Fetched by envelope (boundary + walk-graph buffer) so weights don't stop
+    at the city line — unlike the ACS layer, which is county-scoped."""
+    import geopandas as gpd
+    import pandas as pd
+
+    slug = ctx.cfg.slug
+    path = context_dir(slug) / "blocks_2020.parquet"
+    if path.exists():
+        return pd.read_parquet(path)
+
+    boundary = gpd.GeoSeries([ctx.boundary], crs="EPSG:4326")
+    buffered = (boundary.to_crs(ctx.cfg.crs_projected)
+                .buffer(BLOCKS_BUFFER_M * 3.28084).to_crs("EPSG:4326"))
+    bbox = tuple(buffered.total_bounds)
+
+    from councilhound.impact.context.geohub import fetch_all_attributes
+    rows = fetch_all_attributes(
+        TIGERWEB_BLOCKS_URL, out_fields="GEOID,POP100,CENTLON,CENTLAT", bbox=bbox)
+    df = pd.DataFrame({
+        "geoid": [r.get("GEOID") for r in rows],
+        "pop": pd.to_numeric([r.get("POP100") for r in rows], errors="coerce"),
+        "lon": pd.to_numeric([r.get("CENTLON") for r in rows], errors="coerce"),
+        "lat": pd.to_numeric([r.get("CENTLAT") for r in rows], errors="coerce"),
+    }).dropna()
+    df = df[df["pop"] > 0].reset_index(drop=True)
+    if not len(df):
+        raise RuntimeError("TIGERweb block query returned no populated blocks")
+
+    df.to_parquet(path)
+    Manifest(slug).record(
+        "blocks",
+        prov("Census 2020 (PL 94-171) block population via TIGERweb",
+             TIGERWEB_BLOCKS_URL, "2020",
+             f"envelope query, boundary + {BLOCKS_BUFFER_M} m buffer").model_dump(),
+        {"blocks": len(df), "population": int(df['pop'].sum())},
+    )
+    log.info("blocks built: %d populated blocks, pop %s", len(df), f"{df['pop'].sum():,.0f}")
+    return df
 
 
 def _latest_lodes_year(state: str = "va") -> int:

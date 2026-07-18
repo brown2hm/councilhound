@@ -28,37 +28,71 @@ log = logging.getLogger(__name__)
 PAGE_SIZE = 1000
 
 
+def _envelope_params(bbox: tuple[float, float, float, float] | None) -> dict:
+    """Optional spatial filter: (minx, miny, maxx, maxy) in EPSG:4326."""
+    if bbox is None:
+        return {}
+    return {
+        "geometry": ",".join(str(v) for v in bbox),
+        "geometryType": "esriGeometryEnvelope",
+        "inSR": "4326",
+        "spatialRel": "esriSpatialRelIntersects",
+    }
+
+
+def _page(url: str, params: dict, features_key: str = "features"):
+    offset = 0
+    while True:
+        resp = http.get(url, params={**params, "resultOffset": str(offset),
+                                     "resultRecordCount": str(PAGE_SIZE)}, timeout=120)
+        payload = resp.json()
+        if "error" in payload:
+            raise RuntimeError(f"ArcGIS query failed for {url}: {payload['error']}")
+        page = payload.get(features_key, [])
+        yield from page
+        if len(page) < PAGE_SIZE and not payload.get("exceededTransferLimit"):
+            break
+        offset += len(page)
+        if not page:  # defensive: some servers omit exceededTransferLimit
+            break
+
+
 def fetch_all_features(layer_url: str, where: str = "1=1", out_fields: str = "*",
-                       geometry_precision: int = 6) -> dict:
+                       geometry_precision: int = 6,
+                       bbox: tuple[float, float, float, float] | None = None) -> dict:
     """Page through an ArcGIS layer's /query endpoint; return one GeoJSON
     FeatureCollection. Works for hosted FeatureServers (maxRecordCount is
     commonly 1000-2000) and MapServer layers."""
     url = layer_url.rstrip("/")
     if not url.endswith("/query"):
         url += "/query"
-    features: list[dict] = []
-    offset = 0
-    while True:
-        resp = http.get(url, params={
-            "where": where,
-            "outFields": out_fields,
-            "f": "geojson",
-            "outSR": "4326",
-            "geometryPrecision": str(geometry_precision),
-            "resultOffset": str(offset),
-            "resultRecordCount": str(PAGE_SIZE),
-        }, timeout=120)
-        payload = resp.json()
-        if "error" in payload:
-            raise RuntimeError(f"ArcGIS query failed for {layer_url}: {payload['error']}")
-        page = payload.get("features", [])
-        features.extend(page)
-        if len(page) < PAGE_SIZE and not payload.get("exceededTransferLimit"):
-            break
-        offset += len(page)
-        if not page:  # defensive: some servers omit exceededTransferLimit
-            break
-    return {"type": "FeatureCollection", "features": features}
+    params = {
+        "where": where,
+        "outFields": out_fields,
+        "f": "geojson",
+        "outSR": "4326",
+        "geometryPrecision": str(geometry_precision),
+        **_envelope_params(bbox),
+    }
+    return {"type": "FeatureCollection", "features": list(_page(url, params))}
+
+
+def fetch_all_attributes(layer_url: str, where: str = "1=1", out_fields: str = "*",
+                         bbox: tuple[float, float, float, float] | None = None) -> list[dict]:
+    """Attribute-only paging (returnGeometry=false) — for layers whose rows
+    carry what we need (e.g. census blocks publish POP100 + centroid fields),
+    skipping megabytes of polygon geometry."""
+    url = layer_url.rstrip("/")
+    if not url.endswith("/query"):
+        url += "/query"
+    params = {
+        "where": where,
+        "outFields": out_fields,
+        "f": "json",
+        "returnGeometry": "false",
+        **_envelope_params(bbox),
+    }
+    return [feature.get("attributes", {}) for feature in _page(url, params)]
 
 
 # GeoHub dataset title (lowercased) -> jurisdiction config attribute

@@ -153,6 +153,11 @@ class JurisdictionContext:
         return census.load_lodes(self)
 
     @functools.cached_property
+    def blocks(self):
+        from councilhound.impact.context import census
+        return census.load_blocks(self)
+
+    @functools.cached_property
     def pois(self):
         from councilhound.impact.context import pois
         return pois.load_pois(self)
