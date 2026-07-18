@@ -303,8 +303,9 @@ def _capture(dest, spend, a):
     return capture, walk_dollars, share_food, share_all
 
 
-def _rollup(dest, capture):
-    """Sum per-POI capture into named clusters for the reporting metrics."""
+def _rollup(dest, capture, walk_dollars):
+    """Sum per-POI capture (total and walk-arriving) into named clusters for
+    the reporting metrics and cluster tooltips."""
     import numpy as np
 
     labels = dest["cluster"]
@@ -316,6 +317,7 @@ def _rollup(dest, capture):
             "value": float(capture[0][members].sum()),
             "low": float(capture[1][members].sum()),
             "high": float(capture[2][members].sum()),
+            "walk_value": float(walk_dollars[0][members].sum()),
         }
     return rolled
 
@@ -473,8 +475,10 @@ def _street_layer(sub, primary: dict, prop: str, decimals: int = 1,
     return {"type": "FeatureCollection", "features": features}
 
 
-def _capture_points_layer(dest, capture) -> dict:
-    """Per-POI capture as weighted points — the heatmap's real input."""
+def _capture_points_layer(dest, capture, walk_dollars) -> dict:
+    """Per-POI capture as weighted points — the heatmaps' real input.
+    walk_usd is the walk-arriving share of that business's capture, so the
+    frontend can show total capture and walk-in capture on one scale."""
     features = []
     for i in range(dest["n"]):
         dollars = float(capture[0][i])
@@ -486,6 +490,7 @@ def _capture_points_layer(dest, capture) -> dict:
                          "coordinates": [round(float(dest["lon"][i]), 6),
                                          round(float(dest["lat"][i]), 6)]},
             "properties": {"capture_usd": round(dollars),
+                           "walk_usd": round(float(walk_dollars[0][i])),
                            "own": bool(dest["cluster"][i] == -2)},
         })
     return {"type": "FeatureCollection", "features": features}
@@ -503,6 +508,7 @@ def _cluster_layer(ctx, rolled: dict) -> dict:
             "type": "Feature",
             "geometry": {"type": "Point", "coordinates": [round(lon, 6), round(lat, 6)]},
             "properties": {"name": c["name"], "annual_capture_usd": round(c["value"]),
+                           "walk_usd": round(c.get("walk_value", 0.0)),
                            "poi_count": c["poi_count"], "own": c["own"]},
         })
     return {"type": "FeatureCollection", "features": features}
@@ -539,7 +545,7 @@ def run(spec, ctx, prior=None):
 
     dest = _destinations(ctx, site, site_projected, own_retail_equiv)
     capture, walk_dollars, share_food, share_all = _capture(dest, spend, a)
-    rolled = _rollup(dest, capture)
+    rolled = _rollup(dest, capture, walk_dollars)
 
     metrics: list[MetricValue] = []
     ces_prov = ces_shares.provenance()
@@ -703,15 +709,17 @@ def run(spec, ctx, prior=None):
             dollar_amounts[node] = dollar_amounts.get(node, 0.0) + float(walk_dollars[0][i])
     dollar_flows = route_edge_amounts(sub, dest["walk_origin"], dollar_amounts)
     notes.append(
-        "Walking-expenditure street values are the walk-arriving share of the "
-        "NEW residents' spending routed along shortest paths — not total "
+        "Walk-in capture per business (and its street-routed form) is the "
+        "walk-arriving share of the NEW residents' spending — not total "
         "pedestrian commerce, and not incremental sales (some walk-arriving "
-        "dollars would otherwise have arrived by car).")
+        "dollars would otherwise have arrived by car). Comparing a business's "
+        "walk-in capture to its total capture shows how much of its projected "
+        "gain depends on being within walking distance of the project.")
 
     layers = {
         "site": {"type": "FeatureCollection", "features": [{
             "type": "Feature", "geometry": spec.geometry, "properties": {"role": "site"}}]},
-        "capture_points": _capture_points_layer(dest, capture),
+        "capture_points": _capture_points_layer(dest, capture, walk_dollars),
         "capture_clusters": _cluster_layer(ctx, rolled),
         "commercial_retail_zones": ctx.commercial_retail_zones,
         "foot_traffic_delta": _street_layer(sub, flows, "trips_per_day",

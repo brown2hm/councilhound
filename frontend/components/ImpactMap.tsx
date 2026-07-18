@@ -190,57 +190,22 @@ function HeatCanvas({
  * fallback for evaluations computed before capture_points existed. */
 function captureHeatPoints(
   source: GeoJSON.FeatureCollection,
+  valueKeys: string[],
   scaleMax: number,
   zones?: GeoJSON.FeatureCollection,
 ): HeatPoint[] {
   return source.features
     .filter((f) => f.geometry.type === "Point")
     .map((f) => {
-      const props = f.properties as { capture_usd?: number; annual_capture_usd?: number };
+      const props = (f.properties ?? {}) as Record<string, unknown>;
+      const key = valueKeys.find((k) => typeof props[k] === "number");
       return {
         coords: (f.geometry as GeoJSON.Point).coordinates as [number, number],
-        value: props?.capture_usd ?? props?.annual_capture_usd ?? 0,
+        value: key ? (props[key] as number) : 0,
       };
     })
-    .filter(({ coords }) => pointInZones(coords, zones))
+    .filter(({ coords, value }) => value > 0 && pointInZones(coords, zones))
     .map(({ coords: [lng, lat], value }): HeatPoint => [lat, lng, dollarT(value, scaleMax)]);
-}
-
-/** Street dollar flows -> heat points: walk each LineString and emit a point
- * every ~50 m carrying the edge's weight, so a hot street reads as a glowing
- * corridor rather than two endpoint blobs. */
-function streetHeatPoints(
-  source: GeoJSON.FeatureCollection,
-  scaleMax: number,
-  zones?: GeoJSON.FeatureCollection,
-): HeatPoint[] {
-  const edges = source.features
-    .filter((f) => f.geometry.type === "LineString")
-    .map((f) => ({
-      coords: (f.geometry as GeoJSON.LineString).coordinates as [number, number][],
-      value: (f.properties as { dollars_per_year?: number })?.dollars_per_year ?? 0,
-    }));
-  const points: HeatPoint[] = [];
-  const STEP_M = 50;
-  for (const { coords, value } of edges) {
-    if (value <= 0) continue;
-    const weight = dollarT(value, scaleMax);
-    for (let i = 0; i < coords.length - 1; i++) {
-      const [lng0, lat0] = coords[i];
-      const [lng1, lat1] = coords[i + 1];
-      // equirectangular segment length in meters (fine at city scale)
-      const dx = (lng1 - lng0) * 111_320 * Math.cos((lat0 * Math.PI) / 180);
-      const dy = (lat1 - lat0) * 110_540;
-      const steps = Math.max(1, Math.round(Math.hypot(dx, dy) / STEP_M));
-      for (let s = 0; s <= steps; s++) {
-        const t = s / steps;
-        const lng = lng0 + t * (lng1 - lng0);
-        const lat = lat0 + t * (lat1 - lat0);
-        if (pointInZones([lng, lat], zones)) points.push([lat, lng, weight]);
-      }
-    }
-  }
-  return points;
 }
 
 export default function ImpactMap({
@@ -293,19 +258,33 @@ export default function ImpactMap({
     [walkDollars],
   );
 
+  const emptyFc: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
   const spendingHeat = useMemo(
     () =>
       captureHeatPoints(
-        capturePoints ?? clusters ?? { type: "FeatureCollection", features: [] },
+        capturePoints ?? clusters ?? emptyFc,
+        ["capture_usd", "annual_capture_usd"],
         captureScaleMax,
         commercialRetailZones,
       ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [capturePoints, clusters, captureScaleMax, commercialRetailZones],
   );
-  const walkingHeat = useMemo(
-    () => (walkDollars ? streetHeatPoints(walkDollars, walkScaleMax, commercialRetailZones) : []),
-    [walkDollars, walkScaleMax, commercialRetailZones],
+  // walk-in capture: the walk-arriving share of each business's capture, on
+  // the SAME dollar scale as total capture so toggling the two heatmaps
+  // shows how much of a business's gain depends on walk access
+  const walkInHeat = useMemo(
+    () =>
+      captureHeatPoints(
+        capturePoints ?? emptyFc,
+        ["walk_usd"],
+        captureScaleMax,
+        commercialRetailZones,
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [capturePoints, captureScaleMax, commercialRetailZones],
   );
+  const hasWalkIn = walkInHeat.length > 0;
 
   // trips styling for the optional street-lines overlay
   const flowScale = useMemo(() => {
@@ -349,20 +328,20 @@ export default function ImpactMap({
               />
             </LayerGroup>
           </LayersControl.Overlay>
-          {walkDollars && (
-            <LayersControl.Overlay name="Walking expenditures (heatmap)">
+          {hasWalkIn && (
+            <LayersControl.Overlay name="Walk-in capture (heatmap)">
               <LayerGroup>
                 <HeatCanvas
-                  points={walkingHeat}
-                  radius={14}
-                  blur={10}
+                  points={walkInHeat}
+                  radius={22}
+                  blur={16}
                   clipZones={commercialRetailZones}
                 />
               </LayerGroup>
             </LayersControl.Overlay>
           )}
           {walkDollars && (
-            <LayersControl.Overlay name="Walking expenditures (streets)">
+            <LayersControl.Overlay name="Walking $ routed on streets">
               <WalkDollarsLayer walkDollars={walkDollars} scaleMax={walkScaleMax} />
             </LayersControl.Overlay>
           )}
@@ -389,9 +368,12 @@ export default function ImpactMap({
         )}
       </MapContainer>
       <div className="pointer-events-none absolute bottom-3 left-3 z-[500] rounded-xl border border-hairline bg-canvas/90 px-3 py-2 text-[11px] leading-relaxed text-muted">
-        <DollarScaleRow label="$ captured /business/yr" scaleMax={captureScaleMax} />
+        <DollarScaleRow
+          label={hasWalkIn ? "$ /business/yr (capture & walk-in)" : "$ captured /business/yr"}
+          scaleMax={captureScaleMax}
+        />
         {walkDollars && (
-          <DollarScaleRow label="walking $ /street/yr" scaleMax={walkScaleMax} />
+          <DollarScaleRow label="walking $ /street/yr (streets layer)" scaleMax={walkScaleMax} />
         )}
         <span className="mr-3">
           <span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm border-2 border-[#1a3a3a] bg-white/60 align-middle" />
@@ -505,6 +487,7 @@ function ClusterMarkers({
         const props = f.properties as {
           name?: string;
           annual_capture_usd?: number;
+          walk_usd?: number;
           poi_count?: number;
           own?: boolean;
         };
@@ -526,6 +509,9 @@ function ClusterMarkers({
               <span className="font-semibold">{props.name}</span>
               <br />
               {fmtDollars(capture)}/yr captured
+              {props.walk_usd != null && props.walk_usd > 0 && (
+                <> · {fmtDollars(props.walk_usd)} arriving on foot</>
+              )}
               {props.own
                 ? " · this project"
                 : props.poi_count

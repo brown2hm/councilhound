@@ -125,11 +125,13 @@ export default async function DevelopmentAnalysisPage({
           <h2 className="mb-2 text-lg font-semibold">Where the effects land</h2>
           <ImpactMapClient layers={evaluation.map_layers} />
           <p className="mt-2 text-[12px] text-muted">
-            Layers (toggle top-right): spending captured as a heatmap modeled per
-            business location; walking expenditures as a heatmap or street lines (the
-            walk-arriving share of new residents&apos; spending routed over nearby
-            streets); walk trips/day; and named shopping areas rolled up for reporting,
-            sized by dollars. Both heatmaps are clipped to CR (Commercial Retail) zoning.
+            Layers (toggle top-right): spending captured and walk-in capture as
+            heatmaps modeled per business location — both on the same dollar scale, so
+            toggling between them shows how much of each business&apos;s projected gain
+            arrives on foot from the new development. Street overlays show the walking
+            dollars routed over sidewalks and walk trips/day. Named shopping areas are
+            rolled up for reporting, sized by dollars. Heatmaps are clipped to CR
+            (Commercial Retail) zoning.
           </p>
         </section>
       )}
