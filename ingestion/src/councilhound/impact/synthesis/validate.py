@@ -29,11 +29,14 @@ def allowed_values(bundle) -> set[float]:
         if x is None:
             return
         x = float(x)
-        allowed.add(round(x, 2))
-        # rounded presentation forms the narrative may reasonably use
-        for digits in (0, 1, 2):
-            for scale in (1, 1e-3, 1e-6):  # raw, thousands, millions
-                allowed.add(round(x * scale, digits))
+        # prose may carry the sign as a word ("a deficit of $5,985,151"),
+        # so the unsigned form of any signed value is also quotable
+        for v in (x, -x) if x < 0 else (x,):
+            allowed.add(round(v, 2))
+            # rounded presentation forms the narrative may reasonably use
+            for digits in (0, 1, 2):
+                for scale in (1, 1e-3, 1e-6):  # raw, thousands, millions
+                    allowed.add(round(v * scale, digits))
 
     for m in bundle.all_metrics():
         add(m.value), add(m.low), add(m.high)
@@ -60,8 +63,10 @@ def allowed_values(bundle) -> set[float]:
         quotable.extend(result.narrative_notes)
         for m in result.metrics:
             quotable.append(m.method)
-            quotable.extend(p.notes or "" for p in m.provenance)
-    quotable.extend(p.notes or "" for p in bundle.all_sources())
+            for p in m.provenance:
+                quotable += [p.notes or "", p.vintage, p.source_name]
+    for p in bundle.all_sources():
+        quotable += [p.notes or "", p.vintage, p.source_name]  # e.g. "Va. Code § 58.1-605"
     quotable.extend(bundle.spec.extraction_quotes.values())
     quotable.extend(bundle.spec.extraction_notes)
     for text in quotable:

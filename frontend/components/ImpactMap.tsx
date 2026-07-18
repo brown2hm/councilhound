@@ -2,24 +2,74 @@
 
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import { useMemo } from "react";
-import { CircleMarker, GeoJSON, MapContainer, TileLayer, Tooltip } from "react-leaflet";
+import "leaflet.heat";
+import { useEffect, useMemo } from "react";
+import {
+  CircleMarker,
+  GeoJSON,
+  LayerGroup,
+  LayersControl,
+  MapContainer,
+  TileLayer,
+  Tooltip,
+  useMap,
+} from "react-leaflet";
 
-// foot-traffic delta styling: greens for gains, red for losses, weight by magnitude
-function edgeStyle(deltaPct: number) {
-  const gain = deltaPct >= 0;
-  const magnitude = Math.min(Math.abs(deltaPct) / 50, 1);
-  return {
-    color: gain ? "#14453a" : "#c2402a",
-    weight: 1.5 + magnitude * 3.5,
-    opacity: 0.35 + magnitude * 0.55,
-  };
+// viridis control points (matplotlib); linear interpolation between stops
+const VIRIDIS: [number, number, number][] = [
+  [68, 1, 84], [72, 40, 120], [62, 74, 137], [49, 104, 142], [38, 130, 142],
+  [31, 158, 137], [53, 183, 121], [109, 205, 89], [180, 222, 44], [253, 231, 37],
+];
+
+function viridis(t: number): string {
+  const x = Math.min(Math.max(t, 0), 1) * (VIRIDIS.length - 1);
+  const i = Math.min(Math.floor(x), VIRIDIS.length - 2);
+  const f = x - i;
+  const [r0, g0, b0] = VIRIDIS[i];
+  const [r1, g1, b1] = VIRIDIS[i + 1];
+  return `rgb(${Math.round(r0 + f * (r1 - r0))},${Math.round(g0 + f * (g1 - g0))},${Math.round(b0 + f * (b1 - b0))})`;
 }
+
+const VIRIDIS_GRADIENT = Object.fromEntries(
+  VIRIDIS.map((rgb, i) => [i / (VIRIDIS.length - 1), `rgb(${rgb.join(",")})`]),
+);
 
 function fmtDollars(x: number): string {
   if (x >= 1_000_000) return `$${(x / 1_000_000).toFixed(1)}M`;
   if (x >= 1_000) return `$${Math.round(x / 1_000)}k`;
   return `$${Math.round(x)}`;
+}
+
+/** Kernel heatmap of spending capture (leaflet.heat with a viridis gradient). */
+function SpendingHeatLayer({ clusters }: { clusters: GeoJSON.FeatureCollection }) {
+  const map = useMap();
+  useEffect(() => {
+    const captures = clusters.features
+      .filter((f) => f.geometry.type === "Point")
+      .map((f) => ({
+        coords: (f.geometry as GeoJSON.Point).coordinates as [number, number],
+        capture: (f.properties as { annual_capture_usd?: number })?.annual_capture_usd ?? 0,
+      }));
+    const max = Math.max(1, ...captures.map((c) => c.capture));
+    // sqrt scaling keeps mid-size clusters visible next to the top one
+    const points = captures.map(
+      ({ coords: [lng, lat], capture }) =>
+        [lat, lng, Math.sqrt(capture / max)] as [number, number, number],
+    );
+    const layer = (L as unknown as { heatLayer: (pts: unknown, opts: unknown) => L.Layer })
+      .heatLayer(points, {
+        radius: 32,
+        blur: 24,
+        maxZoom: 15,
+        max: 1.0,
+        gradient: VIRIDIS_GRADIENT,
+      });
+    layer.addTo(map);
+    return () => {
+      map.removeLayer(layer);
+    };
+  }, [map, clusters]);
+  return null;
 }
 
 export default function ImpactMap({
@@ -57,6 +107,20 @@ export default function ImpactMap({
     [clusters],
   );
 
+  // foot-traffic delta -> viridis over the observed range
+  const deltaRange = useMemo(() => {
+    const deltas = (footTraffic?.features ?? []).map(
+      (f) => (f.properties as { delta_pct?: number })?.delta_pct ?? 0,
+    );
+    if (!deltas.length) return { min: 0, max: 1 };
+    return { min: Math.min(...deltas), max: Math.max(...deltas) };
+  }, [footTraffic]);
+
+  const deltaToT = (d: number) =>
+    deltaRange.max === deltaRange.min
+      ? 0.5
+      : (d - deltaRange.min) / (deltaRange.max - deltaRange.min);
+
   return (
     <div className="relative">
       <MapContainer
@@ -68,65 +132,127 @@ export default function ImpactMap({
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
         />
-        {footTraffic && (
-          <GeoJSON
-            data={footTraffic}
-            style={(feature) =>
-              edgeStyle((feature?.properties as { delta_pct?: number })?.delta_pct ?? 0)
-            }
-          />
-        )}
+        <LayersControl position="topright">
+          <LayersControl.Overlay checked name="Spending captured (heatmap)">
+            <SpendingHeatLayerWrapper clusters={clusters} />
+          </LayersControl.Overlay>
+          <LayersControl.Overlay checked name="Foot-traffic change (streets)">
+            <FootTrafficLayer footTraffic={footTraffic} deltaToT={deltaToT} />
+          </LayersControl.Overlay>
+          <LayersControl.Overlay checked name="Cluster details">
+            <ClusterMarkers clusters={clusters} maxCapture={maxCapture} />
+          </LayersControl.Overlay>
+        </LayersControl>
         {site && (
           <GeoJSON
             data={site}
-            style={{ color: "#1a3a3a", weight: 2, fillColor: "#7c5cd4", fillOpacity: 0.25 }}
+            style={{ color: "#1a3a3a", weight: 2.5, fillColor: "#ffffff", fillOpacity: 0.35 }}
           />
         )}
-        {(clusters?.features ?? []).map((f, i) => {
-          if (f.geometry.type !== "Point") return null;
-          const [lng, lat] = f.geometry.coordinates as [number, number];
-          const props = f.properties as {
-            name?: string;
-            annual_capture_usd?: number;
-            own?: boolean;
-          };
-          const capture = props.annual_capture_usd ?? 0;
-          const radius = 6 + 16 * Math.sqrt(capture / maxCapture);
-          return (
-            <CircleMarker
-              key={i}
-              center={[lat, lng]}
-              radius={radius}
-              pathOptions={{
-                color: props.own ? "#7c5cd4" : "#14453a",
-                weight: props.own ? 2.5 : 1.5,
-                fillColor: props.own ? "#7c5cd4" : "#14453a",
-                fillOpacity: 0.3,
-              }}
-            >
-              <Tooltip>
-                <span className="font-semibold">{props.name}</span>
-                <br />
-                {fmtDollars(capture)}/yr captured
-              </Tooltip>
-            </CircleMarker>
-          );
-        })}
       </MapContainer>
       <div className="pointer-events-none absolute bottom-3 left-3 z-[500] rounded-xl border border-hairline bg-canvas/90 px-3 py-2 text-[11px] leading-relaxed text-muted">
+        <div className="mb-1 flex items-center gap-2">
+          <span
+            className="inline-block h-2 w-24 rounded-full"
+            style={{
+              background: `linear-gradient(to right, ${[0, 0.25, 0.5, 0.75, 1]
+                .map((t) => viridis(t))
+                .join(", ")})`,
+            }}
+          />
+          <span>low → high (both layers)</span>
+        </div>
         <span className="mr-3">
-          <span className="mr-1 inline-block h-2.5 w-2.5 rounded-full border-2 border-[#7c5cd4] bg-[#7c5cd4]/30 align-middle" />
-          site &amp; its retail
+          <span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm border-2 border-[#1a3a3a] bg-white/60 align-middle" />
+          project site
         </span>
-        <span className="mr-3">
-          <span className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-[#14453a]/60 align-middle" />
-          spending captured
-        </span>
-        <span>
-          <span className="mr-1 inline-block h-0.5 w-4 bg-[#14453a] align-middle" />
-          foot-traffic gain
-        </span>
+        <span>blur: $ captured · lines: foot-traffic index Δ on streets</span>
       </div>
     </div>
+  );
+}
+
+// react-leaflet's LayersControl needs layer-ish children; wrap the imperative
+// heat layer and the marker groups in components it can toggle
+function SpendingHeatLayerWrapper({ clusters }: { clusters?: GeoJSON.FeatureCollection }) {
+  if (!clusters) return <LayerGroup />;
+  return (
+    <LayerGroup>
+      <SpendingHeatLayer clusters={clusters} />
+    </LayerGroup>
+  );
+}
+
+function FootTrafficLayer({
+  footTraffic,
+  deltaToT,
+}: {
+  footTraffic?: GeoJSON.FeatureCollection;
+  deltaToT: (d: number) => number;
+}) {
+  if (!footTraffic) return <LayerGroup />;
+  return (
+    <LayerGroup>
+      <GeoJSON
+        data={footTraffic}
+        style={(feature) => {
+          const delta = (feature?.properties as { delta_pct?: number })?.delta_pct ?? 0;
+          return { color: viridis(deltaToT(delta)), weight: 3, opacity: 0.85 };
+        }}
+        onEachFeature={(feature, layer) => {
+          const delta = (feature.properties as { delta_pct?: number })?.delta_pct ?? 0;
+          layer.bindTooltip(`foot-traffic index ${delta >= 0 ? "+" : ""}${delta}%`);
+        }}
+      />
+    </LayerGroup>
+  );
+}
+
+function ClusterMarkers({
+  clusters,
+  maxCapture,
+}: {
+  clusters?: GeoJSON.FeatureCollection;
+  maxCapture: number;
+}) {
+  return (
+    <LayerGroup>
+      {(clusters?.features ?? []).map((f, i) => {
+        if (f.geometry.type !== "Point") return null;
+        const [lng, lat] = f.geometry.coordinates as [number, number];
+        const props = f.properties as {
+          name?: string;
+          annual_capture_usd?: number;
+          poi_count?: number;
+          own?: boolean;
+        };
+        const capture = props.annual_capture_usd ?? 0;
+        const radius = 5 + 13 * Math.sqrt(capture / maxCapture);
+        return (
+          <CircleMarker
+            key={i}
+            center={[lat, lng]}
+            radius={radius}
+            pathOptions={{
+              color: props.own ? "#1a3a3a" : "#ffffff",
+              weight: props.own ? 2.5 : 1.5,
+              fillColor: viridis(Math.sqrt(capture / maxCapture)),
+              fillOpacity: 0.75,
+            }}
+          >
+            <Tooltip>
+              <span className="font-semibold">{props.name}</span>
+              <br />
+              {fmtDollars(capture)}/yr captured
+              {props.own
+                ? " · this project"
+                : props.poi_count
+                  ? ` · ${props.poi_count} businesses (named for the one nearest the cluster center)`
+                  : ""}
+            </Tooltip>
+          </CircleMarker>
+        );
+      })}
+    </LayerGroup>
   );
 }

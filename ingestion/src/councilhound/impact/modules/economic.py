@@ -128,13 +128,16 @@ def _clusters(ctx, site_pt_projected, own_retail_equiv: dict[str, float]):
     clusters = []
     for label, group in retail[retail["cluster"] >= 0].groupby("cluster"):
         cx, cy = float(group.geometry.x.mean()), float(group.geometry.y.mean())
-        # deterministic name: the member POI nearest the centroid
+        # deterministic name: the member POI nearest the centroid stands in
+        # for the whole cluster (the poi_count on the map layer makes the
+        # one-of-many relationship explicit)
         d2 = (group.geometry.x - cx) ** 2 + (group.geometry.y - cy) ** 2
         anchor = group.loc[d2.idxmin(), "name"]
         clusters.append({
             "name": f"{anchor} area",
             "x": cx, "y": cy,
             "counts": group["taxonomy"].value_counts().to_dict(),
+            "poi_count": int(len(group)),
             "own": False,
         })
     clusters.append({
@@ -489,6 +492,6 @@ def _cluster_layer(ctx, clusters, capture) -> dict:
             "type": "Feature",
             "geometry": {"type": "Point", "coordinates": [round(lon, 6), round(lat, 6)]},
             "properties": {"name": c["name"], "annual_capture_usd": round(float(dollars)),
-                           "own": c["own"]},
+                           "poi_count": c.get("poi_count", 0), "own": c["own"]},
         })
     return {"type": "FeatureCollection", "features": features}
