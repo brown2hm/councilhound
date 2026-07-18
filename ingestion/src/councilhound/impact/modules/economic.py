@@ -71,9 +71,11 @@ def _assumptions(ctx) -> dict[str, Assumption]:
                    basis=ces,
                    rationale="CES line items are national averages; ±15% covers "
                              "regional and vintage drift"),
-        Assumption(key="beta_walk", value=0.10, low=0.07, high=0.15,
-                   basis="Huff impedance decay per methodology brief",
-                   rationale="per-minute walk-time decay in destination choice"),
+        Assumption(key="beta_walk", value=0.15, low=0.07, high=0.15,
+                   basis="Huff impedance decay; methodology brief range 0.07-0.15, "
+                         "set to the upper end (analyst calibration, 2026-07)",
+                   rationale="per-minute walk-time decay in destination choice; "
+                             "steeper decay concentrates walk capture nearer the site"),
         Assumption(key="walk_share_neighborhood", value=0.60, low=0.40, high=0.80,
                    basis="methodology brief mode-split default",
                    rationale="walk share for restaurants/convenience/services at a "
