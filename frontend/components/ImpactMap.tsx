@@ -378,9 +378,6 @@ export default function ImpactMap({
           label={hasWalkIn ? "$ /business/yr (capture & walk-in)" : "$ captured /business/yr"}
           scaleMax={captureScaleMax}
         />
-        {walkDollars && (
-          <DollarScaleRow label="walking $ /street/yr (streets layer)" scaleMax={walkScaleMax} />
-        )}
         <span className="mr-3">
           <span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm border-2 border-[#1a3a3a] bg-white/60 align-middle" />
           project site
