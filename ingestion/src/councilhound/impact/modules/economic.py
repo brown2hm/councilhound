@@ -376,6 +376,39 @@ def run(spec, ctx, prior=None):
             provenance=[ces_prov], method=huff_method,
             assumptions=["beta_walk", "walk_share_neighborhood", "ces_scale"],
         ))
+    # in-city capture shares — the fiscal module's meals/sales-tax link:
+    # only spending that lands inside city limits generates city tax revenue
+    from shapely.geometry import Point as _Point
+    from shapely.ops import transform as _shp_transform
+    boundary_projected = _shp_transform(tx.transform, ctx.boundary)
+    in_city = np.array([boundary_projected.contains(_Point(c["x"], c["y"])) for c in clusters])
+    for category, label in (("restaurant_bar", "food_away"),
+                            (None, "all_retail")):
+        share_num = np.zeros(3)  # value, low, high accumulators
+        share_den = np.zeros(3)
+        cats = [category] if category else list(RETAIL_CLASSES)
+        for cat in cats:
+            attractiveness = np.array([c["counts"].get(cat, 0.0) for c in clusters])
+            ws = _walk_share_for(cat, a)
+            for slot, (beta, ws_value) in enumerate((
+                    (a["beta_walk"].value, ws.value),
+                    (a["beta_walk"].high, ws.low),
+                    (a["beta_walk"].low, ws.high))):
+                p = huff.blended_probabilities(attractiveness, walk_min, drive_min,
+                                               walk_share=ws_value, alpha=ALPHA,
+                                               beta_walk=beta, beta_drive=BETA_DRIVE)
+                share_num[slot] += p[in_city].sum()
+                share_den[slot] += p.sum()
+        shares = np.divide(share_num, share_den, out=np.zeros(3), where=share_den > 0)
+        lo, hi = float(min(shares)), float(max(shares))
+        metrics.append(MetricValue(
+            name=f"In-city capture share: {label}",
+            value=float(shares[0]), unit="fraction", low=lo, high=hi,
+            provenance=[ces_prov], method=huff_method + "; share of capture landing "
+            "at clusters inside the city boundary",
+            assumptions=["beta_walk", "walk_share_neighborhood"],
+        ))
+
     own_idx = next(i for i, c in enumerate(clusters) if c["own"])
     metrics.append(MetricValue(
         name="Annual capture: project's own ground-floor retail",
