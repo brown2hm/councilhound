@@ -9,7 +9,6 @@ from councilhound.impact import cache
 @pytest.fixture(autouse=True)
 def tmp_data_dirs(tmp_path, monkeypatch):
     monkeypatch.setattr(cache, "DATA_DIR", str(tmp_path / "data"))
-    monkeypatch.setattr(cache, "RAW_DATA_DIR", str(tmp_path / "data" / "raw"))
     return tmp_path
 
 

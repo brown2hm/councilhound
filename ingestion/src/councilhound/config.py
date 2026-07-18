@@ -34,3 +34,7 @@ USER_AGENT = os.environ.get(
     "(KHTML, like Gecko) Chrome/126.0 Safari/537.36 councilhound/0.1",
 )
 REQUEST_DELAY_SECONDS = float(os.environ.get("REQUEST_DELAY_SECONDS", "1.0"))
+
+# Optional for the impact subsystem's ACS loader; anonymous access is fine at
+# our volume, a key just raises the rate limit.
+CENSUS_API_KEY = os.environ.get("CENSUS_API_KEY", "")

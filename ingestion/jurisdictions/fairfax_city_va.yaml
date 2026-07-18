@@ -1,28 +1,41 @@
-# City of Fairfax, Virginia — jurisdiction config for the impact subsystem.
-# null values are placeholders: `impact-setup-jurisdiction` discovers and pins
-# each one WITH provenance (source URL + fiscal year). Module code refuses to
-# run on unpinned values (jurisdiction.require_rate) — no guessed rates.
 name: City of Fairfax, Virginia
 fips:
-  state: "51"
-  county: "600"   # independent city, county-equivalent FIPS 51600
-crs_projected: "EPSG:2283"   # VA State Plane North, US survey feet
+  state: '51'
+  county: '600'
+crs_projected: EPSG:2283
 projects_index_url: https://www.fairfaxva.gov/Property-Business/Development/Projects
-geohub_portal_url: https://www.fairfaxva.gov/Services/Maps-and-GIS-Data/City-of-Fairfax-GeoHub
-# Same FeatureServer the directory scraper uses (config.FAIRFAX_PROJECTS_ARCGIS_URL)
-development_review_map_source: https://services2.arcgis.com/DANcyjLcCCpGk8Ri/arcgis/rest/services/Major_Developments_Project_Map_v2/FeatureServer/0/query
-boundary_source: null      # GeoHub layer URL — discovered at first context build, then pinned
-parcels_source: null
-zoning_source: null
+boundary_source: https://services2.arcgis.com/DANcyjLcCCpGk8Ri/arcgis/rest/services/City_Boundary/FeatureServer/0
+parcels_source: https://services2.arcgis.com/DANcyjLcCCpGk8Ri/arcgis/rest/services/Parcels/FeatureServer/0
+zoning_source: https://services2.arcgis.com/DANcyjLcCCpGk8Ri/arcgis/rest/services/ZoningSplits/FeatureServer/0
 assessment_source: null
+development_review_map_source: https://services2.arcgis.com/DANcyjLcCCpGk8Ri/arcgis/rest/services/Major_Developments_Project_Map_v2/FeatureServer/0/query
+geohub_portal_url: https://www.fairfaxva.gov/Services/Maps-and-GIS-Data/City-of-Fairfax-GeoHub
 tax:
-  real_estate_rate_per_100: {value: null, source: null, fy: null}
-  meals_tax_rate: {value: null, source: null, fy: null}
-  sales_tax_local_share: {value: null, source: null, fy: null}
-  personal_property_per_household: {value: null, source: null, fy: null}
+  real_estate_rate_per_100:
+    value: null
+    source: null
+    fy: null
+  meals_tax_rate:
+    value: null
+    source: null
+    fy: null
+  sales_tax_local_share:
+    value: null
+    source: null
+    fy: null
+  personal_property_per_household:
+    value: null
+    source: null
+    fy: null
 budget:
-  general_fund_expenditure: {value: null, source: null, fy: null}
-  population_basis: {value: null, source: null, fy: null}
-transit_feeds: []          # CUE / WMATA / Fairfax Connector GTFS URLs — pinned via setup
-fringe_reference_blockgroup: null   # environmental module (follow-up branch)
-calibration_counts: null   # optional pedestrian counts for foot-traffic scaling
+  general_fund_expenditure:
+    value: null
+    source: null
+    fy: null
+  population_basis:
+    value: null
+    source: null
+    fy: null
+transit_feeds: []
+fringe_reference_blockgroup: null
+calibration_counts: null

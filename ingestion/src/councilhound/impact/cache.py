@@ -1,7 +1,8 @@
 """Disk cache for the impact subsystem.
 
-Layout (all under the repo data root, gitignored):
-    RAW_DATA_DIR/impact/<source>/<vintage>/...     immutable raw downloads
+Layout (all under DATA_DIR, gitignored — NOT RAW_DATA_DIR, which .env may
+point at a Docker volume path that doesn't exist on the local machine):
+    DATA_DIR/impact/raw/<source>/<vintage>/...     immutable raw downloads
     DATA_DIR/impact/context/<jurisdiction>/        built context layers
         manifest.json                              {layer: provenance + stats}
     DATA_DIR/impact/specs/<slug>.yaml              HITL spec artifacts
@@ -19,11 +20,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
-from councilhound.config import DATA_DIR, RAW_DATA_DIR
+from councilhound.config import DATA_DIR
 
 
 def raw_path(source: str, vintage: str, filename: str = "") -> Path:
-    p = Path(RAW_DATA_DIR) / "impact" / source / vintage
+    p = Path(DATA_DIR) / "impact" / "raw" / source / vintage
     p.mkdir(parents=True, exist_ok=True)
     return p / filename if filename else p
 
