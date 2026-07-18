@@ -129,7 +129,7 @@ export default async function DevelopmentAnalysisPage({
             business location; walking expenditures as a heatmap or street lines (the
             walk-arriving share of new residents&apos; spending routed over nearby
             streets); walk trips/day; and named shopping areas rolled up for reporting,
-            sized by dollars.
+            sized by dollars. Both heatmaps are clipped to CR (Commercial Retail) zoning.
           </p>
         </section>
       )}

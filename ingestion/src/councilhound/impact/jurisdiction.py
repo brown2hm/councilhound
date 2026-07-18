@@ -172,6 +172,11 @@ class JurisdictionContext:
         from councilhound.impact.context import parcels
         return parcels.load_parcels(self)
 
+    @functools.cached_property
+    def commercial_retail_zones(self):
+        from councilhound.impact.context import geohub
+        return geohub.load_commercial_retail_zones(self)
+
     def transformer(self):
         """pyproj transformer EPSG:4326 -> the jurisdiction's projected CRS."""
         import pyproj

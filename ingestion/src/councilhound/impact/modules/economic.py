@@ -713,6 +713,7 @@ def run(spec, ctx, prior=None):
             "type": "Feature", "geometry": spec.geometry, "properties": {"role": "site"}}]},
         "capture_points": _capture_points_layer(dest, capture),
         "capture_clusters": _cluster_layer(ctx, rolled),
+        "commercial_retail_zones": ctx.commercial_retail_zones,
         "foot_traffic_delta": _street_layer(sub, flows, "trips_per_day",
                                             secondary=pct, secondary_prop="delta_pct"),
         "walk_dollars": _street_layer(sub, dollar_flows, "dollars_per_year", decimals=0),

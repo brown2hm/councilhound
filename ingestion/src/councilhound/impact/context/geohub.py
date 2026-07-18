@@ -167,3 +167,77 @@ def load_boundary(ctx):
         )
     fc = json.loads(path.read_text())
     return unary_union([shape(f["geometry"]) for f in fc["features"]])
+
+
+def load_commercial_retail_zones(ctx) -> dict:
+    """Dissolved city zoning footprint for the CR (Commercial Retail) district.
+
+    Most zoning comes from whole parcels. Split-zoned parcels use the city's
+    separate ZoningSplits geometry so only their CR portion is included.
+    """
+    from shapely.geometry import mapping, shape
+    from shapely.ops import unary_union
+
+    path = context_dir(ctx.cfg.slug) / "zoning_commercial_retail_v2.geojson"
+    if not path.exists():
+        from councilhound.impact.jurisdiction import require_source
+
+        if ctx.cfg.parcels_source is None or ctx.cfg.zoning_source is None:
+            discover_layers(ctx.cfg)
+        parcels_url = require_source(ctx.cfg, "parcels_source")
+        splits_url = require_source(ctx.cfg, "zoning_source")
+        parcels = fetch_all_features(
+            parcels_url,
+            where="ZONE1 = 'CR' AND SPLITZONED = 'N'",
+            out_fields="ZONE1,SPLITZONED",
+        )
+        splits = fetch_all_features(
+            splits_url,
+            where="ZONE = 'CR'",
+            out_fields="ZONE",
+        )
+        source_features = parcels["features"] + splits["features"]
+        if not source_features:
+            raise RuntimeError("parcel and zoning-split layers returned no CR features")
+
+        dissolved = unary_union([
+            shape(feature["geometry"])
+            for feature in source_features
+            if feature.get("geometry")
+        ]).buffer(0)
+        if dissolved.is_empty:
+            raise RuntimeError("CR zoning features produced an empty dissolved geometry")
+        parts = len(dissolved.geoms) if dissolved.geom_type == "MultiPolygon" else 1
+        fc = {
+            "type": "FeatureCollection",
+            "features": [{
+                "type": "Feature",
+                "geometry": mapping(dissolved),
+                "properties": {"ZONE": "CR"},
+            }],
+        }
+        atomic_write_json(path, fc)
+        Manifest(ctx.cfg.slug).record(
+            "zoning_commercial_retail",
+            [
+                prov(
+                    "Parcel zoning (GeoHub)",
+                    parcels_url,
+                    "live",
+                    "ArcGIS FeatureServer; filter: ZONE1 = 'CR' AND SPLITZONED = 'N'",
+                ).model_dump(),
+                prov(
+                    "Split-zone fragments (GeoHub)",
+                    splits_url,
+                    "live",
+                    "ArcGIS FeatureServer; filter: ZONE = 'CR'",
+                ).model_dump(),
+            ],
+            {
+                "parcel_features": len(parcels["features"]),
+                "split_features": len(splits["features"]),
+                "dissolved_parts": parts,
+                "zone": "CR",
+            },
+        )
+    return json.loads(path.read_text())
