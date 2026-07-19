@@ -89,6 +89,17 @@ class ProjectSpec(BaseModel):
     documents: list[Provenance] = Field(default_factory=list)
 
 
+class AdjustTerm(BaseModel):
+    """One power-law term of a metric's exact dependence on assumptions:
+    contributes value x prod((a_k / a_k_baseline) ** exps[k]) to the metric
+    when assumption centrals are adjusted. Terms exist only for assumptions
+    the metric depends on multiplicatively (or by a fixed power, e.g. Engel
+    elasticities); network-model parameters (Huff shape) never appear —
+    changing those requires a full re-run."""
+    value: float
+    exps: dict[str, float] = Field(default_factory=dict)  # Assumption.key -> exponent
+
+
 class MetricValue(BaseModel):
     name: str
     value: float
@@ -99,6 +110,9 @@ class MetricValue(BaseModel):
     assumptions: list[str] = Field(default_factory=list)  # Assumption.key references
     method: str  # one-line formula/method description
     headline: bool = False  # surfaced as a stat tile on the report page
+    # exact recompute model for the interactive assumptions page; None means
+    # the metric is not client-adjustable
+    adjust: list[AdjustTerm] | None = None
 
 
 class ModuleResult(BaseModel):

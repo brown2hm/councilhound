@@ -33,7 +33,7 @@ def _spend():
 def test_capture_sums_to_spend_per_slot():
     a = _assumptions(_Ctx())
     spend = _spend()
-    capture, walk_dollars, _, _ = _capture(_dest(), spend, a)
+    capture, walk_dollars, _, _, _ = _capture(_dest(), spend, a)
     for slot, pick in ((0, "value"), (1, "low"), (2, "high")):
         expected = sum(getattr(spend[c], pick) for c in RETAIL_CLASSES)
         assert capture[slot].sum() == pytest.approx(expected, rel=1e-9)
@@ -47,7 +47,7 @@ def test_walk_dollars_bounded_by_mode_split_budget():
 
     a = _assumptions(_Ctx())
     spend = _spend()
-    _, walk_dollars, _, _ = _capture(_dest(), spend, a)
+    _, walk_dollars, _, _, _ = _capture(_dest(), spend, a)
     budget = sum(spend[c].value * _walk_share_for(c, a).value for c in RETAIL_CLASSES)
     assert 0 < walk_dollars[0].sum() < budget
 
@@ -62,7 +62,7 @@ def test_walk_dollars_equal_budget_at_zero_travel_time():
     dest = _dest()
     dest["walk_min"][:] = 0.0
     dest["drive_min"][:] = 0.0
-    _, walk_dollars, _, _ = _capture(dest, spend, a)
+    _, walk_dollars, _, _, _ = _capture(dest, spend, a)
     budget = sum(spend[c].value * _walk_share_for(c, a).value for c in RETAIL_CLASSES)
     assert walk_dollars[0].sum() == pytest.approx(budget, rel=1e-9)
 
@@ -71,8 +71,8 @@ def test_far_destinations_get_effectively_no_walk_dollars():
     a = _assumptions(_Ctx())
     dest = _dest()
     dest["walk_min"][2] = 90.0  # a 90-minute walk; drive stays short
-    _, walk_dollars, _, _ = _capture(dest, _spend(), a)
-    capture, _, _, _ = _capture(dest, _spend(), a)
+    _, walk_dollars, _, _, _ = _capture(dest, _spend(), a)
+    capture, _, _, _, _ = _capture(dest, _spend(), a)
     # that business still captures (by car) but walk-in is a sliver of it
     assert capture[0][2] > 0
     assert walk_dollars[0][2] < 0.01 * capture[0][2]
@@ -80,5 +80,5 @@ def test_far_destinations_get_effectively_no_walk_dollars():
 
 def test_walk_dollars_never_exceed_capture_totals():
     a = _assumptions(_Ctx())
-    capture, walk_dollars, _, _ = _capture(_dest(), _spend(), a)
+    capture, walk_dollars, _, _, _ = _capture(_dest(), _spend(), a)
     assert walk_dollars[0].sum() < capture[0].sum()

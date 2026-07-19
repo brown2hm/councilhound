@@ -216,6 +216,23 @@ def confirm(session: Session, slug: str, spec_path: str | None = None,
     return f"confirmed '{slug}' — next: impact-evaluate {slug}"
 
 
+def _check_adjust_terms(result: ModuleResult) -> None:
+    """Invariant: a metric's adjustment terms must reproduce its value exactly
+    at the published assumption centrals (sum of term values == value). This
+    is the drift guard for the interactive assumptions page — a module change
+    that breaks a decomposition fails the evaluation instead of silently
+    publishing a wrong client-side model. Tolerance covers stored rounding."""
+    for m in result.metrics:
+        if m.adjust is None:
+            continue
+        total = sum(t.value for t in m.adjust)
+        if abs(total - m.value) > max(1e-6 * abs(m.value), 0.51):
+            raise RuntimeError(
+                f"adjustment terms for '{m.name}' sum to {total:,.2f} but the "
+                f"metric value is {m.value:,.2f} — the term decomposition in "
+                f"module '{result.module}' no longer matches the formula")
+
+
 def evaluate(session: Session, slug: str, modules: tuple[str, ...] | None = None,
              skip_synthesis: bool = False, force: bool = False) -> str:
     from councilhound.impact.jurisdiction import JurisdictionContext
@@ -238,6 +255,7 @@ def evaluate(session: Session, slug: str, modules: tuple[str, ...] | None = None
         run = registry.get_module(name)
         log.info("running module: %s", name)
         result, layers = run(spec, ctx, prior=list(results))
+        _check_adjust_terms(result)
         results.append(result)
         map_layers.update(layers)
 

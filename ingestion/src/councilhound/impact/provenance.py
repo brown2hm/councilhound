@@ -11,11 +11,39 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from councilhound.impact.schemas import Assumption, MetricValue, Provenance
+from councilhound.impact.schemas import AdjustTerm, Assumption, MetricValue, Provenance
 
 
 def prov(source_name: str, url: str, vintage: str, notes: str | None = None) -> Provenance:
     return Provenance(source_name=source_name, url=url, vintage=vintage, notes=notes)
+
+
+# --- adjustment terms: exact client-side recompute model ---------------------
+# A metric's adjust list decomposes its central value into power-law terms of
+# assumption centrals (see AdjustTerm). The algebra below keeps the invariant
+# sum(term values) == metric value, which evaluate.py asserts on every run.
+
+def term(value: float, **exps: float) -> AdjustTerm:
+    return AdjustTerm(value=float(value), exps=exps)
+
+
+def terms_scale(terms: list[AdjustTerm], k: float) -> list[AdjustTerm]:
+    return [AdjustTerm(value=t.value * k, exps=dict(t.exps)) for t in terms]
+
+
+def terms_pow_extend(terms: list[AdjustTerm], **extra: float) -> list[AdjustTerm]:
+    """Multiply every term by extra assumption factors (adds exponents)."""
+    out = []
+    for t in terms:
+        exps = dict(t.exps)
+        for key, e in extra.items():
+            exps[key] = exps.get(key, 0.0) + e
+        out.append(AdjustTerm(value=t.value, exps=exps))
+    return out
+
+
+def terms_value(terms: list[AdjustTerm]) -> float:
+    return sum(t.value for t in terms)
 
 
 @dataclass(frozen=True)
@@ -89,6 +117,7 @@ def metric(
     assumptions: list[Assumption] | None = None,
     method: str = "",
     headline: bool = False,
+    adjust: list[AdjustTerm] | None = None,
 ) -> MetricValue:
     """Build a MetricValue from a propagated interval, recording which
     assumptions touched it (by key)."""
@@ -102,6 +131,7 @@ def metric(
         assumptions=[a.key for a in (assumptions or [])],
         method=method,
         headline=headline,
+        adjust=adjust,
     )
 
 

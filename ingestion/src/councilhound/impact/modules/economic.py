@@ -25,7 +25,8 @@ from __future__ import annotations
 import logging
 import math
 
-from councilhound.impact.provenance import Interval, metric, prov
+from councilhound.impact.provenance import (Interval, metric, prov, term,
+                                            terms_pow_extend, terms_scale)
 from councilhound.impact.schemas import Assumption, MetricValue, ModuleResult
 from councilhound.impact.modules import ces_shares, huff
 
@@ -343,6 +344,10 @@ def _capture(dest, spend, a):
     walk_dollars = {slot: np.zeros(n) for slot in range(3)}
     share_food = np.zeros((3, 2))    # [slot][num, den] for food_away
     share_all = np.zeros((3, 2))
+    # central-slot per-category allocations, kept so the metrics can publish
+    # exact per-category adjustment terms (Huff probabilities are independent
+    # of the demand-side assumptions, so category sums scale as pure powers)
+    by_cat = {"capture": {}, "walk": {}}
 
     for category in RETAIL_CLASSES:
         attractiveness = (dest["taxonomy"] == category).astype(float)
@@ -357,13 +362,18 @@ def _capture(dest, spend, a):
                 attractiveness, dest["walk_min"], dest["drive_min"],
                 walk_pref=ws_value, alpha=ALPHA, beta_walk=beta,
                 beta_drive=BETA_DRIVE)
-            capture[slot] += huff.allocate_spend(spend_value, p_total)
-            walk_dollars[slot] += huff.allocate_spend(spend_value, p_walk)
+            alloc_total = huff.allocate_spend(spend_value, p_total)
+            alloc_walk = huff.allocate_spend(spend_value, p_walk)
+            capture[slot] += alloc_total
+            walk_dollars[slot] += alloc_walk
+            if slot == 0:
+                by_cat["capture"][category] = alloc_total
+                by_cat["walk"][category] = alloc_walk
             in_mass = p_total[dest["in_city"]].sum()
             share_all[slot] += (in_mass, p_total.sum())
             if category == "restaurant_bar":
                 share_food[slot] += (in_mass, p_total.sum())
-    return capture, walk_dollars, share_food, share_all
+    return capture, walk_dollars, share_food, share_all, by_cat
 
 
 def _rollup(dest, capture, walk_dollars):
@@ -377,6 +387,7 @@ def _rollup(dest, capture, walk_dollars):
         members = np.where(labels == label)[0]
         rolled[label] = {
             **meta,
+            "members": members,
             "value": float(capture[0][members].sum()),
             "low": float(capture[1][members].sum()),
             "high": float(capture[2][members].sum()),
@@ -617,8 +628,25 @@ def run(spec, ctx, prior=None):
     own_retail_equiv = {cls: own_equiv_total * share for cls, share in OWN_RETAIL_MIX.items()}
 
     dest = _destinations(ctx, site, site_projected, own_retail_equiv)
-    capture, walk_dollars, share_food, share_all = _capture(dest, spend, a)
+    capture, walk_dollars, share_food, share_all, by_cat = _capture(dest, spend, a)
     rolled = _rollup(dest, capture, walk_dollars)
+
+    # exponents of each category's demand on the adjustable assumptions:
+    # spend_c = households x e_c x (income ratio)^elasticity_c x ces_scale
+    def demand_exps(category):
+        return {"occupancy_rate": 1.0, "ces_scale": 1.0,
+                "income_premium_new_construction":
+                    ces_shares.CATEGORY_ELASTICITY[category]}
+
+    def cat_terms(kind, members=None):
+        """Per-category adjustment terms for a capture/walk aggregate."""
+        out = []
+        for category in RETAIL_CLASSES:
+            arr = by_cat[kind][category]
+            amount = float(arr.sum() if members is None else arr[members].sum())
+            if amount > 0:
+                out.append(term(amount, **demand_exps(category)))
+        return out
 
     metrics: list[MetricValue] = []
     ces_prov = ces_shares.provenance()
@@ -634,24 +662,30 @@ def run(spec, ctx, prior=None):
 
     metrics.append(metric("New households", households, "households",
                           [docs_prov], [a["occupancy_rate"]],
-                          "proposed units x occupancy_rate"))
+                          "proposed units x occupancy_rate",
+                          adjust=[term(households.value, occupancy_rate=1.0)]))
     metrics.append(metric("New residents", residents, "residents",
                           [cupr_prov],
                           [a["occupancy_rate"], a["avg_hh_size_multifamily"]],
                           "households x persons per multifamily unit (Rutgers "
-                          "CUPR bedroom-mix multipliers)", headline=True))
+                          "CUPR bedroom-mix multipliers)", headline=True,
+                          adjust=[term(residents.value, occupancy_rate=1.0,
+                                       avg_hh_size_multifamily=1.0)]))
     metrics.append(metric(
         "Aggregate household income", aggregate_income, "$/yr",
         [acs_prov], [a["income_premium_new_construction"], a["occupancy_rate"]],
         f"households x {income_scope} (${income_base:,.0f}) "
-        "x new-construction premium"))
+        "x new-construction premium",
+        adjust=[term(aggregate_income.value, occupancy_rate=1.0,
+                     income_premium_new_construction=1.0)]))
 
     for category in RETAIL_CLASSES:
         metrics.append(metric(
             f"New annual spending: {category}", spend[category], "$/yr",
             [ces_prov], [a["ces_scale"], a["income_premium_new_construction"]],
             "households x CES category spend x (income ratio)^elasticity "
-            "(Engel scaling, sublinear for necessities)"))
+            "(Engel scaling, sublinear for necessities)",
+            adjust=[term(spend[category].value, **demand_exps(category))]))
 
     named = [c for label, c in rolled.items() if label >= 0]
     for c in sorted(named, key=lambda c: -c["value"])[:5]:
@@ -660,6 +694,7 @@ def run(spec, ctx, prior=None):
             value=c["value"], unit="$/yr", low=c["low"], high=c["high"],
             provenance=[ces_prov], method=huff_method,
             assumptions=["beta_walk", "walk_share_neighborhood", "ces_scale"],
+            adjust=cat_terms("capture", c["members"]),
         ))
 
     for label, shares in (("food_away", share_food), ("all_retail", share_all)):
@@ -680,6 +715,7 @@ def run(spec, ctx, prior=None):
         value=own["value"], unit="$/yr", low=own["low"], high=own["high"],
         provenance=[ces_prov], method=huff_method + "; own retail competes as a destination",
         assumptions=["own_retail_sqft_per_equiv_poi", "beta_walk"], headline=True,
+        adjust=cat_terms("capture", own["members"]),
     ))
     notes.append(
         "The project's own retail is included as a competing destination; its "
@@ -697,13 +733,17 @@ def run(spec, ctx, prior=None):
     site_prov = prov("Project documents (extracted spec)", spec.source_url, "current")
     metrics.append(metric("On-site jobs removed (existing space)", jobs_removed, "jobs",
                           [site_prov], [a["sqft_per_office_job"]],
-                          "existing commercial sqft / sqft-per-office-job"))
+                          "existing commercial sqft / sqft-per-office-job",
+                          adjust=[term(jobs_removed.value, sqft_per_office_job=-1.0)]))
     metrics.append(metric("On-site retail jobs added", jobs_added, "jobs",
                           [site_prov], [a["sqft_per_retail_job"]],
-                          "proposed retail sqft / sqft-per-retail-job"))
+                          "proposed retail sqft / sqft-per-retail-job",
+                          adjust=[term(jobs_added.value, sqft_per_retail_job=-1.0)]))
     metrics.append(metric("Net on-site job change", net_jobs, "jobs",
                           [site_prov], [a["sqft_per_office_job"], a["sqft_per_retail_job"]],
-                          "retail jobs added - existing jobs removed"))
+                          "retail jobs added - existing jobs removed",
+                          adjust=[term(jobs_added.value, sqft_per_retail_job=-1.0),
+                                  term(-jobs_removed.value, sqft_per_office_job=-1.0)]))
     if spec.existing.use:
         notes.append(f"Displaced use: {spec.existing.use}. Any spending that "
                      "originated on-site today is assumed negligible relative to "
@@ -723,7 +763,10 @@ def run(spec, ctx, prior=None):
         [ces_prov], [*ces_mode_assumptions, a["beta_walk"]],
         "walk-mode share of the joint destination+mode Huff choice, summed "
         "over businesses; walking loses to driving with walk time, so the "
-        "remainder of the mode-split budget arrives by car", headline=True))
+        "remainder of the mode-split budget arrives by car", headline=True,
+        adjust=cat_terms("walk")))
+    import numpy as np
+    own_index = np.array([dest["n"] - 1])
     metrics.append(MetricValue(
         name="Spending arriving on foot at project's own retail",
         value=float(walk_dollars[0][-1]), unit="$/yr",
@@ -732,6 +775,7 @@ def run(spec, ctx, prior=None):
         method="walk-mode share of the joint Huff choice at the own-retail destination",
         assumptions=["own_retail_sqft_per_equiv_poi", "beta_walk",
                      "walk_share_neighborhood"],
+        adjust=cat_terms("walk", own_index),
     ))
 
     # foot traffic: exact marginal flows
@@ -741,14 +785,21 @@ def run(spec, ctx, prior=None):
         trip_rate=a["walk_trips_per_resident_day"].value,
         beta=a["beta_walk"].value)
 
-    # consistency diagnostic: dollars per walk trip should be plausible
+    # consistency diagnostic: dollars per walk trip should be plausible.
+    # Adjustment terms: walk terms / trips — occupancy cancels (exponent nets
+    # to zero), household size and trip rate divide through
     per_trip = walk_total / (trips * 365.0)
+    per_trip_terms = terms_pow_extend(
+        terms_scale(cat_terms("walk"), 1.0 / (trips.value * 365.0)),
+        avg_hh_size_multifamily=-1.0, walk_trips_per_resident_day=-1.0,
+        occupancy_rate=-1.0)
     metrics.append(metric(
         "Implied spending per resident walk trip", per_trip, "$/trip",
         [ces_prov], [a["walk_trips_per_resident_day"], *ces_mode_assumptions],
         "walk-arriving spend total / (daily walk trips x 365); trips count ALL "
         "walking (exercise, transit access, ...), not only shopping, so a few "
-        "dollars per average trip implies a plausible $5-15 per shopping trip"))
+        "dollars per average trip implies a plausible $5-15 per shopping trip",
+        adjust=per_trip_terms))
     if not (0.25 <= per_trip.value <= 30.0):
         notes.append(
             f"CONSISTENCY FLAG: implied spending per walk trip is "
@@ -765,7 +816,9 @@ def run(spec, ctx, prior=None):
         "New resident walk trips per day", trips, "trips/day",
         [trips_prov], [a["walk_trips_per_resident_day"], a["avg_hh_size_multifamily"],
                        a["occupancy_rate"]],
-        "new residents x daily walk trips per resident"))
+        "new residents x daily walk trips per resident",
+        adjust=[term(trips.value, occupancy_rate=1.0, avg_hh_size_multifamily=1.0,
+                     walk_trips_per_resident_day=1.0)]))
     metrics.append(MetricValue(
         name="Foot-traffic index change, 10 nearest commercial street segments",
         value=round(nearest_delta, 1), unit="% (relative index)",

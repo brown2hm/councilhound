@@ -167,7 +167,15 @@ export default async function DevelopmentAnalysisPage({
       )}
 
       <section className="mb-8">
-        <h2 className="mb-2 text-lg font-semibold">Assumptions &amp; sensitivities</h2>
+        <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-lg font-semibold">Assumptions &amp; sensitivities</h2>
+          <Link
+            href={`/development/${params.slug}/assumptions`}
+            className="text-[13px] font-semibold underline underline-offset-4 hover:text-muted"
+          >
+            Disagree with these? Adjust them and see the effect →
+          </Link>
+        </div>
         <div className="overflow-x-auto rounded-2xl border border-hairline">
           <table className="w-full text-[13px]">
             <thead className="bg-soft text-left text-muted">

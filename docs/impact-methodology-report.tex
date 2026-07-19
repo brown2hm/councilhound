@@ -385,6 +385,15 @@ fixed seed; comp lookback 15 years.
       polygons and colored on dollar-pinned viridis ramps (nice-number ceilings),
       so a color means the same dollars regardless of layer toggling; capture and
       walk-in capture share one scale to make their comparison meaningful.
+\item \textbf{Interactive assumption adjustment.} Each metric publishes an
+      exact power-law decomposition over the assumptions it depends on
+      multiplicatively (or by a fixed power, e.g.\ the Engel elasticities):
+      $v' = \sum_t v_t \prod_k (a_k / a_k^0)^{e_{t,k}}$. Because the joint-choice
+      probabilities are independent of the demand-side assumptions, this
+      client-side recompute reproduces the pipeline's own arithmetic exactly;
+      the evaluation asserts $\sum_t v_t = v$ on every run. Network-model
+      parameters ($\beta_w$, mode shares, own-retail attractiveness) appear in
+      no term and are presented as requiring a full re-run.
 \end{itemize}
 
 \section{Known limitations and audit notes}

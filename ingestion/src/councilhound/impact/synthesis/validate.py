@@ -57,11 +57,14 @@ def allowed_values(bundle) -> set[float]:
             add(m.high * 100 if m.high is not None else None)
     # numbers already present in deterministic module text are quotable:
     # narrative_notes (e.g. the computed students range), provenance notes
-    # (e.g. comp per-unit values), extraction quotes, and method strings
+    # (e.g. comp per-unit values), extraction quotes, metric names (e.g.
+    # "K-12", "10 nearest segments" — the hyphen otherwise scans as a minus
+    # sign), and method strings
     quotable: list[str] = []
     for result in bundle.results:
         quotable.extend(result.narrative_notes)
         for m in result.metrics:
+            quotable.append(m.name)
             quotable.append(m.method)
             for p in m.provenance:
                 quotable += [p.notes or "", p.vintage, p.source_name]

@@ -184,6 +184,11 @@ export interface ImpactAssumption {
   rationale: string;
 }
 
+export interface ImpactAdjustTerm {
+  value: number;
+  exps: Record<string, number>;
+}
+
 export interface ImpactMetric {
   module: string;
   name: string;
@@ -195,6 +200,9 @@ export interface ImpactMetric {
   assumptions: string[];
   method: string;
   headline: boolean;
+  // exact client-side recompute model: adjusted value = sum of term.value x
+  // prod((adjusted[k]/baseline[k])^exps[k]); absent = not client-adjustable
+  adjust?: ImpactAdjustTerm[] | null;
 }
 
 export interface ProjectEvaluation {

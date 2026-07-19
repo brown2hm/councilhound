@@ -13,7 +13,8 @@ import logging
 from datetime import date
 
 from councilhound.impact.jurisdiction import MissingRateError, require_rate
-from councilhound.impact.provenance import Interval, metric, prov
+from councilhound.impact.provenance import (Interval, metric, prov, term,
+                                            terms_pow_extend, terms_scale)
 from councilhound.impact.schemas import Assumption, MetricValue, ModuleResult
 
 log = logging.getLogger(__name__)
@@ -82,6 +83,13 @@ def _interval_from_metric(m: MetricValue) -> Interval:
                     m.high if m.high is not None else m.value)
 
 
+def _terms_of(m: MetricValue):
+    """A metric's adjustment terms, degrading to a constant term so that
+    composite metrics keep the sum(terms) == value invariant even when a
+    component isn't adjustable."""
+    return m.adjust if m.adjust else [term(m.value)]
+
+
 def _site_assessment(spec, notes):
     """Current assessed value: prefer the extracted (document-stated) value,
     else sum WebPro records for the resolved parcels."""
@@ -138,6 +146,7 @@ def run(spec, ctx, prior=None):
     # 2. projected assessed value from multifamily comps
     projected_av = None
     comp_prov = None
+    av_terms = None
     if units:
         comps = _comps(notes)
         if comps is not None and len(comps) >= 3:
@@ -160,10 +169,13 @@ def run(spec, ctx, prior=None):
             commercial = (Interval.point(spec.proposed.retail_sqft or 0)
                           * Interval.from_assumption(a["commercial_value_per_sqft"]))
             projected_av = residential + commercial
+            av_terms = [term(residential.value),
+                        term(commercial.value, commercial_value_per_sqft=1.0)]
             metrics.append(metric(
                 "Projected assessed value", projected_av, "$",
                 [comp_prov], [a["commercial_value_per_sqft"]],
-                "median comp $/unit x units (25th-75th pct bounds) + retail sqft x $/sqft"))
+                "median comp $/unit x units (25th-75th pct bounds) + retail sqft x $/sqft",
+                adjust=av_terms))
         elif comps is not None:
             notes.append(f"LOW CONFIDENCE: only {len(comps)} multifamily comps found "
                          "(<3) — projected value not computed; extend the lookback or "
@@ -172,13 +184,16 @@ def run(spec, ctx, prior=None):
     # 3. recurring revenue
     if projected_av is not None and re_rate is not None:
         projected_tax = projected_av * (re_rate.value / 100.0)
+        tax_terms = terms_scale(av_terms, re_rate.value / 100.0)
         metrics.append(metric("Projected real estate tax", projected_tax, "$/yr",
                               [comp_prov, rate_prov], [a["commercial_value_per_sqft"]],
-                              "projected assessed value x RE rate / 100"))
+                              "projected assessed value x RE rate / 100",
+                              adjust=tax_terms))
         if site_av is not None:
             metrics.append(metric("Real estate tax increase", projected_tax - site_av * (re_rate.value / 100.0),
                                   "$/yr", [comp_prov, rate_prov, site_prov], [],
-                                  "projected minus current RE tax", headline=True))
+                                  "projected minus current RE tax", headline=True,
+                                  adjust=tax_terms + [term(-site_av.value * re_rate.value / 100.0)]))
         if acres:
             metrics.append(metric("Projected value per acre", projected_av * (1 / acres),
                                   "$/acre", [comp_prov], [], "projected AV / site acres"))
@@ -193,7 +208,8 @@ def run(spec, ctx, prior=None):
             "Personal property tax (new households)", households * pp_actuals.value, "$/yr",
             [prov("City budget per-household personal property actuals",
                   pp_actuals.source or "", pp_actuals.fy or "")],
-            [], "new households x per-household personal property revenue"))
+            [], "new households x per-household personal property revenue",
+            adjust=terms_scale(_terms_of(households_m), pp_actuals.value)))
     elif households_m:
         pp_rate = _rate(cfg, "tax.personal_property_rate_per_100", notes)
         if pp_rate:
@@ -201,6 +217,12 @@ def run(spec, ctx, prior=None):
             vehicles = households * Interval.from_assumption(a["vehicles_per_household"])
             pp_est = (vehicles * Interval.from_assumption(a["avg_vehicle_assessed_value"])
                       * (pp_rate.value / 100.0))
+            pp_terms = terms_pow_extend(
+                terms_scale(_terms_of(households_m),
+                            a["vehicles_per_household"].value
+                            * a["avg_vehicle_assessed_value"].value
+                            * pp_rate.value / 100.0),
+                vehicles_per_household=1.0, avg_vehicle_assessed_value=1.0)
             metrics.append(metric(
                 "Personal property tax on resident vehicles (rough estimate)",
                 pp_est, "$/yr",
@@ -211,7 +233,7 @@ def run(spec, ctx, prior=None):
                 [a["vehicles_per_household"], a["avg_vehicle_assessed_value"]],
                 "ROUGH ESTIMATE: new households x assumed vehicles per household "
                 "x assumed value per vehicle x PP rate / 100 — no project-specific "
-                "vehicle data; treat as order-of-magnitude"))
+                "vehicle data; treat as order-of-magnitude", adjust=pp_terms))
             notes.append(
                 "Personal property tax is a rough estimate: the city rate is "
                 "pinned, but vehicles per household and average vehicle value "
@@ -234,7 +256,9 @@ def run(spec, ctx, prior=None):
                   "at $0.27 per $100, slightly above the retail rate")],
             [a["retail_sales_per_sqft"]],
             "ROUGH ESTIMATE: proposed retail sqft x assumed gross sales per "
-            "sqft x BPOL retail rate / 100 — actual receipts depend on tenants"))
+            "sqft x BPOL retail rate / 100 — actual receipts depend on tenants",
+            adjust=[term(retail_sqft * a["retail_sales_per_sqft"].value
+                         * bpol_rate.value / 100.0, retail_sales_per_sqft=1.0)]))
         notes.append(
             "BPOL revenue is a rough estimate: the city rate schedule is "
             "pinned, but tenant gross receipts are assumed from a sales-per-"
@@ -250,7 +274,9 @@ def run(spec, ctx, prior=None):
             "Meals tax on captured in-city dining", meals_base * meals_rate.value, "$/yr",
             [prov("City meals tax rate", meals_rate.source or "", meals_rate.fy or "")],
             [], "restaurant spending x in-city capture share x meals tax rate "
-                "(cross-module link from the economic Huff run)"))
+                "(cross-module link from the economic Huff run)",
+            adjust=terms_scale(_terms_of(food_away_m),
+                               in_city_food_m.value * meals_rate.value)))
     elif meals_rate and not food_away_m:
         notes.append("Meals tax not computed: economic module results unavailable")
 
@@ -263,12 +289,17 @@ def run(spec, ctx, prior=None):
             taxable = sum((_interval_from_metric(m) for m in spend_ms[1:]),
                           _interval_from_metric(spend_ms[0]))
             base = taxable * _interval_from_metric(in_city_all_m)
+            sales_terms = []
+            for m in spend_ms:
+                sales_terms += terms_scale(_terms_of(m),
+                                           in_city_all_m.value * sales_rate.value)
             metrics.append(metric(
                 "Local sales tax share on captured in-city retail",
                 base * sales_rate.value, "$/yr",
                 [prov("Local-option sales tax share", sales_rate.source or "",
                       sales_rate.fy or "")],
-                [], "in-city captured retail spend x local sales tax share"))
+                [], "in-city captured retail spend x local sales tax share",
+                adjust=sales_terms))
 
     # 4. cost side — a range, never a point
     gf = _rate(cfg, "budget.general_fund_expenditure", notes)
@@ -284,17 +315,21 @@ def run(spec, ctx, prior=None):
         # students_per_unit informs only the school-impact NOTE below — it is
         # deliberately absent from metric assumption lists so provenance
         # never claims an input that doesn't enter the arithmetic
+        naive_terms = terms_scale(_terms_of(residents_m), per_capita)
         metrics.append(metric(
             "Annual service cost — naive per-capita method", naive, "$/yr",
             [budget_prov], [],
             "new residents x GF expenditure per capita (upper-bound framing; "
-            "includes fixed costs that don't scale)"))
+            "includes fixed costs that don't scale)", adjust=naive_terms))
         marginal = naive * Interval.from_assumption(a["marginal_cost_factor"])
+        marginal_terms = terms_pow_extend(
+            terms_scale(naive_terms, a["marginal_cost_factor"].value),
+            marginal_cost_factor=1.0)
         metrics.append(metric(
             "Annual service cost — marginal framing", marginal, "$/yr",
             [budget_prov], [a["marginal_cost_factor"]],
             "naive cost x marginal factor: schools/parks scale, existing road "
-            "frontage and admin mostly don't"))
+            "frontage and admin mostly don't", adjust=marginal_terms))
         notes.append(
             f"School impact within the cost range: {units} units x "
             f"{a['students_per_unit'].value} students/unit "
@@ -303,6 +338,17 @@ def run(spec, ctx, prior=None):
                 units * a["students_per_unit"].value,
                 units * a["students_per_unit"].low,
                 units * a["students_per_unit"].high))
+        students = Interval.point(units) * Interval.from_assumption(a["students_per_unit"])
+        metrics.append(metric(
+            "Estimated K-12 students", students, "students",
+            [prov("Rutgers CUPR residential demographic multipliers "
+                  "(Listokin et al. 2006), high-rise multifamily",
+                  "https://cupr.rutgers.edu", "2006")],
+            [a["students_per_unit"]],
+            "units x students per unit; reported alongside the cost range but "
+            "never enters either cost method (per-capita costing already embeds "
+            "average school costs)",
+            adjust=[term(students.value, students_per_unit=1.0)]))
 
         # net fiscal impact: INCREMENTAL revenue minus the cost range. The RE
         # component prefers the tax increase over the projected total — the
@@ -318,18 +364,20 @@ def run(spec, ctx, prior=None):
                          "Meals tax on captured in-city dining",
                          "Local sales tax share on captured in-city retail")
         revenue = _interval_from_metric(re_component) if re_component else None
+        revenue_terms = list(_terms_of(re_component)) if re_component else []
         for name in revenue_names:
             m = next((x for x in metrics if x.name == name), None)
             if m:
                 interval = _interval_from_metric(m)
                 revenue = interval if revenue is None else revenue + interval
+                revenue_terms += _terms_of(m)
         if revenue is not None:
             # per-method nets published explicitly so the narrative can cite
             # either framing without deriving arithmetic of its own
-            for method_name, cost, note in (
-                ("naive per-capita method", naive,
+            for method_name, cost, cost_terms, note in (
+                ("naive per-capita method", naive, naive_terms,
                  "upper-bound cost framing; allocates fixed citywide costs"),
-                ("marginal framing", marginal,
+                ("marginal framing", marginal, marginal_terms,
                  "only services that scale with new residents"),
             ):
                 net = revenue - cost
@@ -337,17 +385,21 @@ def run(spec, ctx, prior=None):
                     f"Net annual fiscal impact — {method_name}", net, "$/yr",
                     [budget_prov], [a["marginal_cost_factor"]],
                     f"incremental new recurring revenue minus service cost ({note})",
-                    headline=True))
+                    headline=True,
+                    adjust=revenue_terms + terms_scale(cost_terms, -1.0)))
             net_low = revenue.low - naive.high      # most conservative
             net_high = revenue.high - marginal.low  # most favorable
             net_mid = revenue.value - (naive.value + marginal.value) / 2
+            mid_terms = (revenue_terms + terms_scale(naive_terms, -0.5)
+                         + terms_scale(marginal_terms, -0.5))
             metrics.append(MetricValue(
                 name="Net annual fiscal impact (range across both cost methods)",
                 value=round(net_mid), unit="$/yr", low=round(net_low), high=round(net_high),
                 provenance=[budget_prov],
                 assumptions=["marginal_cost_factor"],
                 method="incremental new recurring revenue minus service-cost range "
-                       "(naive per-capita upper, marginal lower)"))
+                       "(naive per-capita upper, marginal lower)",
+                adjust=mid_terms))
             notes.append("The net fiscal range spans both cost framings on purpose: "
                          "the naive per-capita method overstates costs for infill "
                          "(it allocates fixed citywide costs to new residents); the "
