@@ -71,6 +71,7 @@ def allowed_values(bundle) -> set[float]:
                 quotable += [p.notes or "", p.vintage, p.source_name]
     for p in bundle.all_sources():
         quotable += [p.notes or "", p.vintage, p.source_name]  # e.g. "Va. Code § 58.1-605"
+    quotable.append(bundle.spec.name)  # street-number names: "10340 Democracy Lane"
     quotable.extend(bundle.spec.extraction_quotes.values())
     quotable.extend(bundle.spec.extraction_notes)
     for text in quotable:
