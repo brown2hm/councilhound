@@ -13,7 +13,11 @@ export default async function DevelopmentPage({
   if (searchParams.type) params.set("project_type", searchParams.type);
   if (searchParams.status) params.set("status", searchParams.status);
   if (searchParams.q) params.set("q", searchParams.q);
-  const projects = await api.developmentProjects(params);
+  const allProjects = await api.developmentProjects(params);
+  // tolerate an older API that doesn't tag source yet: untagged rows are
+  // the official directory
+  const projects = allProjects.filter((p) => (p.source ?? "official") === "official");
+  const fromMeetings = allProjects.filter((p) => p.source === "meetings");
 
   const types = Array.from(new Set(projects.map((p) => p.project_type).filter(Boolean))) as string[];
   const statuses = Array.from(new Set(projects.map((p) => p.official_status).filter(Boolean))) as string[];
@@ -22,7 +26,8 @@ export default async function DevelopmentPage({
     <div className="mx-auto max-w-[1280px] px-8 pb-16 pt-8">
       <h1 className="mb-1 text-[32px] font-medium tracking-[-0.5px]">Development directory</h1>
       <p className="mb-5 text-sm text-muted">
-        Official City of Fairfax project records, linked back to CouncilHound topic history where available.
+        Official City of Fairfax project records, linked back to CouncilHound topic history
+        where available — followed by projects surfaced only from council-meeting discussion.
       </p>
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -49,6 +54,12 @@ export default async function DevelopmentPage({
         </form>
       </div>
 
+      <div className="mb-2 flex items-baseline gap-2">
+        <h2 className="text-lg font-semibold">Official city projects</h2>
+        <span className="text-[12px] text-muted">
+          synced from the city&apos;s development directory
+        </span>
+      </div>
       <ul className="divide-y divide-hairline-soft rounded-2xl border border-hairline bg-canvas">
         {projects.map((project) => (
           <li key={project.slug} className="px-5 py-4">
@@ -85,9 +96,11 @@ export default async function DevelopmentPage({
                     impact analysis
                   </Link>
                 )}
-                <a href={project.detail_url} target="_blank" className="text-[13px] font-semibold text-muted underline underline-offset-2 hover:text-ink">
-                  city record
-                </a>
+                {project.detail_url && (
+                  <a href={project.detail_url} target="_blank" className="text-[13px] font-semibold text-muted underline underline-offset-2 hover:text-ink">
+                    city record
+                  </a>
+                )}
               </div>
             </div>
           </li>
@@ -96,6 +109,50 @@ export default async function DevelopmentPage({
           <li className="px-5 py-6 text-sm text-muted">No projects match those filters.</li>
         )}
       </ul>
+
+      {fromMeetings.length > 0 && (
+        <>
+          <div className="mb-2 mt-10 flex items-baseline gap-2">
+            <h2 className="text-lg font-semibold">Heard in council meetings</h2>
+            <span className="text-[12px] text-muted">
+              projects surfaced from meeting agendas, minutes, and discussion — not in the
+              city&apos;s official directory
+            </span>
+          </div>
+          <ul className="divide-y divide-hairline-soft rounded-2xl border border-dashed border-hairline bg-soft">
+            {fromMeetings.map((project) => (
+              <li key={project.entity_slug} className="px-5 py-3.5">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2">
+                    {project.entity_slug ? (
+                      <Link
+                        href={`/topics/${project.entity_slug}`}
+                        className="text-sm font-semibold text-ink underline underline-offset-2"
+                      >
+                        {project.name}
+                      </Link>
+                    ) : (
+                      <span className="text-sm font-semibold">{project.name}</span>
+                    )}
+                    {project.entity_status && <StatusBadge status={project.entity_status} />}
+                    <span className="rounded-full border border-hairline bg-canvas px-2.5 py-0.5 text-[11px] font-semibold text-muted">
+                      from meetings
+                    </span>
+                  </div>
+                  {project.entity_slug && (
+                    <Link
+                      href={`/topics/${project.entity_slug}`}
+                      className="text-[13px] font-semibold text-muted underline underline-offset-2 hover:text-ink"
+                    >
+                      topic history
+                    </Link>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </div>
   );
 }

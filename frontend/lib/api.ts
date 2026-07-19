@@ -149,7 +149,10 @@ export interface CityProjectOfficial {
 }
 
 export interface CityProjectSummary {
-  slug: string;
+  // "official": synced from the city's development directory;
+  // "meetings": a project entity surfaced from council-meeting context
+  source: "official" | "meetings";
+  slug: string | null;
   name: string;
   project_type: string | null;
   division: string | null;
@@ -157,7 +160,7 @@ export interface CityProjectSummary {
   description: string | null;
   address: string | null;
   applicant: string | null;
-  detail_url: string;
+  detail_url: string | null;
   image_url: string | null;
   entity_slug: string | null;
   entity_status: string | null;

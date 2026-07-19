@@ -17,6 +17,7 @@ router = APIRouter()
 
 def _serialize(row: CityProject, entity: Entity | None, has_evaluation: bool) -> dict:
     return {
+        "source": "official",
         "slug": row.external_slug,
         "name": row.name,
         "project_type": row.project_type,
@@ -58,10 +59,45 @@ def list_development_projects(
         query = query.where(CityProject.official_status == status)
     if q:
         query = query.where(CityProject.name.ilike(f"%{q}%"))
-    return [
+    items = [
         _serialize(row, entity, eval_status == "synthesized")
         for row, entity, eval_status in session.execute(query).all()
     ]
+
+    # project entities surfaced from MEETING context (agendas/minutes/
+    # discussion) that the city's official directory doesn't list — shown
+    # separately so official records and meeting-derived mentions are never
+    # conflated. Official-only filters suppress this section.
+    if not (project_type or division or status):
+        linked = select(CityProject.entity_id).where(CityProject.entity_id.isnot(None))
+        eq = (select(Entity)
+              .where(Entity.entity_type == "project", Entity.id.not_in(linked))
+              .order_by(Entity.name))
+        if q:
+            eq = eq.where(Entity.name.ilike(f"%{q}%"))
+        items += [
+            {
+                "source": "meetings",
+                "slug": None,
+                "name": entity.name,
+                "project_type": None,
+                "division": None,
+                "official_status": None,
+                "description": None,
+                "address": None,
+                "applicant": None,
+                "detail_url": None,
+                "image_url": None,
+                "entity_slug": entity.canonical_slug,
+                "entity_status": entity.current_status,
+                "lat": None,
+                "lng": None,
+                "synced_at": None,
+                "has_evaluation": False,
+            }
+            for entity in session.scalars(eq).all()
+        ]
+    return items
 
 
 @router.get("/{slug}/evaluation")
