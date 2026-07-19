@@ -35,10 +35,11 @@ function fmt(value: number, unit: string): string {
 }
 
 function sliderStep(a: ImpactAssumption): number {
-  const span = a.high - a.low;
-  const raw = span / 100;
-  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
-  return Math.max(mag, Math.round(raw / mag) * mag) || raw;
+  // Round via decimal string, not Math.log10/Math.pow: those aren't exactly
+  // specified, so server and client can disagree in the last bit and break
+  // hydration on the step attribute.
+  const raw = (a.high - a.low) / 100;
+  return raw > 0 ? Number(raw.toPrecision(1)) : raw;
 }
 
 const FRIENDLY: Record<string, string> = {
