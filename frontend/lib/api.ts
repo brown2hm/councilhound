@@ -152,6 +152,9 @@ export interface CityProjectSummary {
   // "official": synced from the city's development directory;
   // "meetings": a project entity surfaced from council-meeting context
   source: "official" | "meetings";
+  // meeting-derived rows are classified: "development" (built environment)
+  // or "civic" (plans, contracts, studies, programs)
+  category?: "development" | "civic" | null;
   slug: string | null;
   name: string;
   project_type: string | null;

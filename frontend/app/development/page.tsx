@@ -17,7 +17,9 @@ export default async function DevelopmentPage({
   // tolerate an older API that doesn't tag source yet: untagged rows are
   // the official directory
   const projects = allProjects.filter((p) => (p.source ?? "official") === "official");
-  const fromMeetings = allProjects.filter((p) => p.source === "meetings");
+  const fromMeetings = allProjects.filter(
+    (p) => p.source === "meetings" && (p.category ?? "development") === "development",
+  );
 
   const types = Array.from(new Set(projects.map((p) => p.project_type).filter(Boolean))) as string[];
   const statuses = Array.from(new Set(projects.map((p) => p.official_status).filter(Boolean))) as string[];
@@ -112,12 +114,20 @@ export default async function DevelopmentPage({
 
       {fromMeetings.length > 0 && (
         <>
-          <div className="mb-2 mt-10 flex items-baseline gap-2">
-            <h2 className="text-lg font-semibold">Heard in council meetings</h2>
-            <span className="text-[12px] text-muted">
-              projects surfaced from meeting agendas, minutes, and discussion — not in the
-              city&apos;s official directory
-            </span>
+          <div className="mb-2 mt-10 flex flex-wrap items-baseline justify-between gap-2">
+            <div className="flex items-baseline gap-2">
+              <h2 className="text-lg font-semibold">Heard in council meetings</h2>
+              <span className="text-[12px] text-muted">
+                development projects surfaced from meeting agendas, minutes, and discussion
+                — not in the city&apos;s official directory
+              </span>
+            </div>
+            <Link
+              href="/civic"
+              className="text-[13px] font-semibold underline underline-offset-4 hover:text-muted"
+            >
+              Other civic topics from meetings →
+            </Link>
           </div>
           <ul className="divide-y divide-hairline-soft rounded-2xl border border-dashed border-hairline bg-soft">
             {fromMeetings.map((project) => (
