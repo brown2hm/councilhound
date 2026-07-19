@@ -27,10 +27,13 @@ def _assumptions() -> dict[str, Assumption]:
                    basis="screening range for new ground-floor commercial assessed value",
                    rationale="assessed $/sqft applied to proposed retail space; refine "
                              "with commercial comps in a follow-up"),
-        Assumption(key="students_per_unit", value=0.175, low=0.10, high=0.25,
-                   basis="multifamily student generation rates in NoVA jurisdiction "
-                         "studies (range per methodology brief)",
-                   rationale="school-age adjustment applied to the naive per-capita cost"),
+        Assumption(key="students_per_unit", value=0.10, low=0.05, high=0.15,
+                   basis="high-rise/small-unit multifamily student generation rates "
+                         "(below garden-apartment averages per the Rutgers demographic "
+                         "multipliers); university-adjacent renter pools skew to "
+                         "single/roommate households over families",
+                   rationale="informs the school-impact note only — per-capita costing "
+                             "already embeds average school costs"),
         Assumption(key="marginal_cost_factor", value=0.40, low=0.25, high=0.60,
                    basis="marginal-cost framing: fixed services (roads, admin) don't "
                          "scale with infill residents",

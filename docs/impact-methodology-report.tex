@@ -300,9 +300,11 @@ residents. The marginal framing scales only the cost share expected to grow
 and can understate costs if capacity thresholds are crossed. The headline range
 spans both framings; per-method nets are also published. School impact is
 reported as a note --- $U \times \assum{students\_per\_unit}$ students, per
-multifamily generation-rate evidence \cite{listokin2006} --- and deliberately
-does not enter the arithmetic of either cost method (per-capita costing already
-embeds average school costs).
+multifamily generation-rate evidence \cite{listokin2006}, set toward the
+high-rise/small-unit end of that evidence because university-adjacent rental
+buildings house predominantly single and roommate households rather than
+families --- and deliberately does not enter the arithmetic of either cost
+method (per-capita costing already embeds average school costs).
 
 \section{Assumptions}
 
@@ -310,7 +312,7 @@ Central values with propagated bounds; every metric lists the assumption keys
 that touched it.
 
 \begin{center}
-\small
+\footnotesize
 \begin{tabular}{@{}llll@{}}
 \toprule
 Key & Value & Range & Basis \\
@@ -329,11 +331,11 @@ $\beta_d$ (min$^{-1}$, fixed) & 0.15 & --- & drive impedance decay \\
 \assum{sqft\_per\_retail\_job} & 500 & 400--700 & planning standard; cf.\ CBECS \cite{cbecs} \\
 \assum{own\_retail\_sqft\_per\_equiv\_poi} & 2{,}000 & 1{,}500--3{,}000 & typical inline suite size \\
 \assum{commercial\_value\_per\_sqft} & \$275 & \$200--\$400 & screening; replace with comps \\
-\assum{students\_per\_unit} & 0.175 & 0.10--0.25 & MF generation rates \cite{listokin2006} \\
+\assum{students\_per\_unit} & 0.10 & 0.05--0.15 & high-rise MF, univ.-adjacent \cite{listokin2006} \\
 \assum{marginal\_cost\_factor} & 0.40 & 0.25--0.60 & share of average cost that scales \\
-\assum{vehicles\_per\_household} & 1.4 & 1.0--1.8 & ACS vehicles-available norms, MF renters (estimate input) \\
-\assum{avg\_vehicle\_assessed\_value} & \$14{,}000 & \$9{,}000--\$20{,}000 & NoVA personal-property rolls (estimate input) \\
-\assum{retail\_sales\_per\_sqft} & \$400 & \$250--\$600 & neighborhood retail/restaurant gross sales (estimate input) \\
+\assum{vehicles\_per\_household} & 1.4 & 1.0--1.8 & ACS vehicle norms, MF renters (estimate) \\
+\assum{avg\_vehicle\_assessed\_value} & \$14{,}000 & \$9k--\$20k & NoVA personal-property rolls (estimate) \\
+\assum{retail\_sales\_per\_sqft} & \$400 & \$250--\$600 & neighborhood retail gross sales (estimate) \\
 \bottomrule
 \end{tabular}
 \end{center}
