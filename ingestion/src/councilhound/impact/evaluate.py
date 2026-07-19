@@ -301,3 +301,73 @@ def evaluate(session: Session, slug: str, modules: tuple[str, ...] | None = None
         lines.append(f"synthesized report ({len(report_md.split())} words) -> "
                      f"view at /development/{slug}")
     return "\n".join(lines)
+
+
+# columns copied verbatim by impact-push (everything the API serves)
+_PUSH_COLUMNS = (
+    "status", "spec", "extraction_model", "extraction_prompt_version",
+    "confirmed_at", "module_results", "map_layers", "assumptions", "sources",
+    "report_markdown", "report_model", "report_prompt_version",
+    "computed_at", "synthesized_at",
+)
+
+
+def push(session: Session, dsn: str, slugs: tuple[str, ...] = (),
+         push_all: bool = False) -> str:
+    """Upsert locally synthesized evaluations into a TARGET database (the
+    production DB, reached e.g. via `fly proxy`). Compute stays local — heavy
+    geo deps and fairfaxva.gov IP-blocking — so this sync is how results ship.
+
+    Rows are matched to the target's city_projects by external_slug; a slug
+    the target hasn't ingested yet is skipped with a warning rather than
+    invented (the nightly cloud ingest owns that table)."""
+    from sqlalchemy import create_engine
+    from sqlalchemy.dialects.postgresql import insert as pg_insert
+
+    if not slugs and not push_all:
+        raise SystemExit("pass project slugs or --all")
+
+    # same driver normalization as db.session (psycopg v3)
+    if dsn.startswith("postgres://"):
+        dsn = "postgresql://" + dsn[len("postgres://"):]
+    if dsn.startswith("postgresql://"):
+        dsn = "postgresql+psycopg://" + dsn[len("postgresql://"):]
+
+    query = (select(CityProject.external_slug, ProjectEvaluation)
+             .join(ProjectEvaluation, ProjectEvaluation.city_project_id == CityProject.id)
+             .where(ProjectEvaluation.status == "synthesized"))
+    if slugs:
+        query = query.where(CityProject.external_slug.in_(slugs))
+    rows = session.execute(query).all()
+    missing = set(slugs) - {slug for slug, _ in rows}
+    if missing:
+        raise SystemExit(f"not synthesized locally: {', '.join(sorted(missing))}")
+    if not rows:
+        return "nothing to push (no synthesized evaluations)"
+
+    lines = []
+    engine = create_engine(dsn)
+    try:
+        with engine.begin() as target:
+            for slug, evaluation in rows:
+                target_project_id = target.execute(
+                    select(CityProject.id).where(CityProject.external_slug == slug)
+                ).scalar()
+                if target_project_id is None:
+                    lines.append(f"SKIP {slug}: target has no city_projects row "
+                                 "(cloud ingest hasn't synced it)")
+                    continue
+                values = {c: getattr(evaluation, c) for c in _PUSH_COLUMNS}
+                values["city_project_id"] = target_project_id
+                stmt = pg_insert(ProjectEvaluation.__table__).values(**values)
+                stmt = stmt.on_conflict_do_update(
+                    index_elements=["city_project_id"],
+                    set_={c: stmt.excluded[c] for c in _PUSH_COLUMNS},
+                )
+                target.execute(stmt)
+                size_kb = len(json.dumps(evaluation.map_layers or {})) / 1024
+                lines.append(f"pushed {slug} (map layers {size_kb:,.0f} KB, "
+                             f"synthesized {evaluation.synthesized_at:%Y-%m-%d %H:%M})")
+    finally:
+        engine.dispose()
+    return "\n".join(lines)

@@ -452,6 +452,21 @@ def impact_evaluate(slug, module_names, skip_synthesis, force):
                             skip_synthesis=skip_synthesis, force=force))
 
 
+@cli.command("impact-push")
+@click.argument("slugs", nargs=-1)
+@click.option("--all", "push_all", is_flag=True, help="push every synthesized evaluation")
+@click.option("--dsn", envvar="IMPACT_PUSH_DATABASE_URL", required=True,
+              help="target Postgres DSN (e.g. via `fly proxy` to the prod DB); "
+                   "defaults to $IMPACT_PUSH_DATABASE_URL")
+def impact_push(slugs, push_all, dsn):
+    """Upsert locally synthesized evaluations into the production database."""
+    from councilhound.db.session import get_session
+    from councilhound.impact.evaluate import push
+
+    with get_session() as session:
+        click.echo(push(session, dsn, slugs=slugs, push_all=push_all))
+
+
 @cli.command("impact-setup-jurisdiction")
 @jurisdiction_option
 def impact_setup_jurisdiction(jurisdiction):
