@@ -78,9 +78,21 @@ def allowed_values(bundle) -> set[float]:
     return allowed
 
 
+def _sig_figs(raw: str) -> int:
+    """Significant digits as WRITTEN ('1.5' -> 2, '39.2' -> 3, '467,949' -> 6).
+    Trailing zeros count (conservative), leading zeros don't."""
+    digits = raw.replace(",", "").replace(".", "").lstrip("0")
+    return max(len(digits), 1)
+
+
 def extract_numbers(markdown: str) -> list[tuple[float, str]]:
     """(value, verbatim context) for every quantity-looking number outside
     code fences."""
+    return [(v, c) for v, c, _ in extract_numbers_with_precision(markdown)]
+
+
+def extract_numbers_with_precision(markdown: str) -> list[tuple[float, str, int]]:
+    """(value, verbatim context, significant digits as written)."""
     text = re.sub(r"```.*?```", "", markdown, flags=re.S)
     found = []
     for match in _NUMBER.finditer(text):
@@ -97,20 +109,31 @@ def extract_numbers(markdown: str) -> list[tuple[float, str]]:
             if not prev.isdigit():
                 value = -value
         context = text[max(0, match.start() - 40):match.end() + 20].replace("\n", " ")
-        found.append((value, context.strip()))
+        found.append((value, context.strip(), _sig_figs(raw)))
     return found
 
 
-def _matches(value: float, allowed: set[float]) -> bool:
+def _matches(value: float, allowed: set[float], sig: int | None = None) -> bool:
     for candidate in (value, round(value), round(value, 1), round(value, 2)):
         if candidate in allowed:
             return True
-    # tolerate rounding to 2-3 significant figures of any allowed value
     for a in allowed:
         if a != 0 and abs(value - a) / abs(a) < 0.005:
             return True
         if a == 0 and abs(value) < 1e-9:
             return True
+    # a number is held to its own written precision: "$1.5 million" is a
+    # legitimate statement of $1,469,000 (2 significant figures), while
+    # "$1,500,000" written in full would not be. Tolerance is half a unit in
+    # the last written digit (plus float slack for exact midpoints).
+    if sig:
+        import math
+        for a in allowed:
+            if a == 0:
+                continue
+            quantum = 10.0 ** (math.floor(math.log10(abs(a))) - sig + 1)
+            if abs(value - a) <= 0.51 * quantum:
+                return True
     return False
 
 
@@ -118,11 +141,11 @@ def validate_report(markdown: str, bundle) -> list[str]:
     """Returns violations: numbers in the draft not traceable to the data."""
     allowed = allowed_values(bundle)
     violations = []
-    for value, context in extract_numbers(markdown):
+    for value, context, sig in extract_numbers_with_precision(markdown):
         if value in _IGNORED and value == int(value):
             continue
         if _is_year(value):
             continue
-        if not _matches(value, allowed):
+        if not _matches(value, allowed, sig):
             violations.append(f"{value:g} (in: \"...{context}...\")")
     return violations

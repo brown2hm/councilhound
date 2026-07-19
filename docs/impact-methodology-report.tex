@@ -286,25 +286,36 @@ classification at \$0.27 per \$100 is slightly above the retail rate applied
 here.)
 
 \subsection{Service costs and net impact}
+When the city's education transfer $E$ and school enrollment $N_{enr}$ are
+pinned, costs use the \emph{school-split} model --- the per-capita-multiplier
+refinement of \cite{burchell1978}: school costs follow the project's own
+student estimate at the per-pupil tuition rate, and only non-school costs are
+allocated per resident.
 \begin{align}
-\text{naive per-capita cost} &= N_{res} \cdot \frac{GF}{P} \\
-\text{marginal cost} &= \text{naive} \cdot \mu, \qquad
+S_{K12} &= U \cdot \assum{students\_per\_unit} \\
+\text{naive cost} &= N_{res} \cdot \frac{GF - E}{P}
+                     \;+\; S_{K12} \cdot \frac{E}{N_{enr}} \\
+\text{marginal cost} &= N_{res} \cdot \frac{GF - E}{P} \cdot \mu
+                     \;+\; S_{K12} \cdot \frac{E}{N_{enr}}, \qquad
 \mu = \assum{marginal\_cost\_factor} \\
 \text{net}_{\,method} &= R_{inc} - \text{cost}_{\,method}
 \end{align}
-where $GF/P$ is General Fund expenditure per capita and $R_{inc}$ is
-\emph{incremental} recurring revenue (the real-estate component is the tax
-\emph{increase} when the current tax is known). The naive method is an
-intentional upper bound: it allocates fixed citywide costs to incremental
-residents. The marginal framing scales only the cost share expected to grow
-and can understate costs if capacity thresholds are crossed. The headline range
-spans both framings; per-method nets are also published. School impact is
-reported as a note --- $U \times \assum{students\_per\_unit}$ students, per
-multifamily generation-rate evidence \cite{listokin2006}, set toward the
-high-rise/small-unit end of that evidence because university-adjacent rental
-buildings house predominantly single and roommate households rather than
-families --- and deliberately does not enter the arithmetic of either cost
-method (per-capita costing already embeds average school costs).
+where $R_{inc}$ is \emph{incremental} recurring revenue (the real-estate
+component is the tax \emph{increase} when the current tax is known). The
+school term appears unscaled in both framings: pupils generate tuition-contract
+costs one-for-one, so a development generating few students carries
+proportionally low school costs instead of the school-heavy citywide average
+--- without the split, a zero-student building would still be billed average
+school costs for every resident. The student generation rate is set toward the
+high-rise/small-unit end of the multifamily evidence \cite{listokin2006}
+because university-adjacent rental buildings house predominantly single and
+roommate households rather than families. The naive framing remains an upper
+bound on the non-school side (it allocates fixed citywide costs to incremental
+residents); the marginal framing scales only the non-school share expected to
+grow and can understate costs if capacity thresholds are crossed. The headline
+range spans both framings; per-method nets are also published. If $E$ or
+$N_{enr}$ is unpinned, both framings degrade to the single per-capita form
+$N_{res} \cdot GF/P$ with the student count reported as a note.
 
 \section{Assumptions}
 
@@ -455,7 +466,9 @@ version; their adopted resolutions and residual caveats:
 City of Fairfax GeoHub ArcGIS services (boundary, parcels, zoning); City of
 Fairfax public assessment database (Patriot WebPro); City budget pages (tax
 rates, General Fund, pinned with fiscal year) and the adopted-budget Rates \&
-Levies schedule (personal property and BPOL rates); Census ACS 5-year (B01003,
+Levies schedule (personal property and BPOL rates); City of Fairfax Schools
+FY2026 budget announcement (FCPS tuition contract and projected ADM, for the
+school-split cost model); Census ACS 5-year (B01003,
 B19013, B25010, B25044, B08301) and 2020 PL~94-171 block population via
 TIGERweb; LEHD LODES~8; OpenStreetMap via OSMnx \cite{boeing2017}; Overture
 Maps places; BLS Consumer Expenditure Survey 2023 \cite{blsces}; FHWA National

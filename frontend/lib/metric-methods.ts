@@ -151,16 +151,22 @@ export const METRIC_METHODS: MetricMethod[] = [
     assumptions: ["Retail spending", "In-city retail capture share", "Local sales tax share"],
   },
   {
+    name: "Estimated K-12 students",
+    description: "Estimates how many public-school students the development is likely to add — the driver of the school-cost component.",
+    method: "Proposed housing units multiplied by a student generation rate for high-rise multifamily",
+    assumptions: ["Proposed housing units", "Students per unit"],
+  },
+  {
     name: "Annual service cost - naive per-capita method",
-    description: "Provides a conservative upper estimate by assigning each new resident the city's current average service cost.",
-    method: "New residents allocated the current general-fund expenditure per resident",
-    assumptions: ["New residents", "General-fund expenditure per resident"],
+    description: "Conservative estimate that assigns each new resident the city's average non-school service cost, plus per-pupil tuition for the students the project actually generates.",
+    method: "New residents multiplied by non-school general-fund cost per resident, plus estimated students multiplied by the per-pupil tuition contract",
+    assumptions: ["New residents", "Non-school expenditure per resident", "Students per unit", "Per-pupil tuition"],
   },
   {
     name: "Annual service cost - marginal framing",
-    description: "Estimates the added public-service costs that are more likely to grow because of the development.",
-    method: "Per-capita service cost adjusted to include only costs expected to scale with new residents",
-    assumptions: ["Naive per-capita service cost", "Marginal cost factor"],
+    description: "Estimates the added public-service costs most likely to grow because of the development. School costs follow the student estimate in both framings.",
+    method: "Non-school per-capita cost scaled by the marginal factor, plus estimated students multiplied by the per-pupil tuition contract",
+    assumptions: ["Non-school per-capita service cost", "Marginal cost factor", "Students per unit", "Per-pupil tuition"],
   },
   {
     name: "Net annual fiscal impact - naive per-capita method",

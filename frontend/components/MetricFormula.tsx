@@ -96,11 +96,14 @@ function formulaForMetric(name: string): string | null {
   if (name === "Local sales tax share on captured in-city retail") {
     return String.raw`T_{\mathrm{sales}} = S_{\mathrm{retail}}\,q_{\mathrm{city,retail}}\,r_{\mathrm{local}}`;
   }
+  if (name === "Estimated K-12 students") {
+    return String.raw`S_{\mathrm{K12}} = U \times s_{\mathrm{unit}}`;
+  }
   if (name === "Annual service cost — naive per-capita method" || name === "Annual service cost - naive per-capita method") {
-    return String.raw`C_{\mathrm{naive}} = R \times c_{\mathrm{GF/resident}}`;
+    return String.raw`C_{\mathrm{naive}} = R \times c_{\mathrm{non\text{-}school}} + S_{\mathrm{K12}} \times c_{\mathrm{pupil}}`;
   }
   if (name === "Annual service cost — marginal framing" || name === "Annual service cost - marginal framing") {
-    return String.raw`C_{\mathrm{marginal}} = C_{\mathrm{naive}} \times k_{\mathrm{marginal}}`;
+    return String.raw`C_{\mathrm{marginal}} = R \times c_{\mathrm{non\text{-}school}} \times k_{\mathrm{marginal}} + S_{\mathrm{K12}} \times c_{\mathrm{pupil}}`;
   }
   if (name === "Net annual fiscal impact — naive per-capita method" || name === "Net annual fiscal impact - naive per-capita method") {
     return String.raw`N_{\mathrm{naive}} = \sum_r T_r - C_{\mathrm{naive}}`;

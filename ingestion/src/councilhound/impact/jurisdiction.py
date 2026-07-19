@@ -45,6 +45,11 @@ class TaxRates(BaseModel):
 class BudgetFacts(BaseModel):
     general_fund_expenditure: PinnedValue = Field(default_factory=PinnedValue)
     population_basis: PinnedValue = Field(default_factory=PinnedValue)
+    # school-split cost model: when both are pinned, service costs become
+    # residents x non-school per-capita + students x per-pupil, so student
+    # generation drives the school component instead of being note-only
+    education_transfer: PinnedValue = Field(default_factory=PinnedValue)
+    school_enrollment: PinnedValue = Field(default_factory=PinnedValue)
 
 
 class Fips(BaseModel):

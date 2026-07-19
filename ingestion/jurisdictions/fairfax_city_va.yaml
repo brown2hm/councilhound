@@ -44,6 +44,14 @@ budget:
     value: 25026
     source: https://api.census.gov/data/2024/acs/acs5
     fy: ACS 2024 5-yr
+  education_transfer:
+    value: 71400000
+    source: https://www.cityoffairfaxschools.org/apps/news/article/2017291
+    fy: FY2026 (School Services Agreement tuition to FCPS; GF is FY2027 — one-year vintage mismatch)
+  school_enrollment:
+    value: 2992
+    source: https://www.cityoffairfaxschools.org/apps/news/article/2017291
+    fy: FY2026 projected city ADM
 transit_feeds: []
 fringe_reference_blockgroup: null
 calibration_counts: null
