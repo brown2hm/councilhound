@@ -35,7 +35,11 @@ class TaxRates(BaseModel):
     real_estate_rate_per_100: PinnedValue = Field(default_factory=PinnedValue)
     meals_tax_rate: PinnedValue = Field(default_factory=PinnedValue)
     sales_tax_local_share: PinnedValue = Field(default_factory=PinnedValue)
+    # per-household budget actuals (preferred) vs. rate-based vehicle estimate
+    # (fallback) — fiscal.py uses whichever is pinned, actuals first
     personal_property_per_household: PinnedValue = Field(default_factory=PinnedValue)
+    personal_property_rate_per_100: PinnedValue = Field(default_factory=PinnedValue)
+    bpol_retail_rate_per_100: PinnedValue = Field(default_factory=PinnedValue)
 
 
 class BudgetFacts(BaseModel):

@@ -127,6 +127,18 @@ export const METRIC_METHODS: MetricMethod[] = [
     assumptions: ["Projected assessed value", "Site area"],
   },
   {
+    name: "Personal property tax on resident vehicles (rough estimate)",
+    description: "Rough estimate of annual vehicle (personal property) tax from new households. The city's rate is real; the vehicle counts and values are assumptions, so treat this as order-of-magnitude.",
+    method: "New households multiplied by assumed vehicles per household and assumed value per vehicle, taxed at the city's personal property rate",
+    assumptions: ["Vehicles per household", "Average vehicle assessed value", "Personal property tax rate", "Occupancy rate"],
+  },
+  {
+    name: "BPOL business license tax on project retail (rough estimate)",
+    description: "Rough estimate of annual business-license (BPOL) tax from the project's own shops and restaurants. The city's rate schedule is real; tenant sales are assumed from typical sales per square foot.",
+    method: "Proposed retail floor area multiplied by assumed gross sales per square foot, taxed at the city's BPOL retail rate",
+    assumptions: ["Proposed retail floor area", "Retail sales per square foot", "BPOL retail rate"],
+  },
+  {
     name: "Meals tax on captured in-city dining",
     description: "Estimates city meals-tax revenue from new resident spending at restaurants inside the city.",
     method: "Restaurant spending captured inside the city multiplied by the meals tax rate",
@@ -152,19 +164,19 @@ export const METRIC_METHODS: MetricMethod[] = [
   },
   {
     name: "Net annual fiscal impact - naive per-capita method",
-    description: "Tests whether new recurring revenue covers costs under the more conservative per-resident approach.",
-    method: "New recurring revenue less the per-capita service-cost estimate",
+    description: "Tests whether new recurring revenue covers costs under the more conservative per-resident approach. Revenue includes the rough-estimate personal property and BPOL lines.",
+    method: "New recurring revenue (including rough-estimate personal property and BPOL lines) less the per-capita service-cost estimate",
     assumptions: ["New recurring revenue", "Naive per-capita service cost"],
   },
   {
     name: "Net annual fiscal impact - marginal framing",
-    description: "Tests whether new recurring revenue covers the public costs most likely to increase in practice.",
-    method: "New recurring revenue less the marginal service-cost estimate",
+    description: "Tests whether new recurring revenue covers the public costs most likely to increase in practice. Revenue includes the rough-estimate personal property and BPOL lines.",
+    method: "New recurring revenue (including rough-estimate personal property and BPOL lines) less the marginal service-cost estimate",
     assumptions: ["New recurring revenue", "Marginal service cost"],
   },
   {
     name: "Net annual fiscal impact range",
-    description: "Presents a practical range of possible yearly gains or losses rather than relying on one cost estimate.",
+    description: "Presents a practical range of possible yearly gains or losses rather than relying on one cost estimate. Revenue includes the rough-estimate personal property and BPOL lines.",
     method: "Range bounded by the naive per-capita and marginal service-cost estimates",
     assumptions: ["New recurring revenue", "Naive per-capita service cost", "Marginal service cost"],
   },

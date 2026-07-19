@@ -35,6 +35,26 @@ def _assumptions() -> dict[str, Assumption]:
                    basis="marginal-cost framing: fixed services (roads, admin) don't "
                          "scale with infill residents",
                    rationale="share of average per-capita cost that scales at the margin"),
+        # rough-estimate inputs: the three below exist only to keep the revenue
+        # side from silently reading as zero for taxes the city does levy —
+        # their metrics are labeled "rough estimate" and carry wide bounds
+        Assumption(key="vehicles_per_household", value=1.4, low=1.0, high=1.8,
+                   basis="ACS vehicles-available norms for multifamily renter "
+                         "households in Northern Virginia (below the ~1.8 "
+                         "citywide all-tenure average)",
+                   rationale="rough-estimate input: converts new households to "
+                             "taxable vehicles for the personal property levy"),
+        Assumption(key="avg_vehicle_assessed_value", value=14000.0, low=9000.0, high=20000.0,
+                   basis="typical assessed (trade-in basis) vehicle values in "
+                         "NoVA jurisdictions' recent personal-property rolls",
+                   rationale="rough-estimate input: average taxable value per "
+                             "vehicle; no project-specific fleet data exists"),
+        Assumption(key="retail_sales_per_sqft", value=400.0, low=250.0, high=600.0,
+                   basis="industry gross-sales ranges for ground-floor "
+                         "neighborhood retail and full-service restaurants",
+                   rationale="rough-estimate input: annual gross receipts per "
+                             "sqft for the BPOL base; the low bound absorbs "
+                             "vacancy and lease-up"),
     ]}
 
 
@@ -160,15 +180,62 @@ def run(spec, ctx, prior=None):
             metrics.append(metric("Projected value per acre", projected_av * (1 / acres),
                                   "$/acre", [comp_prov], [], "projected AV / site acres"))
 
+    # personal property: per-household budget actuals when pinned (preferred),
+    # else a rate-based vehicle estimate — explicitly labeled a rough estimate
     households_m = _prior_metric(prior, "New households")
-    pp_rate = _rate(cfg, "tax.personal_property_per_household", notes)
-    if households_m and pp_rate:
+    pp_actuals = cfg.tax.personal_property_per_household
+    if households_m and pp_actuals.value is not None:
         households = _interval_from_metric(households_m)
         metrics.append(metric(
-            "Personal property tax (new households)", households * pp_rate.value, "$/yr",
+            "Personal property tax (new households)", households * pp_actuals.value, "$/yr",
             [prov("City budget per-household personal property actuals",
-                  pp_rate.source or "", pp_rate.fy or "")],
+                  pp_actuals.source or "", pp_actuals.fy or "")],
             [], "new households x per-household personal property revenue"))
+    elif households_m:
+        pp_rate = _rate(cfg, "tax.personal_property_rate_per_100", notes)
+        if pp_rate:
+            households = _interval_from_metric(households_m)
+            vehicles = households * Interval.from_assumption(a["vehicles_per_household"])
+            pp_est = (vehicles * Interval.from_assumption(a["avg_vehicle_assessed_value"])
+                      * (pp_rate.value / 100.0))
+            metrics.append(metric(
+                "Personal property tax on resident vehicles (rough estimate)",
+                pp_est, "$/yr",
+                [prov("City personal property tax rate", pp_rate.source or "",
+                      pp_rate.fy or "",
+                      "PPTRA car-tax relief is a fixed state block grant, so "
+                      "marginal vehicles yield the city the full levy")],
+                [a["vehicles_per_household"], a["avg_vehicle_assessed_value"]],
+                "ROUGH ESTIMATE: new households x assumed vehicles per household "
+                "x assumed value per vehicle x PP rate / 100 — no project-specific "
+                "vehicle data; treat as order-of-magnitude"))
+            notes.append(
+                "Personal property tax is a rough estimate: the city rate is "
+                "pinned, but vehicles per household and average vehicle value "
+                "are assumptions, not observed data. Pinning per-household "
+                "budget actuals would replace this estimate.")
+
+    # BPOL on the project's own commercial space — same rough-estimate framing
+    bpol_rate = _rate(cfg, "tax.bpol_retail_rate_per_100", notes)
+    retail_sqft = spec.proposed.retail_sqft or 0
+    if bpol_rate and retail_sqft:
+        receipts = (Interval.point(retail_sqft)
+                    * Interval.from_assumption(a["retail_sales_per_sqft"]))
+        metrics.append(metric(
+            "BPOL business license tax on project retail (rough estimate)",
+            receipts * (bpol_rate.value / 100.0), "$/yr",
+            [prov("City BPOL rate schedule (budget Rates & Levies)",
+                  bpol_rate.source or "", bpol_rate.fy or "",
+                  "retail-sales rate applied to the whole space; the "
+                  "repair/personal/business-services classification is taxed "
+                  "at $0.27 per $100, slightly above the retail rate")],
+            [a["retail_sales_per_sqft"]],
+            "ROUGH ESTIMATE: proposed retail sqft x assumed gross sales per "
+            "sqft x BPOL retail rate / 100 — actual receipts depend on tenants"))
+        notes.append(
+            "BPOL revenue is a rough estimate: the city rate schedule is "
+            "pinned, but tenant gross receipts are assumed from a sales-per-"
+            "sqft range.")
 
     meals_rate = _rate(cfg, "tax.meals_tax_rate", notes)
     food_away_m = _prior_metric(prior, "New annual spending: restaurant_bar")
@@ -199,8 +266,6 @@ def run(spec, ctx, prior=None):
                 [prov("Local-option sales tax share", sales_rate.source or "",
                       sales_rate.fy or "")],
                 [], "in-city captured retail spend x local sales tax share"))
-    notes.append("BPOL (business license) revenue on the new commercial space is not "
-                 "computed — the BPOL rate schedule is not pinned in this version.")
 
     # 4. cost side — a range, never a point
     gf = _rate(cfg, "budget.general_fund_expenditure", notes)
@@ -242,7 +307,11 @@ def run(spec, ctx, prior=None):
         # the increase belongs in a net-impact figure.
         re_component = (next((x for x in metrics if x.name == "Real estate tax increase"), None)
                         or next((x for x in metrics if x.name == "Projected real estate tax"), None))
+        # the per-household and vehicle-estimate PP lines are mutually
+        # exclusive above, so listing both cannot double count
         revenue_names = ("Personal property tax (new households)",
+                         "Personal property tax on resident vehicles (rough estimate)",
+                         "BPOL business license tax on project retail (rough estimate)",
                          "Meals tax on captured in-city dining",
                          "Local sales tax share on captured in-city retail")
         revenue = _interval_from_metric(re_component) if re_component else None
@@ -281,6 +350,10 @@ def run(spec, ctx, prior=None):
                          "(it allocates fixed citywide costs to new residents); the "
                          "marginal framing understates them if service capacity "
                          "expansions are triggered.")
+            notes.append("The revenue side includes the rough-estimate personal "
+                         "property and BPOL lines: leaving them at zero would "
+                         "understate revenue for taxes the city does levy, but "
+                         "both carry wide assumption-driven bounds.")
 
     result = ModuleResult(module="fiscal", metrics=metrics,
                           narrative_notes=notes, assumptions=list(a.values()))

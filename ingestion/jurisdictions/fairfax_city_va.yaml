@@ -27,6 +27,14 @@ tax:
     value: null
     source: null
     fy: null
+  personal_property_rate_per_100:
+    value: 4.13
+    source: https://www.fairfaxva.gov/Government/Finance/Budget
+    fy: FY2027 (rate unchanged; also FY2024 Rates & Levies, code 311210)
+  bpol_retail_rate_per_100:
+    value: 0.20
+    source: https://portal2.fairfaxva.gov/Budget/edoc/704029/19%20FY%202024%20Rates%20and%20Levies.pdf?dbid=0&repo=cityoffairfax
+    fy: FY2024 adopted (Rates & Levies — retail sales all types)
 budget:
   general_fund_expenditure:
     value: 207912496

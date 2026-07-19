@@ -84,6 +84,12 @@ function formulaForMetric(name: string): string | null {
     return String.raw`\Delta T_{\mathrm{RE}} = T_{\mathrm{RE},1} - T_{\mathrm{RE},0}`;
   }
   if (name === "Projected value per acre") return String.raw`V_{1,\mathrm{acre}} = \frac{V_1}{A}`;
+  if (name === "Personal property tax on resident vehicles (rough estimate)") {
+    return String.raw`T_{\mathrm{pp}} \approx H \times \nu_{\mathrm{hh}} \times \bar{v}_{\mathrm{veh}} \times \frac{r_{\mathrm{pp}}}{100}`;
+  }
+  if (name === "BPOL business license tax on project retail (rough estimate)") {
+    return String.raw`T_{\mathrm{bpol}} \approx F_{\mathrm{retail}} \times g_{\mathrm{sf}} \times \frac{r_{\mathrm{bpol}}}{100}`;
+  }
   if (name === "Meals tax on captured in-city dining") {
     return String.raw`T_{\mathrm{meals}} = S_{\mathrm{restaurant}}\,q_{\mathrm{city,food}}\,r_{\mathrm{meals}}`;
   }
