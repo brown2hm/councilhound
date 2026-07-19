@@ -15,9 +15,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from councilhound.db.models import CityProject, Entity, ProjectEvaluation
+from councilhound.db.models import CityProject, Entity, ProjectEvaluation, WikiPage
 
 from app.db import db_session
+from app.wiki import wiki_payload
 
 router = APIRouter()
 
@@ -166,6 +167,21 @@ def list_development_projects(
     return items
 
 
+@router.get("/{slug}/wiki")
+def get_wiki(slug: str, session: Session = Depends(db_session)):
+    """The project's OKF wiki (mirrored from the knowledge bundle)."""
+    project = session.scalar(
+        select(CityProject).where(CityProject.external_slug == slug))
+    if project is None or project.entity_id is None:
+        raise HTTPException(status_code=404, detail="no wiki for this project")
+    entity = session.get(Entity, project.entity_id)
+    payload = wiki_payload(session, entity) if entity else None
+    if payload is None:
+        raise HTTPException(status_code=404, detail="no wiki for this project")
+    payload["official_slug"] = project.external_slug
+    return payload
+
+
 @router.get("/{slug}/evaluation")
 def get_evaluation(slug: str, session: Session = Depends(db_session)):
     result = session.execute(
@@ -189,10 +205,14 @@ def get_evaluation(slug: str, session: Session = Depends(db_session)):
         for note in module_result.get("narrative_notes", [])
     ]
     entity = (session.get(Entity, project.entity_id) if project.entity_id else None)
+    has_wiki = entity is not None and session.scalar(
+        select(WikiPage.id).where(WikiPage.entity_id == entity.id,
+                                  WikiPage.kind == "concept").limit(1)) is not None
     return {
         "slug": project.external_slug,
         "name": project.name,
         "entity_slug": entity.canonical_slug if entity else None,
+        "has_wiki": has_wiki,
         "official_status": project.official_status,
         "detail_url": project.detail_url,
         "status": evaluation.status,

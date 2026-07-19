@@ -215,6 +215,7 @@ export interface ProjectEvaluation {
   slug: string;
   name: string;
   entity_slug: string | null;
+  has_wiki: boolean;
   official_status: string | null;
   detail_url: string;
   status: string;
@@ -235,6 +236,26 @@ export interface ProjectEvaluation {
   report_model: string | null;
   report_prompt_version: string | null;
   synthesized_at: string | null;
+}
+
+export interface WikiPageInfo {
+  page: string;
+  path: string;
+  title: string;
+  type: string | null;
+  description: string | null;
+  timestamp: string | null;
+  frontmatter: Record<string, unknown>;
+  body: string;
+}
+
+export interface ProjectWiki {
+  entity_slug: string;
+  official_slug?: string;
+  name: string;
+  pages: WikiPageInfo[];
+  log: string | null;
+  pushed_at: string | null;
 }
 
 export interface MemberSummary {
@@ -372,6 +393,9 @@ export const api = {
     get<CityProjectSummary[]>(`/development/?${params}`),
   developmentEvaluation: (slug: string) =>
     get<ProjectEvaluation>(`/development/${encodeURIComponent(slug)}/evaluation`),
+  developmentWiki: (slug: string) =>
+    get<ProjectWiki>(`/development/${encodeURIComponent(slug)}/wiki`),
+  entityWiki: (slug: string) => get<ProjectWiki>(`/entities/${encodeURIComponent(slug)}/wiki`),
   search: (q: string, body?: string) =>
     get<SearchResponse>(`/search/?q=${encodeURIComponent(q)}${body ? `&body=${body}` : ""}`),
   member: (slug: string) => get<MemberDetail>(`/members/${encodeURIComponent(slug)}`),

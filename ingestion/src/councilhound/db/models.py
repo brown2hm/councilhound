@@ -206,6 +206,25 @@ class ProjectEvaluation(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
+class WikiPage(Base):
+    """One file of the OKF knowledge bundle (councilhound.okf), mirrored into
+    the DB so the cloud API can serve project wikis. The bundle directory
+    (git) is canonical; okf-push is the only writer. entity_id anchors
+    project pages (projects/<slug>/...); bundle-level pages carry NULL."""
+    __tablename__ = "wiki_pages"
+
+    id = Column(Integer, primary_key=True)
+    path = Column(Text, unique=True, nullable=False)  # bundle-relative, e.g. projects/x/overview.md
+    entity_id = Column(Integer, ForeignKey("entities.id", ondelete="CASCADE"), index=True)
+    kind = Column(String, nullable=False)  # 'concept' | 'index' | 'log'
+    page = Column(String, nullable=False)  # basename sans .md, e.g. 'overview'
+    frontmatter = Column(JSON)  # parsed YAML; NULL for reserved files
+    body = Column(Text, nullable=False)
+    content_hash = Column(String, nullable=False)
+    pushed_at = Column(DateTime(timezone=True), server_default=func.now(),
+                       onupdate=func.now())
+
+
 class EntityProfile(Base):
     """LLM-synthesized rollup for an entity's detail page: overall summary,
     open questions / options on the table, and commentary binned per council

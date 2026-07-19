@@ -13,8 +13,21 @@ from councilhound.hot_topics import entity_discussion_series, hot_topics
 
 from app.db import db_session
 from app.links import clip_link
+from app.wiki import wiki_payload
 
 router = APIRouter()
+
+
+def _resolve_entity(session: Session, slug: str) -> Entity | None:
+    entity = session.scalar(select(Entity).where(Entity.canonical_slug == slug))
+    if entity is None:
+        # merged entities leave their old slug behind as an alias, so
+        # bookmarked/indexed URLs keep resolving to the survivor
+        entity = session.scalar(
+            select(Entity).join(EntityAlias, EntityAlias.entity_id == Entity.id)
+            .where(func.lower(EntityAlias.alias) == slug.lower())
+        )
+    return entity
 
 
 @router.get("/hot")
@@ -183,16 +196,19 @@ def _city_record(session: Session, entity: Entity) -> dict | None:
     }
 
 
+@router.get("/{slug}/wiki")
+def get_entity_wiki(slug: str, session: Session = Depends(db_session)):
+    """The project's OKF wiki (mirrored from the knowledge bundle)."""
+    entity = _resolve_entity(session, slug)
+    payload = wiki_payload(session, entity) if entity else None
+    if payload is None:
+        raise HTTPException(404, "no wiki for this entity")
+    return payload
+
+
 @router.get("/{slug}")
 def get_entity(slug: str, session: Session = Depends(db_session)):
-    entity = session.scalar(select(Entity).where(Entity.canonical_slug == slug))
-    if entity is None:
-        # merged entities leave their old slug behind as an alias, so
-        # bookmarked/indexed URLs keep resolving to the survivor
-        entity = session.scalar(
-            select(Entity).join(EntityAlias, EntityAlias.entity_id == Entity.id)
-            .where(func.lower(EntityAlias.alias) == slug.lower())
-        )
+    entity = _resolve_entity(session, slug)
     if entity is None:
         raise HTTPException(404, "entity not found")
 

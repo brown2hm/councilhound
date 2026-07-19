@@ -45,6 +45,12 @@ model, and ops notes.
   meeting-derived development projects (deduplicated and classified), and a
   separate civic-topics page for the plans, contracts, studies, and programs
   surfaced from transcripts.
+- **Project wikis** — a per-project knowledge base in the
+  [Open Knowledge Format](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf):
+  durable markdown pages (overview, meeting history, positions, impact)
+  maintained by incremental curator edits instead of regeneration, with
+  impact figures resolved live via metric markers so prose never carries
+  stale numbers. See [Project wikis](#project-wikis-okf-knowledge-bundle).
 
 ## How it works
 
@@ -151,6 +157,35 @@ with source + fiscal year — including the school-split cost inputs and the
 personal-property/BPOL rate schedule) live in
 `ingestion/jurisdictions/<slug>.yaml`; unpinned rates make the dependent
 metrics refuse to run rather than guess.
+
+### Project wikis (OKF knowledge bundle)
+
+`councilhound.okf` maintains a wiki-style knowledge base — one directory of
+markdown concept files per tracked project, per the
+[Open Knowledge Format](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf)
+v0.1 spec (YAML frontmatter, reserved `index.md`/`log.md`). The bundle
+(default `data/okf/councilhound-fairfax/`, override `$OKF_BUNDLE_DIR`) is
+canonical for narrative knowledge and designed for incremental maintenance
+instead of wholesale profile regeneration. Ownership is per-file:
+`history.md` and all indexes are **pipeline-owned** (regenerated
+deterministically); `overview.md`/`positions.md`/`impact.md` are
+**curator-owned** — seeded once, then edited minimally by the LLM curator as
+new meetings land, so human edits survive (`<!-- curator:off -->` regions are
+enforced untouchable). Impact figures never appear literally in wiki prose:
+pages carry `{{metric:...}}` markers the frontend resolves against the live
+evaluation, so wiki text can't go stale.
+
+```
+PYTHONPATH=src ../.venv/bin/python -m councilhound.cli okf-seed      # one-time draft per project
+PYTHONPATH=src ../.venv/bin/python -m councilhound.cli okf-refresh   # deterministic: history, indexes, status
+PYTHONPATH=src ../.venv/bin/python -m councilhound.cli okf-curate    # LLM: minimal edits for stale wikis
+PYTHONPATH=src ../.venv/bin/python -m councilhound.cli okf-lint      # OKF conformance + marker/link checks
+PYTHONPATH=src ../.venv/bin/python -m councilhound.cli okf-push      # mirror into wiki_pages (--dsn for prod)
+```
+
+The API serves the mirror at `/development/{slug}/wiki` and
+`/entities/{slug}/wiki`; each project's analysis page links to its wiki at
+`/development/{slug}/wiki` (beta, read-only shadow of the profile summary).
 
 ### Docker (full stack)
 

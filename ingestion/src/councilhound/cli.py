@@ -476,6 +476,104 @@ def impact_setup_jurisdiction(jurisdiction):
     run_setup(jurisdiction, echo=click.echo)
 
 
+# --- OKF knowledge bundle (councilhound.okf) ------------------------------
+# The wiki-style knowledge base: one directory of markdown concept files per
+# tracked project (Open Knowledge Format v0.1). Seed once, then the nightly
+# flow is refresh -> curate -> lint -> push.
+
+bundle_dir_option = click.option(
+    "--bundle-dir", default=None,
+    help="bundle root (defaults to $OKF_BUNDLE_DIR)")
+
+
+def _bundle_dir(value):
+    from councilhound.config import OKF_BUNDLE_DIR
+    return value or OKF_BUNDLE_DIR
+
+
+@cli.command("okf-seed")
+@bundle_dir_option
+@click.option("--slug", "slugs", multiple=True, help="seed specific project slug(s)")
+@limit_option
+@click.option("--force", is_flag=True, help="re-draft curator pages of existing wikis")
+def okf_seed(bundle_dir, slugs, limit, force):
+    """One-time draft of project wiki directories from profiles + records."""
+    from councilhound.db.session import get_session
+    from councilhound.okf.export import seed_bundle
+
+    with get_session() as session:
+        click.echo(seed_bundle(session, _bundle_dir(bundle_dir),
+                               slugs=list(slugs) or None, limit=limit, force=force))
+
+
+@cli.command("okf-refresh")
+@bundle_dir_option
+def okf_refresh(bundle_dir):
+    """Deterministic pass: regenerate history.md, indexes, status frontmatter."""
+    from councilhound.db.session import get_session
+    from councilhound.okf.export import refresh_bundle
+
+    with get_session() as session:
+        click.echo(refresh_bundle(session, _bundle_dir(bundle_dir)))
+
+
+@cli.command("okf-curate")
+@bundle_dir_option
+@limit_option
+def okf_curate(bundle_dir, limit):
+    """LLM curator: minimal edits to overview/positions for stale wikis."""
+    from councilhound.db.session import get_session
+    from councilhound.okf.curate import curate_pending
+
+    with get_session() as session:
+        click.echo(curate_pending(session, _bundle_dir(bundle_dir), limit=limit))
+
+
+@cli.command("okf-lint")
+@bundle_dir_option
+@click.option("--no-db", is_flag=True, help="skip DB-backed metric-marker checks")
+def okf_lint(bundle_dir, no_db):
+    """Validate OKF conformance; exits nonzero on problems."""
+    from councilhound.okf.lint import lint_bundle
+
+    if no_db:
+        problems = lint_bundle(_bundle_dir(bundle_dir))
+    else:
+        from councilhound.db.session import get_session
+        with get_session() as session:
+            problems = lint_bundle(_bundle_dir(bundle_dir), session)
+    for p in problems:
+        click.echo(p)
+    if problems:
+        raise click.ClickException(f"{len(problems)} problem(s)")
+    click.echo("bundle conformant")
+
+
+@cli.command("okf-push")
+@bundle_dir_option
+@click.option("--dsn", envvar="IMPACT_PUSH_DATABASE_URL", default=None,
+              help="target Postgres DSN (e.g. via `fly proxy` to the prod DB); "
+                   "defaults to the app database")
+def okf_push(bundle_dir, dsn):
+    """Mirror the bundle into wiki_pages so the API can serve it."""
+    from councilhound.okf.push import push_bundle
+
+    if dsn:
+        import sqlalchemy as sa
+        from sqlalchemy.orm import sessionmaker
+        engine = sa.create_engine(dsn)
+        session = sessionmaker(bind=engine)()
+        try:
+            click.echo(push_bundle(session, _bundle_dir(bundle_dir)))
+        finally:
+            session.close()
+            engine.dispose()
+    else:
+        from councilhound.db.session import get_session
+        with get_session() as session:
+            click.echo(push_bundle(session, _bundle_dir(bundle_dir)))
+
+
 @cli.command("impact-status")
 def impact_status():
     """List impact evaluations and their lifecycle state."""

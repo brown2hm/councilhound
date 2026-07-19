@@ -38,3 +38,13 @@ REQUEST_DELAY_SECONDS = float(os.environ.get("REQUEST_DELAY_SECONDS", "1.0"))
 # Optional for the impact subsystem's ACS loader; anonymous access is fine at
 # our volume, a key just raises the rate limit.
 CENSUS_API_KEY = os.environ.get("CENSUS_API_KEY", "")
+
+# OKF knowledge bundle (councilhound.okf): a directory of markdown concept
+# files per tracked project, per the Open Knowledge Format spec. The bundle
+# is a build artifact rendered from the DB — point this at a checkout of the
+# knowledge repo once one exists.
+OKF_BUNDLE_DIR = os.environ.get(
+    "OKF_BUNDLE_DIR", os.path.join(DATA_DIR, "okf", "councilhound-fairfax"))
+# Public site base used for `resource` frontmatter URIs and cross-links from
+# wiki prose to pages that live outside the bundle (members, analyses).
+SITE_BASE_URL = os.environ.get("SITE_BASE_URL", "https://councilhound.net").rstrip("/")

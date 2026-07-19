@@ -92,6 +92,17 @@ export default async function DevelopmentAnalysisPage({
       <p className="mb-6 text-[13px] text-muted">
         {facts.join(" · ")}
         {facts.length > 0 && " · "}
+        {evaluation.has_wiki && (
+          <>
+            <Link
+              href={`/development/${evaluation.slug}/wiki`}
+              className="font-semibold underline underline-offset-2 hover:text-ink"
+            >
+              project wiki
+            </Link>
+            {" · "}
+          </>
+        )}
         {evaluation.entity_slug && (
           <>
             <Link
