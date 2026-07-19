@@ -1,10 +1,23 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import AssumptionsLab from "@/components/AssumptionsLab";
 import ImpactMapClient from "@/components/ImpactMapClient";
 import Markdown from "@/components/Markdown";
 import { api, type ImpactMetric, type ImpactProvenance } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
+
+/** Split the synthesized report into the executive summary (shown inline)
+ * and the remaining sections (collapsed). Falls back to the whole report
+ * when the expected "## Executive summary" heading is missing. */
+function splitReport(markdown: string): { summary: string; rest: string | null } {
+  const sections = markdown.split(/\n(?=## )/);
+  const summaryIdx = sections.findIndex((s) => /^## Executive summary/i.test(s));
+  if (summaryIdx === -1) return { summary: markdown, rest: null };
+  const summary = sections[summaryIdx].replace(/^## Executive summary\s*/i, "");
+  const rest = sections.filter((_, i) => i !== summaryIdx && i > 0).join("\n");
+  return { summary, rest: rest.trim() ? rest : null };
+}
 
 function fmtValue(m: ImpactMetric): string {
   const dollars = m.unit.startsWith("$");
@@ -51,6 +64,7 @@ export default async function DevelopmentAnalysisPage({
   }
 
   const headlines = evaluation.metrics.filter((m) => m.headline);
+  const report = splitReport(evaluation.report_markdown || "");
   const proposed = evaluation.spec.proposed ?? {};
   const facts = [
     proposed.units != null && `${proposed.units} units`,
@@ -142,7 +156,8 @@ export default async function DevelopmentAnalysisPage({
       )}
 
       <section className="mb-8">
-        <Markdown>{evaluation.report_markdown}</Markdown>
+        <h2 className="mb-2 text-lg font-semibold">Summary</h2>
+        <Markdown>{report.summary}</Markdown>
         {evaluation.metrics.length > 0 && (
           <Link
             href="/development/methods"
@@ -152,6 +167,34 @@ export default async function DevelopmentAnalysisPage({
           </Link>
         )}
       </section>
+
+      <section className="mb-8">
+        <h2 className="mb-1 text-lg font-semibold">Adjust the assumptions</h2>
+        <p className="mb-4 max-w-[760px] text-[13px] leading-[1.55] text-muted">
+          Every estimate above rests on named assumptions with published ranges. If you
+          have better local knowledge, move the sliders — adjusted values use the exact
+          formulas of the pipeline, bounded by each assumption&apos;s sensitivity range.
+          Travel and destination-choice parameters are excluded (they require a full
+          model re-run). Nothing is saved or submitted.
+        </p>
+        <AssumptionsLab
+          assumptions={evaluation.assumptions}
+          metrics={evaluation.metrics}
+        />
+      </section>
+
+      {report.rest && (
+        <section className="mb-8">
+          <details className="rounded-2xl border border-hairline bg-canvas p-5">
+            <summary className="cursor-pointer text-[15px] font-semibold">
+              Full analysis
+            </summary>
+            <div className="mt-3">
+              <Markdown>{report.rest}</Markdown>
+            </div>
+          </details>
+        </section>
+      )}
 
       {evaluation.narrative_notes.length > 0 && (
         <section className="mb-8 rounded-2xl border border-hairline bg-soft p-5">
@@ -165,42 +208,6 @@ export default async function DevelopmentAnalysisPage({
           </ul>
         </section>
       )}
-
-      <section className="mb-8">
-        <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-lg font-semibold">Assumptions &amp; sensitivities</h2>
-          <Link
-            href={`/development/${params.slug}/assumptions`}
-            className="text-[13px] font-semibold underline underline-offset-4 hover:text-muted"
-          >
-            Disagree with these? Adjust them and see the effect →
-          </Link>
-        </div>
-        <div className="overflow-x-auto rounded-2xl border border-hairline">
-          <table className="w-full text-[13px]">
-            <thead className="bg-soft text-left text-muted">
-              <tr>
-                <th className="px-4 py-2.5 font-semibold">Assumption</th>
-                <th className="px-4 py-2.5 font-semibold">Value</th>
-                <th className="px-4 py-2.5 font-semibold">Range</th>
-                <th className="px-4 py-2.5 font-semibold">Why</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-hairline-soft">
-              {evaluation.assumptions.map((a) => (
-                <tr key={a.key} className="align-top">
-                  <td className="px-4 py-2.5 font-mono text-[12px]">{a.key}</td>
-                  <td className="px-4 py-2.5">{a.value}</td>
-                  <td className="px-4 py-2.5 text-muted">
-                    {a.low} – {a.high}
-                  </td>
-                  <td className="px-4 py-2.5 leading-snug text-body">{a.rationale}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
 
       <section className="mb-8">
         <h2 className="mb-2 text-lg font-semibold">Data sources</h2>
