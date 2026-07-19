@@ -104,10 +104,11 @@ def extract_numbers_with_precision(markdown: str) -> list[tuple[float, str, int]
         if sign == "−":  # true minus
             value = -value
         elif sign == "-":
-            # a hyphen directly after a digit is a range separator ("234.9-253.2"),
-            # not a negative sign
+            # a hyphen directly after a digit is a range separator
+            # ("234.9-253.2") and after a letter it's a compound word
+            # ("early-1970s", "Phase-2") — neither is a negative sign
             prev = text[match.start() - 1] if match.start() > 0 else ""
-            if not prev.isdigit():
+            if not (prev.isdigit() or prev.isalpha()):
                 value = -value
         context = text[max(0, match.start() - 40):match.end() + 20].replace("\n", " ")
         found.append((value, context.strip(), _sig_figs(raw)))
