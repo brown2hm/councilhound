@@ -2,63 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Markdown from "@/components/Markdown";
 import { api, formatDate, type ImpactMetric, type ProjectWiki } from "@/lib/api";
+import { metricsByKey, resolveBody } from "@/lib/wiki";
 
 export const dynamic = "force-dynamic";
-
-/** Same normalization as councilhound.okf.bundle.slugify — metric marker
- * keys are the slugified metric name on both sides. */
-function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
-function fmtMetric(m: ImpactMetric): string {
-  const dollars = m.unit.startsWith("$");
-  const fraction = m.unit === "fraction";
-  const fmt = (x: number) => {
-    if (fraction) return `${Math.round(x * 100)}%`;
-    if (dollars && Math.abs(x) >= 1_000_000) return `$${(x / 1_000_000).toFixed(1)}M`;
-    if (dollars && Math.abs(x) >= 10_000) return `$${Math.round(x / 1_000)}k`;
-    if (dollars) return `$${Math.round(x).toLocaleString()}`;
-    return Math.abs(x) >= 100
-      ? Math.round(x).toLocaleString()
-      : x.toLocaleString(undefined, { maximumFractionDigits: 1 });
-  };
-  let out = `**${m.name}: ${fmt(m.value)}**`;
-  if (m.low != null && m.high != null && !(m.low === m.value && m.high === m.value)) {
-    out += ` _(range ${fmt(m.low)} – ${fmt(m.high)})_`;
-  }
-  return out;
-}
-
-/** Resolve wiki source into renderable markdown: {{metric:...}} markers
- * become formatted live values (numbers never live in wiki prose), {{map:...}}
- * points at the analysis maps, and bundle-internal links become in-page
- * anchors. */
-function resolveBody(
-  body: string,
-  metricsByKey: Map<string, ImpactMetric>,
-  entitySlug: string,
-  officialSlug: string,
-): string {
-  return body
-    .replace(/<!--[\s\S]*?-->/g, "") // ownership notes are for editors, not readers
-    .replace(/\{\{metric:([a-z0-9-]+)\}\}/g, (_all, key: string) => {
-      const m = metricsByKey.get(key);
-      return m ? fmtMetric(m) : `_metric ${key} unavailable_`;
-    })
-    .replace(
-      /\{\{map:([a-z0-9-]+)\}\}/g,
-      () => `[maps on the analysis page](/development/${officialSlug})`,
-    )
-    .replace(
-      new RegExp(`\\]\\(/projects/${entitySlug}/([a-z0-9-]+)\\.md\\)`, "g"),
-      (_all, page: string) => `](#${page})`,
-    );
-}
 
 export default async function ProjectWikiPage({
   params,
@@ -71,10 +17,10 @@ export default async function ProjectWikiPage({
   } catch {
     notFound();
   }
-  const metricsByKey = new Map<string, ImpactMetric>();
+  let metrics = new Map<string, ImpactMetric>();
   try {
     const evaluation = await api.developmentEvaluation(params.slug);
-    for (const m of evaluation.metrics) metricsByKey.set(slugify(m.name), m);
+    metrics = metricsByKey(evaluation.metrics);
   } catch {
     // no synthesized evaluation — metric markers render as unavailable
   }
@@ -127,7 +73,7 @@ export default async function ProjectWikiPage({
           </div>
           <div className="text-[14px] leading-[1.6]">
             <Markdown>
-              {resolveBody(p.body, metricsByKey, wiki.entity_slug, params.slug)}
+              {resolveBody(p.body, metrics, wiki.entity_slug, params.slug)}
             </Markdown>
           </div>
         </section>

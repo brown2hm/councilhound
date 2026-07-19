@@ -3,7 +3,14 @@ import { notFound } from "next/navigation";
 import AssumptionsLab from "@/components/AssumptionsLab";
 import ImpactMapClient from "@/components/ImpactMapClient";
 import Markdown from "@/components/Markdown";
-import { api, type ImpactMetric, type ImpactProvenance } from "@/lib/api";
+import {
+  api,
+  formatDate,
+  type ImpactMetric,
+  type ImpactProvenance,
+  type ProjectWiki,
+} from "@/lib/api";
+import { metricsByKey, resolveBody, stripSection, WIKI_PAGE_LABELS } from "@/lib/wiki";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +69,18 @@ export default async function DevelopmentAnalysisPage({
   } catch {
     notFound();
   }
+  // the wiki's overview page replaces the report's executive summary as the
+  // narrative when one exists (the full report stays in "Full analysis")
+  let wiki: ProjectWiki | null = null;
+  if (evaluation.has_wiki) {
+    try {
+      wiki = await api.developmentWiki(params.slug);
+    } catch {
+      // wiki flagged but unavailable — fall back to the report summary
+    }
+  }
+  const overview = wiki?.pages.find((p) => p.page === "overview") ?? null;
+  const wikiBase = `/development/${params.slug}/wiki`;
 
   const headlines = evaluation.metrics.filter((m) => m.headline);
   const report = splitReport(evaluation.report_markdown || "");
@@ -167,8 +186,49 @@ export default async function DevelopmentAnalysisPage({
       )}
 
       <section className="mb-8">
-        <h2 className="mb-2 text-lg font-semibold">Summary</h2>
-        <Markdown>{report.summary}</Markdown>
+        <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-lg font-semibold">Summary</h2>
+          {overview?.timestamp && (
+            <span className="text-[12px] text-muted">
+              from the project wiki · through{" "}
+              {formatDate(String(overview.timestamp).slice(0, 10))}
+            </span>
+          )}
+        </div>
+        {overview && wiki ? (
+          <>
+            <Markdown>
+              {resolveBody(
+                stripSection(overview.body, "In this wiki"),
+                metricsByKey(evaluation.metrics),
+                wiki.entity_slug,
+                params.slug,
+                wikiBase,
+              )}
+            </Markdown>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {wiki.pages
+                .filter((p) => p.page !== "overview")
+                .map((p) => (
+                  <Link
+                    key={p.page}
+                    href={`${wikiBase}#${p.page}`}
+                    className="rounded-full border border-hairline bg-canvas px-3 py-1 text-[13px] font-semibold text-body hover:bg-strong"
+                  >
+                    {WIKI_PAGE_LABELS[p.page] ?? p.title}
+                  </Link>
+                ))}
+              <Link
+                href={wikiBase}
+                className="rounded-full border border-hairline bg-canvas px-3 py-1 text-[13px] font-semibold text-body hover:bg-strong"
+              >
+                Full wiki →
+              </Link>
+            </div>
+          </>
+        ) : (
+          <Markdown>{report.summary}</Markdown>
+        )}
         {evaluation.metrics.length > 0 && (
           <Link
             href="/development/methods"
@@ -194,14 +254,16 @@ export default async function DevelopmentAnalysisPage({
         />
       </section>
 
-      {report.rest && (
+      {(overview ? evaluation.report_markdown : report.rest) && (
         <section className="mb-8">
           <details className="rounded-2xl border border-hairline bg-canvas p-5">
             <summary className="cursor-pointer text-[15px] font-semibold">
               Full analysis
             </summary>
             <div className="mt-3">
-              <Markdown>{report.rest}</Markdown>
+              {/* with the wiki overview as the page summary, the report's own
+                  executive summary lives here instead of disappearing */}
+              <Markdown>{overview ? evaluation.report_markdown : report.rest!}</Markdown>
             </div>
           </details>
         </section>
