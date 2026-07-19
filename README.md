@@ -36,9 +36,15 @@ model, and ops notes.
   video or document. Rate-limited per IP and capped by a global daily budget.
 - **Impact analysis** — per-project economic (Huff retail capture +
   foot-traffic index) and fiscal (revenue/cost ranges, comps-based projected
-  value) screening estimates over open data, with every number carrying
-  provenance and named assumptions with sensitivity bounds. See
+  value, school-split service costs) screening estimates over open data, with
+  every number carrying provenance and named assumptions with sensitivity
+  bounds — and an interactive assumptions panel on each project page that
+  recomputes the estimates live as you adjust them. See
   [Impact analysis](#impact-analysis-local-run-stage) below.
+- **Development directory & civic topics** — official city project records,
+  meeting-derived development projects (deduplicated and classified), and a
+  separate civic-topics page for the plans, contracts, studies, and programs
+  surfaced from transcripts.
 
 ## How it works
 
@@ -127,11 +133,24 @@ PYTHONPATH=src ../.venv/bin/python -m councilhound.cli impact-context           
 PYTHONPATH=src ../.venv/bin/python -m councilhound.cli impact-extract <slug>      # LLM spec extraction
 PYTHONPATH=src ../.venv/bin/python -m councilhound.cli impact-confirm <slug>      # human gate: review the YAML
 PYTHONPATH=src ../.venv/bin/python -m councilhound.cli impact-evaluate <slug>     # modules + synthesized report
+PYTHONPATH=src ../.venv/bin/python -m councilhound.cli impact-push --all          # upsert synthesized results to prod
 ```
 
-Jurisdiction-specific values (FIPS, CRS, layer URLs, tax rates with source +
-fiscal year) live in `ingestion/jurisdictions/<slug>.yaml`; unpinned rates
-make the dependent metrics refuse to run rather than guess.
+`impact-push` is how results ship: it upserts every synthesized evaluation
+into the production Postgres (DSN via `--dsn` or `$IMPACT_PUSH_DATABASE_URL`,
+e.g. through `fly proxy`), matching projects by slug and skipping any the
+cloud ingest hasn't synced. Each project page then serves headline tiles, the
+capture/walkability maps, a short summary with the full narrative collapsed,
+and an interactive assumptions panel — every metric ships an exact power-law
+decomposition over its assumptions, so sliders recompute the pipeline's own
+arithmetic client-side (formulas and citations:
+`docs/impact-methodology-report.tex`).
+
+Jurisdiction-specific values (FIPS, CRS, layer URLs, tax and budget rates
+with source + fiscal year — including the school-split cost inputs and the
+personal-property/BPOL rate schedule) live in
+`ingestion/jurisdictions/<slug>.yaml`; unpinned rates make the dependent
+metrics refuse to run rather than guess.
 
 ### Docker (full stack)
 
