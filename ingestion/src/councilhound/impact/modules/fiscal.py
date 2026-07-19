@@ -371,6 +371,14 @@ def run(spec, ctx, prior=None):
                     students.value, students.low, students.high, per_pupil,
                     "net local cost" if state_offset else "(gross)",
                     school_cost.value))
+            # published as its own metric so the narrative can cite the
+            # school component and its bounds without deriving arithmetic
+            metrics.append(metric(
+                "Annual school cost within the service-cost estimates",
+                school_cost, "$/yr", [budget_prov], [a["students_per_unit"]],
+                "estimated students x net local cost per pupil; included "
+                "identically in both cost framings",
+                adjust=list(school_terms)))
         else:
             per_capita = gf.value / pop.value
             naive = residents * per_capita
