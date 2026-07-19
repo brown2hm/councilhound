@@ -323,17 +323,30 @@ def run(spec, ctx, prior=None):
 
         if school_split:
             nonschool_percap = (gf.value - edu.value) / pop.value
-            per_pupil = edu.value / enroll.value
+            # per-pupil cost is NET of state education revenue when pinned:
+            # basic aid and the education sales tax follow ADM, so a new
+            # student brings that revenue with them — only the local share
+            # is a cost to city taxpayers
+            state_school = cfg.budget.state_school_revenue
+            state_offset = state_school.value or 0.0
+            per_pupil = (edu.value - state_offset) / enroll.value
             resident_cost = residents * nonschool_percap
             school_cost = students * per_pupil
             naive = resident_cost + school_cost
+            school_note = (f"schools: (${edu.value:,.0f} tuition - "
+                           f"${state_offset:,.0f} state education revenue) / "
+                           f"{enroll.value:,.0f} students = ${per_pupil:,.0f} "
+                           f"net local cost per pupil"
+                           if state_offset else
+                           f"schools: ${edu.value:,.0f} / {enroll.value:,.0f} "
+                           f"students = ${per_pupil:,.0f} per pupil (gross — "
+                           "state education revenue not pinned)")
             budget_prov = prov(
                 "City General Fund budget + school tuition contract",
                 gf.source or "", gf.fy or "",
                 f"non-school: (${gf.value:,.0f} - ${edu.value:,.0f}) / "
                 f"{pop.value:,.0f} residents = ${nonschool_percap:,.0f} per "
-                f"capita; schools: ${edu.value:,.0f} / {enroll.value:,.0f} "
-                f"students = ${per_pupil:,.0f} per pupil ({edu.fy or ''})")
+                f"capita; {school_note} ({edu.fy or ''})")
             school_terms = [term(school_cost.value, students_per_unit=1.0)]
             resident_terms = terms_scale(_terms_of(residents_m), nonschool_percap)
             naive_terms = resident_terms + school_terms
@@ -352,10 +365,11 @@ def run(spec, ctx, prior=None):
                                "with actual students; fixed services don't)")
             notes.append(
                 "School costs use the split model: {:.0f} students ({:.0f}-{:.0f}) "
-                "x ${:,.0f} per pupil ≈ ${:,.0f}/yr in both cost framings — a "
+                "x ${:,.0f} {} per pupil ≈ ${:,.0f}/yr in both cost framings — a "
                 "development generating fewer students carries proportionally "
                 "lower costs instead of the school-heavy citywide average.".format(
                     students.value, students.low, students.high, per_pupil,
+                    "net local cost" if state_offset else "(gross)",
                     school_cost.value))
         else:
             per_capita = gf.value / pop.value

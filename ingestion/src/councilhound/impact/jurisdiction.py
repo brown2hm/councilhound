@@ -50,6 +50,9 @@ class BudgetFacts(BaseModel):
     # generation drives the school component instead of being note-only
     education_transfer: PinnedValue = Field(default_factory=PinnedValue)
     school_enrollment: PinnedValue = Field(default_factory=PinnedValue)
+    # state education revenue received by the locality (basic aid + education
+    # sales tax); netted against the transfer so per-pupil cost is LOCAL cost
+    state_school_revenue: PinnedValue = Field(default_factory=PinnedValue)
 
 
 class Fips(BaseModel):

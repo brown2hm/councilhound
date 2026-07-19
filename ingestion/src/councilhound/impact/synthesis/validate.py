@@ -9,7 +9,8 @@ import re
 
 # numbers with optional sign (ASCII or U+2212), $ , % and magnitude suffixes
 _NUMBER = re.compile(r"([-−+]?)\s*\$?(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s*"
-                     r"(million|M\b|k\b|thousand|%)?", re.IGNORECASE)
+                     # (?!-\d) keeps "39 K-12 students" from parsing as 39k
+                     r"(million|M\b(?!-\d)|k\b(?!-\d)|thousand|%)?", re.IGNORECASE)
 
 _MAGNITUDE = {"million": 1e6, "m": 1e6, "k": 1e3, "thousand": 1e3}
 

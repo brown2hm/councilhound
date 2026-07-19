@@ -45,13 +45,17 @@ budget:
     source: https://api.census.gov/data/2024/acs/acs5
     fy: ACS 2024 5-yr
   education_transfer:
-    value: 71400000
-    source: https://www.cityoffairfaxschools.org/apps/news/article/2017291
-    fy: FY2026 (School Services Agreement tuition to FCPS; GF is FY2027 — one-year vintage mismatch)
+    value: 76429791
+    source: https://fairfaxva.openbook.questica.com/#/budget-book/35EE7255-C107-483D-8AD6-CBB272D5F9CD
+    fy: FY2027 adopted (Education page — FCPS tuition contract, final tuition bill estimate)
   school_enrollment:
-    value: 2992
-    source: https://www.cityoffairfaxschools.org/apps/news/article/2017291
-    fy: FY2026 projected city ADM
+    value: 3103
+    source: https://fairfaxva.openbook.questica.com/#/budget-book/35EE7255-C107-483D-8AD6-CBB272D5F9CD
+    fy: FY2027 estimated ADM (Education page tuition history table)
+  state_school_revenue:
+    value: 14492271
+    source: https://fairfaxva.openbook.questica.com/#/budget-book/35EE7255-C107-483D-8AD6-CBB272D5F9CD
+    fy: FY2027 adopted (GF Revenue Detail — 424202 Basic School Aid $9,526,349 + 424201 State Sales Tax $4,965,922)
 transit_feeds: []
 fringe_reference_blockgroup: null
 calibration_counts: null

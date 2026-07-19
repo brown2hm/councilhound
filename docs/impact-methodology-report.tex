@@ -289,17 +289,24 @@ here.)
 When the city's education transfer $E$ and school enrollment $N_{enr}$ are
 pinned, costs use the \emph{school-split} model --- the per-capita-multiplier
 refinement of \cite{burchell1978}: school costs follow the project's own
-student estimate at the per-pupil tuition rate, and only non-school costs are
-allocated per resident.
+student estimate at the per-pupil rate, and only non-school costs are
+allocated per resident. The per-pupil rate is \emph{net} of the state
+education revenue $A$ the locality receives (basic aid and the education
+sales tax follow average daily membership, so a new student brings that
+revenue with them; only the local share is a cost to city taxpayers).
 \begin{align}
 S_{K12} &= U \cdot \assum{students\_per\_unit} \\
 \text{naive cost} &= N_{res} \cdot \frac{GF - E}{P}
-                     \;+\; S_{K12} \cdot \frac{E}{N_{enr}} \\
+                     \;+\; S_{K12} \cdot \frac{E - A}{N_{enr}} \\
 \text{marginal cost} &= N_{res} \cdot \frac{GF - E}{P} \cdot \mu
-                     \;+\; S_{K12} \cdot \frac{E}{N_{enr}}, \qquad
+                     \;+\; S_{K12} \cdot \frac{E - A}{N_{enr}}, \qquad
 \mu = \assum{marginal\_cost\_factor} \\
 \text{net}_{\,method} &= R_{inc} - \text{cost}_{\,method}
 \end{align}
+The citywide identity is preserved: total allocable local cost is
+$(GF - E) + (E - A) = GF - A$, i.e.\ the state-financed share of the General
+Fund is excluded from local cost, exactly as a local-fiscal test requires.
+If $A$ is unpinned the per-pupil rate degrades to the gross $E / N_{enr}$.
 where $R_{inc}$ is \emph{incremental} recurring revenue (the real-estate
 component is the tax \emph{increase} when the current tax is known). The
 school term appears unscaled in both framings: pupils generate tuition-contract
