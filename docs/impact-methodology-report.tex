@@ -13,7 +13,7 @@
 
 \newcommand{\assum}[1]{\texttt{#1}}
 \title{CouncilHound Development Impact Methodology}
-\author{CouncilHound --- impact analysis subsystem}
+\author{Hunter Brown \\ \small\href{mailto:huntermbrown@gmail.com}{\texttt{huntermbrown@gmail.com}} \\ \small CouncilHound --- impact analysis subsystem}
 \date{July 2026 \\ \small model version: joint destination--mode Huff, census-block weights}
 
 \begin{document}
@@ -64,7 +64,7 @@ $\rho$     & occupancy rate at stabilization (\assum{occupancy\_rate}) \\
 $\bar{s}$  & persons per occupied multifamily unit (\assum{avg\_hh\_size\_multifamily}) \\
 $y$        & mean household income of the site's census tract (ACS B19025/B11001) \\
 $\pi$      & new-construction income premium (\assum{income\_premium\_new\_construction}) \\
-$e_c$      & CES average annual expenditure for category $c$ (BLS CE 2023) \\
+$e_c$      & CES average annual expenditure for category $c$ (BLS CES 2023) \\
 $y_{\mathrm{CES}}$ & CES average pre-tax income per consumer unit (\$101{,}805, 2023) \\
 $\varepsilon_c$ & expenditure--income elasticity for category $c$ (Engel scaling) \\
 $\kappa$   & CES scaling factor (\assum{ces\_scale}) \\
@@ -77,11 +77,18 @@ $\tau$     & daily walk trips per resident (\assum{walk\_trips\_per\_resident\_d
 
 \medskip
 \noindent
-Networks are OpenStreetMap walk and drive graphs built with OSMnx
+Abbreviations used throughout: ACS is the Census Bureau's American Community
+Survey; CES is the U.S. Bureau of Labor Statistics (BLS) Consumer Expenditure
+Survey \cite{blsces}; NHTS is the Federal Highway Administration's (FHWA)
+National Household Travel Survey \cite{nhts}; POI is point of interest.
+
+\medskip
+\noindent
+Networks are OpenStreetMap (OSM) walk and drive graphs built with OSMnx
 \cite{boeing2017}; walk edge times use 4.8\,km/h. Population weights use 2020
-Census (PL~94-171) block centroids. Points of interest merge Overture Maps,
-OpenStreetMap, and (when licensed) Foursquare OS Places into a nine-class
-taxonomy. Travel times come from single-source Dijkstra runs over edge minutes;
+Census Public Law (PL) 94-171 block centroids. Points of interest merge
+Overture Maps, OpenStreetMap, and (when licensed) Foursquare Open Source
+Places into a nine-class taxonomy. Travel times come from single-source Dijkstra runs over edge minutes;
 each business inherits the time of its nearest network node.
 
 \section{Demand module}
@@ -92,10 +99,10 @@ N_{hh}  &= U \cdot \rho \\
 N_{res} &= N_{hh} \cdot \bar{s}
 \end{align}
 Occupancy at stabilization is benchmarked against the Census Housing Vacancies
-and Homeownership series \cite{hvs}. Household size uses a multifamily
-bedroom-mix demographic multiplier in the tradition of Listokin et
+and Homeownership (HVS) series \cite{hvs}. Household size uses a multifamily
+(MF) bedroom-mix demographic multiplier in the tradition of Listokin et
 al.~\cite{listokin2006} ($\bar{s} = 1.8$, range 1.5--2.2, for a typical
-studio/1BR/2BR mix): the ACS B25010 tenure-level renter average
+studio/one-bedroom/two-bedroom mix): the ACS B25010 tenure-level renter average
 ($\approx 3.1$ locally) was evaluated and rejected as an estimator because it
 is dominated by single-family renter households and is blind to unit mix.
 When a project's bedroom mix is known, the multiplier should be set from it
@@ -117,7 +124,7 @@ spending uses BLS Consumer Expenditure Survey 2023 levels \cite{blsces}
 scaled by the income ratio $r$ raised to a per-category expenditure
 elasticity $\varepsilon_c$ (grocery 0.45, restaurant/bar 0.85, comparison
 0.95, convenience 0.60, personal services 0.90, entertainment 1.05),
-consistent with the Engel gradients in the CE income-quintile tables:
+consistent with the Engel gradients in the CES income-quintile tables:
 necessity spending grows sublinearly with income, so a high-income tract no
 longer implies proportionally more grocery spending.
 
@@ -168,7 +175,7 @@ $\theta = \sum_{j \in \mathrm{city}} \sum_m P(j,m)$. These shares are the
 cross-module inputs to the meals-tax and sales-tax lines.
 
 \paragraph{Reporting rollup.} Businesses are grouped for display by DBSCAN
-\cite{ester1996} ($\varepsilon = 150$\,m, $\mathrm{minPts} = 3$) and each
+(density-based spatial clustering of applications with noise) \cite{ester1996} ($\varepsilon = 150$\,m, $\mathrm{minPts} = 3$) and each
 cluster is labeled by the named street intersection nearest its centroid
 (from the OSM walk graph, within $\sim$450\,m), falling back to the central
 member business where no named intersection is close; cluster values are sums
@@ -231,7 +238,8 @@ J^+ = \frac{\mathrm{proposed\ retail\ sqft}}{\assum{sqft\_per\_retail\_job}},
 \end{equation}
 Space-per-worker values (300 [200--450] office; 500 [400--700] retail, gross)
 sit between dense workplace-utilization benchmarks and the building-stock
-averages observable in CBECS \cite{cbecs}. These are site-activity screens
+averages observable in the Commercial Buildings Energy Consumption Survey
+(CBECS) \cite{cbecs}. These are site-activity screens
 only; no indirect or induced employment is modeled.
 
 \section{Fiscal module}
@@ -243,6 +251,10 @@ standard caution that neither is universally correct for infill
 \cite{kotval2006}.
 
 \subsection{Revenue}
+Real-estate (RE) tax lines use assessed value ($AV$) at the adopted rate $r$
+per \$100 of value, with $p_{sqft}$ the assumed commercial value per square
+foot (\assum{commercial\_value\_per\_sqft}); BPOL is Virginia's Business,
+Professional and Occupational License tax on gross receipts.
 \begin{align}
 \text{current RE tax} &= AV_{now} \cdot r / 100 \\
 AV_{proj} &= \mathrm{median}\!\left(\tfrac{AV_i}{\mathrm{units}_i}\right)
@@ -280,7 +292,8 @@ wide bounds. When per-household personal-property budget actuals ($p_{pp}$)
 are pinned, the actuals path $N_{hh} \cdot p_{pp}$ replaces
 Equation~\eqref{eq:ppest}. Both estimate lines enter incremental recurring
 revenue: omitting them would systematically understate revenue for taxes the
-city does levy. (PPTRA car-tax relief is a fixed state block grant, so
+city does levy. (Car-tax relief under Virginia's Personal Property Tax Relief
+Act is a fixed state block grant, so
 marginal vehicles yield the city the full levy; the services BPOL
 classification at \$0.27 per \$100 is slightly above the retail rate applied
 here.)
@@ -292,8 +305,10 @@ refinement of \cite{burchell1978}: school costs follow the project's own
 student estimate at the per-pupil rate, and only non-school costs are
 allocated per resident. The per-pupil rate is \emph{net} of the state
 education revenue $A$ the locality receives (basic aid and the education
-sales tax follow average daily membership, so a new student brings that
-revenue with them; only the local share is a cost to city taxpayers).
+sales tax follow average daily membership, ADM, so a new student brings that
+revenue with them; only the local share is a cost to city taxpayers). In the
+formulas below, $GF$ is the city's total General Fund expenditure and $P$
+its citywide population.
 \begin{align}
 S_{K12} &= U \cdot \assum{students\_per\_unit} \\
 \text{naive cost} &= N_{res} \cdot \frac{GF - E}{P}
@@ -303,13 +318,13 @@ S_{K12} &= U \cdot \assum{students\_per\_unit} \\
 \mu = \assum{marginal\_cost\_factor} \\
 \text{net}_{\,method} &= R_{inc} - \text{cost}_{\,method}
 \end{align}
+where $R_{inc}$ is \emph{incremental} recurring revenue (the real-estate
+component is the tax \emph{increase} when the current tax is known).
 The citywide identity is preserved: total allocable local cost is
 $(GF - E) + (E - A) = GF - A$, i.e.\ the state-financed share of the General
 Fund is excluded from local cost, exactly as a local-fiscal test requires.
 If $A$ is unpinned the per-pupil rate degrades to the gross $E / N_{enr}$.
-where $R_{inc}$ is \emph{incremental} recurring revenue (the real-estate
-component is the tax \emph{increase} when the current tax is known). The
-school term appears unscaled in both framings: pupils generate tuition-contract
+The school term appears unscaled in both framings: pupils generate tuition-contract
 costs one-for-one, so a development generating few students carries
 proportionally low school costs instead of the school-heavy citywide average
 --- without the split, a zero-student building would still be billed average
@@ -352,7 +367,7 @@ $\beta_d$ (min$^{-1}$, fixed) & 0.15 & --- & drive impedance decay \\
 \assum{students\_per\_unit} & 0.10 & 0.05--0.15 & high-rise MF, univ.-adjacent \cite{listokin2006} \\
 \assum{marginal\_cost\_factor} & 0.40 & 0.25--0.60 & share of average cost that scales \\
 \assum{vehicles\_per\_household} & 1.4 & 1.0--1.8 & ACS vehicle norms, MF renters (estimate) \\
-\assum{avg\_vehicle\_assessed\_value} & \$14{,}000 & \$9k--\$20k & NoVA personal-property rolls (estimate) \\
+\assum{avg\_vehicle\_assessed\_value} & \$14{,}000 & \$9k--\$20k & Northern Virginia vehicle rolls (estimate) \\
 \assum{retail\_sales\_per\_sqft} & \$400 & \$250--\$600 & neighborhood retail gross sales (estimate) \\
 \bottomrule
 \end{tabular}
@@ -374,7 +389,7 @@ fixed seed; comp lookback 15 years.
       per-business weights rather than interpolated cluster centroids.
 \item \textbf{Joint rather than nested choice.} Equation~\eqref{eq:joint} is a
       single multinomial logit over (destination, mode) pairs. A nested logit would
-      relax the independence-of-irrelevant-alternatives property across modes; the
+      relax the independence-of-irrelevant-alternatives (IIA) property across modes; the
       joint form was chosen for transparency and because screening bounds on $w_c$
       and $\beta_w$ dominate the error budget.
 \item \textbf{Exact marginal flows.} Project-caused foot traffic is computed as
@@ -387,7 +402,7 @@ fixed seed; comp lookback 15 years.
       ACS layer stopped at.
 \item \textbf{Determinism.} All sampling is seeded; two evaluations on a warm
       cache produce identical metric values.
-\item \textbf{LLM firewall.} Document extraction demands a verbatim
+\item \textbf{Large-language-model (LLM) firewall.} Document extraction demands a verbatim
       $\leq$15-word quote per numeric field, verified in code against the document
       text; unverifiable values are nulled. Parcel identifiers are verified the
       same way.
@@ -423,7 +438,8 @@ version; their adopted resolutions and residual caveats:
 \item \textbf{Household size (addressed).} The unit-mix-blind ACS renter
       average ($\approx 3.1$) was replaced by a multifamily bedroom-mix
       multiplier, $\bar{s} = 1.8$ [1.5--2.2] \cite{listokin2006}.
-      \emph{Residual:} the multiplier assumes a typical studio/1BR/2BR mix;
+      \emph{Residual:} the multiplier assumes a typical
+      studio/one-bedroom/two-bedroom mix;
       when a project's actual bedroom program is extracted it should set
       $\bar{s}$ directly.
 \item \textbf{Aggregate income (addressed).} Tract income now uses the mean
@@ -434,7 +450,7 @@ version; their adopted resolutions and residual caveats:
 \item \textbf{CES income scaling (addressed).} Category spending scales by
       $r^{\varepsilon_c}$ per Equation~\eqref{eq:engel} instead of linearly.
       \emph{Residual:} the elasticities are national approximations read from
-      CE quintile gradients, not locally estimated.
+      CES quintile gradients, not locally estimated.
 \item \textbf{Walk-trip rate (addressed).} $\tau$ reduced from 2.0 to 1.0
       [0.5--2.0], anchored to NHTS metro person-level walking rates with a
       walkability uplift consistent with the built-environment literature
@@ -474,10 +490,13 @@ City of Fairfax GeoHub ArcGIS services (boundary, parcels, zoning); City of
 Fairfax public assessment database (Patriot WebPro); City budget pages (tax
 rates, General Fund, pinned with fiscal year) and the adopted-budget Rates \&
 Levies schedule (personal property and BPOL rates); City of Fairfax Schools
-FY2026 budget announcement (FCPS tuition contract and projected ADM, for the
-school-split cost model); Census ACS 5-year (B01003,
+fiscal-year 2026 budget announcement (tuition contract with Fairfax County
+Public Schools and projected ADM, for the school-split cost model); Census
+ACS 5-year (B01003,
 B19013, B25010, B25044, B08301) and 2020 PL~94-171 block population via
-TIGERweb; LEHD LODES~8; OpenStreetMap via OSMnx \cite{boeing2017}; Overture
+TIGERweb; Census Longitudinal Employer--Household Dynamics Origin--Destination
+Employment Statistics (LEHD LODES) version~8; OpenStreetMap via OSMnx
+\cite{boeing2017}; Overture
 Maps places; BLS Consumer Expenditure Survey 2023 \cite{blsces}; FHWA National
 Household Travel Survey \cite{nhts}; Virginia Code \S 58.1-605 (local-option
 sales tax).
