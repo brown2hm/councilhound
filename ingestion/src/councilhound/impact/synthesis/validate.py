@@ -81,9 +81,11 @@ def allowed_values(bundle) -> set[float]:
 
 def _sig_figs(raw: str) -> int:
     """Significant digits as WRITTEN ('1.5' -> 2, '39.2' -> 3, '467,949' -> 6).
-    Trailing zeros count (conservative), leading zeros don't."""
+    Trailing zeros don't count — prose rounds to hundreds/thousands ('5,900'
+    states 2 significant figures) — but the floor of 2 keeps a coarse
+    '1,000,000' from matching anything within half a million."""
     digits = raw.replace(",", "").replace(".", "").lstrip("0")
-    return max(len(digits), 1)
+    return max(len(digits.rstrip("0")), 2)
 
 
 def extract_numbers(markdown: str) -> list[tuple[float, str]]:
