@@ -17,12 +17,12 @@ drift). Two mechanisms:
 """
 import logging
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from councilhound.db.models import (
-    Entity, EntityAlias, EntityMention, EntityProfile, EntityUpdate,
-    Meeting, TranscriptChunk,
+    CityProject, Entity, EntityAlias, EntityGeocode, EntityMention,
+    EntityProfile, EntityUpdate, Meeting, TranscriptChunk, WikiPage,
 )
 
 log = logging.getLogger(__name__)
@@ -42,6 +42,33 @@ RESOLVE_STRIP = CREATE_STRIP | {
 
 _ACRONYM_STOPWORDS = {"and", "of", "the", "for", "a", "an"}
 
+# Token-level spelling drift observed in the July 2026 audit: the same street
+# or phrase slugs differently depending on which document named it
+# ("Blenheim Blvd" vs "Blenheim Boulevard", "drive-thru" vs "drive-through").
+# Values may be multi-token ("masterplan" -> "master plan"). Deliberately
+# conservative: no "st" (Saint) or "dr" (Doctor) expansion.
+_TOKEN_CANON: dict[str, tuple[str, ...]] = {
+    "blvd": ("boulevard",),
+    "ave": ("avenue",),
+    "rd": ("road",),
+    "thru": ("through",),
+    "improvement": ("improvements",),
+    "masterplan": ("master", "plan"),
+}
+
+# A "Draft X" / "Proposed X" is the same tracked thread as X — the tracker
+# follows the matter, not each revision of its paperwork.
+_LEADING_STRIP = {"draft", "proposed"}
+
+
+def _canonical_tokens(tokens: list[str]) -> list[str]:
+    out: list[str] = []
+    for t in tokens:
+        out.extend(_TOKEN_CANON.get(t, (t,)))
+    while len(out) > 2 and out[0] in _LEADING_STRIP:
+        out = out[1:]
+    return out
+
 
 def _strip_acronym_suffix(tokens: list[str]) -> list[str]:
     """['urban','forest','master','plan','ufmp'] -> drop the trailing token
@@ -54,7 +81,7 @@ def _strip_acronym_suffix(tokens: list[str]) -> list[str]:
 
 def normalize_slug(slug: str) -> str:
     """Create-time canonicalization for non-person slugs (context-free)."""
-    tokens = slug.split("-")
+    tokens = _canonical_tokens(slug.split("-"))
     while True:
         stripped = _strip_acronym_suffix(tokens)
         if len(stripped) >= 3 and stripped[-1] in CREATE_STRIP:
@@ -151,6 +178,39 @@ def merge_entities(session: Session, source_slug: str, target_slug: str,
     if src_profile is not None:
         session.delete(src_profile)
 
+    # official city-project link: the record must keep pointing at the
+    # surviving thread (entity_id is unique — target's own link wins)
+    target_linked = session.scalar(select(CityProject)
+                                   .where(CityProject.entity_id == target.id))
+    for cp in session.scalars(select(CityProject)
+                              .where(CityProject.entity_id == source.id)):
+        if target_linked is None:
+            cp.entity_id = target.id
+            target_linked = cp
+        else:
+            cp.entity_id = None
+
+    # geocode: keep the source's fix if the target has none
+    target_geo = session.scalar(select(EntityGeocode)
+                                .where(EntityGeocode.entity_id == target.id))
+    src_geo = session.scalar(select(EntityGeocode)
+                             .where(EntityGeocode.entity_id == source.id))
+    if src_geo is not None:
+        if target_geo is None or (target_geo.status == "miss" and src_geo.status == "ok"):
+            if target_geo is not None:
+                session.delete(target_geo)
+                session.flush()
+            src_geo.entity_id = target.id
+        else:
+            session.delete(src_geo)
+
+    # wiki pages: keep the source's bundle pages unless the target already
+    # has its own (the OKF bundle reconciles paths on the next push)
+    if session.scalar(select(WikiPage).where(WikiPage.entity_id == target.id)) is None:
+        moved["wiki_pages"] = session.execute(
+            update(WikiPage).where(WikiPage.entity_id == source.id)
+            .values(entity_id=target.id)).rowcount
+
     _keep_earliest_first_seen(session, source, target)
     session.flush()  # reassignments must land before recompute/delete
     _recompute_status(session, target)
@@ -193,30 +253,97 @@ def _recompute_status(session: Session, entity: Entity) -> None:
         entity.current_status = latest
 
 
+def _rename_to_canonical(session: Session, entity: Entity, canon: str) -> None:
+    """Move an entity onto its canonical slug, leaving the old slug as an
+    alias so existing URLs and future extractions still resolve."""
+    from councilhound.entities import add_alias
+    old = entity.canonical_slug
+    entity.canonical_slug = canon
+    session.flush()
+    add_alias(session, entity, old)
+    log.info("canonicalized slug %s -> %s", old, canon)
+
+
 def dedupe_pass(session: Session, apply: bool = False) -> list[dict]:
-    """Scan existing non-person entities for ones whose normalized slug
-    matches another entity of the same type; optionally merge them."""
-    proposals = []
-    entities = session.scalars(
-        select(Entity).where(Entity.entity_type != "person")
+    """Scan existing non-person entities: merge ones whose normalized slug
+    matches another entity of the same type, and re-slug ones whose
+    canonical form isn't taken (so future phrasing drift converges on them).
+    When applying, each action executes before the next entity is examined,
+    so chains resolve (a rename creates the target the next merge folds
+    into). Dry-run reports against current state only."""
+    actions = []
+    slugs = session.scalars(
+        select(Entity.canonical_slug).where(Entity.entity_type != "person")
         .order_by(Entity.canonical_slug)).all()
-    for e in entities:
+    for slug in slugs:
+        e = session.scalar(select(Entity).where(Entity.canonical_slug == slug))
+        if e is None:  # already merged away earlier in this pass
+            continue
         create_norm = normalize_slug(e.canonical_slug)
         base = None
         if create_norm != e.canonical_slug:
-            base = session.scalar(select(Entity).where(
-                Entity.canonical_slug == create_norm,
-                Entity.entity_type == e.entity_type))
+            candidate = _entity_by_slug_or_alias(session, create_norm)
+            if candidate is not None and candidate.entity_type == e.entity_type:
+                base = candidate
         if base is None:
-            base = find_normalized_base(session, e.entity_type, e.canonical_slug)
-        if base is None or base.id == e.id:
+            base = find_normalized_base(session, e.entity_type, create_norm)
+        if base is not None and base.id != e.id:
+            action = {"action": "merge", "source": e.canonical_slug,
+                      "target": base.canonical_slug, "entity_type": e.entity_type}
+            if apply:
+                action["moved"] = merge_entities(session, e.canonical_slug,
+                                                 base.canonical_slug)
+        elif base is None and create_norm != e.canonical_slug:
+            action = {"action": "rename", "source": e.canonical_slug,
+                      "target": create_norm, "entity_type": e.entity_type}
+            if apply:
+                _rename_to_canonical(session, e, create_norm)
+        else:
             continue
-        proposals.append({"source": e.canonical_slug, "target": base.canonical_slug,
-                          "entity_type": e.entity_type})
+        actions.append(action)
     if apply:
-        # longest sources first so chains (x -> y, y -> z) fold x into y
-        # before y itself is merged away into z
-        for p in sorted(proposals, key=lambda p: len(p["source"]), reverse=True):
-            p["moved"] = merge_entities(session, p["source"], p["target"])
         session.commit()
-    return proposals
+    return actions
+
+
+def _entity_by_slug_or_alias(session: Session, slug: str) -> Entity | None:
+    entity = session.scalar(select(Entity).where(Entity.canonical_slug == slug))
+    if entity is not None:
+        return entity
+    alias = session.scalar(select(EntityAlias)
+                           .where(func.lower(EntityAlias.alias) == slug.lower()))
+    return session.get(Entity, alias.entity_id) if alias else None
+
+
+def merge_batch(session: Session, entries: list[dict], apply: bool = False) -> list[dict]:
+    """Apply a curated merge list: [{"source": slug, "target": slug,
+    "force_cross_type": bool?, "note": str?}, ...]. Idempotent — a source
+    whose slug already aliases the target reports 'already-merged', and
+    missing slugs are skipped with a warning, so re-runs are safe."""
+    results = []
+    for entry in entries:
+        src_slug, dst_slug = entry["source"], entry["target"]
+        outcome = {"source": src_slug, "target": dst_slug}
+        source = _entity_by_slug_or_alias(session, src_slug)
+        target = _entity_by_slug_or_alias(session, dst_slug)
+        if target is None:
+            outcome["result"] = "skipped: target not found"
+        elif source is None:
+            outcome["result"] = "skipped: source not found"
+        elif source.id == target.id:
+            outcome["result"] = "already-merged"
+        elif not apply:
+            outcome["result"] = "would merge"
+        else:
+            try:
+                moved = merge_entities(session, source.canonical_slug,
+                                       target.canonical_slug,
+                                       force_cross_type=bool(entry.get("force_cross_type")))
+                outcome["result"] = f"merged {moved}"
+            except ValueError as exc:
+                session.rollback()
+                outcome["result"] = f"error: {exc}"
+        results.append(outcome)
+    if apply:
+        session.commit()
+    return results

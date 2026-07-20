@@ -139,9 +139,9 @@ def dedupe_entities(apply_):
     with get_session() as session:
         proposals = dedupe_pass(session, apply=apply_)
         for p in proposals:
-            click.echo(f"{p['source']} -> {p['target']} ({p['entity_type']})"
-                       + (f"  moved {p['moved']}" if apply_ else ""))
-        click.echo(f"{len(proposals)} merge(s) {'applied' if apply_ else 'proposed (use --apply)'}")
+            click.echo(f"{p['action']}: {p['source']} -> {p['target']} ({p['entity_type']})"
+                       + (f"  moved {p['moved']}" if apply_ and p["action"] == "merge" else ""))
+        click.echo(f"{len(proposals)} action(s) {'applied' if apply_ else 'proposed (use --apply)'}")
 
 
 @cli.command("merge-entity")
@@ -160,6 +160,29 @@ def merge_entity(source_slug, target_slug, force_cross_type):
                                force_cross_type=force_cross_type)
         session.commit()
         click.echo(f"merged {source_slug} -> {target_slug}: {moved}")
+
+
+@cli.command("merge-entities-batch")
+@click.argument("merge_file", type=click.Path(exists=True))
+@click.option("--apply", "apply_", is_flag=True, help="perform the merges (default: dry-run print)")
+def merge_entities_batch(merge_file, apply_):
+    """Apply a curated merge list (JSON: {"merges": [{"source", "target",
+    "force_cross_type"?}, ...]}). Idempotent — safe to re-run; already-merged
+    and missing slugs are reported and skipped."""
+    import json
+
+    from councilhound.db.session import get_session
+    from councilhound.dedupe import merge_batch
+
+    with open(merge_file) as fh:
+        entries = json.load(fh)["merges"]
+    with get_session() as session:
+        results = merge_batch(session, entries, apply=apply_)
+        for r in results:
+            click.echo(f"{r['source']} -> {r['target']}: {r['result']}")
+        applied = sum(1 for r in results if r["result"].startswith("merged"))
+        click.echo(f"{len(results)} entries; {applied} merged"
+                   + ("" if apply_ else " (dry-run — use --apply)"))
 
 
 @cli.command()
@@ -262,6 +285,8 @@ def daily(days):
         click.echo(f"structure:    {structure_pending(session)}")
         click.echo(f"index-points: {pipeline.link_index_points_pending(session)}")
         click.echo(f"seed:         {seed_people(session)}")
+        from councilhound.dedupe import dedupe_pass
+        click.echo(f"dedupe:       {len(dedupe_pass(session, apply=True))} action(s)")
         from councilhound.geocode import geocode_pending
         click.echo(f"geocode:      {geocode_pending(session)}")
         click.echo(f"profile:      {profile_pending(session)}")
