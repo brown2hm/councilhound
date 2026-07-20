@@ -291,6 +291,8 @@ def daily(days):
         click.echo(f"geocode:      {geocode_pending(session)}")
         click.echo(f"profile:      {profile_pending(session)}")
         click.echo(f"embed:        {embed_pending(session)}")
+        from councilhound.notify import notify_subscribers
+        click.echo(f"notify:       {notify_subscribers(session)}")
 
 
 @cli.command()

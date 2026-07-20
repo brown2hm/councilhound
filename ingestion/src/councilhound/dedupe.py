@@ -22,7 +22,8 @@ from sqlalchemy.orm import Session
 
 from councilhound.db.models import (
     CityProject, Entity, EntityAlias, EntityGeocode, EntityMention,
-    EntityProfile, EntityUpdate, Meeting, TranscriptChunk, WikiPage,
+    EntityProfile, EntityUpdate, Meeting, TopicSubscription, TranscriptChunk,
+    WikiPage,
 )
 
 log = logging.getLogger(__name__)
@@ -210,6 +211,16 @@ def merge_entities(session: Session, source_slug: str, target_slug: str,
         moved["wiki_pages"] = session.execute(
             update(WikiPage).where(WikiPage.entity_id == source.id)
             .values(entity_id=target.id)).rowcount
+
+    # followers of the folded thread keep following the survivor
+    target_subs = {s.email for s in session.scalars(
+        select(TopicSubscription).where(TopicSubscription.entity_id == target.id))}
+    for sub in session.scalars(select(TopicSubscription)
+                               .where(TopicSubscription.entity_id == source.id)):
+        if sub.email in target_subs:
+            session.delete(sub)
+        else:
+            sub.entity_id = target.id
 
     _keep_earliest_first_seen(session, source, target)
     session.flush()  # reassignments must land before recompute/delete

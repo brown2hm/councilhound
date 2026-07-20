@@ -48,3 +48,23 @@ def check_ask_rate(request: Request) -> None:
 
         window.append(now)
         _day["count"] += 1
+
+
+SUBSCRIBE_PER_HOUR = int(os.environ.get("SUBSCRIBE_RATE_PER_HOUR", "10"))
+
+_sub_lock = threading.Lock()
+_sub_by_ip: dict[str, deque] = defaultdict(deque)
+
+
+def check_subscribe_rate(request: Request) -> None:
+    """Follow-a-topic signups send email, so they get their own (laxer)
+    per-IP window to stop confirmation-mail abuse."""
+    ip = client_ip(request)
+    now = time.time()
+    with _sub_lock:
+        window = _sub_by_ip[ip]
+        while window and window[0] < now - 3600:
+            window.popleft()
+        if len(window) >= SUBSCRIBE_PER_HOUR:
+            raise HTTPException(429, "Too many signups from this address — try again later.")
+        window.append(now)

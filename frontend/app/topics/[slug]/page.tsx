@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import BodyTag from "@/components/BodyTag";
 import DiscussionSparkline from "@/components/DiscussionSparkline";
+import FollowTopic from "@/components/FollowTopic";
 import StatusBadge from "@/components/StatusBadge";
 import StatusStepper from "@/components/StatusStepper";
 import VoteBlock from "@/components/VotePills";
@@ -73,6 +74,10 @@ export default async function TopicDetail({ params }: { params: { slug: string }
       ) : (
         <div className="mb-5" />
       )}
+
+      <div className="mb-6">
+        <FollowTopic entitySlug={entity.slug} />
+      </div>
 
       <StatusStepper timeline={entity.timeline} currentStatus={entity.current_status} />
 

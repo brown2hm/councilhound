@@ -71,6 +71,71 @@ def list_upcoming(session: Session = Depends(db_session)):
     ]
 
 
+def _ics_escape(text: str) -> str:
+    return (text.replace("\\", "\\\\").replace(";", "\\;")
+                .replace(",", "\\,").replace("\n", "\\n"))
+
+
+# Static VTIMEZONE for the city's zone so TZID references are self-contained.
+_VTIMEZONE = """BEGIN:VTIMEZONE
+TZID:America/New_York
+BEGIN:DAYLIGHT
+TZOFFSETFROM:-0500
+TZOFFSETTO:-0400
+TZNAME:EDT
+DTSTART:19700308T020000
+RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU
+END:DAYLIGHT
+BEGIN:STANDARD
+TZOFFSETFROM:-0400
+TZOFFSETTO:-0500
+TZNAME:EST
+DTSTART:19701101T020000
+RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU
+END:STANDARD
+END:VTIMEZONE"""
+
+
+@router.get("/upcoming.ics")
+def upcoming_calendar(session: Session = Depends(db_session)):
+    """Upcoming meetings as an iCalendar feed — subscribe from any calendar
+    app to keep the city's meeting schedule on your own calendar."""
+    from fastapi.responses import Response
+
+    rows = session.scalars(
+        select(UpcomingMeeting)
+        .where(UpcomingMeeting.starts_at.isnot(None))
+        .order_by(UpcomingMeeting.starts_at)
+    ).all()
+    lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//CouncilHound//City of Fairfax meetings//EN",
+        "X-WR-CALNAME:City of Fairfax meetings (CouncilHound)",
+        "REFRESH-INTERVAL;VALUE=DURATION:PT12H",
+        _VTIMEZONE,
+    ]
+    for u in rows:
+        start = u.starts_at.strftime("%Y%m%dT%H%M%S")
+        end = (u.starts_at + datetime.timedelta(hours=2)).strftime("%Y%m%dT%H%M%S")
+        lines += [
+            "BEGIN:VEVENT",
+            f"UID:{u.granicus_event_id}@councilhound.net",
+            f"DTSTAMP:{datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')}",
+            f"DTSTART;TZID=America/New_York:{start}",
+            f"DTEND;TZID=America/New_York:{end}",
+            f"SUMMARY:{_ics_escape(u.title)}",
+        ]
+        if u.agenda_url:
+            lines.append(f"DESCRIPTION:Agenda: {_ics_escape(u.agenda_url)}")
+            lines.append(f"URL:{_ics_escape(u.agenda_url)}")
+        lines.append("END:VEVENT")
+    lines.append("END:VCALENDAR")
+    return Response("\r\n".join(lines) + "\r\n", media_type="text/calendar",
+                    headers={"Content-Disposition": 'inline; filename="councilhound.ics"',
+                             "Cache-Control": "public, max-age=3600"})
+
+
 @router.get("/stats")
 def get_stats(
     days: int = Query(30, ge=7, le=365),
