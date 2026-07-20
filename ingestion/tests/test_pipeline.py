@@ -52,6 +52,20 @@ def test_skip_media_never_fetches_audio(db_session, monkeypatch):
     assert called["media"] is False  # the hourly catchup path skips audio
 
 
+def test_rescan_never_downgrades_extracted(db_session, monkeypatch):
+    s = db_session
+    m = _discovered(s)
+    m.status = "extracted"
+    s.flush()
+    monkeypatch.setattr(pipeline, "discover", lambda *a, **k: None)
+    monkeypatch.setattr(pipeline, "fetch_documents", lambda session, meeting: 1)
+    monkeypatch.setattr(pipeline, "fetch_media", lambda session, meeting: None)
+
+    pipeline.run_ingest(s, "13", since=datetime.date(2026, 7, 1))
+    s.refresh(m)
+    assert m.status == "extracted"  # nightly window re-scan must not reset it
+
+
 def test_sync_projects_links_entities_and_geocodes(db_session, monkeypatch):
     from councilhound.scraper.fairfax_projects import DiscoveredProject
 

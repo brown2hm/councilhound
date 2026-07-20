@@ -378,7 +378,10 @@ def run_ingest(
     for meeting in meetings:
         try:
             fetch_documents(session, meeting)
-            meeting.status = "fetched"
+            # 'fetched' marks docs-downloaded for structuring; never downgrade
+            # an already-'extracted' meeting on a window re-scan.
+            if meeting.status == "discovered":
+                meeting.status = "fetched"
             session.commit()
             processed += 1
         except Exception as exc:  # keep going; failures land in the run log
