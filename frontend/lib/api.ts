@@ -103,6 +103,23 @@ export interface UpcomingEvent {
   agenda_url: string | null;
 }
 
+export interface UpcomingAgendaTopic {
+  slug: string;
+  name: string;
+  entity_type: string;
+  current_status: string | null;
+  update_count: number;
+  last_seen: string | null;
+  agenda_context: string | null;
+  latest_update: { date: string; text: string } | null;
+  evaluation_slug: string | null;
+}
+
+export interface UpcomingDetail extends UpcomingEvent {
+  has_agenda_text: boolean;
+  topics: UpcomingAgendaTopic[];
+}
+
 export interface DiscussionPoint {
   meeting_id: number;
   date: string;
@@ -388,6 +405,8 @@ export const api = {
   stats: (days = 30) => get<MeetingStats>(`/meetings/stats?days=${days}`),
   members: () => get<MemberSummary[]>("/members/"),
   upcoming: () => get<UpcomingEvent[]>("/meetings/upcoming"),
+  upcomingDetail: (eventId: string) =>
+    get<UpcomingDetail>(`/meetings/upcoming/${encodeURIComponent(eventId)}`),
   mapLocations: () => get<MapLocation[]>("/entities/map"),
   developmentProjects: (params: URLSearchParams) =>
     get<CityProjectSummary[]>(`/development/?${params}`),

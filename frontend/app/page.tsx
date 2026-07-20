@@ -268,7 +268,12 @@ function NextUp({ events }: { events: UpcomingEvent[] }) {
                   className={`h-2 w-2 shrink-0 self-center rounded-full ${e.body === "planning_commission" ? "bg-ochre" : "bg-teal"}`}
                 />
               )}
-              <span className="truncate font-medium">{e.title}</span>
+              <Link
+                href={`/meetings/upcoming/${encodeURIComponent(e.event_id)}`}
+                className="truncate font-medium underline-offset-2 hover:underline"
+              >
+                {e.title}
+              </Link>
             </span>
             <span className="shrink-0 text-[13px] text-muted">
               {e.in_progress ? (

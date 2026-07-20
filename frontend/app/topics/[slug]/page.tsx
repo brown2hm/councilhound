@@ -91,6 +91,13 @@ export default async function TopicDetail({ params }: { params: { slug: string }
               {u.title}
               {u.starts_at &&
                 ` · ${new Date(u.starts_at).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}`}
+              {" · "}
+              <Link
+                href={`/meetings/upcoming/${encodeURIComponent(u.event_id)}`}
+                className="font-semibold underline underline-offset-2"
+              >
+                meeting brief
+              </Link>
               {u.agenda_url && (
                 <>
                   {" · "}

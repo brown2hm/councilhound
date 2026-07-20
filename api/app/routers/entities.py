@@ -154,6 +154,7 @@ def _on_upcoming_agendas(session: Session, entity: Entity) -> list[dict]:
         text = u.agenda_text.lower()
         if any(v in text for v in variants):
             hits.append({
+                "event_id": u.granicus_event_id,
                 "title": u.title,
                 "body": u.body,
                 "starts_at": u.starts_at.isoformat() if u.starts_at else None,

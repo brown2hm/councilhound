@@ -6,7 +6,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from councilhound.db.models import AgendaItem, Document, Meeting, UpcomingMeeting, Vote
+from councilhound.db.models import (
+    AgendaItem, CityProject, Document, Entity, EntityAlias, EntityUpdate,
+    Meeting, ProjectEvaluation, UpcomingMeeting, Vote,
+)
+from councilhound.hot_topics import MIN_VARIANT_LEN
 
 from app.db import db_session
 from app.links import clip_link
@@ -134,6 +138,96 @@ def upcoming_calendar(session: Session = Depends(db_session)):
     return Response("\r\n".join(lines) + "\r\n", media_type="text/calendar",
                     headers={"Content-Disposition": 'inline; filename="councilhound.ics"',
                              "Cache-Control": "public, max-age=3600"})
+
+
+def _agenda_context(agenda_text: str, variant: str) -> str | None:
+    """The agenda line that names the entity, trimmed for display."""
+    for line in agenda_text.splitlines():
+        if variant in line.lower():
+            line = " ".join(line.split())
+            return line[:217] + "…" if len(line) > 220 else line
+    return None
+
+
+@router.get("/upcoming/{event_id}")
+def upcoming_detail(event_id: str, session: Session = Depends(db_session)):
+    """One upcoming meeting, annotated: every tracked topic named in its
+    fetched agenda, with status, history stats, and the agenda line that
+    names it — the pre-meeting brief."""
+    u = session.scalar(select(UpcomingMeeting)
+                       .where(UpcomingMeeting.granicus_event_id == event_id))
+    if u is None:
+        raise HTTPException(404, "upcoming meeting not found")
+
+    topics = []
+    if u.agenda_text:
+        text_low = u.agenda_text.lower()
+
+        counts = (
+            select(EntityUpdate.entity_id, func.count().label("n"),
+                   func.max(Meeting.meeting_date).label("last_date"))
+            .join(Meeting, EntityUpdate.meeting_id == Meeting.id)
+            .group_by(EntityUpdate.entity_id)
+            .subquery()
+        )
+        tracked = session.execute(
+            select(Entity, counts.c.n, counts.c.last_date)
+            .join(counts, Entity.id == counts.c.entity_id)
+            .where(Entity.entity_type != "person")
+        ).all()
+        aliases: dict[int, list[str]] = {}
+        for a in session.scalars(select(EntityAlias).where(
+                EntityAlias.entity_id.in_([e.id for e, _, _ in tracked]))):
+            aliases.setdefault(a.entity_id, []).append(a.alias)
+
+        for entity, n, last_date in tracked:
+            variants = {v.lower() for v in [entity.name, *aliases.get(entity.id, [])]
+                        if v and len(v) >= MIN_VARIANT_LEN}
+            hit = next((v for v in sorted(variants, key=len, reverse=True)
+                        if v in text_low), None)
+            if hit is None:
+                continue
+            latest = session.execute(
+                select(EntityUpdate, Meeting)
+                .join(Meeting, EntityUpdate.meeting_id == Meeting.id)
+                .where(EntityUpdate.entity_id == entity.id)
+                .order_by(Meeting.meeting_date.desc())
+                .limit(1)
+            ).first()
+            project_row = session.execute(
+                select(CityProject, ProjectEvaluation.status)
+                .outerjoin(ProjectEvaluation,
+                           ProjectEvaluation.city_project_id == CityProject.id)
+                .where(CityProject.entity_id == entity.id)
+            ).first()
+            topics.append({
+                "slug": entity.canonical_slug,
+                "name": entity.name,
+                "entity_type": entity.entity_type,
+                "current_status": entity.current_status,
+                "update_count": n,
+                "last_seen": last_date.isoformat() if last_date else None,
+                "agenda_context": _agenda_context(u.agenda_text, hit),
+                "latest_update": {
+                    "date": str(latest[1].meeting_date),
+                    "text": latest[0].update_text,
+                } if latest else None,
+                "evaluation_slug": (project_row[0].external_slug
+                                    if project_row and project_row[1] == "synthesized"
+                                    else None),
+            })
+        topics.sort(key=lambda t: t["update_count"], reverse=True)
+
+    return {
+        "event_id": u.granicus_event_id,
+        "title": u.title,
+        "body": u.body,
+        "starts_at": u.starts_at.isoformat() if u.starts_at else None,
+        "in_progress": u.in_progress,
+        "agenda_url": u.agenda_url,
+        "has_agenda_text": bool(u.agenda_text),
+        "topics": topics,
+    }
 
 
 @router.get("/stats")
