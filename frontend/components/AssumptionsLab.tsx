@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { ImpactAssumption, ImpactMetric } from "@/lib/api";
+import { fmtScalar } from "@/lib/format";
 
 /** Interactive assumption adjustment. Each adjustable metric ships an exact
  * power-law decomposition (metric.adjust); moving a slider re-evaluates
@@ -25,13 +26,7 @@ function recompute(m: ImpactMetric, baseline: Record<string, number>, adjusted: 
 }
 
 function fmt(value: number, unit: string): string {
-  const dollars = unit.startsWith("$");
-  if (unit === "fraction") return `${Math.round(value * 100)}%`;
-  if (dollars && Math.abs(value) >= 1_000_000) return `$${(value / 1_000_000).toFixed(2)}M`;
-  if (dollars && Math.abs(value) >= 10_000) return `$${Math.round(value / 1_000).toLocaleString()}k`;
-  if (dollars) return `$${Math.round(value).toLocaleString()}`;
-  if (Math.abs(value) >= 100) return Math.round(value).toLocaleString();
-  return value.toLocaleString(undefined, { maximumFractionDigits: 1 });
+  return fmtScalar(value, unit, 2); // two decimals: adjusted-vs-published deltas stay visible
 }
 
 function sliderStep(a: ImpactAssumption): number {

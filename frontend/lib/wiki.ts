@@ -3,6 +3,7 @@
 // carries stale numbers, and rewrite bundle-internal links for whatever page
 // is hosting the content.
 import type { ImpactMetric } from "@/lib/api";
+import { fmtScalar } from "@/lib/format";
 
 /** Same normalization as councilhound.okf.bundle.slugify — metric marker
  * keys are the slugified metric name on both sides. */
@@ -19,17 +20,7 @@ export function metricsByKey(metrics: ImpactMetric[]): Map<string, ImpactMetric>
 }
 
 export function fmtMetric(m: ImpactMetric): string {
-  const dollars = m.unit.startsWith("$");
-  const fraction = m.unit === "fraction";
-  const fmt = (x: number) => {
-    if (fraction) return `${Math.round(x * 100)}%`;
-    if (dollars && Math.abs(x) >= 1_000_000) return `$${(x / 1_000_000).toFixed(1)}M`;
-    if (dollars && Math.abs(x) >= 10_000) return `$${Math.round(x / 1_000)}k`;
-    if (dollars) return `$${Math.round(x).toLocaleString()}`;
-    return Math.abs(x) >= 100
-      ? Math.round(x).toLocaleString()
-      : x.toLocaleString(undefined, { maximumFractionDigits: 1 });
-  };
+  const fmt = (x: number) => fmtScalar(x, m.unit);
   let out = `**${m.name}: ${fmt(m.value)}**`;
   if (m.low != null && m.high != null && !(m.low === m.value && m.high === m.value)) {
     out += ` _(range ${fmt(m.low)} – ${fmt(m.high)})_`;

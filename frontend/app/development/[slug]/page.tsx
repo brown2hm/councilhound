@@ -11,6 +11,7 @@ import {
   type ImpactProvenance,
   type ProjectWiki,
 } from "@/lib/api";
+import { fmtScalar, plainLanguageImpact } from "@/lib/format";
 import { metricsByKey, resolveBody, stripSection, WIKI_PAGE_LABELS } from "@/lib/wiki";
 
 export const dynamic = "force-dynamic";
@@ -28,30 +29,12 @@ function splitReport(markdown: string): { summary: string; rest: string | null }
 }
 
 function fmtValue(m: ImpactMetric): string {
-  const dollars = m.unit.startsWith("$");
-  const fraction = m.unit === "fraction";
-  const fmt = (x: number) => {
-    if (fraction) return `${Math.round(x * 100)}%`;
-    if (dollars && Math.abs(x) >= 1_000_000) return `$${(x / 1_000_000).toFixed(1)}M`;
-    if (dollars && Math.abs(x) >= 10_000) return `$${Math.round(x / 1_000)}k`;
-    if (dollars) return `$${Math.round(x).toLocaleString()}`;
-    return Math.abs(x) >= 100 ? Math.round(x).toLocaleString() : x.toLocaleString(undefined, { maximumFractionDigits: 1 });
-  };
-  return fmt(m.value);
+  return fmtScalar(m.value, m.unit);
 }
 
 function fmtRange(m: ImpactMetric): string | null {
   if (m.low == null || m.high == null || (m.low === m.value && m.high === m.value)) return null;
-  const fraction = m.unit === "fraction";
-  const dollars = m.unit.startsWith("$");
-  const fmt = (x: number) => {
-    if (fraction) return `${Math.round(x * 100)}%`;
-    if (dollars && Math.abs(x) >= 1_000_000) return `$${(x / 1_000_000).toFixed(1)}M`;
-    if (dollars && Math.abs(x) >= 10_000) return `$${Math.round(x / 1_000)}k`;
-    if (dollars) return `$${Math.round(x).toLocaleString()}`;
-    return Math.round(x).toLocaleString();
-  };
-  return `${fmt(m.low)} – ${fmt(m.high)}`;
+  return `${fmtScalar(m.low, m.unit)} – ${fmtScalar(m.high, m.unit)}`;
 }
 
 function unitLabel(unit: string): string {
@@ -184,6 +167,11 @@ export default async function DevelopmentAnalysisPage({
               </div>
             ))}
           </div>
+          {plainLanguageImpact(evaluation.metrics) && (
+            <p className="mt-4 max-w-[820px] rounded-2xl bg-soft p-4 px-5 text-[14px] leading-[1.6] text-body">
+              {plainLanguageImpact(evaluation.metrics)}
+            </p>
+          )}
         </section>
       )}
 
