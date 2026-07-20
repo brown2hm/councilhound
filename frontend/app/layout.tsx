@@ -9,9 +9,18 @@ import NavLinks from "@/components/NavLinks";
 const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
 
 export const metadata: Metadata = {
-  title: "CouncilHound — City of Fairfax",
+  metadataBase: new URL("https://councilhound.net"),
+  title: {
+    default: "CouncilHound — City of Fairfax",
+    template: "%s — CouncilHound",
+  },
   description:
     "CouncilHound sniffs through City of Fairfax council and planning commission records so you can track projects, votes, and decisions over time.",
+  openGraph: {
+    siteName: "CouncilHound",
+    type: "website",
+    images: ["/brand/hound.png"],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -19,14 +28,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className="scroll-smooth">
       <body className={`${inter.className} flex min-h-screen flex-col bg-canvas text-ink antialiased`}>
         <header className="sticky top-0 z-10 border-b border-hairline-soft bg-canvas">
-          <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between px-8">
-            <div className="flex items-center gap-10">
-              <Link href="/" className="flex items-center gap-2.5">
-                <Image src="/brand/hound.png" alt="" width={41} height={36} className="h-9 w-auto" priority />
-                <span className="text-lg font-semibold tracking-[-0.4px]">CouncilHound</span>
-              </Link>
-              <NavLinks />
-            </div>
+          <div className="relative mx-auto flex h-16 max-w-[1280px] items-center justify-between gap-4 px-4 sm:px-8">
+            <Link href="/" className="flex shrink-0 items-center gap-2.5">
+              <Image src="/brand/hound.png" alt="" width={41} height={36} className="h-9 w-auto" priority />
+              <span className="text-lg font-semibold tracking-[-0.4px]">CouncilHound</span>
+            </Link>
+            <NavLinks />
           </div>
         </header>
         <main className="w-full flex-1">{children}</main>

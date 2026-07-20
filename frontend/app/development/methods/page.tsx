@@ -2,6 +2,12 @@ import Link from "next/link";
 import MetricFormula from "@/components/MetricFormula";
 import { METRIC_METHODS } from "@/lib/metric-methods";
 
+export const metadata = {
+  title: "Impact methods",
+  description:
+    "Formulas, data sources, and assumptions behind CouncilHound's development impact screening estimates.",
+};
+
 export default function MetricMethodsPage() {
   return (
     <div className="mx-auto max-w-[1180px] px-8 pb-16 pt-8">

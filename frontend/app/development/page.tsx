@@ -2,6 +2,12 @@ import Link from "next/link";
 import StatusBadge from "@/components/StatusBadge";
 import { api } from "@/lib/api";
 
+export const metadata = {
+  title: "Development directory",
+  description:
+    "Official City of Fairfax development project records plus projects surfaced from council-meeting discussion, linked to topic history and impact analysis.",
+};
+
 export const dynamic = "force-dynamic";
 
 export default async function DevelopmentPage({

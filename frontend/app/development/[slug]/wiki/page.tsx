@@ -1,10 +1,25 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import Markdown from "@/components/Markdown";
 import { api, formatDate, type ImpactMetric, type ProjectWiki } from "@/lib/api";
 import { metricsByKey, resolveBody } from "@/lib/wiki";
 
 export const dynamic = "force-dynamic";
+
+const getWiki = cache((slug: string) => api.developmentWiki(slug));
+
+export async function generateMetadata({ params }: { params: { slug: string } }) {
+  try {
+    const wiki = await getWiki(params.slug);
+    return {
+      title: `${wiki.name} — project wiki`,
+      description: `A maintained knowledge base on ${wiki.name}: overview, meeting history, member positions, and impact analysis, built from City of Fairfax records.`,
+    };
+  } catch {
+    return {};
+  }
+}
 
 export default async function ProjectWikiPage({
   params,
@@ -13,7 +28,7 @@ export default async function ProjectWikiPage({
 }) {
   let wiki: ProjectWiki;
   try {
-    wiki = await api.developmentWiki(params.slug);
+    wiki = await getWiki(params.slug);
   } catch {
     notFound();
   }

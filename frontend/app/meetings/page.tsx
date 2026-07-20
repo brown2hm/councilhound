@@ -2,6 +2,12 @@ import Link from "next/link";
 import BodyTag, { BODY_DOTS } from "@/components/BodyTag";
 import { api, formatDate } from "@/lib/api";
 
+export const metadata = {
+  title: "Meetings",
+  description:
+    "Every archived City of Fairfax council and commission meeting, with agenda items, outcomes, votes, and links to the moment on video.",
+};
+
 const BODIES = [
   { key: "", label: "All bodies" },
   { key: "city_council", label: "City Council" },

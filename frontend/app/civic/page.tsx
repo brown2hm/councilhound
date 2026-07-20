@@ -2,6 +2,12 @@ import Link from "next/link";
 import StatusBadge from "@/components/StatusBadge";
 import { api } from "@/lib/api";
 
+export const metadata = {
+  title: "Civic topics",
+  description:
+    "Plans, contracts, studies, and programs surfaced from City of Fairfax council-meeting discussion.",
+};
+
 export const dynamic = "force-dynamic";
 
 /** Civic topics surfaced from council-meeting transcripts that are neither

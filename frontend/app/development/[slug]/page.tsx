@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import AssumptionsLab from "@/components/AssumptionsLab";
 import ImpactMapClient from "@/components/ImpactMapClient";
 import Markdown from "@/components/Markdown";
@@ -58,6 +59,20 @@ function unitLabel(unit: string): string {
   return unit.replace("$/yr", "per year").replace("$/acre", "per acre").replace("$", "");
 }
 
+const getEvaluation = cache((slug: string) => api.developmentEvaluation(slug));
+
+export async function generateMetadata({ params }: { params: { slug: string } }) {
+  try {
+    const evaluation = await getEvaluation(params.slug);
+    return {
+      title: `${evaluation.name} — impact analysis`,
+      description: `Screening estimates of the economic and fiscal impact of ${evaluation.name} in the City of Fairfax, with named assumptions and sensitivity ranges.`,
+    };
+  } catch {
+    return {};
+  }
+}
+
 export default async function DevelopmentAnalysisPage({
   params,
 }: {
@@ -65,7 +80,7 @@ export default async function DevelopmentAnalysisPage({
 }) {
   let evaluation;
   try {
-    evaluation = await api.developmentEvaluation(params.slug);
+    evaluation = await getEvaluation(params.slug);
   } catch {
     notFound();
   }

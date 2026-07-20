@@ -1,10 +1,25 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import BodyTag from "@/components/BodyTag";
 import StatusBadge from "@/components/StatusBadge";
 import { api, formatDate } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
+
+const getMember = cache((slug: string) => api.member(slug));
+
+export async function generateMetadata({ params }: { params: { slug: string } }) {
+  try {
+    const member = await getMember(params.slug);
+    return {
+      title: member.name,
+      description: `${member.name}'s voting record and positions recorded in City of Fairfax meeting minutes.`,
+    };
+  } catch {
+    return {};
+  }
+}
 
 const VOTE_TINTS: Record<string, string> = {
   yes: "bg-tint-mint text-tint-mint-text",
@@ -16,7 +31,7 @@ const VOTE_TINTS: Record<string, string> = {
 export default async function MemberPage({ params }: { params: { slug: string } }) {
   let member;
   try {
-    member = await api.member(params.slug);
+    member = await getMember(params.slug);
   } catch {
     notFound();
   }
