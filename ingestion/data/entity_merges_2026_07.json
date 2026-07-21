@@ -1,0 +1,144 @@
+{
+  "comment": "Curated one-time merge list from the July 2026 duplicate audit of prod (councilhound.net). Each entry folds `source` into `target` (mentions, updates, votes, aliases move; the old name and slug become aliases of the survivor). Apply with: councilhound.cli merge-entities-batch data/entity_merges_2026_07.json --apply. Idempotent: already-merged and missing slugs are skipped. Deliberately NOT merged: distinct-but-related threads (old-town-parking-study vs old-town, wilcoxon-trail-extension vs george-snyder-trail, detached-accessory-dwelling-units vs accessory-dwelling-units, stacy-sherwood-community-center [the existing venue] vs willard-sherwood-community-center [the redevelopment]).",
+  "merges": [
+    {"source": "davies", "target": "davies-property", "note": "The Davies = official Davies Property record"},
+    {"source": "davies-property-mixed-use-development", "target": "davies-property"},
+    {"source": "davies-property-redevelopment-application", "target": "davies-property"},
+    {"source": "davies-proposal", "target": "davies-property"},
+    {"source": "4131-chain-bridge-road-davies-property", "target": "davies-property"},
+    {"source": "redevelopment-of-4131-chain-bridge-road", "target": "davies-property"},
+    {"source": "hill-davies-family-llc-mixed-use-development", "target": "davies-property", "note": "the denied 2025 iteration of the same site's application thread"},
+    {"source": "davies-property-the-hill-davies-family-llc", "target": "hill-davies-family-llc", "note": "mis-split applicant record (person type)"},
+
+    {"source": "4085-4101-and-4103-chain-bridge-road-mixed-use-development", "target": "gallery-at-city-center"},
+    {"source": "proposed-mixed-use-development-at-4085-4101-and-4103-chain-bridge-road", "target": "gallery-at-city-center"},
+    {"source": "redevelopment-of-4085-4117-chain-bridge-road", "target": "gallery-at-city-center"},
+    {"source": "4085-4101-and-4103-chain-bridge-road", "target": "4085-4117-chain-bridge-road", "note": "location: same Gallery at City Center site"},
+
+    {"source": "10340-democracy-lane-multifamily-residential-development", "target": "10340-democracy-lane"},
+    {"source": "multifamily-residential-development-at-10340-democracy-lane", "target": "10340-democracy-lane"},
+
+    {"source": "willard-sherwood-health-and-community-center", "target": "willard-sherwood-community-center"},
+    {"source": "willard-sherwood-health-community-center", "target": "willard-sherwood-community-center"},
+    {"source": "willard-sherwood-development", "target": "willard-sherwood-community-center"},
+    {"source": "health-and-community-center-3740-blenheim-boulevard", "target": "willard-sherwood-community-center"},
+    {"source": "health-and-community-center-3750-blenheim-boulevard", "target": "willard-sherwood-community-center"},
+    {"source": "sherwood-center", "target": "sherwood-community-center", "note": "location: same building"},
+
+    {"source": "blenheim-boulevard-multimodal-improvement-project", "target": "blenheim-boulevard-multimodal-improvements"},
+    {"source": "blenheim-boulevard-multimodal-improvement-project-upc-107013", "target": "blenheim-boulevard-multimodal-improvements"},
+    {"source": "blenheim-boulevard-multimodal-project", "target": "blenheim-boulevard-multimodal-improvements"},
+    {"source": "blenheim-blvd-multimodal-improvements", "target": "blenheim-boulevard-multimodal-improvements"},
+
+    {"source": "fy-20272031-capital-improvement-program", "target": "fy2027-fy2031-capital-improvement-program"},
+    {"source": "capital-improvement-program-fy2027fy2031", "target": "fy2027-fy2031-capital-improvement-program"},
+    {"source": "draft-fy-2027-2031-capital-improvement-program", "target": "fy2027-fy2031-capital-improvement-program"},
+    {"source": "draft-fy-2027-2031-cip", "target": "fy2027-fy2031-capital-improvement-program"},
+    {"source": "draft-fy2027fy2031-capital-improvement-program-cip", "target": "fy2027-fy2031-capital-improvement-program", "force_cross_type": true},
+    {"source": "fy2027fy2031-capital-improvement-program", "target": "fy2027-fy2031-capital-improvement-program", "force_cross_type": true},
+
+    {"source": "fy-20262030-capital-improvement-program", "target": "capital-improvement-program-fy2026-to-fy2030", "force_cross_type": true},
+    {"source": "fy2026-2030-capital-improvement-program", "target": "capital-improvement-program-fy2026-to-fy2030", "force_cross_type": true},
+    {"source": "fy2026fy2030-capital-improvement-program", "target": "capital-improvement-program-fy2026-to-fy2030", "force_cross_type": true},
+    {"source": "fy2026fy2030-capital-improvement-program-cip", "target": "capital-improvement-program-fy2026-to-fy2030", "force_cross_type": true},
+    {"source": "fy-26-30-capital-improvement-program-cip", "target": "capital-improvement-program-fy2026-to-fy2030", "force_cross_type": true},
+
+    {"source": "fy27-budget", "target": "fy-2027-budget"},
+    {"source": "fy-2027-proposed-budget", "target": "fy-2027-budget"},
+    {"source": "fy27-budget-work-session", "target": "fy-2027-budget"},
+    {"source": "fy2027-general-fund-budget", "target": "fy-2027-budget"},
+    {"source": "fy-2027-budget-appropriation-resolutions", "target": "fy-2027-appropriation-resolutions"},
+
+    {"source": "fy26-budget", "target": "fy-2026-budget"},
+    {"source": "fy2026-budget", "target": "fy-2026-budget"},
+    {"source": "fy26-proposed-budget", "target": "fy-2026-budget"},
+    {"source": "proposed-fy26-budget", "target": "fy-2026-budget"},
+
+    {"source": "grant-supplemental-appropriation-resolution-1-815-512-fy-2026", "target": "grant-supplemental-appropriation-fy-2026-1-815-512"},
+    {"source": "grant-supplemental-appropriation-fy-2025-1-047-794", "target": "grant-supplemental-appropriation-resolution-1-047-794-fy-2025", "force_cross_type": true},
+    {"source": "fy-2025-fall-supplemental-appropriation-650-000", "target": "supplemental-appropriation-resolution-fy-2025-fall-650-000", "force_cross_type": true},
+    {"source": "fy-2025-supplemental-appropriation-650-000", "target": "supplemental-appropriation-resolution-fy-2025-fall-650-000", "force_cross_type": true},
+
+    {"source": "jermantown-road-improvement-project", "target": "jermantown-road-improvements-project"},
+    {"source": "jermantown-road-transportation-improvement-project", "target": "jermantown-road-improvements-project"},
+    {"source": "jermantown-road-cip-improvements", "target": "jermantown-road-improvements-project"},
+
+    {"source": "chick-fil-a-drive-thru-expansion-special-use-modification", "target": "chick-fil-a-drive-through-and-building-modification"},
+
+    {"source": "cue-bus-transit-development-plan-update", "target": "cue-transit-development-plan-tdp"},
+    {"source": "transit-development-plan-for-cue", "target": "cue-transit-development-plan-tdp", "force_cross_type": true},
+    {"source": "cue-zero-fare-evaluation", "target": "cue-zero-fare-policy"},
+
+    {"source": "old-town-hall-phase-rehabilitation", "target": "old-town-hall-renovation-project"},
+    {"source": "old-town-hall-project", "target": "old-town-hall-renovation-project"},
+    {"source": "old-town-hall-renovations", "target": "old-town-hall-renovation-project", "force_cross_type": true},
+
+    {"source": "fairfax-square-professional-center-mixed-use-development", "target": "fairfax-square-professional-center"},
+
+    {"source": "hotel-at-10230-main-street", "target": "farr-house"},
+    {"source": "farr-house-five-chimneys-concept-10230-main-street", "target": "farr-house"},
+
+    {"source": "10300-willard-way-redevelopment", "target": "courthouse-plaza"},
+    {"source": "combined-courthouse-llc-10300-willard-way-mixed-use-development", "target": "courthouse-plaza", "note": "the denied 2025 application at the same site"},
+    {"source": "combined-courthouse-llc-mixed-use-development", "target": "courthouse-plaza"},
+    {"source": "10300-willard-way-and-3922-blenheim-boulevard", "target": "10300-willard-way", "note": "location: combined parcel naming"},
+
+    {"source": "9495-silver-king-court-redevelopment", "target": "highlands-at-mantua"},
+    {"source": "mantua-professional-center-townhomes", "target": "highlands-at-mantua"},
+    {"source": "mantua-townhouse-proposal", "target": "highlands-at-mantua"},
+
+    {"source": "fern-street-connector-project", "target": "fern-street-connector-path"},
+
+    {"source": "urban-forest-masterplan", "target": "urban-forest-master-plan", "force_cross_type": true},
+    {"source": "urban-forest-masterplan-ufmp", "target": "urban-forest-master-plan"},
+    {"source": "urban-forest-management-plan", "target": "urban-forest-master-plan", "force_cross_type": true},
+
+    {"source": "mcleanwarwick-avenuefairfax-boulevard-intersection-improvement-project", "target": "mclean-avewarwick-avefairfax-blvd-intersection-improvements"},
+
+    {"source": "northfaxeastwest-road-revenue-sharing-application", "target": "northfax-east-west-roadway"},
+
+    {"source": "chain-bridge-roadeaton-place-project", "target": "chain-bridge-roadeaton-place-intersection-improvements"},
+    {"source": "chain-bridgeeaton-place-meeting", "target": "chain-bridge-roadeaton-place-intersection-improvements"},
+    {"source": "chain-bridge-road-and-eaton-place-transportation-project", "target": "chain-bridge-roadeaton-place-intersection-improvements", "force_cross_type": true},
+    {"source": "chain-bridge-roadeaton-place", "target": "chain-bridge-roadeaton-place-intersection", "note": "location"},
+
+    {"source": "pickett-road-trail", "target": "pickett-road-connector-trail", "force_cross_type": true},
+    {"source": "pickett-trail", "target": "pickett-road-connector-trail"},
+
+    {"source": "citys-solid-waste-management-plan-5-year-update", "target": "solid-waste-management-plan-update", "force_cross_type": true},
+
+    {"source": "noise-ordinance-amendment-chapter-38-article-ii", "target": "ordinance-amending-chapter-38-article-ii-noise"},
+    {"source": "chapter-38-environment-article-ii-noise-ordinance-amendment", "target": "ordinance-amending-chapter-38-article-ii-noise"},
+    {"source": "ordinance-amending-chapter-38-environment-article-ii-noise", "target": "ordinance-amending-chapter-38-article-ii-noise"},
+
+    {"source": "remote-participation", "target": "remote-participation-policy"},
+    {"source": "remote-participation-authorization", "target": "remote-participation-policy"},
+    {"source": "remote-participation-code-of-virginia-sec-2-3708", "target": "remote-participation-policy"},
+    {"source": "remote-participation-code-of-virginia-sec-2-3708-2", "target": "remote-participation-policy"},
+
+    {"source": "facade-and-interiors-improvement-grant-committee", "target": "facade-improvement-grant-committee"},
+    {"source": "facade-improvement-grant-committee-vacancy", "target": "facade-improvement-grant-committee"},
+
+    {"source": "zoning-ordinance-amendments-small-area-plans", "target": "small-area-plan-zoning-ordinance-amendments"},
+    {"source": "zoning-ordinance-amendments-related-to-small-area-plans", "target": "small-area-plan-zoning-ordinance-amendments"},
+    {"source": "zoning-ordinance-amendments-for-small-area-plans", "target": "small-area-plan-zoning-ordinance-amendments"},
+    {"source": "city-of-fairfax-zoning-ordinance-amendments-small-area-plans", "target": "small-area-plan-zoning-ordinance-amendments"},
+
+    {"source": "comprehensive-plan", "target": "city-of-fairfax-2035-comprehensive-plan", "force_cross_type": true},
+    {"source": "city-of-fairfax-2035-comprehensive-plan-implementation-guides", "target": "2035-comprehensive-plan-implementation-guide"},
+    {"source": "implementation-guides", "target": "2035-comprehensive-plan-implementation-guide", "force_cross_type": true},
+
+    {"source": "taco-bell-10120-fairfax-boulevard", "target": "taco-bell"},
+    {"source": "taco-bell-application", "target": "taco-bell"},
+
+    {"source": "tommys-carwash-9917-fairfax-boulevard", "target": "tommys-carwash"},
+    {"source": "olympus-pines-car-wash-facility-at-9917-fairfax-boulevard", "target": "tommys-carwash", "note": "Olympus Pines is the applicant for the same facility"},
+
+    {"source": "pathway-homes-inc-4010-university-drive", "target": "4010-university-drive"},
+    {"source": "pathway-homes-upper-story-residential-sup-at-4010-university-drive", "target": "4010-university-drive"},
+
+    {"source": "university-drive-bicycle-facilities", "target": "university-drive-bicycle-lanes-project"},
+
+    {"source": "4131-chain-bridge-rd", "target": "4131-chain-bridge-road", "note": "location"}
+  ]
+}
