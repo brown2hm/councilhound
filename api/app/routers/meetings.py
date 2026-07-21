@@ -141,11 +141,19 @@ def upcoming_calendar(session: Session = Depends(db_session)):
 
 
 def _agenda_context(agenda_text: str, variant: str) -> str | None:
-    """The agenda line that names the entity, trimmed for display."""
+    """A ~200-char excerpt of the agenda centered on the entity's name.
+    PDF extraction often yields one enormous line, so trimming from the
+    line start would show header boilerplate instead of the actual item."""
     for line in agenda_text.splitlines():
-        if variant in line.lower():
-            line = " ".join(line.split())
-            return line[:217] + "…" if len(line) > 220 else line
+        low = line.lower()
+        pos = low.find(variant)
+        if pos < 0:
+            continue
+        start = max(0, pos - 80)
+        end = min(len(line), pos + len(variant) + 120)
+        excerpt = " ".join(line[start:end].split())
+        return (("…" if start > 0 else "") + excerpt
+                + ("…" if end < len(line) else ""))
     return None
 
 
