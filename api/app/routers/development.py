@@ -70,10 +70,37 @@ def _category(name: str) -> str:
     return "civic"
 
 
-def _serialize(row: CityProject, entity: Entity | None, has_evaluation: bool) -> dict:
+# Signals that the project's program includes housing the resident-driven
+# impact model can work with. Deliberately loose keyword matching over the
+# city's own description/requests text — hotel rooms don't count, a remaining
+# single-family home doesn't count as a program.
+_RESIDENTIAL_HINTS = (
+    "dwelling", "residential", "apartment", "townhome", "townhouse",
+    "condominium", "multifamily", "multi-family", "senior living",
+)
+
+
+def _no_analysis_reason(row: CityProject, eval_status: str | None) -> str | None:
+    """Why this official project has no published impact analysis — turns a
+    silent gap into a legible editorial state. None when one is published."""
+    if eval_status == "synthesized":
+        return None
+    if eval_status is not None:
+        return "analysis in preparation"
+    text = " ".join(filter(None, [row.description, row.requests])).lower()
+    if not any(hint in text for hint in _RESIDENTIAL_HINTS):
+        return "no residential program to model"
+    if (row.official_status or "").lower().startswith("pre-app") or "potential" in text:
+        return "awaiting submitted plans"
+    return "not yet evaluated"
+
+
+def _serialize(row: CityProject, entity: Entity | None, has_evaluation: bool,
+               no_analysis_reason: str | None = None) -> dict:
     return {
         "source": "official",
         "category": "development",
+        "no_analysis_reason": no_analysis_reason,
         "slug": row.external_slug,
         "name": row.name,
         "project_type": row.project_type,
@@ -116,7 +143,8 @@ def list_development_projects(
     if q:
         query = query.where(CityProject.name.ilike(f"%{q}%"))
     items = [
-        _serialize(row, entity, eval_status == "synthesized")
+        _serialize(row, entity, eval_status == "synthesized",
+                   no_analysis_reason=_no_analysis_reason(row, eval_status))
         for row, entity, eval_status in session.execute(query).all()
     ]
 

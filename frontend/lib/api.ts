@@ -188,6 +188,7 @@ export interface CityProjectSummary {
   lng: number | null;
   synced_at: string | null;
   has_evaluation: boolean;
+  no_analysis_reason?: string | null;
 }
 
 export interface ImpactProvenance {

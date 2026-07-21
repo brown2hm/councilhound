@@ -104,6 +104,11 @@ export default async function DevelopmentPage({
                     impact analysis
                   </Link>
                 )}
+                {!project.has_evaluation && project.no_analysis_reason && (
+                  <span className="max-w-[180px] text-right text-[11px] font-medium leading-snug text-muted-soft">
+                    no impact analysis — {project.no_analysis_reason}
+                  </span>
+                )}
                 {project.detail_url && (
                   <a href={project.detail_url} target="_blank" className="text-[13px] font-semibold text-muted underline underline-offset-2 hover:text-ink">
                     city record
