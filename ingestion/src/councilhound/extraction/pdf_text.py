@@ -7,6 +7,7 @@ backfill. PDFs go through pymupdf; Granicus HTML (agendas, minutes, actions
 reports) is stripped to text with BeautifulSoup.
 """
 import logging
+import os
 import re
 
 import fitz  # pymupdf
@@ -75,8 +76,13 @@ def extract_pending(session: Session, limit: int | None = None) -> dict:
         q = q.limit(limit)
     docs = session.scalars(q).all()
 
-    done = failed = empty = 0
+    done = failed = empty = missing = 0
     for doc in docs:
+        # local_path may belong to another machine (jobs VMs have ephemeral
+        # disks; some docs are fetched locally) — skip, don't traceback.
+        if not os.path.exists(doc.local_path):
+            missing += 1
+            continue
         try:
             text = extract_document(doc)
             if not text:
@@ -92,6 +98,7 @@ def extract_pending(session: Session, limit: int | None = None) -> dict:
             log.exception("extraction failed for document %s (%s)", doc.id, doc.local_path)
             failed += 1
 
-    result = {"extracted": done, "empty_or_scanned": empty, "failed": failed, "candidates": len(docs)}
+    result = {"extracted": done, "empty_or_scanned": empty, "failed": failed,
+              "file_elsewhere": missing, "candidates": len(docs)}
     log.info("extract_pending: %s", result)
     return result

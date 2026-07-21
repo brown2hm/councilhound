@@ -53,7 +53,6 @@ _TOKEN_CANON: dict[str, tuple[str, ...]] = {
     "ave": ("avenue",),
     "rd": ("road",),
     "thru": ("through",),
-    "improvement": ("improvements",),
     "masterplan": ("master", "plan"),
 }
 
@@ -88,8 +87,13 @@ def normalize_slug(slug: str) -> str:
         if len(stripped) >= 3 and stripped[-1] in CREATE_STRIP:
             stripped = stripped[:-1]
         if stripped == tokens:
-            return "-".join(tokens)
+            break
         tokens = stripped
+    # trailing position only: "X Improvement (Project)" == "X Improvements",
+    # but mid-name phrases ("Capital Improvement Program") must not mutate
+    if len(tokens) >= 3 and tokens[-1] == "improvement":
+        tokens = tokens[:-1] + ["improvements"]
+    return "-".join(tokens)
 
 
 def _is_year_token(token: str) -> bool:
@@ -301,16 +305,31 @@ def dedupe_pass(session: Session, apply: bool = False) -> list[dict]:
         if base is not None and base.id != e.id:
             action = {"action": "merge", "source": e.canonical_slug,
                       "target": base.canonical_slug, "entity_type": e.entity_type}
-            if apply:
-                action["moved"] = merge_entities(session, e.canonical_slug,
-                                                 base.canonical_slug)
         elif base is None and create_norm != e.canonical_slug:
+            # the canonical slug may be held by an entity of ANOTHER type
+            # (canonical_slug is globally unique) — renaming into it would
+            # violate the constraint, and cross-type auto-merges are off
+            # the table, so leave such entities where they are
+            if session.scalar(select(Entity).where(
+                    Entity.canonical_slug == create_norm)) is not None:
+                continue
             action = {"action": "rename", "source": e.canonical_slug,
                       "target": create_norm, "entity_type": e.entity_type}
-            if apply:
-                _rename_to_canonical(session, e, create_norm)
         else:
             continue
+        if apply:
+            # savepoint per action: one surprising conflict must not sink
+            # the rest of the pass (or the nightly job it runs in)
+            try:
+                with session.begin_nested():
+                    if action["action"] == "merge":
+                        action["moved"] = merge_entities(session, e.canonical_slug,
+                                                         action["target"])
+                    else:
+                        _rename_to_canonical(session, e, action["target"])
+            except Exception as exc:
+                log.exception("dedupe action failed: %s", action)
+                action["error"] = str(exc)
         actions.append(action)
     if apply:
         session.commit()

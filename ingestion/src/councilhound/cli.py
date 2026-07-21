@@ -286,7 +286,14 @@ def daily(days):
         click.echo(f"index-points: {pipeline.link_index_points_pending(session)}")
         click.echo(f"seed:         {seed_people(session)}")
         from councilhound.dedupe import dedupe_pass
-        click.echo(f"dedupe:       {len(dedupe_pass(session, apply=True))} action(s)")
+        try:
+            click.echo(f"dedupe:       {len(dedupe_pass(session, apply=True))} action(s)")
+        except Exception:
+            # dedupe is housekeeping — it must never cost us the profile,
+            # embedding, and notification stages that follow
+            session.rollback()
+            logging.getLogger(__name__).exception("dedupe pass failed; continuing")
+            click.echo("dedupe:       FAILED (see log)")
         from councilhound.geocode import geocode_pending
         click.echo(f"geocode:      {geocode_pending(session)}")
         click.echo(f"profile:      {profile_pending(session)}")

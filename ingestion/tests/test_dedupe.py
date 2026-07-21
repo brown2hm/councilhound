@@ -28,9 +28,15 @@ def test_normalize_slug_canonicalizes_spelling_drift():
         "blenheim-boulevard-multimodal-improvements"
     assert normalize_slug("chick-fil-a-drive-thru-expansion") == \
         "chick-fil-a-drive-through-expansion"
-    # singular/plural drift converges on the plural
+    # singular/plural drift converges on the plural — TRAILING position only
     assert normalize_slug("jermantown-road-improvement-project") == \
         "jermantown-road-improvements"
+    # mid-name 'improvement' is part of a proper phrase and must not mutate
+    # (July 21 prod incident: 'Capital Improvements Program')
+    assert normalize_slug("capital-improvement-program-fy2026-to-fy2030") == \
+        "capital-improvement-program-fy2026-to-fy2030"
+    assert normalize_slug("facade-interior-improvement-program") == \
+        "facade-interior-improvement-program"
     # 'masterplan' splits, making the acronym twin resolvable too
     assert normalize_slug("urban-forest-masterplan") == "urban-forest-master-plan"
     assert normalize_slug("urban-forest-masterplan-ufmp") == "urban-forest-master-plan"
@@ -183,6 +189,23 @@ def test_dedupe_pass_renames_stranded_slug_to_canonical(db_session):
     assert alias.entity_id == e.id
     # new phrasing drift now converges on the canonical entity
     assert resolve_entity(s, "project", "Blenheim Boulevard Multimodal Improvement").id == e.id
+
+
+def test_dedupe_pass_skips_cross_type_slug_collision(db_session):
+    """July 21 prod incident: a rename target held by an entity of another
+    type crashed the pass on the unique constraint. It must skip instead."""
+    s = db_session
+    s.add(Entity(entity_type="project", name="Parks and Recreation Master Plan",
+                 canonical_slug="parks-and-recreation-master-plan"))
+    s.add(Entity(entity_type="topic", name="Parks and Recreation Masterplan",
+                 canonical_slug="parks-and-recreation-masterplan"))
+    s.flush()
+
+    actions = dedupe_pass(s, apply=True)  # must not raise
+    assert actions == []
+    slugs = {e.canonical_slug for e in s.query(Entity).all()}
+    assert slugs == {"parks-and-recreation-master-plan",
+                     "parks-and-recreation-masterplan"}
 
 
 def test_dedupe_pass_chains_rename_then_merge(db_session):
