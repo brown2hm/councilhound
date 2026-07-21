@@ -293,25 +293,30 @@ export default function ImpactMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [capturePoints, clusters, captureScaleMax, commercialRetailZones],
   );
-  // walk-in capture: the walk-arriving share of each business's capture, on
-  // the SAME dollar scale as total capture so toggling the two heatmaps
-  // shows how much of a business's gain depends on walk access
+  // walk-in capture gets its OWN pinned scale: walk-arriving dollars run an
+  // order of magnitude below total capture, and sharing the capture scale
+  // rendered the whole walk map in the dimmest bucket. Colors are therefore
+  // not comparable across the two maps — each legend states its own dollars.
+  const walkScaleMax = useMemo(
+    () => niceCeil(maxDollar(capturePoints, ["walk_usd"])),
+    [capturePoints],
+  );
   const walkInHeat = useMemo(
     () =>
       captureHeatPoints(
         capturePoints ?? emptyFc,
         ["walk_usd"],
-        captureScaleMax,
+        walkScaleMax,
         commercialRetailZones,
-        captureScaleMax * 0.005, // drop the long near-zero tail (see above)
+        walkScaleMax * 0.005, // drop the long near-zero tail (see above)
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [capturePoints, captureScaleMax, commercialRetailZones],
+    [capturePoints, walkScaleMax, commercialRetailZones],
   );
   const hasWalkIn = walkInHeat.length > 0;
   const walkPointsForBounds = useMemo(
-    () => pointFeaturesForValue(capturePoints, "walk_usd", captureScaleMax * 0.005),
-    [capturePoints, captureScaleMax],
+    () => pointFeaturesForValue(capturePoints, "walk_usd", walkScaleMax * 0.005),
+    [capturePoints, walkScaleMax],
   );
   const captureBounds = useMemo(
     () => boundsFor([cityBoundary], defaultBounds, 0.04),
@@ -364,7 +369,7 @@ export default function ImpactMap({
           commercialRetailZones={commercialRetailZones}
           walkInHeat={walkInHeat}
           hasWalkIn={hasWalkIn}
-          captureScaleMax={captureScaleMax}
+          walkScaleMax={walkScaleMax}
         />
       </MapPanel>
     </div>
@@ -461,7 +466,7 @@ function WalkMap({
   commercialRetailZones,
   walkInHeat,
   hasWalkIn,
-  captureScaleMax,
+  walkScaleMax,
 }: {
   bounds: L.LatLngBoundsExpression;
   site?: GeoJSON.FeatureCollection;
@@ -470,7 +475,7 @@ function WalkMap({
   commercialRetailZones?: GeoJSON.FeatureCollection;
   walkInHeat: HeatPoint[];
   hasWalkIn: boolean;
-  captureScaleMax: number;
+  walkScaleMax: number;
 }) {
   return (
     <>
@@ -518,7 +523,7 @@ function WalkMap({
       </MapContainer>
       <div className="pointer-events-none absolute bottom-3 left-3 z-[500] rounded-xl border border-hairline bg-canvas/90 px-3 py-2 text-[11px] leading-relaxed text-muted">
         {hasWalkIn && (
-          <DollarScaleRow label="$ arriving on foot /business/yr" scaleMax={captureScaleMax} />
+          <DollarScaleRow label="$ arriving on foot /business/yr" scaleMax={walkScaleMax} />
         )}
         <span className="mr-3">
           <span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm border-2 border-[#1a3a3a] bg-white/60 align-middle" />

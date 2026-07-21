@@ -183,7 +183,9 @@ export default async function DevelopmentAnalysisPage({
             The economic map shows total captured spending by business location and
             named reporting clusters. The walk map uses a tighter extent around
             walk-arriving capture and the street segments assigned new resident walk
-            trips. Dollar heatmaps are clipped to CR (Commercial Retail) zoning.
+            trips. Dollar heatmaps are clipped to CR (Commercial Retail) zoning, and
+            each map is scaled to its own data — walk-arriving dollars run well below
+            total capture, so colors are not comparable across the two maps.
           </p>
         </section>
       )}
