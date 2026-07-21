@@ -146,7 +146,13 @@ P_c(j, m) \;=\;
 \omega_{c,w} = w_c,\ \ \omega_{c,d} = 1 - w_c,
 \label{eq:joint}
 \end{equation}
-with $\alpha = 1$. The mode preference $w_c$ has a clean interpretation: at
+with $\alpha = 1$. The walk impedance $\beta_w = 0.10$ min$^{-1}$ is anchored
+to empirical negative-exponential decay fits: purpose-specific walking
+estimates of 0.09--0.11 min$^{-1}$ (shopping 0.094, restaurant 0.093) from
+Twin Cities travel-survey data \cite{iacono2008}, and 0.073 min$^{-1}$ from
+the national 2009 NHTS \cite{yang2012}; the sensitivity band (0.05--0.15)
+spans the national-sample floor to a hostile-pedestrian-environment ceiling.
+The mode preference $w_c$ has a clean interpretation: at
 zero travel time for both modes, the walk share is exactly $w_c$; as walk time
 grows, walking loses utility to driving and the trip (and its dollars) arrives
 by car instead. Annual capture and walk-arriving capture at business $j$:
@@ -354,7 +360,7 @@ Key & Value & Range & Basis \\
 \assum{avg\_hh\_size\_multifamily} & 1.8 & 1.5--2.2 & bedroom-mix multipliers \cite{listokin2006} \\
 \assum{income\_premium\_new\_construction} & 1.125 & 1.0--1.25 & screening premium, stated openly \\
 \assum{ces\_scale} & 1.0 & 0.85--1.15 & CES national-average drift allowance \cite{blsces} \\
-\assum{beta\_walk} (min$^{-1}$) & 0.15 & 0.07--0.15 & impedance decay; set to top of band (2026-07) \\
+\assum{beta\_walk} (min$^{-1}$) & 0.10 & 0.05--0.15 & purpose-specific walk decay 0.09--0.11 \cite{iacono2008}; national NHTS duration decay 0.073 \cite{yang2012} \\
 $\beta_d$ (min$^{-1}$, fixed) & 0.15 & --- & drive impedance decay \\
 \assum{walk\_share\_neighborhood} & 0.60 & 0.40--0.80 & zero-impedance walk preference \\
 \assum{walk\_share\_comparison} & 0.10 & 0.00--0.30 & comparison goods travel by car \\
@@ -460,9 +466,15 @@ version; their adopted resolutions and residual caveats:
       remain the real calibration.
 \item \textbf{IIA.} The joint logit imposes proportional substitution across all
       (destination, mode) pairs; a nested structure would be more standard.
-\item \textbf{One-sided $\beta_w$ band.} The central value sits at the top of
-      its sensitivity range (analyst calibration), so sensitivity sweeps only
-      explore gentler decay.
+\item \textbf{Transferability of $\beta_w$.} The central value (0.10) sits
+      between the Twin Cities purpose-specific estimates (shopping 0.094,
+      restaurant 0.093 \cite{iacono2008}) and the national NHTS duration
+      decay (0.073 \cite{yang2012}). Both are fit to observed trip-length
+      distributions, which conflate willingness with spatial structure
+      \cite{sheppard1995}; in a competing-destinations model
+      the pure impedance coefficient is plausibly gentler still. Pedestrian-
+      environment quality is not separately modeled — for hostile walking
+      environments, read the steep end of the band (0.15).
 \item \textbf{Attractiveness proxy.} Competitor attractiveness is POI count
       (floor area being unavailable in open POI data), while own-retail
       attractiveness is derived from square footage; the conversion constant
@@ -551,6 +563,24 @@ Surveys}, 2023 tables. \url{https://www.bls.gov/cex/}
 
 \bibitem{nhts} Federal Highway Administration. \emph{National Household Travel
 Survey}, 2022. \url{https://nhts.ornl.gov/}
+
+\bibitem{iacono2008} Iacono, M., Krizek, K., \& El-Geneidy, A. (2008).
+\emph{Access to Destinations: How Close Is Close Enough? Estimating Accurate
+Distance Decay Functions for Multiple Modes and Different Purposes}. Report
+MN/RC 2008-11, Minnesota Department of Transportation. Table 10 estimates
+negative-exponential walk decay by travel time: work 0.106, shopping 0.094,
+restaurant 0.093, recreation 0.100 min$^{-1}$. Journal version: Iacono, Krizek
+\& El-Geneidy (2010), \emph{Journal of Transport Geography}, 18(1), 133--140.
+
+\bibitem{yang2012} Yang, Y., \& Diez-Roux, A.~V. (2012). Walking distance by
+trip purpose and population subgroups. \emph{American Journal of Preventive
+Medicine}, 43(1), 11--19. National 2009 NHTS; fitted duration decay
+0.073 min$^{-1}$ ($R^2 = 0.99$); median walk trip 10 minutes; 65\% of walk
+trips exceed one quarter mile.
+
+\bibitem{sheppard1995} Sheppard, E.~S. (1995). Modeling and predicting
+aggregate flows. In S. Hanson (Ed.), \emph{The Geography of Urban
+Transportation} (2nd ed., pp. 100--128). Guilford Press.
 
 \bibitem{hvs} U.S. Census Bureau. \emph{Housing Vacancies and Homeownership
 (CPS/HVS)}. \url{https://www.census.gov/housing/hvs/}
