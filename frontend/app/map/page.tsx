@@ -1,6 +1,12 @@
 import MapClient from "@/components/MapClient";
 import { api } from "@/lib/api";
 
+export const metadata = {
+  title: "Around the city",
+  description:
+    "City of Fairfax locations and projects named in council and commission business, mapped and colored by project status.",
+};
+
 export const dynamic = "force-dynamic";
 
 export default async function MapPage() {

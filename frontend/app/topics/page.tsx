@@ -2,6 +2,12 @@ import Link from "next/link";
 import StatusBadge from "@/components/StatusBadge";
 import { api, formatDate, type HotTopicsResponse } from "@/lib/api";
 
+export const metadata = {
+  title: "Topic tracker",
+  description:
+    "Every project, ordinance, and development the City of Fairfax council and planning commission have touched, with current status and full history.",
+};
+
 const TYPES = ["project", "ordinance", "resolution", "case_number", "topic", "location", "person"];
 
 function HotSection({

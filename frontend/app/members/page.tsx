@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { api } from "@/lib/api";
 
+export const metadata = {
+  title: "Members",
+  description:
+    "City of Fairfax council members and commissioners: voting records and positions recorded in meeting minutes.",
+};
+
 export const dynamic = "force-dynamic";
 
 const ROLE_TINTS: Record<string, string> = {

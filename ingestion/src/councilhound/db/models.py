@@ -286,6 +286,25 @@ class EntityMention(Base):
     role = Column(String)  # 'sponsor','vote_yes','vote_no','discussed',...
 
 
+class TopicSubscription(Base):
+    """Follow-a-topic email subscription. Created unconfirmed by the API;
+    a tokened confirm link activates it, and every notification carries the
+    matching unsubscribe link. last_update_id is the notification watermark:
+    the nightly notifier only mails entity_updates with a larger id, so
+    subscribers hear about what landed after they signed up."""
+    __tablename__ = "topic_subscriptions"
+    __table_args__ = (UniqueConstraint("email", "entity_id"),)
+
+    id = Column(Integer, primary_key=True)
+    email = Column(Text, nullable=False)
+    entity_id = Column(Integer, ForeignKey("entities.id", ondelete="CASCADE"),
+                       nullable=False, index=True)
+    token = Column(String, unique=True, nullable=False)
+    confirmed = Column(Boolean, nullable=False, default=False)
+    last_update_id = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
 class Vote(Base):
     __tablename__ = "votes"
     __table_args__ = (UniqueConstraint("meeting_id", "agenda_item_id", "description"),)

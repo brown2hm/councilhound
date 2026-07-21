@@ -51,6 +51,13 @@ model, and ops notes.
   maintained by incremental curator edits instead of regeneration, with
   impact figures resolved live via metric markers so prose never carries
   stale numbers. See [Project wikis](#project-wikis-okf-knowledge-bundle).
+- **Follow a topic** — email signup on any topic page (tokened
+  confirmation, digest per subscriber from the nightly job, one-click
+  unsubscribe), plus an iCalendar feed of upcoming meetings
+  (`/meetings/upcoming.ics`).
+- **Pre-meeting briefs** — every upcoming meeting gets an annotated
+  agenda: the tracked topics it names, each with current status, what
+  happened last time, and links to full history and impact analysis.
 
 ## How it works
 

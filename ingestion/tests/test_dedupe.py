@@ -7,7 +7,8 @@ from councilhound.db.models import (
     Entity, EntityAlias, EntityMention, EntityUpdate, Meeting,
 )
 from councilhound.dedupe import (
-    dedupe_pass, find_normalized_base, merge_entities, normalize_slug,
+    dedupe_pass, find_normalized_base, merge_batch, merge_entities,
+    normalize_slug,
 )
 from councilhound.entities import resolve_entity
 
@@ -19,6 +20,25 @@ def test_normalize_slug_strips_project_and_acronyms():
     assert normalize_slug("parks-and-recreation-advisory-board-prab") == \
         "parks-and-recreation-advisory-board"
     assert normalize_slug("board-of-architectural-review-bar") == "board-of-architectural-review"
+
+
+def test_normalize_slug_canonicalizes_spelling_drift():
+    # abbreviation and spelling variants observed in the July 2026 prod audit
+    assert normalize_slug("blenheim-blvd-multimodal-improvements") == \
+        "blenheim-boulevard-multimodal-improvements"
+    assert normalize_slug("chick-fil-a-drive-thru-expansion") == \
+        "chick-fil-a-drive-through-expansion"
+    # singular/plural drift converges on the plural
+    assert normalize_slug("jermantown-road-improvement-project") == \
+        "jermantown-road-improvements"
+    # 'masterplan' splits, making the acronym twin resolvable too
+    assert normalize_slug("urban-forest-masterplan") == "urban-forest-master-plan"
+    assert normalize_slug("urban-forest-masterplan-ufmp") == "urban-forest-master-plan"
+    # a Draft/Proposed X is the same tracked thread as X
+    assert normalize_slug("proposed-fy26-budget") == "fy26-budget"
+    assert normalize_slug("draft-solid-waste-plan") == "solid-waste-plan"
+    # but never strip down to a stub
+    assert normalize_slug("proposed-budget") == "proposed-budget"
 
 
 def test_normalize_slug_keeps_integral_words():
@@ -94,6 +114,26 @@ def test_merge_entities_moves_history_and_leaves_redirect(db_session):
     assert alias.entity_id == target.id
 
 
+def test_merge_repoints_city_project_geocode_and_wiki(db_session):
+    from councilhound.db.models import CityProject, EntityGeocode, WikiPage
+    s = db_session
+    target = resolve_entity(s, "project", "Davies Property")
+    source = resolve_entity(s, "project", "Redevelopment of 4131 Chain Bridge Rd")
+    s.add(CityProject(external_slug="Davies-Property", name="Davies Property",
+                      detail_url="https://example.gov/davies", entity_id=source.id))
+    s.add(EntityGeocode(entity_id=source.id, status="ok", lat=38.85, lng=-77.30))
+    s.add(WikiPage(path="projects/redevelopment-of-4131/overview.md", entity_id=source.id,
+                   kind="concept", page="overview", body="x", content_hash="h"))
+    s.flush()
+
+    merge_entities(s, source.canonical_slug, target.canonical_slug)
+    s.commit()
+
+    assert s.query(CityProject).one().entity_id == target.id
+    assert s.query(EntityGeocode).one().entity_id == target.id
+    assert s.query(WikiPage).one().entity_id == target.id
+
+
 def test_merge_refuses_cross_type_unless_forced(db_session):
     s = db_session
     resolve_entity(s, "location", "Old Town")
@@ -122,3 +162,66 @@ def test_dedupe_pass_dry_run_then_apply(db_session):
     dedupe_pass(s, apply=True)
     assert s.query(Entity).filter_by(canonical_slug="courthouse-plaza-redevelopment").first() is None
     assert s.query(Entity).filter_by(canonical_slug="economic-development").first()
+
+
+def test_dedupe_pass_renames_stranded_slug_to_canonical(db_session):
+    s = db_session
+    s.add(Entity(entity_type="project", name="Blenheim Blvd Multimodal Improvements",
+                 canonical_slug="blenheim-blvd-multimodal-improvements"))
+    s.flush()
+
+    actions = dedupe_pass(s, apply=True)
+    assert actions == [{"action": "rename",
+                        "source": "blenheim-blvd-multimodal-improvements",
+                        "target": "blenheim-boulevard-multimodal-improvements",
+                        "entity_type": "project"}]
+    e = s.query(Entity).filter_by(
+        canonical_slug="blenheim-boulevard-multimodal-improvements").one()
+    # the old slug keeps resolving (URL redirects + future extractions)
+    alias = s.query(EntityAlias).filter_by(
+        alias="blenheim-blvd-multimodal-improvements").one()
+    assert alias.entity_id == e.id
+    # new phrasing drift now converges on the canonical entity
+    assert resolve_entity(s, "project", "Blenheim Boulevard Multimodal Improvement").id == e.id
+
+
+def test_dedupe_pass_chains_rename_then_merge(db_session):
+    s = db_session
+    # two pre-existing drifted twins, neither on the canonical slug
+    s.add(Entity(entity_type="project", name="Jermantown Road improvement project",
+                 canonical_slug="jermantown-road-improvement-project"))
+    s.add(Entity(entity_type="project", name="Jermantown Road Improvements Project",
+                 canonical_slug="jermantown-road-improvements-project"))
+    s.flush()
+
+    dedupe_pass(s, apply=True)
+    survivors = s.query(Entity).filter(
+        Entity.canonical_slug.like("jermantown%")).all()
+    assert len(survivors) == 1
+    assert survivors[0].canonical_slug == "jermantown-road-improvements"
+
+
+def test_merge_batch_is_idempotent_and_skips_missing(db_session):
+    s = db_session
+    m1 = _meeting(s, 1)
+    target = resolve_entity(s, "project", "Davies Property")
+    source = resolve_entity(s, "project", "Davies Proposal")
+    s.add(EntityUpdate(entity_id=source.id, meeting_id=m1.id, update_text="u"))
+    s.flush()
+    entries = [
+        {"source": "davies-proposal", "target": "davies-property"},
+        {"source": "not-a-real-slug", "target": "davies-property"},
+    ]
+
+    dry = merge_batch(s, entries, apply=False)
+    assert dry[0]["result"] == "would merge"
+    assert s.query(Entity).filter_by(canonical_slug="davies-proposal").first()
+
+    first = merge_batch(s, entries, apply=True)
+    assert first[0]["result"].startswith("merged")
+    assert first[1]["result"] == "skipped: source not found"
+    assert s.query(Entity).filter_by(canonical_slug="davies-proposal").first() is None
+
+    second = merge_batch(s, entries, apply=True)  # re-run must be a no-op
+    assert second[0]["result"] == "already-merged"
+    assert s.query(Entity).filter_by(canonical_slug="davies-property").one().id == target.id

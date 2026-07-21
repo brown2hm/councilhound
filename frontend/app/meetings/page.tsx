@@ -2,6 +2,12 @@ import Link from "next/link";
 import BodyTag, { BODY_DOTS } from "@/components/BodyTag";
 import { api, formatDate } from "@/lib/api";
 
+export const metadata = {
+  title: "Meetings",
+  description:
+    "Every archived City of Fairfax council and commission meeting, with agenda items, outcomes, votes, and links to the moment on video.",
+};
+
 const BODIES = [
   { key: "", label: "All bodies" },
   { key: "city_council", label: "City Council" },
@@ -20,7 +26,15 @@ export default async function MeetingsPage({
 
   return (
     <div className="mx-auto max-w-[1280px] px-8 pb-16 pt-8">
-      <h1 className="mb-1 text-[32px] font-medium tracking-[-0.5px]">Meetings</h1>
+      <div className="mb-1 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-[32px] font-medium tracking-[-0.5px]">Meetings</h1>
+        <a
+          href={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/meetings/upcoming.ics`}
+          className="rounded-full border border-hairline px-4 py-2 text-sm font-semibold text-muted hover:text-ink"
+        >
+          📅 Subscribe to the meeting calendar
+        </a>
+      </div>
       <p className="mb-5 text-sm text-muted">
         Every archived meeting, newest first, with what was decided.
       </p>

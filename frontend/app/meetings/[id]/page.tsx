@@ -1,14 +1,29 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import BodyTag from "@/components/BodyTag";
 import ChapterBar from "@/components/ChapterBar";
 import VoteBlock from "@/components/VotePills";
 import { api, formatDate } from "@/lib/api";
 
+const getMeeting = cache((id: string) => api.meeting(id));
+
+export async function generateMetadata({ params }: { params: { id: string } }) {
+  try {
+    const meeting = await getMeeting(params.id);
+    return {
+      title: `${meeting.title} · ${formatDate(meeting.date)}`,
+      description: `Agenda items, outcomes, and votes from the ${formatDate(meeting.date)} ${meeting.title}, with links to the moment in the meeting video.`,
+    };
+  } catch {
+    return {};
+  }
+}
+
 export default async function MeetingPage({ params }: { params: { id: string } }) {
   let meeting;
   try {
-    meeting = await api.meeting(params.id);
+    meeting = await getMeeting(params.id);
   } catch {
     notFound();
   }

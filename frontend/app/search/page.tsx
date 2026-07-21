@@ -2,6 +2,12 @@ import Link from "next/link";
 import BodyTag from "@/components/BodyTag";
 import { api, formatDate, type SearchResult } from "@/lib/api";
 
+export const metadata = {
+  title: "Search the record",
+  description:
+    "Search every transcribed word and agenda item from City of Fairfax meetings, with links to the moment on video.",
+};
+
 export const dynamic = "force-dynamic";
 
 /** Window the chunk text around the first match and mark occurrences. */

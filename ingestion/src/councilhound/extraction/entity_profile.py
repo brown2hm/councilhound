@@ -34,7 +34,7 @@ from councilhound.entities import resolve_entity
 
 log = logging.getLogger(__name__)
 
-PROFILE_PROMPT_VERSION = "v1"
+PROFILE_PROMPT_VERSION = "v2"  # v2: minutes govern vote totals over transcripts
 DEFAULT_MODEL = os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-6")
 MAX_TRANSCRIPT_EXCERPTS = 12
 
@@ -80,6 +80,11 @@ excerpts. Rules:
 - Only state what the material supports; attribute member positions only when \
 the material records that member saying/doing it. Never infer a position from \
 a vote alone.
+- The dated record (minutes-derived updates, outcomes, and vote breakdowns) is \
+authoritative for vote totals, outcomes, and who voted which way. Transcript \
+excerpts add context and quotes only. If a transcript excerpt disagrees with \
+the dated record on a vote total or outcome, state the dated record's version \
+and omit the transcript's — never present both as fact.
 - Be specific about dates and sequence. Newer material supersedes older.
 - open_questions: only genuinely unresolved decisions or explicitly mentioned \
 upcoming steps — not rhetorical questions."""

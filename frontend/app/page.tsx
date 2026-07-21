@@ -248,8 +248,16 @@ function NextUp({ events }: { events: UpcomingEvent[] }) {
   if (shown.length === 0) return null;
   return (
     <section className="rounded-3xl border border-hairline bg-canvas p-6">
-      <div className="mb-3 text-xs font-semibold uppercase tracking-[1.5px] text-muted">
-        Next up
+      <div className="mb-3 flex items-baseline justify-between gap-3">
+        <span className="text-xs font-semibold uppercase tracking-[1.5px] text-muted">
+          Next up
+        </span>
+        <a
+          href={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/meetings/upcoming.ics`}
+          className="text-[12px] font-semibold text-muted underline underline-offset-2 hover:text-ink"
+        >
+          📅 calendar feed
+        </a>
       </div>
       <ul className="space-y-3">
         {shown.map((e) => (
@@ -260,7 +268,12 @@ function NextUp({ events }: { events: UpcomingEvent[] }) {
                   className={`h-2 w-2 shrink-0 self-center rounded-full ${e.body === "planning_commission" ? "bg-ochre" : "bg-teal"}`}
                 />
               )}
-              <span className="truncate font-medium">{e.title}</span>
+              <Link
+                href={`/meetings/upcoming/${encodeURIComponent(e.event_id)}`}
+                className="truncate font-medium underline-offset-2 hover:underline"
+              >
+                {e.title}
+              </Link>
             </span>
             <span className="shrink-0 text-[13px] text-muted">
               {e.in_progress ? (
