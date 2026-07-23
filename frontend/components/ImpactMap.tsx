@@ -253,6 +253,36 @@ export default function ImpactMap({
 }: {
   layers: Record<string, GeoJSON.FeatureCollection>;
 }) {
+  // panels assemble from whichever module layers this evaluation carries:
+  // economic development rows keep the two classic panels; corridor (bike
+  // lane) and trail rows get their own panels. Unknown keys stay ignored.
+  const hasEconomic = Boolean(
+    layers.capture_points ?? layers.capture_clusters ?? layers.foot_traffic_delta,
+  );
+  const hasCorridor = Boolean(layers.bike_corridor);
+  const hasTrail = Boolean(layers.trail_line);
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      {hasEconomic && <EconomicPanels layers={layers} />}
+      {hasCorridor && (
+        <MapPanel title="Bike Corridor Impact">
+          <CorridorMap layers={layers} />
+        </MapPanel>
+      )}
+      {hasTrail && (
+        <MapPanel title="Trail Impact">
+          <TrailMap layers={layers} />
+        </MapPanel>
+      )}
+    </div>
+  );
+}
+
+function EconomicPanels({
+  layers,
+}: {
+  layers: Record<string, GeoJSON.FeatureCollection>;
+}) {
   const site = layers.site;
   const clusters = layers.capture_clusters;
   const capturePoints = layers.capture_points;
@@ -318,6 +348,27 @@ export default function ImpactMap({
     () => pointFeaturesForValue(capturePoints, "walk_usd", walkScaleMax * 0.005),
     [capturePoints, walkScaleMax],
   );
+  // bike-arriving capture: same per-mode treatment as walk, with its own
+  // pinned scale (bike dollars run below walk but reach 3-4x farther, so a
+  // shared scale would wash the map out). Rows evaluated before the bike
+  // mode simply lack bike_usd and skip the panel.
+  const bikeScaleMax = useMemo(
+    () => niceCeil(maxDollar(capturePoints, ["bike_usd"])),
+    [capturePoints],
+  );
+  const bikeInHeat = useMemo(
+    () =>
+      captureHeatPoints(
+        capturePoints ?? emptyFc,
+        ["bike_usd"],
+        bikeScaleMax,
+        commercialRetailZones,
+        bikeScaleMax * 0.005, // same additive-kernel guard as walk
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [capturePoints, bikeScaleMax, commercialRetailZones],
+  );
+  const hasBikeIn = bikeInHeat.length > 0;
   const captureBounds = useMemo(
     () => boundsFor([cityBoundary], defaultBounds, 0.04),
     [cityBoundary],
@@ -348,7 +399,7 @@ export default function ImpactMap({
   }, [footTraffic]);
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <>
       <MapPanel title="Overall Economic Impact">
         <CaptureMap
           bounds={captureBounds}
@@ -372,7 +423,321 @@ export default function ImpactMap({
           walkScaleMax={walkScaleMax}
         />
       </MapPanel>
-    </div>
+      {hasBikeIn && (
+        <MapPanel title="Bike-Based Impact">
+          <BikeMap
+            bounds={captureBounds}
+            site={site}
+            commercialRetailZones={commercialRetailZones}
+            bikeInHeat={bikeInHeat}
+            bikeScaleMax={bikeScaleMax}
+          />
+        </MapPanel>
+      )}
+    </>
+  );
+}
+
+function BikeMap({
+  bounds,
+  site,
+  commercialRetailZones,
+  bikeInHeat,
+  bikeScaleMax,
+}: {
+  bounds: L.LatLngBoundsExpression;
+  site?: GeoJSON.FeatureCollection;
+  commercialRetailZones?: GeoJSON.FeatureCollection;
+  bikeInHeat: HeatPoint[];
+  bikeScaleMax: number;
+}) {
+  return (
+    <>
+      <MapContainer
+        bounds={bounds}
+        scrollWheelZoom={false}
+        className="h-[420px] w-full rounded-2xl border border-hairline"
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+        />
+        <LayersControl position="topright">
+          <LayersControl.Overlay checked name="Bike-in capture (heatmap)">
+            <LayerGroup>
+              <HeatCanvas
+                points={bikeInHeat}
+                radius={22}
+                blur={16}
+                minOpacity={0.75}
+                clipZones={commercialRetailZones}
+              />
+            </LayerGroup>
+          </LayersControl.Overlay>
+          {commercialRetailZones && (
+            <LayersControl.Overlay name="Commercial Retail zoning (CR)">
+              <GeoJSON
+                data={commercialRetailZones}
+                style={{ color: "#1a3a3a", weight: 1.5, dashArray: "5 4", fillOpacity: 0 }}
+              />
+            </LayersControl.Overlay>
+          )}
+        </LayersControl>
+        {site && (
+          <GeoJSON
+            data={site}
+            style={{ color: "#1a3a3a", weight: 2.5, fillColor: "#ffffff", fillOpacity: 0.35 }}
+          />
+        )}
+      </MapContainer>
+      <div className="pointer-events-none absolute bottom-3 left-3 z-[500] rounded-xl border border-hairline bg-canvas/90 px-3 py-2 text-[11px] leading-relaxed text-muted">
+        <DollarScaleRow label="$ arriving by bike /business/yr" scaleMax={bikeScaleMax} />
+        <span className="mr-3">
+          <span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm border-2 border-[#1a3a3a] bg-white/60 align-middle" />
+          project site
+        </span>
+        <span>bikes reach 3-4x walking distance per minute</span>
+      </div>
+    </>
+  );
+}
+
+/** Weighted-population catchment points as subtle circle markers. */
+function CatchmentMarkers({
+  catchment,
+  weightKey,
+  tooltipUnit,
+}: {
+  catchment?: GeoJSON.FeatureCollection;
+  weightKey: string;
+  tooltipUnit: string;
+}) {
+  const maxWeight = Math.max(
+    1e-9,
+    ...(catchment?.features ?? []).map(
+      (f) => ((f.properties ?? {}) as Record<string, number>)[weightKey] ?? 0,
+    ),
+  );
+  return (
+    <LayerGroup>
+      {(catchment?.features ?? []).map((f, i) => {
+        if (f.geometry.type !== "Point") return null;
+        const [lng, lat] = f.geometry.coordinates as [number, number];
+        const props = (f.properties ?? {}) as Record<string, number>;
+        const w = props[weightKey] ?? 0;
+        return (
+          <CircleMarker
+            key={i}
+            center={[lat, lng]}
+            radius={2 + 5 * Math.sqrt(w / maxWeight)}
+            pathOptions={{
+              color: "transparent",
+              fillColor: "#1a3a3a",
+              fillOpacity: 0.22,
+            }}
+          >
+            <Tooltip>
+              {Math.round(w).toLocaleString()} {tooltipUnit}
+            </Tooltip>
+          </CircleMarker>
+        );
+      })}
+    </LayerGroup>
+  );
+}
+
+function CorridorMap({
+  layers,
+}: {
+  layers: Record<string, GeoJSON.FeatureCollection>;
+}) {
+  const corridor = layers.bike_corridor;
+  const capturePoints = layers.bike_capture_points;
+  const catchment = layers.bike_catchment;
+  const cityBoundary = layers.city_boundary;
+  const defaultBounds: L.LatLngBoundsLiteral = [[38.83, -77.33], [38.87, -77.27]];
+
+  const scaleMax = useMemo(
+    () => niceCeil(maxDollar(capturePoints, ["bike_new_usd"])),
+    [capturePoints],
+  );
+  const emptyFc: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
+  const heat = useMemo(
+    () => captureHeatPoints(capturePoints ?? emptyFc, ["bike_new_usd"], scaleMax),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [capturePoints, scaleMax],
+  );
+  const bounds = useMemo(
+    () => boundsFor([corridor, capturePoints], defaultBounds, 0.15),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [corridor, capturePoints],
+  );
+  return (
+    <>
+      <MapContainer
+        bounds={bounds}
+        scrollWheelZoom={false}
+        className="h-[420px] w-full rounded-2xl border border-hairline"
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+        />
+        <LayersControl position="topright">
+          {heat.length > 0 && (
+            <LayersControl.Overlay checked name="New bike spending (heatmap)">
+              <LayerGroup>
+                <HeatCanvas points={heat} radius={22} blur={16} />
+              </LayerGroup>
+            </LayersControl.Overlay>
+          )}
+          {catchment && (
+            <LayersControl.Overlay name="Bike catchment (weighted residents)">
+              <CatchmentMarkers
+                catchment={catchment}
+                weightKey="weighted_pop"
+                tooltipUnit="decay-weighted residents"
+              />
+            </LayersControl.Overlay>
+          )}
+          {cityBoundary && (
+            <LayersControl.Overlay name="City boundary">
+              <GeoJSON
+                data={cityBoundary}
+                style={{ color: "#1a3a3a", weight: 1.5, dashArray: "5 4", fillOpacity: 0 }}
+              />
+            </LayersControl.Overlay>
+          )}
+        </LayersControl>
+        {corridor && (
+          <GeoJSON data={corridor} style={{ color: "#1a3a3a", weight: 5, opacity: 0.9 }} />
+        )}
+      </MapContainer>
+      <div className="pointer-events-none absolute bottom-3 left-3 z-[500] rounded-xl border border-hairline bg-canvas/90 px-3 py-2 text-[11px] leading-relaxed text-muted">
+        {heat.length > 0 && (
+          <DollarScaleRow label="$ new bike spending /business/yr" scaleMax={scaleMax} />
+        )}
+        <span className="mr-3">
+          <span className="mr-1 inline-block h-0.5 w-4 bg-[#1a3a3a] align-middle" />
+          bike corridor
+        </span>
+        <span>catchment circles scale with decay-weighted residents</span>
+      </div>
+    </>
+  );
+}
+
+function TrailMap({
+  layers,
+}: {
+  layers: Record<string, GeoJSON.FeatureCollection>;
+}) {
+  const trail = layers.trail_line;
+  const accessPoints = layers.trail_access_points;
+  const capturePoints = layers.trail_capture_points;
+  const catchment = layers.trail_catchment;
+  const premiumBand = layers.trail_premium_band;
+  const defaultBounds: L.LatLngBoundsLiteral = [[38.83, -77.33], [38.87, -77.27]];
+
+  const scaleMax = useMemo(
+    () => niceCeil(maxDollar(capturePoints, ["trail_usd"])),
+    [capturePoints],
+  );
+  const emptyFc: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
+  const heat = useMemo(
+    () => captureHeatPoints(capturePoints ?? emptyFc, ["trail_usd"], scaleMax),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [capturePoints, scaleMax],
+  );
+  // fit to the trail and its premium band — capture points spread across the
+  // whole walk-reachable POI universe and would zoom the map out to the metro
+  const bounds = useMemo(
+    () => boundsFor([trail, premiumBand, accessPoints], defaultBounds, 0.3),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [trail, premiumBand, accessPoints],
+  );
+  return (
+    <>
+      <MapContainer
+        bounds={bounds}
+        scrollWheelZoom={false}
+        className="h-[420px] w-full rounded-2xl border border-hairline"
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+        />
+        <LayersControl position="topright">
+          {heat.length > 0 && (
+            <LayersControl.Overlay checked name="Trail-user spending (heatmap)">
+              <LayerGroup>
+                <HeatCanvas points={heat} radius={22} blur={16} />
+              </LayerGroup>
+            </LayersControl.Overlay>
+          )}
+          {premiumBand && (
+            <LayersControl.Overlay checked name="Property premium band">
+              <GeoJSON
+                data={premiumBand}
+                style={{ color: "#1a3a3a", weight: 1.5, dashArray: "5 4", fillOpacity: 0.05 }}
+                onEachFeature={(feature, layer) => {
+                  const props = (feature.properties ?? {}) as {
+                    parcel_count?: number;
+                    assessed_total?: number;
+                  };
+                  if (props.parcel_count != null && props.assessed_total != null) {
+                    layer.bindTooltip(
+                      `${props.parcel_count.toLocaleString()} parcels · ` +
+                        `${fmtDollars(props.assessed_total)} assessed within the band`,
+                    );
+                  }
+                }}
+              />
+            </LayersControl.Overlay>
+          )}
+          {catchment && (
+            <LayersControl.Overlay name="Trail catchment (weighted residents)">
+              <CatchmentMarkers
+                catchment={catchment}
+                weightKey="weighted_pop"
+                tooltipUnit="decay-weighted residents"
+              />
+            </LayersControl.Overlay>
+          )}
+        </LayersControl>
+        {trail && (
+          <GeoJSON data={trail} style={{ color: "#1a3a3a", weight: 5, opacity: 0.9 }} />
+        )}
+        {(accessPoints?.features ?? []).map((f, i) => {
+          if (f.geometry.type !== "Point") return null;
+          const [lng, lat] = f.geometry.coordinates as [number, number];
+          return (
+            <CircleMarker
+              key={i}
+              center={[lat, lng]}
+              radius={4}
+              pathOptions={{ color: "#1a3a3a", weight: 2, fillColor: "#ffffff", fillOpacity: 0.9 }}
+            >
+              <Tooltip>trail access point</Tooltip>
+            </CircleMarker>
+          );
+        })}
+      </MapContainer>
+      <div className="pointer-events-none absolute bottom-3 left-3 z-[500] rounded-xl border border-hairline bg-canvas/90 px-3 py-2 text-[11px] leading-relaxed text-muted">
+        {heat.length > 0 && (
+          <DollarScaleRow label="$ trail-user spending /business/yr" scaleMax={scaleMax} />
+        )}
+        <span className="mr-3">
+          <span className="mr-1 inline-block h-0.5 w-4 bg-[#1a3a3a] align-middle" />
+          trail
+        </span>
+        <span className="mr-3">
+          <span className="mr-1 inline-block h-2.5 w-2.5 rounded-full border-2 border-[#1a3a3a] bg-white align-middle" />
+          access points
+        </span>
+        <span>dashed band: parcels in the premium window</span>
+      </div>
+    </>
   );
 }
 

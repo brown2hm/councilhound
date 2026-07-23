@@ -53,6 +53,27 @@ def test_magnitude_suffixes_extracted():
     assert 30_000.0 in numbers
 
 
+def test_k12_grade_range_not_read_as_magnitude():
+    """'K-12' and its en/em-dash variants are a grade range, not a k-suffix:
+    '7.9 K-12 students' means 7.9 students, never 7,900."""
+    for dash in ("-", "–", "—"):
+        values = [v for v, _ in extract_numbers(f"an estimated 7.9 K{dash}12 students")]
+        assert 7.9 in values
+        assert 7900.0 not in values
+
+
+def test_k12_students_draft_passes():
+    """A residential draft citing the K-12 student estimate with an en-dash
+    grade range must validate (regression: en-dash 'K–12' parsed as 7,900)."""
+    bundle = _bundle()
+    bundle.results[0].metrics.append(
+        MetricValue(name="Estimated K-12 students", value=7.9, unit="students",
+                    low=3.9, high=11.8, provenance=bundle.results[0].metrics[0].provenance,
+                    assumptions=["occupancy_rate"], method="m"))
+    draft = "The project adds an estimated 7.9 K–12 students (range: 3.9–11.8)."
+    assert validate_report(draft, bundle) == []
+
+
 def test_regeneration_path(monkeypatch):
     bundle = _bundle()
     calls = []

@@ -99,3 +99,53 @@ def test_unverifiable_pins_dropped(monkeypatch):
     result = extractor.extract_spec_fields(docs)
     assert result["parcel_pins"] == ["57 4 02 015"]
     assert any("99 9 99 999" in n for n in result["notes"])
+
+
+CORRIDOR_CORPUS = """\
+Staff Report, June 2026. The project constructs a protected bike lane on
+Main Street between University Drive and Chain Bridge Road, approximately
+2,600 feet of new facility.
+"""
+
+
+def test_string_firewall_verbatim_street_names_pass():
+    raw = {"corridor_street_name": "Main Street",
+           "corridor_from_street": "University Drive",
+           "corridor_to_street": "Chain Bridge Road"}
+    cleaned, notes = extractor.enforce_string_firewall(raw, CORRIDOR_CORPUS)
+    assert cleaned["corridor.street_name"] == "Main Street"
+    assert cleaned["corridor.from_street"] == "University Drive"
+    assert cleaned["corridor.to_street"] == "Chain Bridge Road"
+    assert notes == []
+
+
+def test_string_firewall_invented_street_nulled():
+    raw = {"corridor_street_name": "Oak Avenue",  # not in the documents
+           "corridor_from_street": None, "corridor_to_street": None}
+    cleaned, notes = extractor.enforce_string_firewall(raw, CORRIDOR_CORPUS)
+    assert cleaned["corridor.street_name"] is None
+    assert any("not found verbatim" in n for n in notes)
+
+
+def test_string_firewall_non_string_nulled():
+    raw = {"corridor_street_name": 42,
+           "corridor_from_street": None, "corridor_to_street": None}
+    cleaned, notes = extractor.enforce_string_firewall(raw, CORRIDOR_CORPUS)
+    assert cleaned["corridor.street_name"] is None
+    assert any("non-string" in n for n in notes)
+
+
+def test_unverifiable_facilities_dropped(monkeypatch):
+    def fake_claude(prompt):
+        raw = _raw()
+        raw["corridor_street_name"] = "Main Street"
+        raw["corridor_facilities"] = ["protected bike lane", "cycle superhighway"]
+        return raw
+
+    monkeypatch.setattr(extractor, "_call_claude", fake_claude)
+    docs = [ProjectDocument(label="d", url="u", text=CORRIDOR_CORPUS,
+                            provenance=prov("d", "u", "x"))]
+    result = extractor.extract_spec_fields(docs)
+    assert result["corridor_facilities"] == ["protected bike lane"]
+    assert result["strings"]["corridor.street_name"] == "Main Street"
+    assert any("cycle superhighway" in n for n in result["notes"])

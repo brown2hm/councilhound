@@ -19,6 +19,8 @@ log = logging.getLogger(__name__)
 
 BUFFER_M = 3_000
 WALK_SPEED_KMH = 4.8  # brief §6.2 walking speed
+BIKE_SPEED_KMH = 15.0  # standard planning value; Iacono (MnDOT 2008-11) Table 2
+# implies bikes cover 3-4x walk distance per minute (4.8 x 3-4 = 14.4-19.2)
 
 
 def _graph_path(slug: str, kind: str):
@@ -26,7 +28,7 @@ def _graph_path(slug: str, kind: str):
 
 
 def load_graph(ctx, kind: str):
-    """kind: 'walk' | 'drive'. Built once, then loaded from GraphML."""
+    """kind: 'walk' | 'drive' | 'bike'. Built once, then loaded from GraphML."""
     import osmnx as ox
 
     slug = ctx.cfg.slug
@@ -40,9 +42,10 @@ def load_graph(ctx, kind: str):
         polygon = buffered.to_crs("EPSG:4326").iloc[0]
         graph = ox.graph_from_polygon(polygon, network_type=kind, simplify=True)
         # travel time per edge: minutes, by mode
-        if kind == "walk":
+        if kind in ("walk", "bike"):
+            speed = WALK_SPEED_KMH if kind == "walk" else BIKE_SPEED_KMH
             for _, _, data in graph.edges(data=True):
-                data["travel_min"] = (data.get("length", 0) / 1000) / WALK_SPEED_KMH * 60
+                data["travel_min"] = (data.get("length", 0) / 1000) / speed * 60
         else:
             graph = ox.routing.add_edge_speeds(graph)
             graph = ox.routing.add_edge_travel_times(graph)

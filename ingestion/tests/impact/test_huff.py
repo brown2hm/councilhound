@@ -90,6 +90,63 @@ def test_joint_mode_far_walk_loses_to_drive():
     assert p_total[1] > 0.15
 
 
+def test_multimode_probabilities_sum_to_one():
+    A = np.array([3.0, 2.0, 7.0])
+    modes = [(0.5, 0.10, np.array([4.0, 8.0, 25.0])),
+             (0.1, 0.10, np.array([1.5, 3.0, 8.0])),
+             (0.4, 0.15, np.array([2.0, 3.0, 6.0]))]
+    p_total, per_mode = huff.joint_multimode_probabilities(A, modes)
+    assert p_total.sum() == pytest.approx(1.0)
+    np.testing.assert_allclose(sum(per_mode), p_total, rtol=1e-12)
+
+
+def test_multimode_shares_at_zero_time_equal_prefs():
+    A = np.array([5.0])
+    zero = np.array([0.0])
+    modes = [(0.5, 0.10, zero), (0.1, 0.10, zero), (0.4, 0.15, zero)]
+    p_total, per_mode = huff.joint_multimode_probabilities(A, modes)
+    for (pref, _, _), p in zip(modes, per_mode):
+        assert p[0] / p_total[0] == pytest.approx(pref)
+
+
+def test_multimode_unreachable_mode_reallocates():
+    A = np.array([1.0, 1.0])
+    inf = np.array([np.inf, np.inf])
+    near = np.array([2.0, 4.0])
+    modes = [(0.5, 0.10, inf), (0.5, 0.15, near)]
+    p_total, (p_dead, p_live) = huff.joint_multimode_probabilities(A, modes)
+    assert p_total.sum() == pytest.approx(1.0)
+    assert p_dead.sum() == 0.0
+    assert p_live.sum() == pytest.approx(1.0)
+
+
+def test_two_mode_wrapper_equals_direct_multimode_call():
+    """joint_mode_probabilities must stay byte-equivalent to the n-mode
+    generalization — the wrapper guarantee that keeps the pinned 2-mode
+    tests meaningful."""
+    A = np.array([3.0, 2.0, 7.0])
+    walk = np.array([4.0, 8.0, 25.0])
+    drive = np.array([2.0, 3.0, 6.0])
+    p_total_w, p_walk_w = huff.joint_mode_probabilities(
+        A, walk, drive, walk_pref=0.6, beta_walk=0.10, beta_drive=0.15)
+    p_total_m, (p_walk_m, _) = huff.joint_multimode_probabilities(
+        A, [(0.6, 0.10, walk), (0.4, 0.15, drive)])
+    np.testing.assert_allclose(p_total_w, p_total_m, rtol=1e-15)
+    np.testing.assert_allclose(p_walk_w, p_walk_m, rtol=1e-15)
+
+
+def test_multimode_splitting_drive_pref_preserves_walk_probabilities():
+    """Carving a bike mode out of the drive remainder must not change the
+    walk mode's zero-impedance semantics: at t=0 everywhere, walk share
+    stays exactly the walk pref."""
+    A = np.array([2.0, 5.0])
+    zero = np.array([0.0, 0.0])
+    p_total, (p_walk, p_bike, p_drive) = huff.joint_multimode_probabilities(
+        A, [(0.6, 0.10, zero), (0.02, 0.10, zero), (0.38, 0.15, zero)])
+    np.testing.assert_allclose(p_walk / p_total, 0.6, rtol=1e-12)
+    np.testing.assert_allclose(p_bike / p_total, 0.02, rtol=1e-12)
+
+
 def test_ces_income_scaling():
     spend = category_spend_per_household(CES_AVG_PRETAX_INCOME)  # scale = 1
     assert spend["grocery"] == pytest.approx(CATEGORY_SPEND["grocery"][0])

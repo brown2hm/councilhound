@@ -13,7 +13,8 @@ from councilhound.impact.cache import context_dir
 # layer name -> filenames to delete on --refresh
 LAYER_FILES = {
     "boundary": ["boundary.geojson"],
-    "networks": ["walk_graph.graphml", "drive_graph.graphml", "node_weights*.parquet"],
+    "networks": ["walk_graph.graphml", "drive_graph.graphml", "bike_graph.graphml",
+                 "node_weights*.parquet"],
     "census": ["census_bg_*.parquet"],
     "blocks": ["blocks_2020.parquet", "node_weights*.parquet"],
     "lodes": ["lodes_*.parquet"],
@@ -51,6 +52,7 @@ def build_context(jurisdiction: str, refresh: str | None = None, echo=print) -> 
         ("pois", lambda: ctx.pois),
         ("walk_graph", lambda: ctx.walk_graph),
         ("drive_graph", lambda: ctx.drive_graph),
+        ("bike_graph", lambda: ctx.bike_graph),
         ("node_weights", lambda: ctx.node_weights),
         ("transit_stops", lambda: ctx.transit_stops),
         ("parcels", lambda: ctx.parcels),

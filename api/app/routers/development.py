@@ -79,6 +79,14 @@ _RESIDENTIAL_HINTS = (
     "condominium", "multifamily", "multi-family", "senior living",
 )
 
+# Corridor/trail projects are analyzable by the bike_lane/trail modules even
+# with no housing program — don't label them "no residential program".
+_CORRIDOR_HINTS = (
+    "bike lane", "bicycle lane", "cycle track", "shared use path",
+    "shared-use path", "trail", "greenway", "multimodal", "multi-modal",
+    "streetscape",
+)
+
 
 def _no_analysis_reason(row: CityProject, eval_status: str | None) -> str | None:
     """Why this official project has no published impact analysis — turns a
@@ -88,6 +96,8 @@ def _no_analysis_reason(row: CityProject, eval_status: str | None) -> str | None
     if eval_status is not None:
         return "analysis in preparation"
     text = " ".join(filter(None, [row.description, row.requests])).lower()
+    if any(hint in text for hint in _CORRIDOR_HINTS):
+        return "not yet evaluated"
     if not any(hint in text for hint in _RESIDENTIAL_HINTS):
         return "no residential program to model"
     if (row.official_status or "").lower().startswith("pre-app") or "potential" in text:

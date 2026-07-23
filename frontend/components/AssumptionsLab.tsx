@@ -56,6 +56,19 @@ const FRIENDLY: Record<string, string> = {
   walk_share_comparison: "Walk share — comparison goods",
   walk_share_grocery_entertainment: "Walk share — grocery/entertainment",
   own_retail_sqft_per_equiv_poi: "Own-retail sq ft per equivalent business",
+  beta_bike: "Bike-time decay (β)",
+  bike_share_neighborhood: "Bike share — neighborhood trips",
+  bike_share_comparison: "Bike share — comparison goods",
+  bike_share_grocery_entertainment: "Bike share — grocery/entertainment",
+  bike_trips_per_resident_day: "Bike trips per resident per day",
+  induced_corridor_visit_share: "Induced corridor visit share",
+  bike_spend_per_trip_restaurant: "Bike spend per trip — food/drink ($)",
+  bike_spend_per_trip_convenience: "Bike spend per trip — convenience ($)",
+  bike_spend_per_trip_other_retail: "Bike spend per trip — other retail ($)",
+  beta_trail_access_km: "Trail-access decay (β per km)",
+  trail_user_days_per_capita: "Trail user-days per resident per year",
+  trail_spend_per_user_day: "Trail spending per user-day ($)",
+  trail_property_premium: "Trail property premium",
 };
 
 export default function AssumptionsLab({
@@ -88,6 +101,8 @@ export default function AssumptionsLab({
   const byModule = [
     { label: "Economic", rows: rows.filter((r) => r.m.module === "economic") },
     { label: "Fiscal", rows: rows.filter((r) => r.m.module === "fiscal") },
+    { label: "Bike lane", rows: rows.filter((r) => r.m.module === "bike_lane") },
+    { label: "Trail", rows: rows.filter((r) => r.m.module === "trail") },
   ].filter((g) => g.rows.length > 0);
 
   return (

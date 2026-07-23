@@ -459,14 +459,19 @@ def impact_extract(slug, jurisdiction, force):
 @click.argument("slug")
 @click.option("--file", "spec_path", type=click.Path(exists=True), default=None,
               help="hand-edited spec YAML to confirm (defaults to the emitted one)")
+@click.option("--geometry", "geometry_path", type=click.Path(exists=True), default=None,
+              help="GeoJSON file (geometry or Feature) to use as the site/corridor "
+                   "geometry — the manual override when parcel or street-name "
+                   "resolution fails")
 @click.option("--yes", is_flag=True, help="skip the interactive review prompt")
-def impact_confirm(slug, spec_path, yes):
+def impact_confirm(slug, spec_path, geometry_path, yes):
     """Human-in-the-loop gate: confirm an extracted ProjectSpec."""
     from councilhound.db.session import get_session
     from councilhound.impact.evaluate import confirm
 
     with get_session() as session:
-        click.echo(confirm(session, slug, spec_path=spec_path, assume_yes=yes))
+        click.echo(confirm(session, slug, spec_path=spec_path, assume_yes=yes,
+                           geometry_path=geometry_path))
 
 
 @cli.command("impact-evaluate")

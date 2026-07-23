@@ -80,6 +80,18 @@ def extract(session: Session, slug: str, jurisdiction: str = "fairfax_city_va",
     def val(dotted):
         return fields[dotted]["value"]
 
+    strings = extracted.get("strings", {})
+    corridor = None
+    if (strings.get("corridor.street_name") or extracted.get("corridor_facilities")
+            or val("corridor.length_ft") is not None):
+        corridor = {
+            "length_ft": val("corridor.length_ft"),
+            "facilities": extracted.get("corridor_facilities", []),
+            "street_name": strings.get("corridor.street_name"),
+            "from_street": strings.get("corridor.from_street"),
+            "to_street": strings.get("corridor.to_street"),
+        }
+
     spec = ProjectSpec(
         name=project.name,
         jurisdiction=jurisdiction,
@@ -103,6 +115,7 @@ def extract(session: Session, slug: str, jurisdiction: str = "fairfax_city_va",
             "acres": val("proposed.acres"),
             "parking_spaces": int(v) if (v := val("proposed.parking_spaces")) is not None else None,
             "affordable_units": int(v) if (v := val("proposed.affordable_units")) is not None else None,
+            "corridor": corridor,
         },
         extraction_confidence={k: v["confidence"] for k, v in fields.items()},
         extraction_quotes={k: v["source_quote"] for k, v in fields.items() if v["source_quote"]},
@@ -111,6 +124,45 @@ def extract(session: Session, slug: str, jurisdiction: str = "fairfax_city_va",
            if method else []),
         documents=[d.provenance for d in docs],
     )
+
+    # corridor projects: the corridor LINE is the analysis geometry — it
+    # wins over any parcel polygon the documents' PINs resolved (street
+    # plans routinely cite right-of-way/adjacent parcels). The human reviews
+    # the method note at confirm; --geometry is the manual override.
+    if (corridor and corridor["street_name"]
+            and spec.project_type in ("street_multimodal", "park")):
+        from councilhound.impact.intake.corridors import (
+            CorridorResolutionError, resolve_corridor)
+        try:
+            geometry, length_ft, method = resolve_corridor(
+                ctx, corridor["street_name"],
+                corridor["from_street"], corridor["to_street"])
+            if spec.geometry is not None:
+                spec.extraction_notes.append(
+                    "corridor line replaces the parcel polygon as the spec "
+                    "geometry (resolved parcel PINs are kept on the spec)")
+            spec.geometry = geometry
+            spec.extraction_notes.append(
+                f"corridor geometry resolved via {method}: {length_ft:,.0f} ft "
+                "along the walk network")
+            if spec.proposed.corridor.length_ft is None:
+                spec.proposed.corridor.length_ft = round(length_ft)
+                spec.extraction_notes.append(
+                    "corridor length_ft filled from the resolved network path "
+                    "(not document-stated)")
+            else:
+                # the corridor analog of the parcel acreage drift gate
+                stated_ft = spec.proposed.corridor.length_ft
+                drift = abs(length_ft - stated_ft) / stated_ft
+                if drift > 0.30:
+                    spec.extraction_notes.append(
+                        f"WARNING: resolved corridor length {length_ft:,.0f} ft "
+                        f"differs from document-stated {stated_ft:,.0f} ft by "
+                        f"{drift:.0%} — trim the geometry or supply it with "
+                        "`impact-confirm --geometry` before evaluating")
+        except CorridorResolutionError as exc:
+            spec.extraction_notes.append(str(exc))
+            log.warning("%s", exc)
 
     # cross-check: resolved polygon vs. document-stated acreage (±15% gate
     # is advisory here — the human sees it at the confirm step)
@@ -157,7 +209,9 @@ def _confidence_summary(spec: ProjectSpec) -> str:
     lines = []
     for field, confidence in sorted(spec.extraction_confidence.items()):
         section, _, attr = field.partition(".")
-        value = getattr(getattr(spec, section), attr, None)
+        holder = (spec.proposed.corridor if section == "corridor"
+                  else getattr(spec, section, None))
+        value = getattr(holder, attr, None) if holder is not None else None
         quote = spec.extraction_quotes.get(field)
         lines.append(f"  {field:28} {str(value):>12}  [{confidence}]"
                      + (f'  "{quote}"' if quote else ""))
@@ -165,7 +219,7 @@ def _confidence_summary(spec: ProjectSpec) -> str:
 
 
 def confirm(session: Session, slug: str, spec_path: str | None = None,
-            assume_yes: bool = False) -> str:
+            assume_yes: bool = False, geometry_path: str | None = None) -> str:
     import click
 
     project = _project(session, slug)
@@ -180,10 +234,27 @@ def confirm(session: Session, slug: str, spec_path: str | None = None,
         raise SystemExit(f"spec YAML not found at {path} — re-run impact-extract") from None
     spec = ProjectSpec.model_validate(data)  # re-validate hand edits
 
+    # manual geometry override: the recovery path when parcel/corridor
+    # resolution fails or resolves the wrong extent
+    if geometry_path:
+        geo = json.loads(open(geometry_path).read())
+        if geo.get("type") == "FeatureCollection":
+            geo = geo["features"][0]
+        if geo.get("type") == "Feature":
+            geo = geo["geometry"]
+        if "type" not in geo or "coordinates" not in geo:
+            raise SystemExit(f"{geometry_path} is not GeoJSON geometry/Feature")
+        spec.geometry = geo
+        spec.extraction_notes.append(
+            f"geometry supplied manually at confirm ({geo['type']})")
+        _spec_yaml_path(slug).write_text(_spec_to_yaml(spec))
+
     # a human editing the parcel list is the expected fix for a wrong/partial
     # site polygon — re-resolve geometry from the (possibly edited) PINs
     stored = (evaluation.spec or {}).get("parcels") or []
-    if spec.parcels and (spec.parcels != stored or spec.geometry is None):
+    if geometry_path:
+        pass  # manual geometry wins; skip re-resolution paths
+    elif spec.parcels and (spec.parcels != stored or spec.geometry is None):
         from councilhound.impact.intake.parcels import ParcelResolutionError, resolve_site
         from councilhound.impact.jurisdiction import JurisdictionContext
         try:
@@ -197,6 +268,27 @@ def confirm(session: Session, slug: str, spec_path: str | None = None,
             path_obj.write_text(_spec_to_yaml(spec))
         except ParcelResolutionError as exc:
             raise SystemExit(f"edited parcels failed to resolve: {exc}") from None
+    elif (spec.proposed.corridor and spec.proposed.corridor.street_name
+            and spec.project_type in ("street_multimodal", "park")
+            and (spec.geometry is None
+                 or spec.geometry.get("type") not in ("LineString", "MultiLineString"))):
+        # corridor project without a corridor line (extraction-time resolution
+        # failed, or a parcel polygon slipped in): snap with the current names
+        from councilhound.impact.intake.corridors import (
+            CorridorResolutionError, resolve_corridor)
+        from councilhound.impact.jurisdiction import JurisdictionContext
+        c = spec.proposed.corridor
+        try:
+            geometry, length_ft, method = resolve_corridor(
+                JurisdictionContext(spec.jurisdiction),
+                c.street_name, c.from_street, c.to_street)
+            spec.geometry = geometry
+            spec.extraction_notes.append(
+                f"corridor geometry resolved at confirm via {method}: "
+                f"{length_ft:,.0f} ft")
+            _spec_yaml_path(slug).write_text(_spec_to_yaml(spec))
+        except CorridorResolutionError as exc:
+            click.echo(f"corridor resolution failed: {exc}")
 
     if not assume_yes:
         click.echo(_confidence_summary(spec))
@@ -247,7 +339,7 @@ def evaluate(session: Session, slug: str, modules: tuple[str, ...] | None = None
 
     spec = ProjectSpec.model_validate(evaluation.spec)
     ctx = JurisdictionContext(spec.jurisdiction)
-    module_names = modules or registry.DEFAULT_MODULES
+    module_names = modules or registry.modules_for(spec.project_type)
 
     results: list[ModuleResult] = []
     map_layers: dict[str, dict] = {}

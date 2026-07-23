@@ -22,7 +22,7 @@ from councilhound.impact.intake.documents import ProjectDocument
 
 log = logging.getLogger(__name__)
 
-EXTRACT_PROMPT_VERSION = "v1"
+EXTRACT_PROMPT_VERSION = "v2"  # v2: corridor fields for street/trail projects
 DEFAULT_MODEL = os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-6")
 MAX_QUOTE_WORDS = 15
 MAX_DOC_CHARS = 60_000  # per document, keeps the prompt bounded
@@ -31,8 +31,12 @@ NUMERIC_FIELDS = (
     "existing.sqft", "existing.units", "existing.assessed_value",
     "proposed.units", "proposed.retail_sqft", "proposed.office_sqft",
     "proposed.stories", "proposed.acres", "proposed.parking_spaces",
-    "proposed.affordable_units",
+    "proposed.affordable_units", "corridor.length_ft",
 )
+
+# corridor street names: strings under the same verbatim rule as numbers —
+# they feed geometric resolution, so an invented name is a wrong corridor
+STRING_FIELDS = ("corridor.street_name", "corridor.from_street", "corridor.to_street")
 
 _FIELD_PROPS = {
     "value": {"type": ["number", "null"]},
@@ -74,6 +78,31 @@ EXTRACT_TOOL = {
             "proposed_acres": _numeric_field_schema("Site area in acres."),
             "proposed_parking_spaces": _numeric_field_schema("Proposed parking spaces."),
             "proposed_affordable_units": _numeric_field_schema("Committed affordable dwelling units."),
+            "corridor_length_ft": _numeric_field_schema(
+                "Corridor/segment length in FEET for street or trail projects "
+                "(convert miles x 5280 only if the documents state miles; then "
+                "quote the miles statement)."),
+            "corridor_street_name": {
+                "type": ["string", "null"],
+                "description": "For street/trail corridor projects: the street or "
+                               "trail name, copied VERBATIM from the documents.",
+            },
+            "corridor_from_street": {
+                "type": ["string", "null"],
+                "description": "Cross street bounding one end of the corridor, "
+                               "verbatim from the documents (null if not stated).",
+            },
+            "corridor_to_street": {
+                "type": ["string", "null"],
+                "description": "Cross street bounding the other end, verbatim "
+                               "(null if not stated).",
+            },
+            "corridor_facilities": {
+                "type": "array", "items": {"type": "string"},
+                "description": "Facilities the project builds along the corridor, "
+                               "verbatim phrases, e.g. 'protected bike lane', "
+                               "'shared use path', 'multi-use trail'.",
+            },
             "parcel_pins": {
                 "type": "array", "items": {"type": "string"},
                 "description": "Parcel PINs / tax map numbers stated in the documents, verbatim.",
@@ -84,7 +113,8 @@ EXTRACT_TOOL = {
             },
         },
         "required": ["project_type", *[f.replace('.', '_') for f in NUMERIC_FIELDS],
-                     "parcel_pins", "conflicts"],
+                     *[f.replace('.', '_') for f in STRING_FIELDS],
+                     "corridor_facilities", "parcel_pins", "conflicts"],
     },
 }
 
@@ -173,6 +203,27 @@ def enforce_firewall(raw: dict, corpus: str) -> tuple[dict, list[str]]:
     return cleaned, notes
 
 
+def enforce_string_firewall(raw: dict, corpus: str) -> tuple[dict, list[str]]:
+    """Same contract as the numeric firewall, for the corridor street-name
+    strings: a non-null value must itself appear verbatim (normalized) in the
+    corpus — the string IS its own quote. Returns ({dotted: str|None}, notes)."""
+    notes: list[str] = []
+    corpus_norm = _normalize(corpus)
+    cleaned: dict[str, str | None] = {}
+    for field in STRING_FIELDS:
+        value = raw.get(field.replace(".", "_"))
+        if value is not None and not isinstance(value, str):
+            notes.append(f"{field}: non-string value ({value!r}) — nulled")
+            value = None
+        if value is not None:
+            value = value.strip() or None
+        if value is not None and _normalize(value) not in corpus_norm:
+            notes.append(f"{field}: {value!r} not found verbatim in documents — nulled")
+            value = None
+        cleaned[field] = value
+    return cleaned, notes
+
+
 def _build_prompt(docs: list[ProjectDocument]) -> str:
     parts = ["Extract the project specification from these documents.",
              "Documents are ordered most-authoritative-last is NOT guaranteed — "
@@ -190,16 +241,25 @@ def extract_spec_fields(docs: list[ProjectDocument]) -> dict:
     corpus = "\n".join(doc.text for doc in docs)
     raw = _call_claude(_build_prompt(docs))
     fields, notes = enforce_firewall(raw, corpus)
+    strings, string_notes = enforce_string_firewall(raw, corpus)
+    notes.extend(string_notes)
     pins = [str(p).strip() for p in raw.get("parcel_pins") or [] if str(p).strip()]
     # PINs must be verbatim in the corpus too — they feed parcel resolution
     corpus_norm = _normalize(corpus)
     verified_pins = [p for p in pins if _normalize(p) in corpus_norm]
     for pin in set(pins) - set(verified_pins):
         notes.append(f"parcel PIN {pin!r} not found in documents — dropped")
+    facilities = [str(f).strip() for f in raw.get("corridor_facilities") or []
+                  if str(f).strip()]
+    verified_facilities = [f for f in facilities if _normalize(f) in corpus_norm]
+    for facility in set(facilities) - set(verified_facilities):
+        notes.append(f"corridor facility {facility!r} not found in documents — dropped")
     return {
         "project_type": raw.get("project_type", "other"),
         "existing_use": raw.get("existing_use"),
         "fields": fields,
+        "strings": strings,
+        "corridor_facilities": verified_facilities,
         "parcel_pins": verified_pins,
         "conflicts": [str(c) for c in raw.get("conflicts") or []],
         "notes": notes,

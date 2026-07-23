@@ -22,34 +22,83 @@ from councilhound.impact.synthesis.validate import validate_report
 
 log = logging.getLogger(__name__)
 
-REPORT_PROMPT_VERSION = "v1"
+REPORT_PROMPT_VERSION = "v2"  # v2: per-module sections (bike_lane, trail)
 DEFAULT_MODEL = os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-6")
 
-TEMPLATE_SECTIONS = """\
+_HEADER = """\
 # Impact analysis: {name}
 
 ## Executive summary
-(4-8 sentences: what the project is, the headline economic and fiscal
-findings WITH their ranges, and the three assumptions the results are most
-sensitive to — name them plainly.)
+(4-8 sentences: what the project is, the headline findings WITH their
+ranges, and the three assumptions the results are most sensitive to — name
+them plainly.)
 
 ## Project description
 (what exists, what is proposed, current status; only facts from the spec)
+"""
 
+_SECTION_ECONOMIC = """
 ## Economic effects
 (new demand, where spending is captured — name the top clusters — the
 project's own retail capture, the foot-traffic index change, jobs ledger.
 State plainly that the Huff capture and foot-traffic figures are screening
 estimates.)
+"""
 
+_SECTION_FISCAL = """
 ## Fiscal effects
 (current vs projected tax, the other recurring revenue lines, the cost
 range with BOTH methods named and why they differ, the net range.)
-
-## Not evaluated in this version
-(connectivity, environmental, and comparable-places analyses are deferred;
-say so in one short paragraph.)
 """
+
+_SECTION_BIKE_LANE = """
+## Bike-lane corridor effects
+(who the corridor newly serves — the decay-weighted catchment — induced
+bike visits, the new-spending range at corridor businesses, and the
+calibration framing: the induced-share bounds come from corridor
+before/after studies, and the figures are screening estimates, not
+predictions. Name the top corridor businesses if present.)
+"""
+
+_SECTION_TRAIL = """
+## Trail effects
+(both channels: trail-user spending — catchment, annual user-days, the
+spending range and where it lands — and the property channel — assessed
+value in the premium band, the uplift range with its zero floor, and the
+tax increment IF computed. State that the ordinary-greenway anchors
+exclude destination-trail tourism.)
+"""
+
+_SECTION_NOT_EVALUATED = """
+## Not evaluated in this version
+({not_evaluated} analyses are deferred; say so in one short paragraph.)
+"""
+
+_ALWAYS_DEFERRED = ("connectivity", "environmental", "comparable-places")
+
+_MODULE_SECTIONS = (
+    ("economic", _SECTION_ECONOMIC, "economic"),
+    ("fiscal", _SECTION_FISCAL, "fiscal"),
+    ("bike_lane", _SECTION_BIKE_LANE, "bike-lane corridor"),
+    ("trail", _SECTION_TRAIL, "trail"),
+)
+
+
+def template_for(bundle: EvaluationBundle) -> str:
+    """Assemble the template from the modules that actually produced
+    metrics; everything else lands in the not-evaluated paragraph."""
+    computed = {r.module for r in bundle.results if r.metrics}
+    sections = [_HEADER]
+    deferred: list[str] = []
+    for module, section, label in _MODULE_SECTIONS:
+        if module in computed:
+            sections.append(section)
+        else:
+            deferred.append(label)
+    deferred.extend(_ALWAYS_DEFERRED)
+    sections.append(_SECTION_NOT_EVALUATED.replace(
+        "{not_evaluated}", ", ".join(deferred)))
+    return "".join(sections)
 
 SYSTEM = """\
 You write the narrative for a municipal development impact report from
@@ -90,7 +139,7 @@ def _prompt(bundle: EvaluationBundle, violations: list[str] | None = None) -> st
     from councilhound.impact.provenance import rank_assumptions_by_sensitivity  # noqa: F401
     parts = [
         "Write the report narrative for this project following the template.",
-        "\n=== TEMPLATE ===\n" + TEMPLATE_SECTIONS.format(name=bundle.spec.name),
+        "\n=== TEMPLATE ===\n" + template_for(bundle).format(name=bundle.spec.name),
         "\n=== PROJECT SPEC ===\n" + json.dumps(bundle.spec.model_dump(mode="json"), indent=1),
         "\n=== MODULE RESULTS ===\n" + json.dumps(
             [r.model_dump(mode="json") for r in bundle.results], indent=1, default=str),

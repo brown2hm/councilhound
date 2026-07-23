@@ -114,6 +114,39 @@ function formulaForMetric(name: string): string | null {
   if (name === "Net annual fiscal impact (range across both cost methods)" || name === "Net annual fiscal impact range") {
     return String.raw`N \in \left[\sum_r T_r-C_{\mathrm{naive}},\;\sum_r T_r-C_{\mathrm{marginal}}\right]`;
   }
+  if (name === "New annual spending arriving by bike") {
+    return String.raw`S_{\mathrm{bike}} = \sum_c \sum_j S_c\,P_{\mathrm{bike}}(j \mid c)`;
+  }
+  if (name === "Bike catchment population (decay-weighted)") {
+    return String.raw`P_{\mathrm{eff}} = \sum_b \mathrm{pop}_b\,e^{-\beta_{\mathrm{bike}} t_b}`;
+  }
+  if (name === "Induced bike visits per day (corridor)") {
+    return String.raw`V = P_{\mathrm{eff}} \times \tau_{\mathrm{bike}} \times \sigma_{\mathrm{induced}}`;
+  }
+  if (name === "New annual spending at corridor businesses") {
+    return String.raw`S_{\mathrm{corridor}} = 365 \sum_g V\,m_g\,\bar{s}_g`;
+  }
+  if (name.startsWith("Implied corridor sales uplift")) {
+    return String.raw`u = \frac{S_{\mathrm{corridor}}}{n_{\mathrm{biz}} \times \bar{F} \times g_{\mathrm{sf}}}`;
+  }
+  if (name === "Trail catchment population (decay-weighted)") {
+    return String.raw`P_{\mathrm{eff}} = \sum_b \mathrm{pop}_b\,e^{-\beta_{\mathrm{access}} d_b}`;
+  }
+  if (name === "Annual trail user-days") {
+    return String.raw`D = P_{\mathrm{eff}} \times u_{\mathrm{capita}}`;
+  }
+  if (name === "Annual trail-user spending at nearby businesses") {
+    return String.raw`S_{\mathrm{trail}} = D \times \bar{s}_{\mathrm{day}}`;
+  }
+  if (name === "Assessed value within the trail premium band") {
+    return String.raw`V_{\mathrm{band}} = \sum_{p \in \mathrm{band}} \mathrm{AV}_p`;
+  }
+  if (name === "Trail property value uplift (capitalization)") {
+    return String.raw`\Delta V = V_{\mathrm{band}} \times \pi_{\mathrm{trail}}`;
+  }
+  if (name === "Annual real estate tax increment (trail premium)") {
+    return String.raw`\Delta T_{\mathrm{RE}} = \Delta V \times \frac{r_{\mathrm{RE}}}{100}`;
+  }
   return null;
 }
 

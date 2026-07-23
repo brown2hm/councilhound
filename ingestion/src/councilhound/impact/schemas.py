@@ -17,7 +17,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
 
-ModuleName = Literal["economic", "fiscal", "connectivity", "environmental", "comparables"]
+ModuleName = Literal["economic", "fiscal", "bike_lane", "trail",
+                     "connectivity", "environmental", "comparables"]
 
 Confidence = Literal["high", "medium", "low"]
 
@@ -46,9 +47,12 @@ class Assumption(BaseModel):
 
 
 class CorridorSpec(BaseModel):
-    """Present only for street/multimodal projects (M5 seam)."""
+    """Present only for street/multimodal and linear park projects."""
     length_ft: float | None = None
-    facilities: list[str] = Field(default_factory=list)
+    facilities: list[str] = Field(default_factory=list)  # e.g. "protected bike lane"
+    street_name: str | None = None
+    from_street: str | None = None
+    to_street: str | None = None
 
 
 class ExistingConditions(BaseModel):

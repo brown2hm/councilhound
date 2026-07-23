@@ -150,6 +150,11 @@ class JurisdictionContext:
         return networks.load_graph(self, "drive")
 
     @functools.cached_property
+    def bike_graph(self):
+        from councilhound.impact.context import networks
+        return networks.load_graph(self, "bike")
+
+    @functools.cached_property
     def node_weights(self):
         from councilhound.impact.context import networks
         return networks.load_node_weights(self)

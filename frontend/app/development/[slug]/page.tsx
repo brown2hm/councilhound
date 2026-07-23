@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     const evaluation = await getEvaluation(params.slug);
     return {
       title: `${evaluation.name} — impact analysis`,
-      description: `Screening estimates of the economic and fiscal impact of ${evaluation.name} in the City of Fairfax, with named assumptions and sensitivity ranges.`,
+      description: `Screening estimates of the community impact of ${evaluation.name} in the City of Fairfax, with named assumptions and sensitivity ranges.`,
     };
   } catch {
     return {};
@@ -180,12 +180,31 @@ export default async function DevelopmentAnalysisPage({
           <h2 className="mb-2 text-lg font-semibold">Where the effects land</h2>
           <ImpactMapClient layers={evaluation.map_layers} />
           <p className="mt-2 text-[12px] text-muted">
-            The economic map shows total captured spending by business location and
-            named reporting clusters. The walk map uses a tighter extent around
-            walk-arriving capture and the street segments assigned new resident walk
-            trips. Dollar heatmaps are clipped to CR (Commercial Retail) zoning, and
-            each map is scaled to its own data — walk-arriving dollars run well below
-            total capture, so colors are not comparable across the two maps.
+            {"capture_points" in evaluation.map_layers ||
+            "capture_clusters" in evaluation.map_layers ? (
+              <>
+                The economic map shows total captured spending by business location and
+                named reporting clusters. The walk map uses a tighter extent around
+                walk-arriving capture and the street segments assigned new resident walk
+                trips; the bike map (when present) shows bike-arriving capture across
+                the city — bikes reach farther, so it spreads wider and thinner. Dollar
+                heatmaps are clipped to CR (Commercial Retail) zoning, and each map is
+                scaled to its own data, so colors are not comparable across maps.
+              </>
+            ) : "bike_corridor" in evaluation.map_layers ? (
+              <>
+                The corridor map shows the proposed facility, the businesses along it
+                with their estimated new bike spending, and the residents the corridor
+                newly serves (weighted by bike travel time). Each heatmap is scaled to
+                its own data and the legend states the dollars.
+              </>
+            ) : (
+              <>
+                The trail map shows the trail line, its access points, businesses within
+                walking reach of them with estimated trail-user spending, and the dashed
+                band of parcels close enough to plausibly capitalize a property premium.
+              </>
+            )}
           </p>
         </section>
       )}

@@ -9,8 +9,9 @@ import re
 
 # numbers with optional sign (ASCII or U+2212), $ , % and magnitude suffixes
 _NUMBER = re.compile(r"([-−+]?)\s*\$?(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s*"
-                     # (?!-\d) keeps "39 K-12 students" from parsing as 39k
-                     r"(million|M\b(?!-\d)|k\b(?!-\d)|thousand|%)?", re.IGNORECASE)
+                     # (?![-–—]\d) keeps "39 K-12 students" from parsing as 39k —
+                     # covers hyphen AND en/em dashes ("7.9 K–12" from the LLM)
+                     r"(million|M\b(?![-–—]\d)|k\b(?![-–—]\d)|thousand|%)?", re.IGNORECASE)
 
 _MAGNITUDE = {"million": 1e6, "m": 1e6, "k": 1e3, "thousand": 1e3}
 
@@ -50,9 +51,10 @@ def allowed_values(bundle) -> set[float]:
                   spec.proposed.affordable_units, spec.existing.sqft, spec.existing.units,
                   spec.existing.assessed_value):
         add(value)
-    # in-city shares etc. expressed as percents
+    # in-city shares etc. expressed as percents ("fraction", "fraction of
+    # baseline sales", ...)
     for m in bundle.all_metrics():
-        if m.unit == "fraction":
+        if m.unit.startswith("fraction"):
             add(m.value * 100)
             add(m.low * 100 if m.low is not None else None)
             add(m.high * 100 if m.high is not None else None)
@@ -71,6 +73,14 @@ def allowed_values(bundle) -> set[float]:
                 quotable += [p.notes or "", p.vintage, p.source_name]
     for p in bundle.all_sources():
         quotable += [p.notes or "", p.vintage, p.source_name]  # e.g. "Va. Code § 58.1-605"
+    # assumption basis/rationale strings carry the literature anchors the
+    # narrative may cite ("Liu & Shi 2020, 14 corridors", "N=1,967")
+    for a in bundle.all_assumptions():
+        quotable.append(a.rationale)
+        if isinstance(a.basis, str):
+            quotable.append(a.basis)
+        else:
+            quotable += [a.basis.notes or "", a.basis.vintage, a.basis.source_name]
     quotable.append(bundle.spec.name)  # street-number names: "10340 Democracy Lane"
     quotable.extend(bundle.spec.extraction_quotes.values())
     quotable.extend(bundle.spec.extraction_notes)

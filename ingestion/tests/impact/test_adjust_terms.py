@@ -48,11 +48,13 @@ def test_terms_algebra_preserves_value_and_exponents():
 
 def test_per_category_capture_decomposition_sums_to_total():
     a = _assumptions(None)
-    capture, walk, _, _, by_cat = _capture(_dest(), _spend(), a)
+    capture, walk, bike, _, _, by_cat = _capture(_dest(), _spend(), a)
     cat_total = sum(by_cat["capture"][c] for c in RETAIL_CLASSES)
     walk_total = sum(by_cat["walk"][c] for c in RETAIL_CLASSES)
+    bike_total = sum(by_cat["bike"][c] for c in RETAIL_CLASSES)
     np.testing.assert_allclose(cat_total, capture[0], rtol=1e-9)
     np.testing.assert_allclose(walk_total, walk[0], rtol=1e-9)
+    np.testing.assert_allclose(bike_total, bike[0], rtol=1e-9)
 
 
 def test_demand_terms_reproduce_direct_rerun_at_shifted_assumptions():
@@ -61,7 +63,7 @@ def test_demand_terms_reproduce_direct_rerun_at_shifted_assumptions():
     a = _assumptions(None)
     dest = _dest()
     spend = _spend()
-    _, _, _, _, by_cat = _capture(dest, spend, a)
+    _, _, _, _, _, by_cat = _capture(dest, spend, a)
 
     baseline = {"occupancy_rate": a["occupancy_rate"].value,
                 "ces_scale": a["ces_scale"].value,
@@ -73,12 +75,16 @@ def test_demand_terms_reproduce_direct_rerun_at_shifted_assumptions():
                     baseline["income_premium_new_construction"] * 1.08}
 
     terms = []
+    bike_terms = []
     shifted_spend = {}
     for category in RETAIL_CLASSES:
         eps = ces_shares.CATEGORY_ELASTICITY[category]
         terms.append(term(float(by_cat["capture"][category].sum()),
                           occupancy_rate=1.0, ces_scale=1.0,
                           income_premium_new_construction=eps))
+        bike_terms.append(term(float(by_cat["bike"][category].sum()),
+                               occupancy_rate=1.0, ces_scale=1.0,
+                               income_premium_new_construction=eps))
         # the demand a direct rerun would see under the shifted assumptions
         factor = ((adjusted["occupancy_rate"] / baseline["occupancy_rate"])
                   * (adjusted["ces_scale"] / baseline["ces_scale"])
@@ -86,6 +92,10 @@ def test_demand_terms_reproduce_direct_rerun_at_shifted_assumptions():
                      / baseline["income_premium_new_construction"]) ** eps)
         shifted_spend[category] = spend[category].scale(factor)
 
-    direct, _, _, _, _ = _capture(dest, shifted_spend, a)
+    direct, _, direct_bike, _, _, _ = _capture(dest, shifted_spend, a)
     assert _eval_terms(terms, baseline, adjusted) == pytest.approx(
         float(direct[0].sum()), rel=1e-9)
+    # the bike-arriving decomposition is the same power law: mode
+    # probabilities are independent of the demand-side assumptions
+    assert _eval_terms(bike_terms, baseline, adjusted) == pytest.approx(
+        float(direct_bike[0].sum()), rel=1e-9)

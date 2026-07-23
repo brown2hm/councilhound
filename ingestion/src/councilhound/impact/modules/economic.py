@@ -96,6 +96,45 @@ def _assumptions(ctx) -> dict[str, Assumption]:
         Assumption(key="walk_share_grocery_entertainment", value=0.30, low=0.10, high=0.50,
                    basis="interpolated between the brief's neighborhood and comparison splits",
                    rationale="grocery/entertainment trips mix walk and drive"),
+        Assumption(key="beta_bike", value=0.10, low=0.05, high=0.15,
+                   basis="Iacono, Krizek & El-Geneidy (MnDOT 2008-11) Table 11 "
+                         "p. B-11: bicycle travel-time decay by purpose — shopping "
+                         "0.107/min (N=64, adj R2 0.67), school 0.100, recreation "
+                         "0.071. Center 0.10 aligns with the walk anchor; bounds "
+                         "widened for the small shopping N and the report's caveat "
+                         "that the negative exponential fits bike times worse than "
+                         "walk. Local: docs/references/"
+                         "iacono-krizek-elgeneidy-2008-mndot-distance-decay.pdf",
+                   rationale="per-minute bike-time decay in destination choice; "
+                             "bikes decay per minute like walkers but cover 3-4x "
+                             "the distance, so the same beta yields ~4x the "
+                             "spatial reach"),
+        Assumption(key="bike_share_neighborhood", value=0.02, low=0.005, high=0.05,
+                   basis="FHWA (2020) NHTS brief: bikes ~1% of person-trips "
+                         "nationally, 85% of bike trips <= 3 mi; Clifton et al. "
+                         "(2013): cyclists match or exceed drivers per month at "
+                         "restaurants, bars, convenience stores — center 2x the "
+                         "national all-trip share for these short-trip categories. "
+                         "Local: docs/references/fhwa-2020-nhts-nonmotorized-"
+                         "brief.pdf, clifton-2013-consumer-behavior-travel-"
+                         "choices.pdf",
+                   rationale="zero-impedance bike preference for restaurant/"
+                             "convenience/services trips; carved from the drive "
+                             "remainder so the pinned walk shares keep their "
+                             "meaning"),
+        Assumption(key="bike_share_comparison", value=0.005, low=0.0, high=0.02,
+                   basis="Clifton et al. (2013): drivers out-spend cyclists at "
+                         "supermarkets and comparison-goods stores (basket-size "
+                         "constraint); FHWA NHTS ~1% national bike share",
+                   rationale="comparison-goods trips carry goods; bike share "
+                             "below the all-trip average"),
+        Assumption(key="bike_share_grocery_entertainment", value=0.01, low=0.0, high=0.03,
+                   basis="interpolated between the neighborhood and comparison "
+                         "bike splits, mirroring the walk-share interpolation; "
+                         "Clifton (2013) shows grocery is the weakest cyclist "
+                         "category",
+                   rationale="grocery/entertainment bike trips mix cargo-limited "
+                             "and recreation-adjacent behavior"),
         Assumption(key="walk_trips_per_resident_day", value=1.0, low=0.5, high=2.0,
                    basis="NHTS metro person-level walking runs ~0.3-0.7 trips/day; "
                          "walkable mixed-use contexts run higher (Ewing & Cervero "
@@ -121,6 +160,14 @@ def _walk_share_for(category: str, a: dict[str, Assumption]) -> Assumption:
     if category == "retail_comparison":
         return a["walk_share_comparison"]
     return a["walk_share_grocery_entertainment"]
+
+
+def _bike_share_for(category: str, a: dict[str, Assumption]) -> Assumption:
+    if category in ("restaurant_bar", "retail_convenience", "personal_services"):
+        return a["bike_share_neighborhood"]
+    if category == "retail_comparison":
+        return a["bike_share_comparison"]
+    return a["bike_share_grocery_entertainment"]
 
 
 def _site_point(spec, ctx):
@@ -300,14 +347,14 @@ def _destinations(ctx, site_pt_4326, site_projected, own_retail_equiv):
     times = []
     walk_nodes = None
     walk_origin = None
-    for graph in (ctx.walk_graph, ctx.drive_graph):
+    for graph in (ctx.walk_graph, ctx.drive_graph, ctx.bike_graph):
         origin = ox.distance.nearest_nodes(graph, site_pt_4326.x, site_pt_4326.y)
         nearest = ox.distance.nearest_nodes(graph, list(lons), list(lats))
         dist = nx.single_source_dijkstra_path_length(graph, origin, weight="travel_min")
         times.append(np.array([dist.get(n, np.inf) for n in nearest]))
         if walk_nodes is None:  # first graph is the walk graph
             walk_nodes, walk_origin = list(nearest), origin
-    walk_min, drive_min = times
+    walk_min, drive_min, bike_min = times
 
     tx = pyproj.Transformer.from_crs("EPSG:4326", crs, always_xy=True)
     boundary_projected = shp_transform(tx.transform, ctx.boundary)
@@ -321,6 +368,7 @@ def _destinations(ctx, site_pt_4326, site_projected, own_retail_equiv):
         "taxonomy": np.append(retail["taxonomy"].to_numpy(), "__own__"),
         "walk_min": np.append(walk_min, 0.0),
         "drive_min": np.append(drive_min, 0.0),
+        "bike_min": np.append(bike_min, 0.0),
         "in_city": np.append(in_city, True),  # the site is inside the city
         "lon": np.append(lons, site_pt_4326.x),
         "lat": np.append(lats, site_pt_4326.y),
@@ -335,55 +383,76 @@ def _destinations(ctx, site_pt_4326, site_projected, own_retail_equiv):
 
 
 def _capture(dest, spend, a):
-    """Per-destination capture and walk-arriving dollars (value/low/high),
-    plus in-city share accumulators, from a JOINT destination+mode choice.
+    """Per-destination capture and walk-/bike-arriving dollars (value/low/
+    high), plus in-city share accumulators, from a JOINT destination+mode
+    choice over walk, bike, and drive.
+
+    Mode preferences: the pinned walk shares keep their exact meaning (walk
+    share at zero impedance); the bike preference is carved out of the DRIVE
+    remainder, so prefs are {walk: ws, bike: bs, drive: 1 - ws - bs}.
 
     Invariants pinned by unit tests: total capture = total spend (the joint
-    probabilities sum to 1); walk dollars <= spend x walk preference, with
-    equality only when every destination is at zero travel time — dollars
-    only arrive on foot where walking actually competes with driving."""
+    probabilities sum to 1); at zero travel time each mode's dollars equal
+    spend x its preference exactly. WALK dollars stay below their budget at
+    any real distance (walking decays fastest), and that bound is pinned.
+    BIKE dollars carry no such bound: at mid distances — too far to walk,
+    short enough to ride — bike utility decays slower than drive's, so bike
+    takes share from the drive remainder beyond its zero-impedance split.
+    That is the intended behavior (bikes reach 3-4x walk distance), and the
+    pinned bike invariants are conservation, t=0 equality, far-destination
+    decay, and monotonicity in bike travel time."""
     import numpy as np
 
     n = dest["n"]
     capture = {slot: np.zeros(n) for slot in range(3)}
     walk_dollars = {slot: np.zeros(n) for slot in range(3)}
+    bike_dollars = {slot: np.zeros(n) for slot in range(3)}
     share_food = np.zeros((3, 2))    # [slot][num, den] for food_away
     share_all = np.zeros((3, 2))
     # central-slot per-category allocations, kept so the metrics can publish
     # exact per-category adjustment terms (Huff probabilities are independent
     # of the demand-side assumptions, so category sums scale as pure powers)
-    by_cat = {"capture": {}, "walk": {}}
+    by_cat = {"capture": {}, "walk": {}, "bike": {}}
 
     for category in RETAIL_CLASSES:
         attractiveness = (dest["taxonomy"] == category).astype(float)
         attractiveness[-1] = dest["own_retail_equiv"].get(category, 0.0)
         ws = _walk_share_for(category, a)
-        for slot, (beta, ws_value, spend_value) in enumerate((
-            (a["beta_walk"].value, ws.value, spend[category].value),
-            (a["beta_walk"].high, ws.low, spend[category].low),
-            (a["beta_walk"].low, ws.high, spend[category].high),
+        bs = _bike_share_for(category, a)
+        for slot, (bw, bb, ws_value, bs_value, spend_value) in enumerate((
+            (a["beta_walk"].value, a["beta_bike"].value,
+             ws.value, bs.value, spend[category].value),
+            (a["beta_walk"].high, a["beta_bike"].high,
+             ws.low, bs.low, spend[category].low),
+            (a["beta_walk"].low, a["beta_bike"].low,
+             ws.high, bs.high, spend[category].high),
         )):
-            p_total, p_walk = huff.joint_mode_probabilities(
-                attractiveness, dest["walk_min"], dest["drive_min"],
-                walk_pref=ws_value, alpha=ALPHA, beta_walk=beta,
-                beta_drive=BETA_DRIVE)
+            p_total, (p_walk, p_bike, _p_drive) = huff.joint_multimode_probabilities(
+                attractiveness,
+                [(ws_value, bw, dest["walk_min"]),
+                 (bs_value, bb, dest["bike_min"]),
+                 (1.0 - ws_value - bs_value, BETA_DRIVE, dest["drive_min"])],
+                alpha=ALPHA)
             alloc_total = huff.allocate_spend(spend_value, p_total)
             alloc_walk = huff.allocate_spend(spend_value, p_walk)
+            alloc_bike = huff.allocate_spend(spend_value, p_bike)
             capture[slot] += alloc_total
             walk_dollars[slot] += alloc_walk
+            bike_dollars[slot] += alloc_bike
             if slot == 0:
                 by_cat["capture"][category] = alloc_total
                 by_cat["walk"][category] = alloc_walk
+                by_cat["bike"][category] = alloc_bike
             in_mass = p_total[dest["in_city"]].sum()
             share_all[slot] += (in_mass, p_total.sum())
             if category == "restaurant_bar":
                 share_food[slot] += (in_mass, p_total.sum())
-    return capture, walk_dollars, share_food, share_all, by_cat
+    return capture, walk_dollars, bike_dollars, share_food, share_all, by_cat
 
 
-def _rollup(dest, capture, walk_dollars):
-    """Sum per-POI capture (total and walk-arriving) into named clusters for
-    the reporting metrics and cluster tooltips."""
+def _rollup(dest, capture, walk_dollars, bike_dollars):
+    """Sum per-POI capture (total, walk- and bike-arriving) into named
+    clusters for the reporting metrics and cluster tooltips."""
     import numpy as np
 
     labels = dest["cluster"]
@@ -397,6 +466,7 @@ def _rollup(dest, capture, walk_dollars):
             "low": float(capture[1][members].sum()),
             "high": float(capture[2][members].sum()),
             "walk_value": float(walk_dollars[0][members].sum()),
+            "bike_value": float(bike_dollars[0][members].sum()),
         }
     return rolled
 
@@ -554,10 +624,11 @@ def _street_layer(sub, primary: dict, prop: str, decimals: int = 1,
     return {"type": "FeatureCollection", "features": features}
 
 
-def _capture_points_layer(dest, capture, walk_dollars) -> dict:
+def _capture_points_layer(dest, capture, walk_dollars, bike_dollars) -> dict:
     """Per-POI capture as weighted points — the heatmaps' real input.
-    walk_usd is the walk-arriving share of that business's capture, so the
-    frontend can show total capture and walk-in capture on one scale."""
+    walk_usd/bike_usd are the walk-/bike-arriving shares of that business's
+    capture, so the frontend can show total and per-mode capture on one
+    scale."""
     features = []
     for i in range(dest["n"]):
         dollars = float(capture[0][i])
@@ -570,6 +641,7 @@ def _capture_points_layer(dest, capture, walk_dollars) -> dict:
                                          round(float(dest["lat"][i]), 6)]},
             "properties": {"capture_usd": round(dollars),
                            "walk_usd": round(float(walk_dollars[0][i])),
+                           "bike_usd": round(float(bike_dollars[0][i])),
                            "own": bool(dest["cluster"][i] == -2)},
         })
     return {"type": "FeatureCollection", "features": features}
@@ -598,6 +670,7 @@ def _cluster_layer(ctx, rolled: dict) -> dict:
             "geometry": {"type": "Point", "coordinates": [round(lon, 6), round(lat, 6)]},
             "properties": {"name": c["name"], "annual_capture_usd": round(c["value"]),
                            "walk_usd": round(c.get("walk_value", 0.0)),
+                           "bike_usd": round(c.get("bike_value", 0.0)),
                            "poi_count": c["poi_count"], "own": c["own"]},
         })
     return {"type": "FeatureCollection", "features": features}
@@ -633,8 +706,9 @@ def run(spec, ctx, prior=None):
     own_retail_equiv = {cls: own_equiv_total * share for cls, share in OWN_RETAIL_MIX.items()}
 
     dest = _destinations(ctx, site, site_projected, own_retail_equiv)
-    capture, walk_dollars, share_food, share_all, by_cat = _capture(dest, spend, a)
-    rolled = _rollup(dest, capture, walk_dollars)
+    capture, walk_dollars, bike_dollars, share_food, share_all, by_cat = \
+        _capture(dest, spend, a)
+    rolled = _rollup(dest, capture, walk_dollars, bike_dollars)
 
     # exponents of each category's demand on the adjustable assumptions:
     # spend_c = households x e_c x (income ratio)^elasticity_c x ces_scale
@@ -770,6 +844,26 @@ def run(spec, ctx, prior=None):
         "over businesses; walking loses to driving with walk time, so the "
         "remainder of the mode-split budget arrives by car", headline=True,
         adjust=cat_terms("walk")))
+
+    bike_slot_sums = [float(bike_dollars[slot].sum()) for slot in range(3)]
+    bike_total = Interval(bike_slot_sums[0],
+                          min(bike_slot_sums), max(bike_slot_sums))
+    bike_mode_assumptions = [a["bike_share_neighborhood"], a["bike_share_comparison"],
+                             a["bike_share_grocery_entertainment"], a["ces_scale"]]
+    metrics.append(metric(
+        "New annual spending arriving by bike", bike_total, "$/yr",
+        [ces_prov], [*bike_mode_assumptions, a["beta_bike"]],
+        "bike-mode share of the joint destination+mode Huff choice, summed "
+        "over businesses; the bike preference is carved from the drive "
+        "remainder, so walk capture keeps its meaning. Biking decays with "
+        "bike time but wins mid-range trips that are too far to walk, so "
+        "this can exceed the zero-impedance bike split",
+        adjust=cat_terms("bike")))
+    notes.append(
+        "Bike-arriving capture models cycling as a third mode alongside "
+        "walking and driving: the bike preference is taken from the drive "
+        "remainder (walk shares are unchanged), and bikes reach ~3-4x the "
+        "walking distance per minute of travel time.")
     import numpy as np
     own_index = np.array([dest["n"] - 1])
     metrics.append(MetricValue(
@@ -862,7 +956,8 @@ def run(spec, ctx, prior=None):
         "site": {"type": "FeatureCollection", "features": [{
             "type": "Feature", "geometry": spec.geometry, "properties": {"role": "site"}}]},
         "city_boundary": _city_boundary_layer(ctx.boundary),
-        "capture_points": _capture_points_layer(dest, capture, walk_dollars),
+        "capture_points": _capture_points_layer(dest, capture, walk_dollars,
+                                                bike_dollars),
         "capture_clusters": _cluster_layer(ctx, rolled),
         "commercial_retail_zones": ctx.commercial_retail_zones,
         "foot_traffic_delta": _street_layer(sub, flows, "trips_per_day",
