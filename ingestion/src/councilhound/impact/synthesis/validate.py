@@ -7,8 +7,10 @@ from __future__ import annotations
 
 import re
 
-# numbers with optional sign (ASCII or U+2212), $ , % and magnitude suffixes
-_NUMBER = re.compile(r"([-−+]?)\s*\$?(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s*"
+# numbers with optional sign (ASCII or U+2212), $ , % and magnitude suffixes.
+# The comma-grouped branch allows a trailing decimal ("70,707.78") so a
+# cents value matches as ONE number instead of orphaning ".78" -> "78".
+_NUMBER = re.compile(r"([-−+]?)\s*\$?(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)\s*"
                      # (?![-–—]\d) keeps "39 K-12 students" from parsing as 39k —
                      # covers hyphen AND en/em dashes ("7.9 K–12" from the LLM)
                      r"(million|M\b(?![-–—]\d)|k\b(?![-–—]\d)|thousand|%)?", re.IGNORECASE)
@@ -82,6 +84,7 @@ def allowed_values(bundle) -> set[float]:
         else:
             quotable += [a.basis.notes or "", a.basis.vintage, a.basis.source_name]
     quotable.append(bundle.spec.name)  # street-number names: "10340 Democracy Lane"
+    quotable.extend(bundle.spec.parcels)  # PINs the draft may cite ("57 2 18 001 A")
     quotable.extend(bundle.spec.extraction_quotes.values())
     quotable.extend(bundle.spec.extraction_notes)
     for text in quotable:

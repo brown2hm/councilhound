@@ -62,6 +62,22 @@ def test_k12_grade_range_not_read_as_magnitude():
         assert 7900.0 not in values
 
 
+def test_comma_grouped_decimal_matches_as_one_number():
+    """'70,707.78' is one number, not '70,707' plus an orphan '78'."""
+    values = [v for v, _ in extract_numbers("generates $70,707.78 per year")]
+    assert 70707.78 in values
+    assert 78.0 not in values
+
+
+def test_parcel_pins_are_quotable():
+    """A draft citing a spec parcel PIN must validate — the leading '57' of
+    '57 2 18 001 A' is a document-sourced identifier, not an invented number."""
+    bundle = _bundle()
+    bundle.spec.parcels = ["57 2 18 001 A"]
+    draft = "The project is associated with parcel 57 2 18 001 A."
+    assert validate_report(draft, bundle) == []
+
+
 def test_k12_students_draft_passes():
     """A residential draft citing the K-12 student estimate with an en-dash
     grade range must validate (regression: en-dash 'K–12' parsed as 7,900)."""
