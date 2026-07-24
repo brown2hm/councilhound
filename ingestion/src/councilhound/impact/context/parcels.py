@@ -96,12 +96,16 @@ def _load_assessment_table(ctx):
     df = gpd.GeoDataFrame.from_features(fc["features"])
     df = df.rename(columns={c: c.lower() for c in df.columns})
     cols = {c: None for c in ("pin", "assessed_land", "assessed_improvement", "assessed_total")}
+    # candidate field names, widest-net; GISCAMA (Fairfax CAMA layer) uses the
+    # shapefile-truncated CurrentLan/CurrentBui/CurrentTot
     for target, candidates in (
         ("pin", ("pin", "parcel_id", "parcelid", "map_pin")),
-        ("assessed_land", ("assessed_land", "landvalue", "land_value", "aprland")),
+        ("assessed_land", ("assessed_land", "landvalue", "land_value", "aprland",
+                           "currentlan")),
         ("assessed_improvement", ("assessed_improvement", "imprvalue", "improvement_value",
-                                  "aprbldg")),
-        ("assessed_total", ("assessed_total", "totalvalue", "total_value", "aprtot")),
+                                  "aprbldg", "currentbui")),
+        ("assessed_total", ("assessed_total", "totalvalue", "total_value", "aprtot",
+                            "currenttot")),
     ):
         for cand in candidates:
             if cand in df.columns:

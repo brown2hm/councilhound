@@ -7,7 +7,7 @@ projects_index_url: https://www.fairfaxva.gov/Property-Business/Development/Proj
 boundary_source: https://services2.arcgis.com/DANcyjLcCCpGk8Ri/arcgis/rest/services/City_Boundary/FeatureServer/0
 parcels_source: https://services2.arcgis.com/DANcyjLcCCpGk8Ri/arcgis/rest/services/Parcels/FeatureServer/0
 zoning_source: https://services2.arcgis.com/DANcyjLcCCpGk8Ri/arcgis/rest/services/ZoningSplits/FeatureServer/0
-assessment_source: null
+assessment_source: https://services2.arcgis.com/DANcyjLcCCpGk8Ri/arcgis/rest/services/GISCAMA/FeatureServer/0
 development_review_map_source: https://services2.arcgis.com/DANcyjLcCCpGk8Ri/arcgis/rest/services/Major_Developments_Project_Map_v2/FeatureServer/0/query
 geohub_portal_url: https://www.fairfaxva.gov/Services/Maps-and-GIS-Data/City-of-Fairfax-GeoHub
 tax:

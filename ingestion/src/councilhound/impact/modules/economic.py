@@ -45,6 +45,13 @@ M_TO_FT = 3.28084
 
 # Huff parameters (brief §6.2.2)
 ALPHA = 1.0
+# Per-minute drive-time decay. Steeper than Iacono (MnDOT 2008-11) Table 7's
+# drive-alone shopping decay (0.117/km ~= 0.05-0.07 per in-vehicle minute):
+# OSMnx edge travel times are pure in-vehicle time and exclude the fixed
+# parking, access, and egress overhead of a car trip, so a steeper per-minute
+# beta stands in for that fixed cost — a short-in-vehicle-time destination is
+# less attractive than its drive minutes alone imply. See
+# docs/references/WALK_ECONOMIC_IMPACT_REFERENCES.md (recalibration candidate).
 BETA_DRIVE = 0.15
 
 RETAIL_CLASSES = ("grocery", "restaurant_bar", "retail_comparison",
@@ -87,15 +94,31 @@ def _assumptions(ctx) -> dict[str, Assumption]:
                              "site. High bound covers hostile pedestrian "
                              "environments; low bound the national-sample floor"),
         Assumption(key="walk_share_neighborhood", value=0.60, low=0.40, high=0.80,
-                   basis="methodology brief mode-split default",
-                   rationale="walk share for restaurants/convenience/services at a "
-                             "walkable mixed-use site"),
+                   basis="ZERO-IMPEDANCE walk preference (share when walking and "
+                         "driving cost nothing), not a realized share — after "
+                         "distance decay the realized walk share is lower. "
+                         "Anchored below by Clifton et al. (2013) Table 2 "
+                         "realized shares: 40-49% at convenience/restaurant/bar "
+                         "in walkable CBDs, so 0.60 for on-site residents at a "
+                         "walkable mixed-use location; 0.40 floor ~= the realized "
+                         "CBD level. See docs/references/"
+                         "WALK_ECONOMIC_IMPACT_REFERENCES.md",
+                   rationale="zero-impedance walk preference for restaurants/"
+                             "convenience/services; realized capture falls off "
+                             "with walk time in the joint mode choice"),
         Assumption(key="walk_share_comparison", value=0.10, low=0.0, high=0.30,
-                   basis="methodology brief mode-split default",
-                   rationale="comparison-goods trips are predominantly by car"),
+                   basis="zero-impedance walk preference; comparison-goods trips "
+                         "carry goods and skew to cars (FHWA NHTS: non-motorized "
+                         "~12% of all trips, lower for goods-carrying purposes)",
+                   rationale="comparison-goods trips are predominantly by car "
+                             "even at zero impedance"),
         Assumption(key="walk_share_grocery_entertainment", value=0.30, low=0.10, high=0.50,
-                   basis="interpolated between the brief's neighborhood and comparison splits",
-                   rationale="grocery/entertainment trips mix walk and drive"),
+                   basis="zero-impedance walk preference, interpolated between the "
+                         "neighborhood and comparison splits; Clifton (2013): "
+                         "grocery skews to cars (carry capacity), entertainment "
+                         "walks more",
+                   rationale="grocery/entertainment mix walk and drive; a "
+                             "preference, not a realized share"),
         Assumption(key="beta_bike", value=0.10, low=0.05, high=0.15,
                    basis="Iacono, Krizek & El-Geneidy (MnDOT 2008-11) Table 11 "
                          "p. B-11: bicycle travel-time decay by purpose — shopping "
@@ -141,11 +164,22 @@ def _assumptions(ctx) -> dict[str, Assumption]:
                          "2010) — 1.0 is a mid estimate for this setting",
                    rationale="scales new residents into all-purpose daily walk "
                              "trips for the foot-traffic flow allocation"),
-        Assumption(key="sqft_per_office_job", value=300.0, low=200.0, high=450.0,
-                   basis="office space-per-worker planning standard",
-                   rationale="existing commercial sqft -> displaced jobs"),
+        Assumption(key="sqft_per_office_job", value=350.0, low=250.0, high=500.0,
+                   basis="EIA CBECS 2018 Table B1: 507 gross sqft per worker in "
+                         "office buildings (occupied-building mean). The existing "
+                         "space being removed is typically older and part-vacant "
+                         "(more sqft per worker than a modern occupied fit-out at "
+                         "~150-250), so the interval spans leased-space density "
+                         "up to the CBECS gross figure; center 350. See "
+                         "docs/references/WALK_ECONOMIC_IMPACT_REFERENCES.md",
+                   rationale="existing commercial sqft -> displaced jobs; a "
+                             "higher value yields fewer displaced jobs per sqft"),
         Assumption(key="sqft_per_retail_job", value=500.0, low=400.0, high=700.0,
-                   basis="retail space-per-worker planning standard",
+                   basis="EIA CBECS 2018 Table B1: ~480 gross sqft/worker for "
+                         "food service and ~990 for enclosed/strip malls; "
+                         "ground-floor mixed-use retail is mostly food service "
+                         "plus small-format shops, so the interval brackets the "
+                         "food-service figure and the lower reaches of mall space",
                    rationale="proposed retail sqft -> on-site jobs"),
         Assumption(key="own_retail_sqft_per_equiv_poi", value=2000.0, low=1500.0, high=3000.0,
                    basis="typical inline retail suite size",

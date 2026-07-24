@@ -231,18 +231,23 @@ directory; paywalled sources are link-only. Companion page:
 
 ## Recalibration candidates (evidence vs. current encoding)
 
-1. **`sqft_per_office_job` high bound.** CBECS 2018 gross office density
-   (507 sqft/worker) exceeds the current high (450). Since the assumption
-   converts EXISTING (often older, part-vacant) commercial space into
-   displaced jobs, the gross measure argues for widening to ~250–500 with
-   a center near 350. Effect: fewer estimated displaced jobs per sqft.
-2. **`BETA_DRIVE` = 0.15/min.** Iacono's drive-alone shopping decay
-   (0.117/km ≈ 0.05–0.07/min on in-vehicle time) is flatter. If the
-   parking/access overhead argument is to carry the difference, consider
-   documenting it in the constant's comment — or add fixed minutes to
-   drive times and flatten beta. Effect of flattening: drive competes
-   better at distance → walk capture concentrates slightly less.
-3. **Walk-share centers are preferences, not observations.** Documented
-   above; not a defect, but any reader comparing 0.60 to Clifton's 25–43%
-   realized shares needs the zero-impedance framing — now written down
-   here and worth echoing in the assumption's rationale string.
+All three were **applied 2026-07-23** (commit after the initial bikes round):
+
+1. **`sqft_per_office_job` — DONE.** Widened to **350 (250–500)** from
+   300 (200–450), and the basis now cites CBECS 2018 (507 gross office
+   sqft/worker; existing removed space runs above a modern occupied
+   fit-out). Effect: slightly fewer estimated displaced jobs per sqft, with
+   an interval that reaches the CBECS gross figure. `sqft_per_retail_job`
+   kept at 500 (400–700) but its basis now cites CBECS food-service (~480)
+   and mall (~990) densities.
+2. **`BETA_DRIVE` = 0.15/min — DONE (documented, value unchanged).** The
+   module constant now carries a comment explaining that OSMnx edge times
+   are pure in-vehicle time and the steeper-than-Iacono per-minute beta
+   proxies the fixed parking/access/egress overhead a car trip carries.
+   Value left at 0.15 to avoid destabilizing every published analysis; the
+   discrepancy is now explained rather than silent.
+3. **Walk-share zero-impedance framing — DONE.** The three
+   `walk_share_*` assumptions' basis/rationale strings now state explicitly
+   that these are zero-impedance PREFERENCES (realized capture falls with
+   walk time in the joint choice), anchored below by Clifton's 40–49%
+   realized CBD shares. No numeric change.
