@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import AssumptionsLab from "@/components/AssumptionsLab";
+import HeadlineMetrics from "@/components/HeadlineMetrics";
 import ImpactMapClient from "@/components/ImpactMapClient";
 import Markdown from "@/components/Markdown";
 import {
@@ -11,7 +12,7 @@ import {
   type ImpactProvenance,
   type ProjectWiki,
 } from "@/lib/api";
-import { fmtScalar, plainLanguageImpact } from "@/lib/format";
+import { plainLanguageImpact } from "@/lib/format";
 import { metricsByKey, resolveBody, stripSection, WIKI_PAGE_LABELS } from "@/lib/wiki";
 
 export const dynamic = "force-dynamic";
@@ -26,20 +27,6 @@ function splitReport(markdown: string): { summary: string; rest: string | null }
   const summary = sections[summaryIdx].replace(/^## Executive summary\s*/i, "");
   const rest = sections.filter((_, i) => i !== summaryIdx && i > 0).join("\n");
   return { summary, rest: rest.trim() ? rest : null };
-}
-
-function fmtValue(m: ImpactMetric): string {
-  return fmtScalar(m.value, m.unit);
-}
-
-function fmtRange(m: ImpactMetric): string | null {
-  if (m.low == null || m.high == null || (m.low === m.value && m.high === m.value)) return null;
-  return `${fmtScalar(m.low, m.unit)} – ${fmtScalar(m.high, m.unit)}`;
-}
-
-function unitLabel(unit: string): string {
-  if (unit === "fraction") return "";
-  return unit.replace("$/yr", "per year").replace("$/acre", "per acre").replace("$", "");
 }
 
 const getEvaluation = cache((slug: string) => api.developmentEvaluation(slug));
@@ -153,20 +140,7 @@ export default async function DevelopmentAnalysisPage({
 
       {headlines.length > 0 && (
         <section className="mb-8">
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-            {headlines.map((m) => (
-              <div key={m.name} className="rounded-2xl border border-hairline bg-canvas p-4">
-                <div className="text-[22px] font-semibold tracking-[-0.3px]">{fmtValue(m)}</div>
-                {fmtRange(m) && (
-                  <div className="text-[12px] font-medium text-muted">range {fmtRange(m)}</div>
-                )}
-                <div className="mt-1 text-[12px] leading-snug text-muted">
-                  {m.name}
-                  {unitLabel(m.unit) && ` (${unitLabel(m.unit).trim()})`}
-                </div>
-              </div>
-            ))}
-          </div>
+          <HeadlineMetrics metrics={headlines} assumptions={evaluation.assumptions} />
           {plainLanguageImpact(evaluation.metrics) && (
             <p className="mt-4 max-w-[820px] rounded-2xl bg-soft p-4 px-5 text-[14px] leading-[1.6] text-body">
               {plainLanguageImpact(evaluation.metrics)}

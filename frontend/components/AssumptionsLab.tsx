@@ -2,28 +2,14 @@
 
 import { useMemo, useState } from "react";
 import type { ImpactAssumption, ImpactMetric } from "@/lib/api";
+import { labelFor, recompute } from "@/lib/assumptions";
 import { fmtScalar } from "@/lib/format";
 
 /** Interactive assumption adjustment. Each adjustable metric ships an exact
- * power-law decomposition (metric.adjust); moving a slider re-evaluates
- *   value' = sum_t t.value x prod_k (adjusted[k]/baseline[k])^t.exps[k]
- * which reproduces what the pipeline itself would compute for these
- * assumptions. Network-model parameters (walk decay, mode shares) are not in
+ * power-law decomposition (metric.adjust); moving a slider re-evaluates it
+ * via lib/assumptions.recompute — the same arithmetic the metric detail
+ * panel uses. Network-model parameters (walk decay, mode shares) are not in
  * any term — changing those requires a full re-run — so they render locked. */
-
-function recompute(m: ImpactMetric, baseline: Record<string, number>, adjusted: Record<string, number>): number {
-  let total = 0;
-  for (const t of m.adjust ?? []) {
-    let factor = 1;
-    for (const [key, e] of Object.entries(t.exps)) {
-      const base = baseline[key];
-      const now = adjusted[key] ?? base;
-      if (base && now !== base) factor *= Math.pow(now / base, e);
-    }
-    total += t.value * factor;
-  }
-  return total;
-}
 
 function fmt(value: number, unit: string): string {
   return fmtScalar(value, unit, 2); // two decimals: adjusted-vs-published deltas stay visible
@@ -36,40 +22,6 @@ function sliderStep(a: ImpactAssumption): number {
   const raw = (a.high - a.low) / 100;
   return raw > 0 ? Number(raw.toPrecision(1)) : raw;
 }
-
-const FRIENDLY: Record<string, string> = {
-  occupancy_rate: "Occupancy rate",
-  avg_hh_size_multifamily: "Household size (multifamily)",
-  income_premium_new_construction: "New-construction income premium",
-  ces_scale: "Spending-survey scaling",
-  walk_trips_per_resident_day: "Walk trips per resident per day",
-  sqft_per_office_job: "Sq ft per office job",
-  sqft_per_retail_job: "Sq ft per retail job",
-  commercial_value_per_sqft: "Commercial value per sq ft ($)",
-  marginal_cost_factor: "Marginal cost factor",
-  students_per_unit: "Students per unit",
-  vehicles_per_household: "Vehicles per household",
-  avg_vehicle_assessed_value: "Assessed value per vehicle ($)",
-  retail_sales_per_sqft: "Retail sales per sq ft ($/yr)",
-  beta_walk: "Walk-time decay (β)",
-  walk_share_neighborhood: "Walk share — neighborhood trips",
-  walk_share_comparison: "Walk share — comparison goods",
-  walk_share_grocery_entertainment: "Walk share — grocery/entertainment",
-  own_retail_sqft_per_equiv_poi: "Own-retail sq ft per equivalent business",
-  beta_bike: "Bike-time decay (β)",
-  bike_share_neighborhood: "Bike share — neighborhood trips",
-  bike_share_comparison: "Bike share — comparison goods",
-  bike_share_grocery_entertainment: "Bike share — grocery/entertainment",
-  bike_trips_per_resident_day: "Bike trips per resident per day",
-  induced_corridor_visit_share: "Induced corridor visit share",
-  bike_spend_per_trip_restaurant: "Bike spend per trip — food/drink ($)",
-  bike_spend_per_trip_convenience: "Bike spend per trip — convenience ($)",
-  bike_spend_per_trip_other_retail: "Bike spend per trip — other retail ($)",
-  beta_trail_access_km: "Trail-access decay (β per km)",
-  trail_user_days_per_capita: "Trail user-days per resident per year",
-  trail_spend_per_user_day: "Trail spending per user-day ($)",
-  trail_property_premium: "Trail property premium",
-};
 
 export default function AssumptionsLab({
   assumptions,
@@ -125,7 +77,7 @@ export default function AssumptionsLab({
             return (
               <div key={a.key} className="rounded-2xl border border-hairline bg-canvas p-4">
                 <div className="flex items-baseline justify-between gap-2">
-                  <div className="text-[13px] font-semibold">{FRIENDLY[a.key] ?? a.key}</div>
+                  <div className="text-[13px] font-semibold">{labelFor(a.key)}</div>
                   <div className="whitespace-nowrap text-[13px] tabular-nums">
                     <span className={changed ? "font-semibold" : ""}>
                       {now.toLocaleString(undefined, { maximumFractionDigits: 3 })}
@@ -148,7 +100,7 @@ export default function AssumptionsLab({
                   value={now}
                   onChange={(e) => setAdjusted((s) => ({ ...s, [a.key]: Number(e.target.value) }))}
                   className="mt-2 w-full accent-ink"
-                  aria-label={FRIENDLY[a.key] ?? a.key}
+                  aria-label={labelFor(a.key)}
                 />
                 <div className="flex justify-between text-[11px] tabular-nums text-muted">
                   <span>{a.low.toLocaleString()}</span>
@@ -175,7 +127,7 @@ export default function AssumptionsLab({
               {locked.map((a) => (
                 <div key={a.key} className="rounded-xl border border-hairline bg-soft p-3 opacity-70">
                   <div className="flex items-baseline justify-between text-[13px]">
-                    <span className="font-semibold">{FRIENDLY[a.key] ?? a.key}</span>
+                    <span className="font-semibold">{labelFor(a.key)}</span>
                     <span className="tabular-nums text-muted">
                       {a.value.toLocaleString()} ({a.low.toLocaleString()}–{a.high.toLocaleString()})
                     </span>
