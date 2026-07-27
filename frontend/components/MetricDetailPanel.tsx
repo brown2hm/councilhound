@@ -30,8 +30,17 @@ function fmtSigned(value: number, unit: string): string {
   return value > 0 ? `+${s}` : s;
 }
 
-function groupLabel(g: CompositionGroup): string {
-  return g.label ? `Scales with ${g.label}` : "Fixed — no adjustable input";
+/** Primary line: what the piece is. Falls back to the driver signature for
+ * evaluations computed before terms carried labels. */
+function groupTitle(g: CompositionGroup): string {
+  if (g.label) return g.label;
+  return g.driverLabel ? `Scales with ${g.driverLabel}` : "Fixed amount";
+}
+
+/** Secondary line: what rescales it (only when the row already has a name). */
+function groupDrivers(g: CompositionGroup): string | null {
+  if (!g.label) return null;
+  return g.driverLabel ? `moves with ${g.driverLabel}` : "fixed — no assumption rescales it";
 }
 
 export default function MetricDetailPanel({
@@ -314,9 +323,14 @@ function LedgerSide({
           <div key={i}>
             <div className="flex items-baseline justify-between gap-3 text-[12px]">
               <span className="leading-snug text-body">
-                {groupLabel(g)}
+                <span className="font-semibold">{groupTitle(g)}</span>
                 {g.terms > 1 && (
                   <span className="text-muted"> · {g.terms} components</span>
+                )}
+                {groupDrivers(g) && (
+                  <span className="block text-[11px] text-muted-soft">
+                    {groupDrivers(g)}
+                  </span>
                 )}
               </span>
               <span className="whitespace-nowrap tabular-nums text-body">

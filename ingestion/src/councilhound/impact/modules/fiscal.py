@@ -14,7 +14,8 @@ from datetime import date
 
 from councilhound.impact.jurisdiction import MissingRateError, require_rate
 from councilhound.impact.provenance import (Interval, metric, prov, term,
-                                            terms_pow_extend, terms_scale)
+                                            terms_pow_extend, terms_relabel,
+                                            terms_scale)
 from councilhound.impact.schemas import Assumption, MetricValue, ModuleResult
 
 log = logging.getLogger(__name__)
@@ -86,11 +87,14 @@ def _interval_from_metric(m: MetricValue) -> Interval:
                     m.high if m.high is not None else m.value)
 
 
-def _terms_of(m: MetricValue):
+def _terms_of(m: MetricValue, label: str | None = None):
     """A metric's adjustment terms, degrading to a constant term so that
     composite metrics keep the sum(terms) == value invariant even when a
-    component isn't adjustable."""
-    return m.adjust if m.adjust else [term(m.value)]
+    component isn't adjustable. `label` renames the borrowed terms for the
+    consuming metric's ledger — a revenue line pulled into a net should read
+    as that revenue line, not as the donor's internal split."""
+    terms = m.adjust if m.adjust else [term(m.value)]
+    return terms_relabel(terms, label) if label else terms
 
 
 def _site_assessment(spec, notes):
@@ -172,8 +176,9 @@ def run(spec, ctx, prior=None):
             commercial = (Interval.point(spec.proposed.retail_sqft or 0)
                           * Interval.from_assumption(a["commercial_value_per_sqft"]))
             projected_av = residential + commercial
-            av_terms = [term(residential.value),
-                        term(commercial.value, commercial_value_per_sqft=1.0)]
+            av_terms = [term(residential.value, "Residential value (comps)"),
+                        term(commercial.value, "Ground-floor commercial value",
+                             commercial_value_per_sqft=1.0)]
             metrics.append(metric(
                 "Projected assessed value", projected_av, "$",
                 [comp_prov], [a["commercial_value_per_sqft"]],
@@ -187,7 +192,12 @@ def run(spec, ctx, prior=None):
     # 3. recurring revenue
     if projected_av is not None and re_rate is not None:
         projected_tax = projected_av * (re_rate.value / 100.0)
-        tax_terms = terms_scale(av_terms, re_rate.value / 100.0)
+        rate_factor = re_rate.value / 100.0
+        tax_terms = [
+            term(residential.value * rate_factor, "Projected RE tax — residential"),
+            term(commercial.value * rate_factor, "Projected RE tax — commercial",
+                 commercial_value_per_sqft=1.0),
+        ]
         metrics.append(metric("Projected real estate tax", projected_tax, "$/yr",
                               [comp_prov, rate_prov], [a["commercial_value_per_sqft"]],
                               "projected assessed value x RE rate / 100",
@@ -196,7 +206,9 @@ def run(spec, ctx, prior=None):
             metrics.append(metric("Real estate tax increase", projected_tax - site_av * (re_rate.value / 100.0),
                                   "$/yr", [comp_prov, rate_prov, site_prov], [],
                                   "projected minus current RE tax", headline=True,
-                                  adjust=tax_terms + [term(-site_av.value * re_rate.value / 100.0)]))
+                                  adjust=tax_terms + [
+                                      term(-site_av.value * re_rate.value / 100.0,
+                                           "Current site RE tax (removed)")]))
         if acres:
             metrics.append(metric("Projected value per acre", projected_av * (1 / acres),
                                   "$/acre", [comp_prov], [], "projected AV / site acres"))
@@ -212,7 +224,8 @@ def run(spec, ctx, prior=None):
             [prov("City budget per-household personal property actuals",
                   pp_actuals.source or "", pp_actuals.fy or "")],
             [], "new households x per-household personal property revenue",
-            adjust=terms_scale(_terms_of(households_m), pp_actuals.value)))
+            adjust=terms_scale(_terms_of(households_m, "Personal property tax"),
+                               pp_actuals.value)))
     elif households_m:
         pp_rate = _rate(cfg, "tax.personal_property_rate_per_100", notes)
         if pp_rate:
@@ -221,7 +234,7 @@ def run(spec, ctx, prior=None):
             pp_est = (vehicles * Interval.from_assumption(a["avg_vehicle_assessed_value"])
                       * (pp_rate.value / 100.0))
             pp_terms = terms_pow_extend(
-                terms_scale(_terms_of(households_m),
+                terms_scale(_terms_of(households_m, "Personal property tax"),
                             a["vehicles_per_household"].value
                             * a["avg_vehicle_assessed_value"].value
                             * pp_rate.value / 100.0),
@@ -261,7 +274,8 @@ def run(spec, ctx, prior=None):
             "ROUGH ESTIMATE: proposed retail sqft x assumed gross sales per "
             "sqft x BPOL retail rate / 100 — actual receipts depend on tenants",
             adjust=[term(retail_sqft * a["retail_sales_per_sqft"].value
-                         * bpol_rate.value / 100.0, retail_sales_per_sqft=1.0)]))
+                         * bpol_rate.value / 100.0, "BPOL on project retail",
+                         retail_sales_per_sqft=1.0)]))
         notes.append(
             "BPOL revenue is a rough estimate: the city rate schedule is "
             "pinned, but tenant gross receipts are assumed from a sales-per-"
@@ -278,7 +292,7 @@ def run(spec, ctx, prior=None):
             [prov("City meals tax rate", meals_rate.source or "", meals_rate.fy or "")],
             [], "restaurant spending x in-city capture share x meals tax rate "
                 "(cross-module link from the economic Huff run)",
-            adjust=terms_scale(_terms_of(food_away_m),
+            adjust=terms_scale(_terms_of(food_away_m, "Meals tax"),
                                in_city_food_m.value * meals_rate.value)))
     elif meals_rate and not food_away_m:
         notes.append("Meals tax not computed: economic module results unavailable")
@@ -294,7 +308,7 @@ def run(spec, ctx, prior=None):
             base = taxable * _interval_from_metric(in_city_all_m)
             sales_terms = []
             for m in spend_ms:
-                sales_terms += terms_scale(_terms_of(m),
+                sales_terms += terms_scale(_terms_of(m, "Local sales tax"),
                                            in_city_all_m.value * sales_rate.value)
             metrics.append(metric(
                 "Local sales tax share on captured in-city retail",
@@ -347,8 +361,9 @@ def run(spec, ctx, prior=None):
                 f"non-school: (${gf.value:,.0f} - ${edu.value:,.0f}) / "
                 f"{pop.value:,.0f} residents = ${nonschool_percap:,.0f} per "
                 f"capita; {school_note} ({edu.fy or ''})")
-            school_terms = [term(school_cost.value, students_per_unit=1.0)]
-            resident_terms = terms_scale(_terms_of(residents_m), nonschool_percap)
+            school_terms = [term(school_cost.value, "School cost", students_per_unit=1.0)]
+            resident_terms = terms_scale(
+                _terms_of(residents_m, "Service cost — non-school"), nonschool_percap)
             naive_terms = resident_terms + school_terms
             naive_method = ("residents x non-school GF per capita + estimated "
                             "students x per-pupil tuition (school costs follow "
@@ -385,7 +400,8 @@ def run(spec, ctx, prior=None):
             budget_prov = prov("City General Fund budget", gf.source or "", gf.fy or "",
                                f"${gf.value:,.0f} / {pop.value:,.0f} residents = "
                                f"${per_capita:,.0f} per capita")
-            naive_terms = terms_scale(_terms_of(residents_m), per_capita)
+            naive_terms = terms_scale(
+                _terms_of(residents_m, "Service cost — per capita"), per_capita)
             naive_method = ("new residents x GF expenditure per capita "
                             "(upper-bound framing; includes fixed costs that "
                             "don't scale)")
@@ -425,7 +441,7 @@ def run(spec, ctx, prior=None):
              "units x students per unit; reported alongside the cost range but "
              "not entering either cost method (per-capita costing already "
              "embeds average school costs)"),
-            adjust=[term(students.value, students_per_unit=1.0)]))
+            adjust=[term(students.value, "Estimated students", students_per_unit=1.0)]))
 
         # net fiscal impact: INCREMENTAL revenue minus the cost range. The RE
         # component prefers the tax increase over the projected total — the

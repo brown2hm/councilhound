@@ -23,12 +23,15 @@ def prov(source_name: str, url: str, vintage: str, notes: str | None = None) -> 
 # assumption centrals (see AdjustTerm). The algebra below keeps the invariant
 # sum(term values) == metric value, which evaluate.py asserts on every run.
 
-def term(value: float, **exps: float) -> AdjustTerm:
-    return AdjustTerm(value=float(value), exps=exps)
+def term(value: float, _label: str | None = None, **exps: float) -> AdjustTerm:
+    """One adjustment term. `_label` names what the piece is (it leads with an
+    underscore so it can never collide with an assumption key passed as a
+    keyword)."""
+    return AdjustTerm(value=float(value), exps=exps, label=_label)
 
 
 def terms_scale(terms: list[AdjustTerm], k: float) -> list[AdjustTerm]:
-    return [AdjustTerm(value=t.value * k, exps=dict(t.exps)) for t in terms]
+    return [AdjustTerm(value=t.value * k, exps=dict(t.exps), label=t.label) for t in terms]
 
 
 def terms_pow_extend(terms: list[AdjustTerm], **extra: float) -> list[AdjustTerm]:
@@ -38,8 +41,16 @@ def terms_pow_extend(terms: list[AdjustTerm], **extra: float) -> list[AdjustTerm
         exps = dict(t.exps)
         for key, e in extra.items():
             exps[key] = exps.get(key, 0.0) + e
-        out.append(AdjustTerm(value=t.value, exps=exps))
+        out.append(AdjustTerm(value=t.value, exps=exps, label=t.label))
     return out
+
+
+def terms_relabel(terms: list[AdjustTerm], label: str) -> list[AdjustTerm]:
+    """Stamp one name onto a borrowed decomposition. Composite metrics reuse
+    another metric's terms (fiscal nets pull in revenue and cost lines); the
+    borrowed terms carry the donor's internal labels, which are wrong in the
+    consumer's ledger unless renamed."""
+    return [AdjustTerm(value=t.value, exps=dict(t.exps), label=label) for t in terms]
 
 
 def terms_value(terms: list[AdjustTerm]) -> float:

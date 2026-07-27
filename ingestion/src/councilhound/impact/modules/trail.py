@@ -373,7 +373,8 @@ def run(spec, ctx, prior=None):
         "Annual trail user-days", user_days, "user-days/yr",
         [ncdot_prov], [a["beta_trail_access_km"], a["trail_user_days_per_capita"]],
         "catchment population x annual user-days per catchment resident",
-        adjust=[term(user_days.value, trail_user_days_per_capita=1.0)]))
+        adjust=[term(user_days.value, "Annual trail user-days",
+                     trail_user_days_per_capita=1.0)]))
     metrics.append(metric(
         "Annual trail-user spending at nearby businesses", spending, "$/yr",
         [ncdot_prov], [a["beta_trail_access_km"], a["trail_user_days_per_capita"],
@@ -381,7 +382,8 @@ def run(spec, ctx, prior=None):
         "annual user-days x direct spending per user-day (NCDOT four-trail "
         "range, destination trails excluded); allocated to businesses by "
         "walk-decay Huff from the access points", headline=True,
-        adjust=[term(spending.value, trail_user_days_per_capita=1.0,
+        adjust=[term(spending.value, "Trail-user spending",
+                     trail_user_days_per_capita=1.0,
                      trail_spend_per_user_day=1.0)]))
 
     # per-business allocation (three slots so top businesses carry bounds)
@@ -445,7 +447,8 @@ def run(spec, ctx, prior=None):
             "assessed value in the premium band x trail property premium "
             "(one-time capitalization into home values; 0 floor reflects "
             "null findings for low-profile trails)",
-            adjust=[term(uplift.value, trail_property_premium=1.0)]))
+            adjust=[term(uplift.value, "Property value uplift",
+                         trail_property_premium=1.0)]))
         try:
             re_rate = require_rate(ctx.cfg, "tax.real_estate_rate_per_100")
             tax = uplift * (re_rate.value / 100.0)
@@ -457,7 +460,8 @@ def run(spec, ctx, prior=None):
                 [a["trail_property_premium"]],
                 "property value uplift x RE rate / 100 — recurring only if "
                 "the premium capitalizes into assessments", headline=True,
-                adjust=[term(tax.value, trail_property_premium=1.0)]))
+                adjust=[term(tax.value, "RE tax on the premium",
+                             trail_property_premium=1.0)]))
         except MissingRateError as exc:
             notes.append(f"Not computed: tax.real_estate_rate_per_100 — {exc}")
         notes.append(

@@ -49,6 +49,13 @@ _SPEND_GROUP = {
 }
 SPEND_GROUPS = ("restaurant", "convenience", "other_retail")
 
+# ledger labels for the corridor establishment groups
+GROUP_LABELS = {
+    "restaurant": "Food & drink",
+    "convenience": "Convenience retail",
+    "other_retail": "Other retail",
+}
+
 
 def _spend_group(taxonomy: str) -> str:
     return _SPEND_GROUP.get(taxonomy, "other_retail")
@@ -135,7 +142,8 @@ def _spending(trips: Interval, mix: dict[str, float], a: dict[str, Assumption]):
         s = (trips * share * 365.0
              * Interval.from_assumption(a[f"bike_spend_per_trip_{g}"]))
         spend_by_group[g] = s
-        group_terms.append(term(s.value, bike_trips_per_resident_day=1.0,
+        group_terms.append(term(s.value, GROUP_LABELS.get(g, g),
+                                bike_trips_per_resident_day=1.0,
                                 induced_corridor_visit_share=1.0,
                                 **{f"bike_spend_per_trip_{g}": 1.0}))
         total = s if total is None else total + s
@@ -318,7 +326,8 @@ def run(spec, ctx, prior=None):
          a["induced_corridor_visit_share"]],
         "catchment population x latent bike trips per resident-day x induced "
         "corridor visit share",
-        adjust=[term(trips.value, bike_trips_per_resident_day=1.0,
+        adjust=[term(trips.value, "Induced bike visits",
+                     bike_trips_per_resident_day=1.0,
                      induced_corridor_visit_share=1.0)]))
 
     layers = {
@@ -362,7 +371,8 @@ def run(spec, ctx, prior=None):
             [clifton_prov], [a[f"bike_spend_per_trip_{g}"],
                              a["induced_corridor_visit_share"]],
             mechanism,
-            adjust=[term(s.value, bike_trips_per_resident_day=1.0,
+            adjust=[term(s.value, GROUP_LABELS.get(g, g),
+                         bike_trips_per_resident_day=1.0,
                          induced_corridor_visit_share=1.0,
                          **{f"bike_spend_per_trip_{g}": 1.0})]))
 

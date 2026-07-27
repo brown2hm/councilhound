@@ -9,8 +9,12 @@ import { labelFor, recompute } from "@/lib/assumptions";
 export interface CompositionGroup {
   /** Assumption keys this piece scales with (empty = fixed). */
   keys: string[];
-  /** "Occupancy rate × Spending-survey scaling", or "" when fixed. */
+  /** What the piece IS ("Personal property tax"); "" on older rows whose
+   * terms carry no name. */
   label: string;
+  /** What rescales it ("Occupancy rate × Vehicles per household"); "" when
+   * nothing does. Shown as secondary context under the name. */
+  driverLabel: string;
   value: number;
   /** How many raw terms collapsed into this group (e.g. per-category terms). */
   terms: number;
@@ -42,7 +46,12 @@ export function composition(m: ImpactMetric): Composition | null {
       .filter(([, e]) => e !== 0)
       .map(([k]) => k)
       .sort();
-    const id = `${t.value < 0 ? "-" : "+"}|${keys.join(",")}`;
+    // A named term groups by its NAME: two revenue lines that happen to share
+    // drivers (meals and sales tax both scale with spending) must stay
+    // separate rows. Only unnamed terms fall back to the driver signature.
+    const id = t.label
+      ? `${t.value < 0 ? "-" : "+"}|name:${t.label}`
+      : `${t.value < 0 ? "-" : "+"}|keys:${keys.join(",")}`;
     const existing = groups.get(id);
     if (existing) {
       existing.value += t.value;
@@ -50,7 +59,8 @@ export function composition(m: ImpactMetric): Composition | null {
     } else {
       groups.set(id, {
         keys,
-        label: keys.map(labelFor).join(" × "),
+        label: t.label ?? "",
+        driverLabel: keys.map(labelFor).join(" × "),
         value: t.value,
         terms: 1,
       });

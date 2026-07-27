@@ -211,6 +211,9 @@ export interface ImpactAssumption {
 export interface ImpactAdjustTerm {
   value: number;
   exps: Record<string, number>;
+  // what the piece IS ("Personal property tax"); null on rows computed
+  // before terms carried labels
+  label?: string | null;
 }
 
 export interface ImpactMetric {

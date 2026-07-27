@@ -102,6 +102,11 @@ class AdjustTerm(BaseModel):
     changing those requires a full re-run."""
     value: float
     exps: dict[str, float] = Field(default_factory=dict)  # Assumption.key -> exponent
+    # what this piece IS ("Personal property tax", "School cost"), for the
+    # signed composition ledger on the report page. The exps say what
+    # rescales a term; without a label the reader can't tell what it is.
+    # Optional: terms published before labels existed simply have none.
+    label: str | None = None
 
 
 class MetricValue(BaseModel):

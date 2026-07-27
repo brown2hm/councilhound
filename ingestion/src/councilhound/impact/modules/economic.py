@@ -57,6 +57,16 @@ BETA_DRIVE = 0.15
 RETAIL_CLASSES = ("grocery", "restaurant_bar", "retail_comparison",
                   "retail_convenience", "personal_services", "entertainment")
 
+# ledger labels for the per-category pieces of capture/walk/bike metrics
+CATEGORY_LABELS = {
+    "grocery": "Grocery",
+    "restaurant_bar": "Restaurants & bars",
+    "retail_comparison": "Comparison retail",
+    "retail_convenience": "Convenience retail",
+    "personal_services": "Personal services",
+    "entertainment": "Entertainment",
+}
+
 # ground-floor retail mix assumed for the project's own space
 OWN_RETAIL_MIX = {"restaurant_bar": 0.5, "retail_comparison": 0.15,
                   "retail_convenience": 0.15, "personal_services": 0.2}
@@ -758,7 +768,8 @@ def run(spec, ctx, prior=None):
             arr = by_cat[kind][category]
             amount = float(arr.sum() if members is None else arr[members].sum())
             if amount > 0:
-                out.append(term(amount, **demand_exps(category)))
+                out.append(term(amount, CATEGORY_LABELS.get(category, category),
+                                **demand_exps(category)))
         return out
 
     metrics: list[MetricValue] = []
@@ -776,20 +787,21 @@ def run(spec, ctx, prior=None):
     metrics.append(metric("New households", households, "households",
                           [docs_prov], [a["occupancy_rate"]],
                           "proposed units x occupancy_rate",
-                          adjust=[term(households.value, occupancy_rate=1.0)]))
+                          adjust=[term(households.value, "New households", occupancy_rate=1.0)]))
     metrics.append(metric("New residents", residents, "residents",
                           [cupr_prov],
                           [a["occupancy_rate"], a["avg_hh_size_multifamily"]],
                           "households x persons per multifamily unit (Rutgers "
                           "CUPR bedroom-mix multipliers)", headline=True,
-                          adjust=[term(residents.value, occupancy_rate=1.0,
+                          adjust=[term(residents.value, "New residents", occupancy_rate=1.0,
                                        avg_hh_size_multifamily=1.0)]))
     metrics.append(metric(
         "Aggregate household income", aggregate_income, "$/yr",
         [acs_prov], [a["income_premium_new_construction"], a["occupancy_rate"]],
         f"households x {income_scope} (${income_base:,.0f}) "
         "x new-construction premium",
-        adjust=[term(aggregate_income.value, occupancy_rate=1.0,
+        adjust=[term(aggregate_income.value, "Aggregate household income",
+                     occupancy_rate=1.0,
                      income_premium_new_construction=1.0)]))
 
     for category in RETAIL_CLASSES:
@@ -798,7 +810,8 @@ def run(spec, ctx, prior=None):
             [ces_prov], [a["ces_scale"], a["income_premium_new_construction"]],
             "households x CES category spend x (income ratio)^elasticity "
             "(Engel scaling, sublinear for necessities)",
-            adjust=[term(spend[category].value, **demand_exps(category))]))
+            adjust=[term(spend[category].value, CATEGORY_LABELS.get(category, category),
+                         **demand_exps(category))]))
 
     named = [c for label, c in rolled.items() if label >= 0]
     for c in sorted(named, key=lambda c: -c["value"])[:5]:
@@ -847,16 +860,20 @@ def run(spec, ctx, prior=None):
     metrics.append(metric("On-site jobs removed (existing space)", jobs_removed, "jobs",
                           [site_prov], [a["sqft_per_office_job"]],
                           "existing commercial sqft / sqft-per-office-job",
-                          adjust=[term(jobs_removed.value, sqft_per_office_job=-1.0)]))
+                          adjust=[term(jobs_removed.value, "Jobs in removed space",
+                                       sqft_per_office_job=-1.0)]))
     metrics.append(metric("On-site retail jobs added", jobs_added, "jobs",
                           [site_prov], [a["sqft_per_retail_job"]],
                           "proposed retail sqft / sqft-per-retail-job",
-                          adjust=[term(jobs_added.value, sqft_per_retail_job=-1.0)]))
+                          adjust=[term(jobs_added.value, "On-site retail jobs",
+                                       sqft_per_retail_job=-1.0)]))
     metrics.append(metric("Net on-site job change", net_jobs, "jobs",
                           [site_prov], [a["sqft_per_office_job"], a["sqft_per_retail_job"]],
                           "retail jobs added - existing jobs removed",
-                          adjust=[term(jobs_added.value, sqft_per_retail_job=-1.0),
-                                  term(-jobs_removed.value, sqft_per_office_job=-1.0)]))
+                          adjust=[term(jobs_added.value, "Retail jobs added",
+                                       sqft_per_retail_job=-1.0),
+                                  term(-jobs_removed.value, "Jobs removed",
+                                       sqft_per_office_job=-1.0)]))
     if spec.existing.use:
         notes.append(f"Displaced use: {spec.existing.use}. Any spending that "
                      "originated on-site today is assumed negligible relative to "
@@ -950,7 +967,8 @@ def run(spec, ctx, prior=None):
         [trips_prov], [a["walk_trips_per_resident_day"], a["avg_hh_size_multifamily"],
                        a["occupancy_rate"]],
         "new residents x daily walk trips per resident",
-        adjust=[term(trips.value, occupancy_rate=1.0, avg_hh_size_multifamily=1.0,
+        adjust=[term(trips.value, "Resident walk trips", occupancy_rate=1.0,
+                     avg_hh_size_multifamily=1.0,
                      walk_trips_per_resident_day=1.0)]))
     metrics.append(MetricValue(
         name="Foot-traffic index change, 10 nearest commercial street segments",

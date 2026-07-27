@@ -99,3 +99,37 @@ def test_demand_terms_reproduce_direct_rerun_at_shifted_assumptions():
     # probabilities are independent of the demand-side assumptions
     assert _eval_terms(bike_terms, baseline, adjusted) == pytest.approx(
         float(direct_bike[0].sum()), rel=1e-9)
+
+
+def test_labels_survive_scale_and_extend():
+    """Composite metrics scale and negate borrowed terms; a term that loses
+    its label on the way into a net becomes an unreadable ledger row."""
+    from councilhound.impact.provenance import terms_relabel
+
+    ts = [term(100.0, "Revenue line", occupancy_rate=1.0), term(50.0)]
+    assert [t.label for t in terms_scale(ts, -1.0)] == ["Revenue line", None]
+    assert [t.label for t in terms_pow_extend(ts, ces_scale=1.0)] == ["Revenue line", None]
+    # negation preserves the name but flips the sign — that is what puts a
+    # cost on the subtract side of the ledger with its identity intact
+    assert terms_scale(ts, -1.0)[0].value == -100.0
+    # relabel stamps a borrowed decomposition with the consumer's name
+    assert [t.label for t in terms_relabel(ts, "School cost")] == ["School cost", "School cost"]
+
+
+def test_label_keyword_cannot_collide_with_an_assumption_key():
+    """`_label` is positional-or-underscored precisely so a key named
+    'label' would still land in exps, not in the term's name."""
+    t = term(10.0, label=2.0)
+    assert t.label is None
+    assert t.exps == {"label": 2.0}
+
+
+def test_capture_terms_carry_category_labels():
+    """The per-category pieces of the mode metrics are the ledger rows."""
+    from councilhound.impact.modules.economic import CATEGORY_LABELS
+    a = _assumptions(None)
+    _, _, _, _, _, by_cat = _capture(_dest(), _spend(), a)
+    labelled = [term(float(by_cat["walk"][c].sum()), CATEGORY_LABELS[c])
+                for c in RETAIL_CLASSES]
+    assert all(t.label for t in labelled)
+    assert "Restaurants & bars" in [t.label for t in labelled]
