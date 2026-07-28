@@ -1,9 +1,9 @@
 ---
 type: project-history
 title: Highlands at Mantua — meeting history
-description: Dated record of every meeting action on Highlands at Mantua, through 2025-03-24.
+description: Dated record of every meeting action on Highlands at Mantua, through 2026-07-27.
 resource: https://councilhound.net/development/The-Highlands-at-Mantua
-timestamp: '2025-03-24'
+timestamp: '2026-07-27'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
@@ -33,4 +33,11 @@ timestamp: '2025-03-24'
 **Agenda item 10**: Staff Report ([watch the moment](https://fairfax.granicus.com/MediaPlayer.php?view_id=13&clip_id=4147&starttime=5687&entrytime=5687))
 - Outcome: Staff provided updates on recent and upcoming City Council meetings and other planning matters, including the Five Chimneys proposal, Mantua townhouse proposal, Courthouse Plaza redevelopment, George Snyder Trail, Chain Bridge Road/Eaton Place intersection public hearing, budget discussions, Transit Development Plan, Small Area Plan zoning ordinance amendments, the Budget Open House, Commissioner Kevin Denton's resignation, the Safety Action Plan, and safety training schedule.
 - [10] The Mantua townhouse proposal was the subject of a City Council work session on February 25, 2025, as reported by staff.
+- Status after: **in_progress**
+
+## 2026-07-27 — Planning Commission Regular Meeting/Work Session
+
+**Agenda item 6a**: Highlands at Mantua – Public Hearing
+- Outcome: Public hearing scheduled per the agenda; no minutes or actions report available.
+- [6a] A public hearing was scheduled for the Highlands at Mantua application, in which applicant RJL Associates, Inc. seeks to replace approximately 21,566 sq ft of office space with 14 front-loaded townhomes on 2.12 acres.
 - Status after: **in_progress**

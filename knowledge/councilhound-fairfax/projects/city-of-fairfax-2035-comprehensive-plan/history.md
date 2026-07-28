@@ -2,9 +2,9 @@
 type: project-history
 title: City of Fairfax 2035 Comprehensive Plan — meeting history
 description: Dated record of every meeting action on City of Fairfax 2035 Comprehensive Plan,
-  through 2026-07-13.
+  through 2026-07-27.
 resource: https://councilhound.net/topics/city-of-fairfax-2035-comprehensive-plan
-timestamp: '2026-07-13'
+timestamp: '2026-07-27'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
@@ -62,3 +62,9 @@ timestamp: '2026-07-13'
 **Agenda item 8c**: Presentation of updates to the Implementation Guides related to the City of Fairfax 2035 Comprehensive Plan and approved Small Area Plans ([watch the moment](https://fairfax.granicus.com/MediaPlayer.php?view_id=13&clip_id=4611&starttime=8962&entrytime=8962))
 - Outcome: Scheduled as a work session presentation per the agenda; no minutes or actions report available to confirm outcome.
 - [8c] The City of Fairfax 2035 Comprehensive Plan is referenced as the basis for Implementation Guide updates scheduled for presentation at this work session.
+
+## 2026-07-27 — Planning Commission Regular Meeting/Work Session
+
+**Agenda item 6a**: Highlands at Mantua – Public Hearing
+- Outcome: Public hearing scheduled per the agenda; no minutes or actions report available.
+- [6a] The City of Fairfax 2035 Comprehensive Plan is implicated by the requested Comprehensive Plan Amendment for the Highlands at Mantua project.
