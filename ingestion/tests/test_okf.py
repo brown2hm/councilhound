@@ -375,6 +375,54 @@ def test_push_never_deletes_pages_of_an_orphan_directory(db_session, project,
 
 # --- curator ---------------------------------------------------------------
 
+def test_material_carries_member_links_for_vote_surnames(db_session, project):
+    """Vote breakdowns key members by surname, so without this block the
+    curator has to build a link itself — and what it builds 404s. Whole URLs,
+    not slugs: given only a slug it produced a root-relative /members/<slug>,
+    which the bundle reserves for its own pages."""
+    db_session.add_all([
+        Entity(entity_type="person", name="Billy Bates",
+               canonical_slug="billy-bates"),
+        Entity(entity_type="person", name="Stacy Hall",
+               canonical_slug="stacy-hall"),
+    ])
+    db_session.commit()
+
+    material, _ = curate._new_material(db_session, project,
+                                       datetime.date(2026, 5, 1))
+    assert "=== COUNCIL MEMBER LINKS ===" in material
+    assert f"Bates -> Billy Bates | {SITE_BASE_URL}/members/billy-bates" in material
+    assert f"Hall -> Stacy Hall | {SITE_BASE_URL}/members/stacy-hall" in material
+
+
+def test_material_marks_unknown_and_ambiguous_members(db_session, project):
+    """An unmerged spelling variant collides on surname; the seated member is
+    the one carrying a title alias. Without that tiebreak the curator is told
+    not to link a member it could link correctly."""
+    real = Entity(entity_type="person", name="Stacey Bates",
+                  canonical_slug="stacey-bates")
+    dupe = Entity(entity_type="person", name="Stacy Bates",
+                  canonical_slug="stacy-bates")
+    db_session.add_all([real, dupe])
+    db_session.flush()
+    db_session.add(EntityAlias(entity_id=real.id, alias="Councilmember Bates"))
+    db_session.commit()
+
+    material, _ = curate._new_material(db_session, project,
+                                       datetime.date(2026, 5, 1))
+    # Bates resolves to the titled entity despite the surname collision
+    assert f"Bates -> Stacey Bates | {SITE_BASE_URL}/members/stacey-bates" in material
+    # Hall has no person entity at all
+    assert "Hall -> no matching member; do not link" in material
+
+    # drop the title alias and the tie becomes genuinely unresolvable
+    db_session.query(EntityAlias).filter_by(entity_id=real.id).delete()
+    db_session.commit()
+    material, _ = curate._new_material(db_session, project,
+                                       datetime.date(2026, 5, 1))
+    assert "Bates -> ambiguous (Stacey Bates, Stacy Bates); do not link" in material
+
+
 def _curator_response(overview_body, positions_body, summary="Noted the approval."):
     return {"overview_body": overview_body, "positions_body": positions_body,
             "edit_summary": summary}

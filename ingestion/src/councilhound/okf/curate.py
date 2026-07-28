@@ -16,7 +16,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
-from councilhound.config import ANTHROPIC_API_KEY
+from councilhound.config import ANTHROPIC_API_KEY, SITE_BASE_URL
 from councilhound.db.models import (
     AgendaItem,
     Entity,
@@ -30,7 +30,7 @@ from councilhound.okf.bundle import CURATOR_OFF_RE, append_log, read_page, write
 
 log = logging.getLogger(__name__)
 
-CURATOR_PROMPT_VERSION = "v1"
+CURATOR_PROMPT_VERSION = "v2"  # v2 adds the member-slug roster + no-invented-URLs rule
 DEFAULT_MODEL = os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-6")
 MAX_TRANSCRIPT_EXCERPTS = 8
 
@@ -75,6 +75,11 @@ when the material records that member saying/doing it — never infer from a \
 vote alone. Newer material supersedes older.
 - Cite: when adding a claim from a meeting, reference its date, e.g. \
 "(2026-06-09 City Council)". Keep existing links intact.
+- Never invent or assemble a URL. To link a council member, copy a URL \
+verbatim from the COUNCIL MEMBER LINKS block; if a name is absent from that \
+block, write it as plain text. Do not build a link from a surname and do not \
+shorten one to a relative path — the members page matches the slug exactly, \
+so anything you construct yourself is a dead link.
 - Never write literal dollar amounts or impact figures — impact estimates \
 are referenced with {{metric:...}} markers only, and only on the impact page.
 - Keep the "Open questions" section honest: resolve questions the record \
@@ -124,6 +129,75 @@ def _page_stamp(frontmatter: dict | None) -> date | None:
     return None
 
 
+# Surname extraction mirrors api/app/routers/members.py:85 — the minutes key
+# vote breakdowns by last name, and that is the only handle we get on a member.
+_SUFFIXES = {"jr", "sr", "ii", "iii", "iv"}
+# Title aliases mark the person who actually sits on a body, which is how the
+# members page builds its roster (members.py:_TITLE_ROLES). Used here to break
+# surname ties created by unmerged spelling variants.
+_TITLE_PREFIXES = ("mayor ", "councilmember ", "council member ",
+                   "councilwoman ", "councilman ", "vice-chair ",
+                   "vice chair ", "chairman ", "chair ", "commissioner ")
+
+
+def _last_name(name: str) -> str:
+    tokens = [t for t in name.replace(",", " ").split()
+              if t.lower().rstrip(".") not in _SUFFIXES]
+    return tokens[-1] if tokens else ""
+
+
+def _roster_block(session: Session, surnames: set[str]) -> list[str]:
+    """Map every surname appearing in this material to its canonical member
+    slug.
+
+    Vote breakdowns are keyed by surname ({'Read': 'yes'}), which is not
+    enough to build a /members/<slug> link. Left to itself the curator
+    slugifies the surname and writes /members/read, which 404s: the members
+    route matches canonical_slug exactly and Catherine Read's is
+    catherine-read. Hand the model the mapping instead of letting it guess,
+    and say explicitly what to do when a name is missing."""
+    if not surnames:
+        return []
+    people = list(session.scalars(
+        select(Entity).where(Entity.entity_type == "person")))
+    titled = {eid for eid, alias in session.execute(
+        select(EntityAlias.entity_id, func.lower(EntityAlias.alias)))
+        if alias.startswith(_TITLE_PREFIXES)}
+    by_surname: dict[str, list[Entity]] = {}
+    for person in people:
+        key = _last_name(person.name).lower()
+        if key:
+            by_surname.setdefault(key, []).append(person)
+
+    # give whole URLs, not slugs: asked to assemble one, the model produced
+    # root-relative /members/<slug>, which the bundle reserves for its own
+    # pages — copying a complete URL leaves nothing to get wrong
+    lines = ["", "=== COUNCIL MEMBER LINKS ===",
+             "Copy these URLs verbatim when linking a member. If a name is "
+             "not listed, write it as plain text with no link."]
+    for surname in sorted(surnames):
+        # breakdown keys are usually a bare surname but not always ("Doyle
+        # Feingold"), so reduce the key the same way the entity name was
+        matches = by_surname.get(_last_name(surname).lower(), [])
+        if len(matches) > 1:
+            # unmerged spelling variants ("Stacey" / "Stacy") collide on
+            # surname; the one carrying a title alias is the seated member
+            seated = [p for p in matches if p.id in titled]
+            if len(seated) == 1:
+                matches = seated
+        if len(matches) == 1:
+            lines.append(
+                f"  {surname} -> {matches[0].name} | "
+                f"{SITE_BASE_URL}/members/{matches[0].canonical_slug}")
+        elif not matches:
+            lines.append(f"  {surname} -> no matching member; do not link")
+        else:
+            # still ambiguous — a wrong guess misattributes a recorded vote
+            names = ", ".join(sorted(p.name for p in matches))
+            lines.append(f"  {surname} -> ambiguous ({names}); do not link")
+    return lines
+
+
 def _new_material(session: Session, entity: Entity, since: date | None) -> tuple[str, date | None]:
     """The dated record newer than `since`, formatted like the profile
     material. Returns (text, latest_meeting_date); empty text = up to date."""
@@ -142,6 +216,7 @@ def _new_material(session: Session, entity: Entity, since: date | None) -> tuple
 
     parts = ["=== NEW DATED RECORD ==="]
     latest = None
+    surnames: set[str] = set()
     for update, meeting, item in rows:
         latest = meeting.meeting_date
         parts.append(f"\n[{meeting.meeting_date}] {meeting.title}")
@@ -152,6 +227,7 @@ def _new_material(session: Session, entity: Entity, since: date | None) -> tuple
             for vote in session.scalars(select(Vote).where(Vote.agenda_item_id == item.id)):
                 parts.append(f"  Vote ({vote.motion_result}): {vote.description} "
                              f"| breakdown: {vote.vote_breakdown}")
+                surnames.update(vote.vote_breakdown or {})
         parts.append(f"  Update: {update.update_text}")
 
     aliases = session.scalars(
@@ -171,6 +247,7 @@ def _new_material(session: Session, entity: Entity, since: date | None) -> tuple
             parts += ["", "=== TRANSCRIPT EXCERPTS (verbatim, unattributed speech) ==="]
             for chunk, meeting in chunks:
                 parts.append(f"\n[{meeting.meeting_date}] {chunk.text[:1200]}")
+    parts += _roster_block(session, surnames)
     return "\n".join(parts), latest
 
 
