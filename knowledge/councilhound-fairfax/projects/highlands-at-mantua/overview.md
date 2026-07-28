@@ -1,6 +1,6 @@
 ---
 type: development-project
-title: The Highlands at Mantua
+title: Highlands at Mantua
 description: The applicant is proposing to replace approximately 21,566 square feet of existing
   offices with fourteen (14) front loaded townhomes on a private street, and sidewalks on
   both sides of a private street with crosswalks connecting to two open space areas with amenities
@@ -8,9 +8,9 @@ description: The applicant is proposing to replace approximately 21,566 square f
 resource: https://councilhound.net/development/The-Highlands-at-Mantua
 tags:
 - private-development
-- under-review
-timestamp: '2026-07-19'
-status: under_review
+- in-progress
+timestamp: '2025-02-10'
+status: in_progress
 source: official
 address: 9495 Silver King Court, Fairfax, VA 22030
 applicant: RJL Associates, Inc.  David S. Houston, Attorney Bean Kinney & Korman, PC 2311
@@ -34,5 +34,6 @@ The applicant is proposing to replace approximately 21,566 square feet of existi
 
 ## In this wiki
 
+- [Meeting history](/projects/highlands-at-mantua/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/highlands-at-mantua/positions.md)
 - [Impact analysis](/projects/highlands-at-mantua/impact.md) — screening estimates with assumptions and ranges

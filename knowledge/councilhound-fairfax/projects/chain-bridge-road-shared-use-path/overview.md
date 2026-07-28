@@ -12,6 +12,7 @@ address: Assembly Drive, 22030
 city_detail_url: https://www.fairfaxva.gov/Property-Business/Development/Projects/Chain-Bridge-Road-Shared-Use-Path
 lat: 38.8609882
 lng: -77.3092292
+evaluation_status: synthesized
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->

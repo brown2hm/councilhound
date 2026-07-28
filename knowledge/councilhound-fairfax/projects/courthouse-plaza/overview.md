@@ -1,14 +1,15 @@
 ---
 type: development-project
 title: Courthouse Plaza
-description: The potential applicant proposes a rezoning from CR Commercial Retail and CG
-  Commercial General to PD-M Planned Development Mixed Use.
+description: Courthouse Plaza is a mixed-use redevelopment proposal for the shopping center
+  at 10300 Willard Way and 3922 Blenheim Boulevard in Fairfax, anchored by a Safeway grocery
+  store.
 resource: https://councilhound.net/development/Courthouse-Plaza
 tags:
 - private-development
-- under-review
-timestamp: '2026-07-19'
-status: under_review
+- in-progress
+timestamp: '2026-06-22'
+status: in_progress
 source: official
 address: 10300 Willard Way and 3922 Blenheim Boulevard, Fairfax, VA 22030
 applicant: Molly Novotny Curata Partners
@@ -18,6 +19,8 @@ lng: -77.3025809
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
+
+Courthouse Plaza is a mixed-use redevelopment proposal for the shopping center at 10300 Willard Way and 3922 Blenheim Boulevard in Fairfax, anchored by a Safeway grocery store. Combined Courthouse, LLC originally sought 8 Special Exceptions for a mixed-use development in the CR Commercial Retail district and Old Town Fairfax Transition Overlay District; a City Council work session was held on September 24, 2024, and a public hearing was held July 22, 2025, but Council deferred action to October 28, 2025 and ultimately denied the request 4–2 on that date. Following the denial, the applicant returned with a revised two-phase redevelopment concept: Phase 1 proposes a 6-story mixed-use building (315 units), and Phase 2 proposes a new street network and reorientation of the grocery anchor (an additional ~315 units, targeted post-2035), now requiring a rezoning from CR/CG to PD-M (Planned Development Mixed Use) with a Master Development Plan and multiple Special Exceptions. Pre-application briefings were presented to the Planning Commission on February 9, 2026, and to City Council on February 24, 2026; the applicant has since formally submitted a land use application with one resubmission received. A post-submission work session was held at the Planning Commission on June 22, 2026, and a City Council work session on the application is scheduled for July 28, 2026. The Board of Architectural Review has also reviewed the proposal, providing feedback including comments on the use of red brick in the building's design.
 
 ## Official record
 
@@ -30,4 +33,5 @@ The potential applicant proposes a rezoning from CR Commercial Retail and CG Com
 
 ## In this wiki
 
+- [Meeting history](/projects/courthouse-plaza/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/courthouse-plaza/positions.md)

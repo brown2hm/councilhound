@@ -8,9 +8,9 @@ description: The applicant is proposing to replace three office buildings with a
 resource: https://councilhound.net/development/Gallery-at-City-Center
 tags:
 - private-development
-- under-review
-timestamp: '2026-07-19'
-status: under_review
+- in-progress
+timestamp: '2026-05-11'
+status: in_progress
 source: official
 address: 4085, 4101, 4103 and 4117 Chain Bridge Road, Fairfax, VA 22030
 applicant: The Christopher Companies 10461 White Granite Drive, Suite 250 Oakton, VA 22124  Clark
@@ -34,5 +34,6 @@ The applicant is proposing to replace three office buildings with a mixed-use de
 
 ## In this wiki
 
+- [Meeting history](/projects/gallery-at-city-center/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/gallery-at-city-center/positions.md)
 - [Impact analysis](/projects/gallery-at-city-center/impact.md) — screening estimates with assumptions and ranges

@@ -6,9 +6,9 @@ description: The applicant, ABTB Mid-Atlantic, LLC, is proposing to develop a 2,
 resource: https://councilhound.net/development/Taco-Bell
 tags:
 - private-development
-- under-construction
-timestamp: '2026-07-19'
-status: under_construction
+- in-progress
+timestamp: '2024-11-25'
+status: in_progress
 source: official
 address: 10120 Fairfax Boulevard, Fairfax, VA 22030
 applicant: ABTB Mid-Atlantic, LLC  Kathryn R. Taylor, Associate 2200 Clarendon Boulevard,
@@ -31,4 +31,5 @@ The applicant, ABTB Mid-Atlantic, LLC, is proposing to develop a 2,090 square fo
 
 ## In this wiki
 
+- [Meeting history](/projects/taco-bell/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/taco-bell/positions.md)

@@ -1,14 +1,14 @@
 ---
 type: project-impact
-title: The Highlands at Mantua — impact analysis
-description: Screening-level economic and fiscal estimates for The Highlands at Mantua.
+title: Highlands at Mantua — impact analysis
+description: Screening-level economic and fiscal estimates for Highlands at Mantua.
 resource: https://councilhound.net/development/The-Highlands-at-Mantua
 timestamp: '2026-07-19'
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
 
-Screening-level estimates of the economic and fiscal effects of The Highlands at Mantua. Figures are decision-support context with named assumptions and sensitivity ranges — not predictions. The [full analysis](https://councilhound.net/development/The-Highlands-at-Mantua) has the interactive assumptions panel and maps; [methods](https://councilhound.net/development/methods) documents every formula.
+Screening-level estimates of the economic and fiscal effects of Highlands at Mantua. Figures are decision-support context with named assumptions and sensitivity ranges — not predictions. The [full analysis](https://councilhound.net/development/The-Highlands-at-Mantua) has the interactive assumptions panel and maps; [methods](https://councilhound.net/development/methods) documents every formula.
 
 ## Headline estimates
 

@@ -24,7 +24,6 @@ lng: -77.3069088
 
 The potential applicant is proposing to replace a gas station, retail and former restaurant with 271 multifamily dwelling units in a proposed 8-story building, 2,253 sq. ft. of ground floor commercial, 316 total parking spaces within 5-levels of structured parking, vehicular access to garage from Chain Bridge Road, a new proposed eat-west road (Northfax Street) and streetscape from Chain Bridge Road, and a new proposed north-south road from Fairfax Boulevard with garage access. The garage and portions of the residential building spans over existing box culvert and a stormwater easement.
 
-- **Requests:** The potential applicant is requesting a Zoning Map Amendment (Rezoning) from CR Commercial Retail to CU Commercial Urban in the Architectural Control Overlay (ACOD), Special Use Permit for upper-story residential/mixed use building, Special Exceptions for height, density, 75% of ground floor non-residential, reduction to parking requirement, and inter-parcel connection, and a Major Certificate of Appropriateness for architecture and landscaping. This proposed application would be subject to the City's Affordable Dwelling Unit (ADU) ordinance.
 - **Address:** 3575 Chain Bridge Road and 10464-10480 Fairfax Boulevard, Fairfax, VA 22030
 - **Applicant:** Chain Bridge, LLC
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Northfax-Chain-Bridge)

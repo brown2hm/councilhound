@@ -24,7 +24,6 @@ lng: -77.2993467
 
 The potential applicant is proposing a hotel and hospitality venue with 96 rooms, spa and membership club, conference and events center, specialty restaurants, and underground parking. The 5,008 square foot colonial style single-family would remain on site as part of the overall development.
 
-- **Requests:** The potential applicant could require a Comprehensive Plan Amendment, Zoning Map Amendment (Rezoning), Water Quality Impact Assessment (WQIA), Resource Protection Area site-specific study, and a Major Certificate of Appropriateness for architecture and landscaping.
 - **Address:** 10230 Main Street, Fairfax, VA 22030
 - **Applicant:** Ox Hill Companies
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Farr-House-aka-Five-Chimneys)

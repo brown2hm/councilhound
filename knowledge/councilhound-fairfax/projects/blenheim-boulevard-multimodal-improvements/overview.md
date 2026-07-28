@@ -1,29 +1,23 @@
 ---
 type: development-project
-title: Blenheim Blvd Multimodal Improvements
-description: Reconstruction of Blenheim Boulevard with sidewalks, a two-way cycle track, upgraded
-  bus stops, and additional turn lanes, enhancing safety and accessibility for pedestrians,
-  cyclists, and transit riders.
-resource: https://councilhound.net/development/Blenheim-Blvd-Multimodal-Improvements
+title: Blenheim Boulevard Multimodal Improvements
+description: The Blenheim Boulevard Multimodal Improvements Project is a City of Fairfax transportation
+  project focused on adding multimodal infrastructure along Blenheim Boulevard.
+resource: https://councilhound.net/topics/blenheim-boulevard-multimodal-improvements
 tags:
 - city-project
-timestamp: '2026-07-19'
-source: official
-address: Blenheim Boulevard, Fairfax, VA 22030
-city_detail_url: https://www.fairfaxva.gov/Property-Business/Development/Projects/Blenheim-Blvd-Multimodal-Improvements
-lat: 38.8557039
-lng: -77.2907317
+- approved
+timestamp: '2026-06-23'
+status: approved
+source: meetings
+evaluation_status: synthesized
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
 
-## Official record
-
-Reconstruction of Blenheim Boulevard with sidewalks, a two-way cycle track, upgraded bus stops, and additional turn lanes, enhancing safety and accessibility for pedestrians, cyclists, and transit riders.
-
-- **Address:** Blenheim Boulevard, Fairfax, VA 22030
-- [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Blenheim-Blvd-Multimodal-Improvements)
+The Blenheim Boulevard Multimodal Improvements Project is a City of Fairfax transportation project focused on adding multimodal infrastructure along Blenheim Boulevard. As of early 2025, construction was anticipated to begin that year, with utility relocation confirmed underway as of March 2026. The approved project scope runs from Blenheim Hall Drive to Ridge Avenue; separate future planning efforts have been identified to potentially extend improvements into Old Town and through Fairfax Circle, but those extensions are not part of the current project. The City Council held a work session on the project on June 3, 2025, and authorized the exercise of quick-take condemnation powers for property acquisition on June 24, 2025. On April 28, 2026, the City Council unanimously (6-0) awarded a construction contract to Fort Myer Construction Corporation for $21,770,570, conditional on final VDOT approval. On June 23, 2026, the Council approved (5-0, Hall absent) a resolution authorizing the City Manager to sign a standard project agreement with NVTA for 70% funding of the project (SPA 2020-48-2).
 
 ## In this wiki
 
+- [Meeting history](/projects/blenheim-boulevard-multimodal-improvements/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/blenheim-boulevard-multimodal-improvements/positions.md)

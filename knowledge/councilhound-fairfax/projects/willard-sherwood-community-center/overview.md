@@ -1,28 +1,22 @@
 ---
 type: development-project
-title: Willard-Sherwood Health Community Center
-description: Fairfax City & Fairfax County are redeveloping the Joseph Willard Health Center
-  and Stacy C.
-resource: https://councilhound.net/development/Willard-Sherwood-Health-Community-Center
+title: Willard-Sherwood Community Center
+description: The Willard-Sherwood Community Center expansion/rebuild is a major capital project
+  for the City of Fairfax.
+resource: https://councilhound.net/topics/willard-sherwood-community-center
 tags:
 - city-project
-timestamp: '2026-07-19'
-source: official
-address: 3750 Blenheim Blvd., Fairfax, VA 22030
-city_detail_url: https://www.fairfaxva.gov/Property-Business/Development/Projects/Willard-Sherwood-Health-Community-Center
-lat: 38.8506818
-lng: -77.2995761
+- in-progress
+timestamp: '2026-05-11'
+status: in_progress
+source: meetings
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
 
-## Official record
-
-Fairfax City & Fairfax County are redeveloping the Joseph Willard Health Center and Stacy C. Sherwood Center sites into a single destination for health, wellness, fitness, and child care. Located at Layton Hall Drive and Blenheim Boulevard, the new Willard-Sherwood Health & Community Center will provide integrated city- and county-operated community, health, and human services to all residents.
-
-- **Address:** 3750 Blenheim Blvd., Fairfax, VA 22030
-- [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Willard-Sherwood-Health-Community-Center)
+The Willard-Sherwood Community Center expansion/rebuild is a major capital project for the City of Fairfax. In November 2024, City Council unanimously approved Resolution R-24-32 authorizing the City of Fairfax Economic Development Authority to issue revenue bonds up to $54,500,000 to finance general government capital projects, with Willard-Sherwood listed as an anticipated expenditure. The project was included in the FY 2026–2030 Capital Improvement Program adopted in May 2025; a council amendment to defer it to the FY 2027 budget failed 3-3. City Council held a work session on a potential land use request for the site on June 10, 2025, and on October 14, 2025 approved a Special Use Permit (with separate actions on a city application and a Fairfax County application heard jointly). The Planning Commission cited the project as a significant capital priority during its February 2026 CIP review, noting a City Council work session on the project was scheduled for the following evening. City Council voted to proceed with the project at its April 28, 2026 meeting, as reported by Planning Commission staff in May 2026. Public support has been substantial and consistent, with speakers at multiple meetings in 2026 including the Chair of the City of Fairfax School Board, the Executive Director of the Central Fairfax Chamber of Commerce, and representatives of the Green Acres Senior Center Senior Council.
 
 ## In this wiki
 
+- [Meeting history](/projects/willard-sherwood-community-center/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/willard-sherwood-community-center/positions.md)

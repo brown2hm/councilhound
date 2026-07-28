@@ -3,7 +3,7 @@ type: project-positions
 title: Taco Bell — positions & open questions
 description: Recorded member positions and unresolved questions on Taco Bell.
 resource: https://councilhound.net/development/Taco-Bell
-timestamp: '2026-07-19'
+timestamp: '2024-11-25'
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->

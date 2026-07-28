@@ -13,6 +13,7 @@ address: Jermantown Road, Fairfax, VA 22030
 city_detail_url: https://www.fairfaxva.gov/Property-Business/Development/Projects/Jermantown-Road-Corridor-Improvements
 lat: 38.8589304
 lng: -77.3296783
+evaluation_status: synthesized
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->

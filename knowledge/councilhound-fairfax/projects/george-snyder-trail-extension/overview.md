@@ -12,6 +12,7 @@ address: Fairfax Blvd. and Draper Drive, 22030
 city_detail_url: https://www.fairfaxva.gov/Property-Business/Development/Projects/George-Snyder-Trail-Extension
 lat: 38.8639907
 lng: -77.2812858
+evaluation_status: synthesized
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->

@@ -1,9 +1,9 @@
 ---
 type: project-positions
-title: The Highlands at Mantua — positions & open questions
-description: Recorded member positions and unresolved questions on The Highlands at Mantua.
+title: Highlands at Mantua — positions & open questions
+description: Recorded member positions and unresolved questions on Highlands at Mantua.
 resource: https://councilhound.net/development/The-Highlands-at-Mantua
-timestamp: '2026-07-19'
+timestamp: '2025-02-10'
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
