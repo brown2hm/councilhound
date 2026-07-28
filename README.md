@@ -171,9 +171,12 @@ metrics refuse to run rather than guess.
 markdown concept files per tracked project, per the
 [Open Knowledge Format](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf)
 v0.1 spec (YAML frontmatter, reserved `index.md`/`log.md`). The bundle
-(default `data/okf/councilhound-fairfax/`, override `$OKF_BUNDLE_DIR`) is
+(default `knowledge/councilhound-fairfax/`, override `$OKF_BUNDLE_DIR`) is
 canonical for narrative knowledge and designed for incremental maintenance
-instead of wholesale profile regeneration. Ownership is per-file:
+instead of wholesale profile regeneration. It is **version-controlled** — it
+deliberately does not live under the gitignored `data/`, because the
+curator-owned pages hold human edits and every regeneration should land as a
+reviewable diff. Ownership is per-file:
 `history.md` and all indexes are **pipeline-owned** (regenerated
 deterministically); `overview.md`/`positions.md`/`impact.md` are
 **curator-owned** — seeded once, then edited minimally by the LLM curator as

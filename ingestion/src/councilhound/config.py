@@ -40,11 +40,15 @@ REQUEST_DELAY_SECONDS = float(os.environ.get("REQUEST_DELAY_SECONDS", "1.0"))
 CENSUS_API_KEY = os.environ.get("CENSUS_API_KEY", "")
 
 # OKF knowledge bundle (councilhound.okf): a directory of markdown concept
-# files per tracked project, per the Open Knowledge Format spec. The bundle
-# is a build artifact rendered from the DB — point this at a checkout of the
-# knowledge repo once one exists.
+# files per tracked project, per the Open Knowledge Format spec. NOT under
+# DATA_DIR — data/ is gitignored, and this bundle is version-controlled on
+# purpose: curator-owned pages carry human edits that only survive because
+# every regeneration lands as a reviewable diff.
+# The default only works from a repo checkout: the ingestion image builds from
+# ingestion/ (so knowledge/ is outside the context) and _REPO_ROOT collapses to
+# "/" there. Anything containerized must mount the bundle and set this env var.
 OKF_BUNDLE_DIR = os.environ.get(
-    "OKF_BUNDLE_DIR", os.path.join(DATA_DIR, "okf", "councilhound-fairfax"))
+    "OKF_BUNDLE_DIR", os.path.join(_REPO_ROOT, "knowledge", "councilhound-fairfax"))
 # Public site base used for `resource` frontmatter URIs and cross-links from
 # wiki prose to pages that live outside the bundle (members, analyses).
 SITE_BASE_URL = os.environ.get("SITE_BASE_URL", "https://councilhound.net").rstrip("/")

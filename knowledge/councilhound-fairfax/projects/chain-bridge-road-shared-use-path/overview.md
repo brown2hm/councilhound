@@ -1,0 +1,28 @@
+---
+type: development-project
+title: Chain Bridge Road Shared Use Path
+description: This project will construct a missing link of path on the west side of Chain
+  Bridge Road between Assembly Drive and Northfax Street (formerly Orchard Street).
+resource: https://councilhound.net/development/Chain-Bridge-Road-Shared-Use-Path
+tags:
+- city-project
+timestamp: '2026-07-19'
+source: official
+address: Assembly Drive, 22030
+city_detail_url: https://www.fairfaxva.gov/Property-Business/Development/Projects/Chain-Bridge-Road-Shared-Use-Path
+lat: 38.8609882
+lng: -77.3092292
+---
+
+<!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
+
+## Official record
+
+This project will construct a missing link of path on the west side of Chain Bridge Road between Assembly Drive and Northfax Street (formerly Orchard Street).
+
+- **Address:** Assembly Drive, 22030
+- [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Chain-Bridge-Road-Shared-Use-Path)
+
+## In this wiki
+
+- [Positions & open questions](/projects/chain-bridge-road-shared-use-path/positions.md)
