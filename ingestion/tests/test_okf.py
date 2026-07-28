@@ -10,6 +10,7 @@ from councilhound.db.models import (
     AgendaItem,
     CityProject,
     Entity,
+    EntityAlias,
     EntityProfile,
     EntityUpdate,
     Meeting,
@@ -287,6 +288,44 @@ def test_push_upserts_and_deletes(db_session, project, tmp_path):
     assert result["deleted"] == 1 and result["updated"] == 1
     assert db_session.query(WikiPage).filter_by(
         path="projects/circle-gateway/impact.md").first() is None
+
+
+def test_push_resolves_renamed_slug_through_alias(db_session, project, tmp_path):
+    """dedupe leaves the old slug behind as an alias when it renames an
+    entity; a bundle seeded before the rename must still land."""
+    seed_bundle(db_session, str(tmp_path))
+    os.rename(tmp_path / "projects/circle-gateway",
+              tmp_path / "projects/circle-gateway-old")
+    db_session.add(EntityAlias(entity_id=project.id, alias="circle-gateway-old"))
+    db_session.commit()
+
+    result = push_bundle(db_session, str(tmp_path))
+    assert result["orphaned"] == 0
+    assert db_session.query(WikiPage).filter_by(
+        path="projects/circle-gateway-old/overview.md").one().entity_id == project.id
+
+
+def test_push_never_deletes_pages_of_an_orphan_directory(db_session, project,
+                                                         tmp_path):
+    """An unresolvable directory means we don't know whose pages these are —
+    which is never a reason to drop a live wiki out from under the API."""
+    seed_bundle(db_session, str(tmp_path))
+    push_bundle(db_session, str(tmp_path))
+    before = {p.path for p in db_session.query(WikiPage)
+              if p.path.startswith("projects/circle-gateway/")}
+    assert before
+
+    # rename with no alias recorded: the directory now resolves to nothing
+    os.rename(tmp_path / "projects/circle-gateway",
+              tmp_path / "projects/circle-gateway-renamed")
+    result = push_bundle(db_session, str(tmp_path))
+
+    assert result["orphaned"] > 0
+    assert result["deleted"] == 0
+    assert result["retained"] == len(before)
+    still_there = {p.path for p in db_session.query(WikiPage)
+                   if p.path.startswith("projects/circle-gateway/")}
+    assert still_there == before
 
 
 # --- curator ---------------------------------------------------------------
