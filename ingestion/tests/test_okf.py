@@ -3,6 +3,7 @@ conformance, push idempotency, and the curator's edit contract (Claude
 mocked — no network)."""
 import datetime
 import os
+import subprocess
 
 import pytest
 
@@ -21,6 +22,7 @@ from councilhound.db.models import (
 )
 from councilhound.okf import bundle as B
 from councilhound.okf import curate
+from councilhound.okf import sync
 from councilhound.okf.export import refresh_bundle, seed_bundle, wiki_candidates
 from councilhound.okf.lint import lint_bundle
 from councilhound.okf.push import push_bundle
@@ -492,3 +494,107 @@ def test_curator_rejects_protected_region_edits(db_session, project, tmp_path,
     result = curate.curate_pending(db_session, str(tmp_path))
     assert result["rejected"] == 1
     assert "Editor's note." in overview.read_text()  # page untouched
+
+
+# --- sync loop -------------------------------------------------------------
+
+def _init_repo(tmp_path):
+    """A throwaway repo so the loop's git steps act on nothing real."""
+    root = tmp_path / "repo"
+    (root / "knowledge").mkdir(parents=True)
+    subprocess.run(["git", "init", "-q", str(root)], check=True)
+    subprocess.run(["git", "-C", str(root), "config", "user.email", "t@t"], check=True)
+    subprocess.run(["git", "-C", str(root), "config", "user.name", "t"], check=True)
+    (root / ".gitkeep").write_text("")
+    subprocess.run(["git", "-C", str(root), "add", "-A"], check=True)
+    subprocess.run(["git", "-C", str(root), "commit", "-qm", "init"], check=True)
+    return root, str(root / "knowledge")
+
+
+def test_sync_commits_and_pushes(db_session, project, tmp_path, monkeypatch):
+    root, bundle = _init_repo(tmp_path)
+    seed_bundle(db_session, bundle)
+    subprocess.run(["git", "-C", str(root), "add", "-A"], check=True)
+    subprocess.run(["git", "-C", str(root), "commit", "-qm", "seed"], check=True)
+    monkeypatch.setattr(sync, "curate_pending",
+                        lambda *a, **k: {"updated": 0, "fresh": 1,
+                                         "rejected": 0, "failed": 0})
+
+    result = sync.sync_bundle(db_session, bundle)
+    assert result["ok"] and result["aborted"] is None
+    assert result["pushed"]["created"] > 0
+    assert db_session.query(WikiPage).count() > 0
+
+
+def test_sync_lint_failure_blocks_commit_and_push(db_session, project, tmp_path,
+                                                  monkeypatch):
+    """Lint is the only automated check between an LLM edit and a live page,
+    so a failing bundle must reach neither git nor prod."""
+    root, bundle = _init_repo(tmp_path)
+    seed_bundle(db_session, bundle)
+    subprocess.run(["git", "-C", str(root), "add", "-A"], check=True)
+    subprocess.run(["git", "-C", str(root), "commit", "-qm", "seed"], check=True)
+    head = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"],
+                          capture_output=True, text=True).stdout.strip()
+
+    def _break_a_page(session, bundle_dir, limit=None):
+        page = os.path.join(bundle_dir, "projects/circle-gateway/positions.md")
+        with open(page, "a") as f:
+            f.write(f"\n- [Ghost]({SITE_BASE_URL}/members/not-a-member)\n")
+        return {"updated": 1, "fresh": 0, "rejected": 0, "failed": 0}
+
+    monkeypatch.setattr(sync, "curate_pending", _break_a_page)
+    result = sync.sync_bundle(db_session, bundle)
+
+    assert result["ok"] is False
+    assert "lint problem" in result["aborted"]
+    assert "not-a-member" in "\n".join(result["lint_problems"])
+    assert "commit" not in result
+    assert "pushed" not in result
+    assert db_session.query(WikiPage).count() == 0
+    # HEAD untouched, and the bad edit is still on disk to inspect
+    now = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"],
+                         capture_output=True, text=True).stdout.strip()
+    assert now == head
+    assert "not-a-member" in open(
+        os.path.join(bundle, "projects/circle-gateway/positions.md")).read()
+
+
+def test_sync_refuses_a_dirty_bundle(db_session, project, tmp_path):
+    """The commit must contain only what this run produced."""
+    root, bundle = _init_repo(tmp_path)
+    seed_bundle(db_session, bundle)  # left uncommitted
+    result = sync.sync_bundle(db_session, bundle)
+    assert result["ok"] is False
+    assert "uncommitted changes" in result["aborted"]
+    assert "refreshed" not in result  # bailed before touching anything
+
+
+def test_sync_reports_candidates_without_a_wiki(db_session, project, tmp_path,
+                                                monkeypatch):
+    """New projects never appear on their own — refresh only walks existing
+    directories — so the loop has to say so rather than silently stagnate."""
+    root, bundle = _init_repo(tmp_path)
+    seed_bundle(db_session, bundle)
+    subprocess.run(["git", "-C", str(root), "add", "-A"], check=True)
+    subprocess.run(["git", "-C", str(root), "commit", "-qm", "seed"], check=True)
+    monkeypatch.setattr(sync, "curate_pending", lambda *a, **k: {"updated": 0})
+
+    newcomer = Entity(entity_type="project", name="Newcomer",
+                      canonical_slug="newcomer")
+    db_session.add(newcomer)
+    db_session.flush()
+    meeting = db_session.query(Meeting).first()
+    db_session.add(CityProject(external_slug="newcomer-official",
+                               entity_id=newcomer.id, name="Newcomer",
+                               detail_url="https://example.gov/newcomer"))
+    db_session.commit()
+
+    result = sync.sync_bundle(db_session, bundle, push=False)
+    assert result["ok"]
+    assert result["unseeded_candidates"] == ["newcomer"]
+    assert not os.path.exists(os.path.join(bundle, "projects/newcomer"))
+
+    result = sync.sync_bundle(db_session, bundle, seed=True, push=False)
+    assert result["seeded"]["seeded"] == 1
+    assert os.path.exists(os.path.join(bundle, "projects/newcomer/overview.md"))

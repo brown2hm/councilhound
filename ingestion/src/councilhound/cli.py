@@ -613,6 +613,47 @@ def okf_push(bundle_dir, dsn):
             click.echo(push_bundle(session, _bundle_dir(bundle_dir)))
 
 
+@cli.command("okf-sync")
+@bundle_dir_option
+@click.option("--seed", is_flag=True,
+              help="also create wikis for candidate projects that lack one "
+                   "(off by default: candidates currently include unmerged "
+                   "duplicates of projects that already have a wiki)")
+@click.option("--curate/--no-curate", default=True, show_default=True,
+              help="run the LLM curator over pages the record has outrun")
+@click.option("--curate-limit", type=int, default=None,
+              help="cap curator updates this run")
+@click.option("--commit/--no-commit", default=True, show_default=True)
+@click.option("--push/--no-push", default=True, show_default=True)
+def okf_sync(bundle_dir, seed, curate, curate_limit, commit, push):
+    """The maintenance loop: refresh -> curate -> lint -> commit -> push."""
+    from councilhound.db.session import get_session
+    from councilhound.okf.sync import sync_bundle
+
+    with get_session() as session:
+        result = sync_bundle(session, _bundle_dir(bundle_dir), seed=seed,
+                             curate=curate, curate_limit=curate_limit,
+                             commit=commit, push=push)
+
+    for stage in ("seeded", "refreshed", "curated", "pushed"):
+        if result.get(stage) is not None:
+            click.echo(f"{stage + ':':11} {result[stage]}")
+    if result.get("commit"):
+        click.echo(f"{'commit:':11} {result['commit']}")
+
+    pending = result.get("unseeded_candidates") or []
+    if pending:
+        click.echo(f"\n{len(pending)} candidate project(s) have no wiki; "
+                   f"review then re-run with --seed:")
+        for slug in pending:
+            click.echo(f"    {slug}")
+
+    for problem in result.get("lint_problems") or []:
+        click.echo(problem, err=True)
+    if not result["ok"]:
+        raise click.ClickException(result["aborted"])
+
+
 @cli.command("impact-status")
 def impact_status():
     """List impact evaluations and their lifecycle state."""
