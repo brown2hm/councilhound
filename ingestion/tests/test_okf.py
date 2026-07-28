@@ -6,6 +6,7 @@ import os
 
 import pytest
 
+from councilhound.config import SITE_BASE_URL
 from councilhound.db.models import (
     AgendaItem,
     CityProject,
@@ -259,6 +260,50 @@ def test_lint_catches_violations(db_session, project, tmp_path):
     assert "notes.md: missing YAML frontmatter" in problems
     assert "/projects/circle-gateway/missing.md does not resolve" in problems
     assert "'not-a-metric' does not match" in problems
+
+
+def test_lint_catches_invented_member_slug(db_session, project, tmp_path):
+    """The curator writes member links from vote breakdowns, which carry only
+    surnames — so it can invent a slug that 404s. /members resolves on
+    canonical_slug alone, so an alias is a broken link there even though the
+    same slug resolves through /entities."""
+    seed_bundle(db_session, str(tmp_path))
+    member = Entity(entity_type="person", name="Catherine Read",
+                    canonical_slug="catherine-read")
+    db_session.add(member)
+    db_session.flush()
+    db_session.add(EntityAlias(entity_id=member.id, alias="read"))
+    db_session.commit()
+
+    positions = tmp_path / "projects/circle-gateway/positions.md"
+    positions.write_text(positions.read_text() + (
+        f"\n- [Read]({SITE_BASE_URL}/members/read) — voted yes.\n"
+        f"- [Read]({SITE_BASE_URL}/members/catherine-read) — voted yes.\n"))
+
+    problems = "\n".join(lint_bundle(str(tmp_path), db_session))
+    assert "/members/read is not a valid members page" in problems
+    assert "catherine-read" not in problems
+
+
+def test_lint_accepts_alias_on_topics_but_not_members(db_session, project,
+                                                      tmp_path):
+    """/topics goes through the alias-following _resolve_entity, so the same
+    alias that is broken under /members is legitimate under /topics. A linter
+    that treats every route the same gets one of these two wrong."""
+    seed_bundle(db_session, str(tmp_path))
+    db_session.add(EntityAlias(entity_id=project.id, alias="circle-gw"))
+    db_session.commit()
+
+    overview = tmp_path / "projects/circle-gateway/overview.md"
+    overview.write_text(overview.read_text() + (
+        f"\nSee [the topic]({SITE_BASE_URL}/topics/circle-gw), "
+        f"[methods]({SITE_BASE_URL}/development/methods), and "
+        f"[nope]({SITE_BASE_URL}/development/not-a-project).\n"))
+
+    problems = "\n".join(lint_bundle(str(tmp_path), db_session))
+    assert "circle-gw" not in problems           # alias is valid on /topics
+    assert "methods" not in problems             # static route, not a slug
+    assert "/development/not-a-project is not a valid development page" in problems
 
 
 # --- push ------------------------------------------------------------------

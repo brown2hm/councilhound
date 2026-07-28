@@ -4,22 +4,33 @@ Spec conformance: every non-reserved .md parses YAML frontmatter with a
 non-empty `type`; reserved index.md/log.md carry no frontmatter. House
 rules: root-absolute links resolve inside the bundle, {{metric:...}} markers
 are well-formed, and (when a DB session is supplied) metric keys resolve
-against the project's synthesized evaluation."""
+against the project's synthesized evaluation and every link out to the
+public site points at a page that actually exists."""
 import os
 
 import yaml
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from councilhound.db.models import CityProject, Entity, ProjectEvaluation
+from councilhound.db.models import (
+    CityProject,
+    Entity,
+    EntityAlias,
+    ProjectEvaluation,
+)
 from councilhound.okf.bundle import (
     RESERVED,
     bundle_links,
     markers,
     parse_page,
+    site_links,
     slugify,
     walk_pages,
 )
+from councilhound.config import SITE_BASE_URL
+
+# Site paths that are real routes rather than a slug lookup.
+STATIC_SITE_PATHS = {("development", "methods")}
 
 
 def _metric_keys(session: Session, project_slug: str) -> set[str] | None:
@@ -38,6 +49,26 @@ def _metric_keys(session: Session, project_slug: str) -> set[str] | None:
             for m in mr.get("metrics", [])}
 
 
+def _site_slugs(session: Session) -> dict[str, set[str]]:
+    """Valid slugs per public route.
+
+    Each route resolves differently, and the linter has to mirror the ROUTE
+    rather than the data model — otherwise it reports the wrong thing in both
+    directions. /members matches canonical_slug on a person only
+    (api/app/routers/members.py:135, no alias fallback), so an alias that
+    resolves fine through /entities still 404s in a browser. /topics goes
+    through the alias-following _resolve_entity, so aliases are legitimate
+    there. /development keys on CityProject.external_slug, a different
+    namespace from entity slugs entirely."""
+    people = set(session.scalars(
+        select(Entity.canonical_slug).where(Entity.entity_type == "person")))
+    entities = set(session.scalars(select(Entity.canonical_slug)))
+    aliases = set(session.scalars(select(func.lower(EntityAlias.alias))))
+    projects = set(session.scalars(select(CityProject.external_slug)))
+    return {"members": people, "topics": entities | aliases,
+            "development": projects}
+
+
 def lint_bundle(bundle_dir: str, session: Session | None = None) -> list[str]:
     """Returns human-readable problems; empty list means conformant."""
     problems: list[str] = []
@@ -46,6 +77,7 @@ def lint_bundle(bundle_dir: str, session: Session | None = None) -> list[str]:
     pages = walk_pages(bundle_dir)
     known_paths = {"/" + rel for rel, _ in pages}
     metric_cache: dict[str, set[str] | None] = {}
+    site_slugs = _site_slugs(session) if session is not None else None
 
     for rel, path in pages:
         with open(path, encoding="utf-8") as f:
@@ -69,6 +101,17 @@ def lint_bundle(bundle_dir: str, session: Session | None = None) -> list[str]:
         for link in bundle_links(body):
             if link not in known_paths:
                 problems.append(f"{rel}: bundle link {link} does not resolve")
+
+        if site_slugs is not None:
+            # the `resource` URI is as user-facing as any body link
+            resource = str((frontmatter or {}).get("resource") or "")
+            for section, slug in site_links(f"{body}\n{resource}", SITE_BASE_URL):
+                if (section, slug) in STATIC_SITE_PATHS:
+                    continue
+                if slug not in site_slugs[section]:
+                    problems.append(
+                        f"{rel}: /{section}/{slug} is not a valid "
+                        f"{section} page")
 
         page_markers = markers(body)
         if page_markers and session is not None and rel.startswith("projects/"):

@@ -17,6 +17,8 @@ PAGE_ORDER = ["overview", "history", "positions", "impact"]
 MARKER_RE = re.compile(r"\{\{(metric|map):([a-z0-9][a-z0-9-]*)\}\}")
 # root-absolute markdown links assert bundle-internal relationships
 _BUNDLE_LINK_RE = re.compile(r"\]\((/[^)#\s]+)")
+# absolute links out to the public site, which the bundle does not contain
+_SITE_LINK_TEMPLATE = r"{base}/(members|topics|development)/([A-Za-z0-9][A-Za-z0-9_-]*)"
 _FRONTMATTER_RE = re.compile(r"\A---\n(.*?\n)---\n", re.DOTALL)
 CURATOR_OFF_RE = re.compile(
     r"<!--\s*curator:off\s*-->.*?<!--\s*/curator:off\s*-->", re.DOTALL)
@@ -104,6 +106,15 @@ def append_log(bundle_dir: str, rel_dir: str, lines: list[str],
 
 def bundle_links(body: str) -> list[str]:
     return [m.group(1) for m in _BUNDLE_LINK_RE.finditer(body)]
+
+
+def site_links(text: str, base_url: str) -> list[tuple[str, str]]:
+    """(section, slug) for every link out to the public site, e.g.
+    ("members", "billy-bates"). Trailing segments are ignored, so
+    /development/Foo/wiki yields ("development", "Foo")."""
+    pattern = re.compile(
+        _SITE_LINK_TEMPLATE.format(base=re.escape(base_url.rstrip("/"))))
+    return [(m.group(1), m.group(2)) for m in pattern.finditer(text)]
 
 
 def markers(body: str) -> list[tuple[str, str]]:
