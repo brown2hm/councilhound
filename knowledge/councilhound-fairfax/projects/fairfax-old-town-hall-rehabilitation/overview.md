@@ -6,12 +6,14 @@ description: The city is rehabilitating Old Town Hall, the premier public facili
 resource: https://councilhound.net/development/Fairfax-Old-Town-Hall-Rehabilitation
 tags:
 - city-project
+- in-progress
 timestamp: '2026-07-19'
 source: official
 address: 3999 University Dr., Fairfax, VA 22030
 city_detail_url: https://www.fairfaxva.gov/Property-Business/Development/Projects/Fairfax-Old-Town-Hall-Rehabilitation
 lat: 38.8460879
 lng: -77.3049734
+status: in_progress
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
@@ -27,6 +29,7 @@ The city is rehabilitating Old Town Hall, the premier public facility and cultur
 
 ## In this wiki
 
+- [Meeting history](/projects/fairfax-old-town-hall-rehabilitation/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/fairfax-old-town-hall-rehabilitation/positions.md)
 - [Documents](/projects/fairfax-old-town-hall-rehabilitation/documents.md) — the city's published record for this project
 

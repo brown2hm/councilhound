@@ -5,12 +5,14 @@ description: Improvement of the Warwick Ave./Fairfax Blvd./McLean Ave.
 resource: https://councilhound.net/development/Warwick-Ave-Fairfax-Blvd-McLean-Ave-Intersection-Improvements
 tags:
 - city-project
+- approved
 timestamp: '2026-07-19'
 source: official
 address: Warwick Ave & Fairfax Blvd & McLean Ave, Fairfax, VA 22030
 city_detail_url: https://www.fairfaxva.gov/Property-Business/Development/Projects/Warwick-Ave-Fairfax-Blvd-McLean-Ave-Intersection-Improvements
 lat: 38.8567996
 lng: -77.3116271
+status: approved
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
@@ -26,6 +28,7 @@ Improvement of the Warwick Ave./Fairfax Blvd./McLean Ave. intersection by realig
 
 ## In this wiki
 
+- [Meeting history](/projects/warwick-avenue-fairfax-boulevard-mclean-avenue-intersection-improvements/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/warwick-avenue-fairfax-boulevard-mclean-avenue-intersection-improvements/positions.md)
 - [Documents](/projects/warwick-avenue-fairfax-boulevard-mclean-avenue-intersection-improvements/documents.md) — the city's published record for this project
 

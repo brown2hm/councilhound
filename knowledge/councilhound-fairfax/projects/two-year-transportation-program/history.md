@@ -9,6 +9,12 @@ timestamp: '2025-02-18'
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
 
+## 2024-10-08 — City Council Meeting
+
+**Agenda item 12b**: Discussion and update on the Transportation Two-Year Program ([watch the moment](https://fairfax.granicus.com/MediaPlayer.php?view_id=13&clip_id=3328&starttime=8475&entrytime=8475))
+- Outcome: Discussed during work session. No action taken.
+- [12b] The Transportation Two-Year Program was discussed and updated during the work session; no formal action was taken.
+
 ## 2024-10-14 — Planning Commission Regular Meeting/Work Session
 
 **Agenda item 10**: Staff Report ([watch the moment](https://fairfax.granicus.com/MediaPlayer.php?view_id=13&clip_id=3330&starttime=2436&entrytime=2436))

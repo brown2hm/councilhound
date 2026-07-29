@@ -6,12 +6,14 @@ description: The City of Fairfax is restoring stormwater outfalls at Providence 
 resource: https://councilhound.net/development/Providence-Park-Van-Dyck-Park-Outfall-Restoration-Project
 tags:
 - city-project
+- approved
 timestamp: '2026-07-19'
 source: official
 address: 10715 West Dr. and 3720 Blenheim Blvd., Fairfax, VA 22030
 city_detail_url: https://www.fairfaxva.gov/Property-Business/Development/Projects/Providence-Park-Van-Dyck-Park-Outfall-Restoration-Project
 lat: 38.8529871
 lng: -77.2985401
+status: approved
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
@@ -27,6 +29,7 @@ The City of Fairfax is restoring stormwater outfalls at Providence Park and Van 
 
 ## In this wiki
 
+- [Meeting history](/projects/providence-park-van-dyck-park-outfall-restoration/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/providence-park-van-dyck-park-outfall-restoration/positions.md)
 
 <!-- /curator:off -->
