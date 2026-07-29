@@ -43,7 +43,9 @@ jobs:
       - name: Tests
         env:
           PYTHONPATH: src
-        run: uv run pytest tests/ -v
+        # tests/impact belongs to the impact job, which installs the geo stack
+        # this one deliberately omits — running it here fails on shapely
+        run: uv run pytest tests/ -v --ignore=tests/impact
 
   # impact-analysis subsystem with the full geo stack installed; the base
   # ingestion job runs the same tests but heavy-dep cases importorskip there
