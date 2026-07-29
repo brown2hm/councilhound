@@ -9,7 +9,7 @@ resource: https://councilhound.net/development/The-Highlands-at-Mantua
 tags:
 - private-development
 - in-progress
-timestamp: '2025-02-10'
+timestamp: '2026-07-27'
 status: in_progress
 source: official
 address: 9495 Silver King Court, Fairfax, VA 22030
@@ -56,6 +56,12 @@ The applicant is proposing to replace approximately 21,566 square feet of existi
 - **Address:** 9495 Silver King Court, Fairfax, VA 22030
 - **Applicant:** RJL Associates, Inc.  David S. Houston, Attorney Bean Kinney & Korman, PC 2311 Wilson Boulevard, Suite 500 Arlington, VA 22201-3359
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/The-Highlands-at-Mantua)
+
+## Recent activity
+
+- **(2025-02-25 City Council)** RJL Associates, Inc. presented the redevelopment proposal during a City Council work session (Agenda Item 12b). No formal council action was taken.
+- **(2025-03-24 Planning Commission)** Staff reported to the Planning Commission that the Mantua townhouse proposal had been the subject of the February 25, 2025 City Council work session.
+- **(2026-07-27 Planning Commission)** A public hearing on the Highlands at Mantua application was scheduled before the Planning Commission (Agenda Item 6a); no minutes or actions report is available.
 
 <!-- curator:off -->
 

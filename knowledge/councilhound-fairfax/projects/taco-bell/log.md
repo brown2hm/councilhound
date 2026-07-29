@@ -12,3 +12,4 @@
 
 - Meeting history updated through 2024-12-09.
 - Meeting history updated through 2024-12-09.
+- Added open question about the December 10, 2024 City Council public hearing on the Taco Bell project, as noted in the 2024-12-09 Planning Commission meeting staff report. (curator: claude-sonnet-4-6, through 2024-12-09)

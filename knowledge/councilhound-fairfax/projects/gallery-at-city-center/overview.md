@@ -9,7 +9,7 @@ resource: https://councilhound.net/development/Gallery-at-City-Center
 tags:
 - private-development
 - in-progress
-timestamp: '2026-05-11'
+timestamp: '2026-07-07'
 status: in_progress
 source: official
 address: 4085, 4101, 4103 and 4117 Chain Bridge Road, Fairfax, VA 22030
@@ -60,6 +60,10 @@ The applicant is proposing to replace three office buildings with a mixed-use de
 - **Address:** 4085, 4101, 4103 and 4117 Chain Bridge Road, Fairfax, VA 22030
 - **Applicant:** The Christopher Companies 10461 White Granite Drive, Suite 250 Oakton, VA 22124  Clark Massie, President Tetra Corporation 221 E. Main Street Purcellville, VA 20132
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Gallery-at-City-Center)
+
+## Recent activity
+
+- **2026-07-07 City Council Special Meeting & Work Session** — Council discussed the redevelopment request by Christopher Land, LLC for 4085-4117 Chain Bridge Road (Agenda item 5a). The item was informational; no formal action was taken.
 
 <!-- curator:off -->
 

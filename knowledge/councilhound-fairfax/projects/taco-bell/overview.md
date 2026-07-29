@@ -7,7 +7,7 @@ resource: https://councilhound.net/development/Taco-Bell
 tags:
 - private-development
 - in-progress
-timestamp: '2024-11-25'
+timestamp: '2024-12-09'
 status: in_progress
 source: official
 address: 10120 Fairfax Boulevard, Fairfax, VA 22030
