@@ -348,6 +348,34 @@ def _project_index(entity: Entity, existing_pages: list[str]) -> str:
     return render_index(entity.name, entries)
 
 
+def _write_impact(bundle_dir: str, entity: Entity, ctx: dict, stamp: str,
+                  only_if_missing: bool = False) -> bool:
+    """Draft impact.md from the synthesized evaluation.
+
+    refresh passes only_if_missing. The page is curator-owned, so an existing
+    one is never overwritten — but without this a project whose evaluation
+    synthesized *after* its wiki was seeded would never get an impact page at
+    all: seed skips any directory that already has an overview.md, and
+    refresh used to regenerate only history and frontmatter. That stranded
+    five of twenty synthesized evaluations."""
+    body = _impact_body(entity, ctx)
+    if body is None:
+        return False
+    rel = f"projects/{entity.canonical_slug}/impact.md"
+    if only_if_missing and os.path.exists(os.path.join(bundle_dir, rel)):
+        return False
+    evaluation = ctx["evaluation"]
+    return write_page(bundle_dir, rel, {
+        "type": "project-impact",
+        "title": f"{entity.name} — impact analysis",
+        "description": f"Screening-level economic and fiscal estimates "
+                       f"for {entity.name}.",
+        "resource": _resource_url(entity, ctx["city"]),
+        "timestamp": (evaluation.synthesized_at.date().isoformat()
+                      if evaluation.synthesized_at else stamp),
+    }, body)
+
+
 def _write_history(session: Session, bundle_dir: str, entity: Entity,
                    ctx: dict) -> bool:
     page = _history_page(entity, ctx, _history_votes(session, ctx))
@@ -462,18 +490,7 @@ def seed_bundle(session: Session, bundle_dir: str,
             "resource": _resource_url(entity, ctx["city"]),
             "timestamp": stamp,
         }, _positions_body(ctx))
-        impact = _impact_body(entity, ctx)
-        if impact:
-            evaluation = ctx["evaluation"]
-            write_page(bundle_dir, f"{rel_dir}/impact.md", {
-                "type": "project-impact",
-                "title": f"{entity.name} — impact analysis",
-                "description": f"Screening-level economic and fiscal estimates "
-                               f"for {entity.name}.",
-                "resource": _resource_url(entity, ctx["city"]),
-                "timestamp": (evaluation.synthesized_at.date().isoformat()
-                              if evaluation.synthesized_at else stamp),
-            }, impact)
+        _write_impact(bundle_dir, entity, ctx, stamp)
         _write_history(session, bundle_dir, entity, ctx)
         append_log(bundle_dir, rel_dir,
                    ["Seeded from the tracker profile and official records."])
@@ -505,14 +522,23 @@ def refresh_bundle(session: Session, bundle_dir: str) -> dict:
             continue
         ctx = _project_context(session, entity)
         changed = _write_history(session, bundle_dir, entity, ctx)
+        # before _refresh_overview, which rebuilds the nav from what is on
+        # disk — write the page first and it links itself
+        seeded_impact = _write_impact(bundle_dir, entity, ctx,
+                                      _narrative_stamp(ctx), only_if_missing=True)
+        changed = seeded_impact or changed
         changed = _refresh_overview(bundle_dir, entity, ctx) or changed
         changed = _refresh_sibling_resources(bundle_dir, entity, ctx) or changed
         if changed:
             latest = (ctx["timeline"][-1][1].meeting_date.isoformat()
                       if ctx["timeline"] else None)
-            note = (f"Meeting history updated through {latest}." if latest
-                    else "Pipeline refresh.")
-            append_log(bundle_dir, f"projects/{slug}", [note])
+            notes = []
+            if seeded_impact:
+                notes.append("Added impact analysis from the synthesized "
+                             "evaluation.")
+            notes.append(f"Meeting history updated through {latest}." if latest
+                         else "Pipeline refresh.")
+            append_log(bundle_dir, f"projects/{slug}", notes)
             refreshed += 1
         else:
             unchanged += 1

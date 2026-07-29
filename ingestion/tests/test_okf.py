@@ -589,6 +589,52 @@ def test_refresh_recomputes_a_stale_resource_uri(db_session, project, tmp_path):
     assert lint_bundle(str(tmp_path), db_session) == []
 
 
+def test_refresh_backfills_impact_for_a_later_synthesis(db_session, project,
+                                                        tmp_path):
+    """seed skips directories that already exist, so an evaluation that
+    synthesizes after the wiki was seeded would otherwise never get an impact
+    page. Five of twenty synthesized evaluations were stranded this way."""
+    db_session.query(ProjectEvaluation).delete()
+    db_session.commit()
+    seed_bundle(db_session, str(tmp_path))
+    impact = tmp_path / "projects/circle-gateway/impact.md"
+    assert not impact.exists()
+    _, overview = _read(tmp_path, "projects/circle-gateway/overview.md")
+    assert "/impact.md" not in overview
+
+    city = db_session.query(CityProject).one()
+    db_session.add(ProjectEvaluation(
+        city_project_id=city.id, status="synthesized",
+        module_results=[{"module": "economic", "metrics": [
+            {"name": "New households", "value": 248.0, "unit": "households",
+             "low": 235.0, "high": 253.0, "provenance": [], "assumptions": [],
+             "method": "units x occupancy", "headline": True}],
+            "narrative_notes": []}],
+        # midday UTC: synthesized_at.date() renders in the session's local
+        # timezone, so a midnight stamp lands on the previous day west of UTC
+        synthesized_at=datetime.datetime(2026, 7, 20, 12,
+                                         tzinfo=datetime.timezone.utc)))
+    db_session.commit()
+
+    result = refresh_bundle(db_session, str(tmp_path))
+    assert result["refreshed"] == 1
+    fm, body = _read(tmp_path, "projects/circle-gateway/impact.md")
+    assert fm["type"] == "project-impact"
+    assert fm["timestamp"] == "2026-07-20"
+    assert "{{metric:new-households}}" in body and "248" not in body
+    # the nav rebuild runs after the write, so the page links itself
+    _, overview = _read(tmp_path, "projects/circle-gateway/overview.md")
+    assert "/projects/circle-gateway/impact.md" in overview
+    assert "Added impact analysis" in (
+        tmp_path / "projects/circle-gateway/log.md").read_text()
+    assert lint_bundle(str(tmp_path), db_session) == []
+
+    # curator-owned once it exists: a second pass must not overwrite edits
+    impact.write_text(impact.read_text() + "\nHand-written caveat.\n")
+    refresh_bundle(db_session, str(tmp_path))
+    assert "Hand-written caveat." in impact.read_text()
+
+
 # --- sync loop -------------------------------------------------------------
 
 def _init_repo(tmp_path):
