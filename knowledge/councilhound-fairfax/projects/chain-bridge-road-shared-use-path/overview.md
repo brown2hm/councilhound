@@ -29,5 +29,6 @@ This project will construct a missing link of path on the west side of Chain Bri
 ## In this wiki
 
 - [Positions & open questions](/projects/chain-bridge-road-shared-use-path/positions.md)
+- [Impact analysis](/projects/chain-bridge-road-shared-use-path/impact.md) — screening estimates with assumptions and ranges
 
 <!-- /curator:off -->

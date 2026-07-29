@@ -1,0 +1,18 @@
+---
+type: project-impact
+title: Blenheim Boulevard Multimodal Improvements — impact analysis
+description: Screening-level economic and fiscal estimates for Blenheim Boulevard Multimodal
+  Improvements.
+resource: https://councilhound.net/development/Blenheim-Blvd-Multimodal-Improvements
+timestamp: '2026-07-27'
+---
+
+<!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
+
+Screening-level estimates of the economic and fiscal effects of Blenheim Boulevard Multimodal Improvements. Figures are decision-support context with named assumptions and sensitivity ranges — not predictions. The [full analysis](https://councilhound.net/development/Blenheim-Blvd-Multimodal-Improvements) has the interactive assumptions panel and maps; [methods](https://councilhound.net/development/methods) documents every formula.
+
+## Headline estimates
+
+- {{metric:new-annual-spending-at-corridor-businesses}} — induced daily bike visits x corridor establishment-group mix (POI count shares) x cyclist spend per trip x 365; allocated evenly within each group
+
+Method notes, caveats, and non-headline metrics live on the [analysis page](https://councilhound.net/development/Blenheim-Blvd-Multimodal-Improvements).

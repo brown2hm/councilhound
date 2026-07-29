@@ -23,5 +23,6 @@ The Blenheim Boulevard Multimodal Improvements Project is a City of Fairfax tran
 
 - [Meeting history](/projects/blenheim-boulevard-multimodal-improvements/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/blenheim-boulevard-multimodal-improvements/positions.md)
+- [Impact analysis](/projects/blenheim-boulevard-multimodal-improvements/impact.md) — screening estimates with assumptions and ranges
 
 <!-- /curator:off -->

@@ -30,5 +30,6 @@ Improvements to Jermantown Road to enhance traffic flow, transit operations, ped
 ## In this wiki
 
 - [Positions & open questions](/projects/jermantown-road-corridor-improvements/positions.md)
+- [Impact analysis](/projects/jermantown-road-corridor-improvements/impact.md) — screening estimates with assumptions and ranges
 
 <!-- /curator:off -->

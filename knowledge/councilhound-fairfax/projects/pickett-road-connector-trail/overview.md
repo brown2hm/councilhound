@@ -35,5 +35,6 @@ Connection of Thaiss Park to Route 50, linking the Wilcoxon, Cross-Country, and 
 
 - [Meeting history](/projects/pickett-road-connector-trail/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/pickett-road-connector-trail/positions.md)
+- [Impact analysis](/projects/pickett-road-connector-trail/impact.md) — screening estimates with assumptions and ranges
 
 <!-- /curator:off -->
