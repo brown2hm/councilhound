@@ -496,6 +496,77 @@ def test_curator_rejects_protected_region_edits(db_session, project, tmp_path,
     assert "Editor's note." in overview.read_text()  # page untouched
 
 
+def test_seeded_nav_section_is_curator_protected(db_session, project, tmp_path):
+    """The nav block is derived from which pages exist, so it is pipeline-owned
+    even though it sits on a curator-owned page."""
+    seed_bundle(db_session, str(tmp_path))
+    _, body = _read(tmp_path, "projects/circle-gateway/overview.md")
+    protected = B.CURATOR_OFF_RE.findall(body)
+    assert len(protected) == 1
+    assert "## In this wiki" in protected[0]
+    assert "/projects/circle-gateway/history.md" in protected[0]
+
+
+def test_refresh_backfills_markers_and_tracks_new_pages(db_session, project,
+                                                        tmp_path):
+    """Pages seeded before markers existed carry an unmarked nav section;
+    refresh re-marks it in place and keeps its links honest as pages appear."""
+    seed_bundle(db_session, str(tmp_path))
+    overview = tmp_path / "projects/circle-gateway/overview.md"
+    impact = tmp_path / "projects/circle-gateway/impact.md"
+
+    # rewind to the pre-marker shape, and drop a page the nav points at
+    fm, body = B.parse_page(overview.read_text())
+    body = body.replace(B.CURATOR_OFF_OPEN + "\n\n", "").replace(
+        "\n" + B.CURATOR_OFF_CLOSE, "")
+    body = body.replace(
+        "- [Impact analysis](/projects/circle-gateway/impact.md) — screening "
+        "estimates with assumptions and ranges\n", "")
+    overview.write_text(B.render_page(fm, body))
+    assert B.CURATOR_OFF_RE.findall(body) == []
+
+    refresh_bundle(db_session, str(tmp_path))
+    _, body = _read(tmp_path, "projects/circle-gateway/overview.md")
+    protected = B.CURATOR_OFF_RE.findall(body)
+    assert len(protected) == 1                      # markers backfilled
+    assert body.count("## In this wiki") == 1       # not duplicated
+    assert impact.exists() and "/impact.md" in protected[0]   # page picked up
+    assert lint_bundle(str(tmp_path), db_session) == []
+
+
+def test_curator_deleting_the_nav_section_is_rejected(db_session, project,
+                                                      tmp_path, monkeypatch):
+    """The regression this protects against: the curator dropped the whole nav
+    section while correctly editing the prose above it, and nothing caught it.
+    Lint cannot — removing links creates no broken links."""
+    seed_bundle(db_session, str(tmp_path))
+    overview = tmp_path / "projects/circle-gateway/overview.md"
+    _, before = B.parse_page(overview.read_text())
+
+    m = Meeting(granicus_clip_id="c9", granicus_view_id="13", body="city_council",
+                meeting_type="council_regular",
+                meeting_date=datetime.date(2026, 7, 14), title="City Council")
+    db_session.add(m)
+    db_session.flush()
+    db_session.add(EntityUpdate(entity_id=project.id, meeting_id=m.id,
+                                update_text="Site plan submitted."))
+    db_session.commit()
+
+    def drops_the_nav(prompt):
+        _, positions_body = _read(tmp_path, "projects/circle-gateway/positions.md")
+        stripped = B.CURATOR_OFF_RE.sub("", before) + "\n\nNew paragraph."
+        return _curator_response(stripped, positions_body)
+
+    monkeypatch.setattr(curate, "_call_claude", drops_the_nav)
+    result = curate.curate_pending(db_session, str(tmp_path))
+
+    assert result["rejected"] == 1 and result["updated"] == 0
+    _, after = B.parse_page(overview.read_text())
+    assert after == before                      # nothing landed
+    assert "## In this wiki" in after
+    assert "New paragraph." not in after        # good prose lost with the bad
+
+
 # --- sync loop -------------------------------------------------------------
 
 def _init_repo(tmp_path):

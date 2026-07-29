@@ -4,10 +4,12 @@ seed_bundle creates a project's wiki directory once — curator-owned pages
 (overview/positions/impact) are drafted from the existing profile, official
 record, and synthesized evaluation, then never touched again by this module.
 refresh_bundle is the deterministic nightly pass: it regenerates only
-pipeline-owned artifacts (history.md, index.md files, status frontmatter on
-overview.md) so re-running it against unchanged data is a no-op."""
+pipeline-owned artifacts (history.md, index.md files, status frontmatter and
+the curator:off "In this wiki" nav section on overview.md) so re-running it
+against unchanged data is a no-op."""
 import logging
 import os
+import re
 from datetime import date
 
 from sqlalchemy import func, select
@@ -25,6 +27,9 @@ from councilhound.db.models import (
     Vote,
 )
 from councilhound.okf.bundle import (
+    CURATOR_OFF_CLOSE,
+    CURATOR_OFF_OPEN,
+    CURATOR_OFF_RE,
     PAGE_ORDER,
     append_log,
     read_page,
@@ -146,6 +151,45 @@ def _overview_frontmatter(entity: Entity, ctx: dict, stamp: str) -> dict:
     return {k: v for k, v in fm.items() if v not in (None, "", [])}
 
 
+NAV_HEADING = "In this wiki"
+# the nav section before markers were introduced: heading through the next h2
+_UNMARKED_NAV_RE = re.compile(rf"^## {NAV_HEADING}\s*$.*?(?=^## |\Z)",
+                              re.MULTILINE | re.DOTALL)
+
+
+def _nav_block(slug: str, pages: set[str]) -> str:
+    """The "In this wiki" section.
+
+    Derived from which pages exist, so it is pipeline-owned even though it
+    lives on a curator-owned page — and wrapped in curator:off, because the
+    curator has silently deleted it. Marking it is what turns that from a
+    quiet content loss into a rejected edit: _protected_regions compares the
+    marked regions before and after, so removing one fails the whole edit."""
+    lines = [CURATOR_OFF_OPEN, "", f"## {NAV_HEADING}", ""]
+    if "history" in pages:
+        lines.append(f"- [Meeting history](/projects/{slug}/history.md) — every action, "
+                     "vote, and update, with links to the moment in the meeting video")
+    lines.append(f"- [Positions & open questions](/projects/{slug}/positions.md)")
+    if "impact" in pages:
+        lines.append(f"- [Impact analysis](/projects/{slug}/impact.md) — screening "
+                     "estimates with assumptions and ranges")
+    lines += ["", CURATOR_OFF_CLOSE]
+    return "\n".join(lines)
+
+
+def _replace_nav(body: str, block: str) -> str:
+    """Swap in a freshly built nav section, whether the existing one is
+    already marked, still unmarked (pages seeded before markers existed), or
+    missing entirely (the curator dropped it)."""
+    for match in CURATOR_OFF_RE.finditer(body):
+        if f"## {NAV_HEADING}" in match.group(0):
+            return body[:match.start()] + block + body[match.end():]
+    match = _UNMARKED_NAV_RE.search(body)
+    if match:
+        return body[:match.start()] + block + "\n" + body[match.end():]
+    return body.rstrip("\n") + "\n\n" + block + "\n"
+
+
 def _overview_body(entity: Entity, ctx: dict) -> str:
     city, profile = ctx["city"], ctx["profile"]
     parts = [CURATED_NOTE, ""]
@@ -161,15 +205,12 @@ def _overview_body(entity: Entity, ctx: dict) -> str:
                  f"- **Division:** {city.division}" if city.division else None,
                  f"- [City record]({city.detail_url})"]
         parts += [f for f in facts if f] + [""]
-    slug = entity.canonical_slug
-    parts += ["## In this wiki", ""]
+    pages = {"positions"}
     if ctx["timeline"]:
-        parts += [f"- [Meeting history](/projects/{slug}/history.md) — every action, "
-                  "vote, and update, with links to the moment in the meeting video"]
-    parts += [f"- [Positions & open questions](/projects/{slug}/positions.md)"]
+        pages.add("history")
     if ctx["evaluation"]:
-        parts += [f"- [Impact analysis](/projects/{slug}/impact.md) — screening "
-                  "estimates with assumptions and ranges"]
+        pages.add("impact")
+    parts += [_nav_block(entity.canonical_slug, pages)]
     return "\n".join(parts)
 
 
@@ -313,21 +354,30 @@ def _write_history(session: Session, bundle_dir: str, entity: Entity,
                       fm, body)
 
 
-def _refresh_overview_frontmatter(bundle_dir: str, entity: Entity, ctx: dict) -> bool:
-    """Rewrite only the pipeline-owned keys of overview.md, preserving the
-    curator/human-owned body and any other frontmatter."""
-    rel = f"projects/{entity.canonical_slug}/overview.md"
+def _refresh_overview(bundle_dir: str, entity: Entity, ctx: dict) -> bool:
+    """Rewrite the pipeline-owned parts of overview.md — the frontmatter keys
+    in REFRESHED_KEYS and the "In this wiki" nav section — preserving the
+    curator/human-owned prose and every other frontmatter key.
+
+    Regenerating the nav from what is on disk keeps it honest as pages come
+    and go (an impact.md backfilled later shows up here), and re-marks it if
+    the curator stripped the markers."""
+    slug = entity.canonical_slug
+    rel = f"projects/{slug}/overview.md"
     page = read_page(os.path.join(bundle_dir, rel))
     if page is None or page[0] is None:
         return False
     fm, body = page
     fresh = _overview_frontmatter(entity, ctx, stamp=str(fm.get("timestamp", "")))
-    changed = False
     for key in REFRESHED_KEYS:
         if key in fresh and fm.get(key) != fresh[key]:
             fm[key] = fresh[key]
-            changed = True
-    return write_page(bundle_dir, rel, fm, body) if changed else False
+
+    present = {f.removesuffix(".md")
+               for f in os.listdir(os.path.join(bundle_dir, "projects", slug))
+               if f.endswith(".md")}
+    body = _replace_nav(body, _nav_block(slug, present))
+    return write_page(bundle_dir, rel, fm, body)
 
 
 def _write_indexes(bundle_dir: str, session: Session) -> None:
@@ -431,7 +481,7 @@ def refresh_bundle(session: Session, bundle_dir: str) -> dict:
             continue
         ctx = _project_context(session, entity)
         changed = _write_history(session, bundle_dir, entity, ctx)
-        changed = _refresh_overview_frontmatter(bundle_dir, entity, ctx) or changed
+        changed = _refresh_overview(bundle_dir, entity, ctx) or changed
         if changed:
             latest = (ctx["timeline"][-1][1].meeting_date.isoformat()
                       if ctx["timeline"] else None)

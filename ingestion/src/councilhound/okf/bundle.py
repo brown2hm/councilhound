@@ -20,6 +20,8 @@ _BUNDLE_LINK_RE = re.compile(r"\]\((/[^)#\s]+)")
 # absolute links out to the public site, which the bundle does not contain
 _SITE_LINK_TEMPLATE = r"{base}/(members|topics|development)/([A-Za-z0-9][A-Za-z0-9_-]*)"
 _FRONTMATTER_RE = re.compile(r"\A---\n(.*?\n)---\n", re.DOTALL)
+CURATOR_OFF_OPEN = "<!-- curator:off -->"
+CURATOR_OFF_CLOSE = "<!-- /curator:off -->"
 CURATOR_OFF_RE = re.compile(
     r"<!--\s*curator:off\s*-->.*?<!--\s*/curator:off\s*-->", re.DOTALL)
 
