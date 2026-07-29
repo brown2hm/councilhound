@@ -34,5 +34,6 @@ Informational development briefings were held on January 7, 2020 for City Counci
 ## In this wiki
 
 - [Positions & open questions](/projects/northfax-west/positions.md)
+- [Documents](/projects/northfax-west/documents.md) — the city's published record for this project
 
 <!-- /curator:off -->

@@ -29,5 +29,6 @@ Creation of a new roadway between Fairfax Blvd/Farr Avenue and Orchard Street to
 ## In this wiki
 
 - [Positions & open questions](/projects/roadway-network-northfax-west/positions.md)
+- [Documents](/projects/roadway-network-northfax-west/documents.md) — the city's published record for this project
 
 <!-- /curator:off -->

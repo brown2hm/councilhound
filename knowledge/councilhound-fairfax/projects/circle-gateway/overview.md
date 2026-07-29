@@ -36,5 +36,6 @@ The applicant is proposing to replace two existing commercial buildings (formerl
 - [Meeting history](/projects/circle-gateway/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/circle-gateway/positions.md)
 - [Impact analysis](/projects/circle-gateway/impact.md) — screening estimates with assumptions and ranges
+- [Documents](/projects/circle-gateway/documents.md) — the city's published record for this project
 
 <!-- /curator:off -->

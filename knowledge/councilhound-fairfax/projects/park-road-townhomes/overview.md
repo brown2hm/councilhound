@@ -35,5 +35,6 @@ The applicant is proposing to build 13 three story, 2 car garage townhomes on 1.
 
 - [Positions & open questions](/projects/park-road-townhomes/positions.md)
 - [Impact analysis](/projects/park-road-townhomes/impact.md) — screening estimates with assumptions and ranges
+- [Documents](/projects/park-road-townhomes/documents.md) — the city's published record for this project
 
 <!-- /curator:off -->

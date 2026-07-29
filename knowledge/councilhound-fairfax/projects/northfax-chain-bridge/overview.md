@@ -34,5 +34,6 @@ The potential applicant is proposing to replace a gas station, retail and former
 
 - [Positions & open questions](/projects/northfax-chain-bridge/positions.md)
 - [Impact analysis](/projects/northfax-chain-bridge/impact.md) — screening estimates with assumptions and ranges
+- [Documents](/projects/northfax-chain-bridge/documents.md) — the city's published record for this project
 
 <!-- /curator:off -->

@@ -4,3 +4,4 @@
 - [History](/projects/10340-democracy-lane/history.md) — the dated meeting record
 - [Positions](/projects/10340-democracy-lane/positions.md) — member positions and open questions
 - [Impact](/projects/10340-democracy-lane/impact.md) — screening-level impact estimates
+- [Documents](/projects/10340-democracy-lane/documents.md) — the city's published document record

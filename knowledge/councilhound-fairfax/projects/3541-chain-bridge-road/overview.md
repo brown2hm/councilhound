@@ -35,5 +35,6 @@ The potential applicant is proposing to redevelop the property with a mixed-use 
 - [Meeting history](/projects/3541-chain-bridge-road/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/3541-chain-bridge-road/positions.md)
 - [Impact analysis](/projects/3541-chain-bridge-road/impact.md) — screening estimates with assumptions and ranges
+- [Documents](/projects/3541-chain-bridge-road/documents.md) — the city's published record for this project
 
 <!-- /curator:off -->

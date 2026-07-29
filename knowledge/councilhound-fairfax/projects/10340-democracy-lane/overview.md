@@ -38,5 +38,6 @@ The potential applicant is proposing to redevelop the property with a six-story 
 - [Meeting history](/projects/10340-democracy-lane/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/10340-democracy-lane/positions.md)
 - [Impact analysis](/projects/10340-democracy-lane/impact.md) — screening estimates with assumptions and ranges
+- [Documents](/projects/10340-democracy-lane/documents.md) — the city's published record for this project
 
 <!-- /curator:off -->

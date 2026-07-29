@@ -37,5 +37,6 @@ A rezoning application was submitted on August 6, 2018 for a mixed-use Planned D
 
 - [Positions & open questions](/projects/breezeway-pulte-homes/positions.md)
 - [Impact analysis](/projects/breezeway-pulte-homes/impact.md) — screening estimates with assumptions and ranges
+- [Documents](/projects/breezeway-pulte-homes/documents.md) — the city's published record for this project
 
 <!-- /curator:off -->

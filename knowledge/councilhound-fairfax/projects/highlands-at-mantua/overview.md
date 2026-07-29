@@ -39,5 +39,6 @@ The applicant is proposing to replace approximately 21,566 square feet of existi
 - [Meeting history](/projects/highlands-at-mantua/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/highlands-at-mantua/positions.md)
 - [Impact analysis](/projects/highlands-at-mantua/impact.md) — screening estimates with assumptions and ranges
+- [Documents](/projects/highlands-at-mantua/documents.md) — the city's published record for this project
 
 <!-- /curator:off -->

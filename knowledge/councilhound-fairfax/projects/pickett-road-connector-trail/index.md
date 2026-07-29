@@ -4,3 +4,4 @@
 - [History](/projects/pickett-road-connector-trail/history.md) — the dated meeting record
 - [Positions](/projects/pickett-road-connector-trail/positions.md) — member positions and open questions
 - [Impact](/projects/pickett-road-connector-trail/impact.md) — screening-level impact estimates
+- [Documents](/projects/pickett-road-connector-trail/documents.md) — the city's published document record

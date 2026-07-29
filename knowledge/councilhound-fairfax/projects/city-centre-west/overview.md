@@ -39,5 +39,6 @@ The applicant is proposing to replace a former bank with a drive-through, a form
 
 - [Positions & open questions](/projects/city-centre-west/positions.md)
 - [Impact analysis](/projects/city-centre-west/impact.md) — screening estimates with assumptions and ranges
+- [Documents](/projects/city-centre-west/documents.md) — the city's published record for this project
 
 <!-- /curator:off -->

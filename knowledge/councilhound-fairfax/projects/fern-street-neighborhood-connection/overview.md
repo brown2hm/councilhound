@@ -28,5 +28,6 @@ The project will construct a new biking and walking connection between Route 29 
 ## In this wiki
 
 - [Positions & open questions](/projects/fern-street-neighborhood-connection/positions.md)
+- [Documents](/projects/fern-street-neighborhood-connection/documents.md) — the city's published record for this project
 
 <!-- /curator:off -->

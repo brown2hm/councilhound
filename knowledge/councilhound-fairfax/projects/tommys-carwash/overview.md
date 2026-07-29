@@ -37,5 +37,6 @@ City Council approved the redevelopment on a 4-2 vote (Lim and Stehle opposed) a
 
 - [Meeting history](/projects/tommys-carwash/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/tommys-carwash/positions.md)
+- [Documents](/projects/tommys-carwash/documents.md) — the city's published record for this project
 
 <!-- /curator:off -->

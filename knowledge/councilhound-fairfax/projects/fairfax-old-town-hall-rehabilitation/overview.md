@@ -28,5 +28,6 @@ The city is rehabilitating Old Town Hall, the premier public facility and cultur
 ## In this wiki
 
 - [Positions & open questions](/projects/fairfax-old-town-hall-rehabilitation/positions.md)
+- [Documents](/projects/fairfax-old-town-hall-rehabilitation/documents.md) — the city's published record for this project
 
 <!-- /curator:off -->

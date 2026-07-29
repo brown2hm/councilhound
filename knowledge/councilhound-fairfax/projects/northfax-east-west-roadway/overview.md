@@ -34,5 +34,6 @@ A new east-west roadway connecting University Drive at Point 50 to Chain Bridge 
 
 - [Meeting history](/projects/northfax-east-west-roadway/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/northfax-east-west-roadway/positions.md)
+- [Documents](/projects/northfax-east-west-roadway/documents.md) — the city's published record for this project
 
 <!-- /curator:off -->

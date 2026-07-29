@@ -27,5 +27,6 @@ Improvement of the Warwick Ave./Fairfax Blvd./McLean Ave. intersection by realig
 ## In this wiki
 
 - [Positions & open questions](/projects/warwick-avenue-fairfax-boulevard-mclean-avenue-intersection-improvements/positions.md)
+- [Documents](/projects/warwick-avenue-fairfax-boulevard-mclean-avenue-intersection-improvements/documents.md) — the city's published record for this project
 
 <!-- /curator:off -->

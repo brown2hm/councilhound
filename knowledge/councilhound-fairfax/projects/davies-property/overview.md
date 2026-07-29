@@ -40,5 +40,6 @@ The applicant is proposing to replace a single-family home with up to 276 apartm
 - [Meeting history](/projects/davies-property/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/davies-property/positions.md)
 - [Impact analysis](/projects/davies-property/impact.md) — screening estimates with assumptions and ranges
+- [Documents](/projects/davies-property/documents.md) — the city's published record for this project
 
 <!-- /curator:off -->

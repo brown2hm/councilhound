@@ -35,5 +35,6 @@ The applicant, ABTB Mid-Atlantic, LLC, is proposing to develop a 2,090 square fo
 
 - [Meeting history](/projects/taco-bell/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/taco-bell/positions.md)
+- [Documents](/projects/taco-bell/documents.md) — the city's published record for this project
 
 <!-- /curator:off -->

@@ -39,5 +39,6 @@ The approved project (PDF, 7MB) includes a total of 266 residential units, inclu
 
 - [Positions & open questions](/projects/paul-vi/positions.md)
 - [Impact analysis](/projects/paul-vi/impact.md) — screening estimates with assumptions and ranges
+- [Documents](/projects/paul-vi/documents.md) — the city's published record for this project
 
 <!-- /curator:off -->

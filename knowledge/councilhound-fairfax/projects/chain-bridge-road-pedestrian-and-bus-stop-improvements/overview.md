@@ -29,5 +29,6 @@ This project will build 1,850 feet of sidewalk and improve bus stops along Chain
 ## In this wiki
 
 - [Positions & open questions](/projects/chain-bridge-road-pedestrian-and-bus-stop-improvements/positions.md)
+- [Documents](/projects/chain-bridge-road-pedestrian-and-bus-stop-improvements/documents.md) — the city's published record for this project
 
 <!-- /curator:off -->

@@ -33,5 +33,6 @@ Construction of the missing link of Government Center Parkway, including sidewal
 
 - [Meeting history](/projects/government-center-parkway-extension/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/government-center-parkway-extension/positions.md)
+- [Documents](/projects/government-center-parkway-extension/documents.md) — the city's published record for this project
 
 <!-- /curator:off -->

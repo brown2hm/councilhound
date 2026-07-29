@@ -39,5 +39,6 @@ The applicant is proposing to replace three office buildings with a mixed-use de
 - [Meeting history](/projects/gallery-at-city-center/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/gallery-at-city-center/positions.md)
 - [Impact analysis](/projects/gallery-at-city-center/impact.md) — screening estimates with assumptions and ranges
+- [Documents](/projects/gallery-at-city-center/documents.md) — the city's published record for this project
 
 <!-- /curator:off -->

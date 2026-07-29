@@ -37,5 +37,6 @@ The applicant proposes to replace existing surface parking at WillowWood Office 
 
 - [Positions & open questions](/projects/botanist/positions.md)
 - [Impact analysis](/projects/botanist/impact.md) — screening estimates with assumptions and ranges
+- [Documents](/projects/botanist/documents.md) — the city's published record for this project
 
 <!-- /curator:off -->

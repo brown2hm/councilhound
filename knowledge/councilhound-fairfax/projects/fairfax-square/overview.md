@@ -37,5 +37,6 @@ The Applicant proposes a phased mixed-use development that would retain the exis
 
 - [Positions & open questions](/projects/fairfax-square/positions.md)
 - [Impact analysis](/projects/fairfax-square/impact.md) — screening estimates with assumptions and ranges
+- [Documents](/projects/fairfax-square/documents.md) — the city's published record for this project
 
 <!-- /curator:off -->

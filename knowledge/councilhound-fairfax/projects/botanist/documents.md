@@ -1,0 +1,65 @@
+---
+type: project-documents
+title: The Botanist — documents
+description: 53 document(s) published in the City of Fairfax project record for The Botanist.
+resource: https://councilhound.net/development/N29-WillowWood-Plaza-Residential-Phase-I
+timestamp: '2026-07-28'
+---
+
+<!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
+
+Documents published in the city's project record, in the order the city lists them. Labels are the city's own and usually carry the document date, format, and size.
+
+- [June 21, 2024 Statement of Support (PDF, 204KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/june-21-2024-statement-of-support.pdf)
+- [June 21, 2024 General Development Plan (PDF, 74MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/june-21-2024-general-development-plan.pdf)
+- [June 21, 2024 Proffers (PDF, 163KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/june-21-2024-proffers.pdf)
+- [March 29, 2024 Statement of Support (PDF, 283KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/march-29-2024-statement-of-support.pdf)
+- [March 29, 2024 General Development Plan (PDF, 34MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/march-29-2024-general-development-plan.pdf)
+- [March 29, 2024 N29 Willowwood Plaza Traffic Impact Study (PDF, 4MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/march-29-2024-n29-willowwood-plaza-traffic-impact-study.pdf)
+- [March 29, 2024 Willowwood Plaza Parking Reduction Study (PDF, 2MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/march-29-2024-willowwood-plaza-parking-reduction-study.pdf)
+- [March 29, 2024 N29 Retail Study (PDF, 9MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/march-29-2024-n29-retail-study.pdf)
+- [March 29, 2024 Proffers (PDF, 163KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/march-29-2024-proffers.pdf)
+- [January 24, 2024 Statement of Support (PDF, 106KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/january-24-2024-statement-of-support.pdf)
+- [January 24, 2024 General Development Plan (PDF, 43MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/january-24-2024-general-development-plan.pdf)
+- [January 24, 2024 N29 Willowwood Plaza Traffic Impact Study (PDF, 4MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/january-24-2024-n29-willowwood-plaza-traffic-impact-study.pdf)
+- [January 24, 2024 Willowwood Plaza Parking Reduction Study (PDF, 1MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/january-24-2024-willowwood-plaza-parking-reduction-study.pdf)
+- [January 24, 2024 Draft Proffers (PDF, 99KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/january-24-2024-draft-proffers.pdf)
+- [January 24, 2024 Survey (PDF, 7MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/january-24-2024-survey.pdf)
+- [December 4, 2023 N29 Residential WillowWood Phase I BAR Submission (PDF, 11MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/december-4-2023-n29-residential-willowwood-phase-i-bar-submission.pdf)
+- [November 7, 2023 N29 WillowWood Phase I BAR Submission (PDF, 9MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/november-7-2023-n29-willowwood-phase-i-bar-submission.pdf)
+- [October 16, 2023 Statement of Support (PDF, 105KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/october-16-2023-statement-of-support.pdf)
+- [October 16, 2023 N29 Residential Phase I General Development Plan (PDF, 28MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/october-16-2023-n29-residential-phase-i-general-development-plan.pdf)
+- [October 16, 2023 Certified Plat (PDF, 1MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/october-16-2023-certified-plat.pdf)
+- [October 16, 2023 Proffers (PDF, 40KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/october-16-2023-proffers.pdf)
+- [October 16, 2023 Parking Reduction Study (PDF, 1MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/october-16-2023-parking-reduction-study.pdf)
+- [October 16, 2023 Subdivision Analysis Exhibit (PDF, 1013KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/october-16-2023-subdivision-analysis-exhibit.pdf)
+- [August 14, 2023 N29 Residential Willowwood Phase I Statement of Support (PDF, 107KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/august-14-2023-n29-residential-willowwood-phase-i-statement-of-support.pdf)
+- [August 14, 2023 N29 Residential Willowwood Phase I General Development Plan Pages 1-10 (PDF, 18MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/august-14-2023-n29-residential-willowwood-phase-i-general-development-plan-pages-1-10.pdf)
+- [August 14, 2023 N29 Residential Willowwod Phase I General Development Plan Pages 11-20 (PDF, 15MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/august-14-2023-n29-residential-willowwod-phase-i-general-development-plan-pages-11-20.pdf)
+- [August 14, 2023 N29 Residential Willowwood Phase I General Development Plan Pages 21-30 (PDF, 16MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/august-14-2023-n29-residential-willowwood-phase-i-general-development-plan-pages-21-30.pdf)
+- [August 14, 2023 N29 Residential Willowwood Phase I General Development Plan Pages 31-37 (PDF, 26MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/august-14-2023-n29-residential-willowwood-phase-i-general-development-plan-pages-31-37.pdf)
+- [August 14, 2023 Willowwood Plaza Traffic Impact Study (PDF, 4MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/august-14-2023-willowwood-plaza-traffic-impact-study.pdf)
+- [August 14, 2023 N29 Residential Willowwood Phase I Parking Reduction Study (PDF, 7MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/august-14-2023-n29-residential-willowwood-phase-i-parking-reduction-study.pdf)
+- [August 14, 2023 N29 Residential Willowwood Phase I Proffers (PDF, 39KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/august-14-2023-n29-residential-willowwood-phase-i-proffers.pdf)
+- [May 23, 2023 N29 WillowWood Phase I BAR Submission (PDF, 26MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/may-23-2023-n29-willowwood-phase-i-bar-submission.pdf)
+- [May 1, 2023 N29 Residential Statement of Support (PDF, 260KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/may-1-2023-n29-residential-statement-of-support.pdf)
+- [May 1, 2023 N29 Residential General Development Plan Sheets 1-10 (PDF, 14MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/may-1-2023-n29-residential-general-development-plan-sheets-1-10.pdf)
+- [May 1, 2023 N29 Residential General Development Plan Sheets 11-18 (PDF, 10MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/may-1-2023-n29-residential-general-development-plan-sheets-11-18.pdf)
+- [May 1, 2023 N29 Residential General Development Plan Sheets 19-29 (PDF, 13MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/may-1-2023-n29-residential-general-development-plan-sheets-19-29.pdf)
+- [May 1, 2023 N29 Residential General Development Plan Sheets 30-36 (PDF, 21MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/may-1-2023-n29-residential-general-development-plan-sheets-30-36.pdf)
+- [May 1, 2023 N29 Residential Traffic Impact Study (PDF, 3MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/may-1-2023-n29-residential-traffic-impact-study.pdf)
+- [May 1, 2023 N29 Residential Parking Reduction Study (PDF, 680KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/may-1-2023-n29-residential-parking-reduction-study.pdf)
+- [May 1, 2023 Subdivision Analysis Exhibit (PDF, 1MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/may-1-2023-subdivision-analysis-exhibit.pdf)
+- [December 8, 2022 N29 Residential Phase I Land Use Applications (PDF, 601KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/december-8-2022-n29-residential-phase-i-land-use-applications.pdf)
+- [December 8, 2022 N29 Residential Phase I Statement of Support (PDF, 75KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/december-8-2022-n29-residential-phase-i-statement-of-support.pdf)
+- [December 8, 2022 General Development Plan Sheets 1-9 (PDF, 13MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/december-8-2022-general-development-plan-sheets-1-9.pdf)
+- [December 8, 2022 General Development Plan Sheets 10-20 (PDF, 21MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/december-8-2022-general-development-plan-sheets-10-20.pdf)
+- [December 8, 2022 General Development Plan Sheets 21-30 (PDF, 17MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/december-8-2022-general-development-plan-sheets-21-30.pdf)
+- [December 8, 2022 N29 Residential Willowwood Plaza Parking Reduction Study (PDF, 685KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/december-8-2022-n29-residential-willowwood-plaza-parking-reduction-study.pdf)
+- [December 8, 2022 N29 Residential Phase I Future Road Connection Exhibit (PDF, 3MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/december-8-2022-n29-residential-phase-i-future-road-connection-exhibit.pdf)
+- [December 8, 2022 N29 Residential Phase I Subdivision Analysis Exhibit (PDF, 1MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/december-8-2022-n29-residential-phase-i-subdivision-analysis-exhibit.pdf)
+- [July 22, 2022 N29 Residential Phase I Land Use Applications (PDF, 665KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/july-22-2022-n29-residential-phase-i-land-use-applications.pdf)
+- [July 22, 2022 N29 Residential Phase I Statement of Support (PDF, 500KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/july-22-2022-n29-residential-phase-i-statement-of-support.pdf)
+- [July 22, 2022 N29 Residential Phase I General Development Plan (PDF, 16MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/july-22-2022-n29-residential-phase-i-general-development-plan.pdf)
+- [April 13, 2022 N29 WillowWood Plaza Residential Briefing Letter (PDF, 200KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/april-13-2022-n29-willowwood-plaza-residential-briefing-letter.pdf)
+- [April 13, 2022 N29 WillowWood Plaza Residential Concept Plan (PDF, 13MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/april-13-2022-n29-willowwood-plaza-residential-concept-plan.pdf)

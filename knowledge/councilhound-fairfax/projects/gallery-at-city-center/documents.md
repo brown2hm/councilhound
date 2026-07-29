@@ -1,0 +1,22 @@
+---
+type: project-documents
+title: Gallery at City Center — documents
+description: 9 document(s) published in the City of Fairfax project record for Gallery at
+  City Center.
+resource: https://councilhound.net/development/Gallery-at-City-Center
+timestamp: '2026-07-28'
+---
+
+<!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
+
+Documents published in the city's project record, in the order the city lists them. Labels are the city's own and usually carry the document date, format, and size.
+
+- [Statement-of-Support.pdf (PDF, 182KB)](https://www.fairfaxva.gov/files/content/city/v/12/property-business/development/projects/gallery-at-city-center/statement-of-support_1.pdf)
+- [General-Development-Plan.pdf (PDF, 132MB)](https://www.fairfaxva.gov/files/content/city/v/12/property-business/development/projects/gallery-at-city-center/general-development-plan_1.pdf)
+- [Transportation-Impact-Study.pdf (PDF, 8MB)](https://www.fairfaxva.gov/files/content/city/v/12/property-business/development/projects/gallery-at-city-center/transportation-impact-study.pdf)
+- [Draft-Proffer.pdf (PDF, 110KB)](https://www.fairfaxva.gov/files/content/city/v/12/property-business/development/projects/gallery-at-city-center/draft-proffer.pdf)
+- [Statement of Support (PDF, 171KB)](https://www.fairfaxva.gov/files/content/city/v/12/property-business/development/projects/gallery-at-city-center/statement-of-support.pdf)
+- [General Development Plan (PDF, 42MB)](https://www.fairfaxva.gov/files/content/city/v/12/property-business/development/projects/gallery-at-city-center/general-development-plan.pdf)
+- [Certified Plat (PDF, 353KB)](https://www.fairfaxva.gov/files/content/city/v/12/property-business/development/projects/gallery-at-city-center/certified-plat.pdf)
+- [January 21, 2025 Pre-Application Project Narrative (PDF, 50KB)](https://www.fairfaxva.gov/files/assets/city/v/1/public-works/documents/projects/the-christopher-at-fairfax-city/january-21-2025-pre-application-project-narrative.pdf)
+- [January 21, 2025 Conceptual Plan (PDF, 12MB)](https://www.fairfaxva.gov/files/assets/city/v/1/public-works/documents/projects/the-christopher-at-fairfax-city/january-21-2025-conceptual-plan.pdf)

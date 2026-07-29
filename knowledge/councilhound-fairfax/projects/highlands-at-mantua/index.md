@@ -4,3 +4,4 @@
 - [History](/projects/highlands-at-mantua/history.md) — the dated meeting record
 - [Positions](/projects/highlands-at-mantua/positions.md) — member positions and open questions
 - [Impact](/projects/highlands-at-mantua/impact.md) — screening-level impact estimates
+- [Documents](/projects/highlands-at-mantua/documents.md) — the city's published document record

@@ -34,5 +34,6 @@ Addition of bike facilities to University Drive, including shared lane markings 
 - [Meeting history](/projects/university-drive-bicycle-lanes/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/university-drive-bicycle-lanes/positions.md)
 - [Impact analysis](/projects/university-drive-bicycle-lanes/impact.md) — screening estimates with assumptions and ranges
+- [Documents](/projects/university-drive-bicycle-lanes/documents.md) — the city's published record for this project
 
 <!-- /curator:off -->

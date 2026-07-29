@@ -36,5 +36,6 @@ The applicant, Fairfax Presbyterian Church, is proposing to add ten (10) townhou
 
 - [Positions & open questions](/projects/fairfax-presbyterian-church/positions.md)
 - [Impact analysis](/projects/fairfax-presbyterian-church/impact.md) — screening estimates with assumptions and ranges
+- [Documents](/projects/fairfax-presbyterian-church/documents.md) — the city's published record for this project
 
 <!-- /curator:off -->

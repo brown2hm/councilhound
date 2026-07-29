@@ -36,5 +36,6 @@ The applicant proposes to redevelop the site with an upper story residential/mix
 
 - [Positions & open questions](/projects/lamb-centerwesley-housing/positions.md)
 - [Impact analysis](/projects/lamb-centerwesley-housing/impact.md) — screening estimates with assumptions and ranges
+- [Documents](/projects/lamb-centerwesley-housing/documents.md) — the city's published record for this project
 
 <!-- /curator:off -->

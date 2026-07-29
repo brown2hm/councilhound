@@ -33,5 +33,6 @@ The potential applicant is proposing a hotel and hospitality venue with 96 rooms
 ## In this wiki
 
 - [Positions & open questions](/projects/farr-house-aka-five-chimneys/positions.md)
+- [Documents](/projects/farr-house-aka-five-chimneys/documents.md) — the city's published record for this project
 
 <!-- /curator:off -->

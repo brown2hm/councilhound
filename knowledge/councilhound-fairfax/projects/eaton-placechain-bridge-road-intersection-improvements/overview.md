@@ -28,5 +28,6 @@ Reconfiguration of the Eaton Place/Chain Bridge Road intersection to improve tra
 ## In this wiki
 
 - [Positions & open questions](/projects/eaton-placechain-bridge-road-intersection-improvements/positions.md)
+- [Documents](/projects/eaton-placechain-bridge-road-intersection-improvements/documents.md) — the city's published record for this project
 
 <!-- /curator:off -->
