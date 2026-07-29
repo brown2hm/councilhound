@@ -47,8 +47,12 @@ CURATED_NOTE = ("<!-- Curator-owned page: updated incrementally as new "
                 "meetings land. Human edits are preserved. -->")
 
 # overview.md frontmatter keys the deterministic refresh may rewrite; body
-# and every other key belong to the curator/humans
-REFRESHED_KEYS = {"status", "tags", "evaluation_status"}
+# and every other key belong to the curator/humans. `resource` is in here
+# because it is derived from whether the entity still has a CityProject: the
+# city dropped George Snyder Trail from its directory, the daily project sync
+# removed the row, and the wiki went on pointing at a 404 because nothing
+# recomputed the URI.
+REFRESHED_KEYS = {"status", "tags", "evaluation_status", "resource"}
 
 
 def _clip_link(view_id: str, clip_id: str | None,
@@ -380,6 +384,26 @@ def _refresh_overview(bundle_dir: str, entity: Entity, ctx: dict) -> bool:
     return write_page(bundle_dir, rel, fm, body)
 
 
+def _refresh_sibling_resources(bundle_dir: str, entity: Entity,
+                               ctx: dict) -> bool:
+    """positions.md and impact.md carry the same derived `resource` URI as
+    overview.md. Their bodies are the curator's, but that key is not — leave
+    it alone and it outlives the record it was derived from."""
+    slug = entity.canonical_slug
+    fresh = _resource_url(entity, ctx["city"])
+    changed = False
+    for page in ("positions", "impact"):
+        rel = f"projects/{slug}/{page}.md"
+        parsed = read_page(os.path.join(bundle_dir, rel))
+        if parsed is None or parsed[0] is None:
+            continue
+        fm, body = parsed
+        if fm.get("resource") != fresh:
+            fm["resource"] = fresh
+            changed = write_page(bundle_dir, rel, fm, body) or changed
+    return changed
+
+
 def _write_indexes(bundle_dir: str, session: Session) -> None:
     project_dirs = []
     projects_root = os.path.join(bundle_dir, "projects")
@@ -482,6 +506,7 @@ def refresh_bundle(session: Session, bundle_dir: str) -> dict:
         ctx = _project_context(session, entity)
         changed = _write_history(session, bundle_dir, entity, ctx)
         changed = _refresh_overview(bundle_dir, entity, ctx) or changed
+        changed = _refresh_sibling_resources(bundle_dir, entity, ctx) or changed
         if changed:
             latest = (ctx["timeline"][-1][1].meeting_date.isoformat()
                       if ctx["timeline"] else None)

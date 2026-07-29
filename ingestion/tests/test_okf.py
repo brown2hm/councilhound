@@ -567,6 +567,28 @@ def test_curator_deleting_the_nav_section_is_rejected(db_session, project,
     assert "New paragraph." not in after        # good prose lost with the bad
 
 
+def test_refresh_recomputes_a_stale_resource_uri(db_session, project, tmp_path):
+    """`resource` is derived from whether the entity still has a CityProject.
+    The city dropped a project from its directory, the sync removed the row,
+    and the wiki kept pointing at a page that now 404s — so refresh has to
+    recompute it, on the sibling pages too."""
+    seed_bundle(db_session, str(tmp_path))
+    fm, _ = _read(tmp_path, "projects/circle-gateway/overview.md")
+    assert fm["resource"].endswith("/development/circle-gateway-official")
+
+    # deleting the CityProject cascades the evaluation away, so impact.md is
+    # no longer generated for this project either
+    os.remove(tmp_path / "projects/circle-gateway/impact.md")
+    db_session.query(CityProject).delete()
+    db_session.commit()
+    refresh_bundle(db_session, str(tmp_path))
+
+    for page in ("overview", "positions"):
+        fm, _ = _read(tmp_path, f"projects/circle-gateway/{page}.md")
+        assert fm["resource"].endswith("/topics/circle-gateway"), page
+    assert lint_bundle(str(tmp_path), db_session) == []
+
+
 # --- sync loop -------------------------------------------------------------
 
 def _init_repo(tmp_path):
