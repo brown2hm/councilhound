@@ -22,6 +22,10 @@ Roadbed reconstruction on Fairfax Boulevard near Fairfax Circle, April–July 20
 - **Address:** Fairfax Boulevard and Spring Street, Fairfax, VA 22030
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Fairfax-Boulevard-Roadbed-Reconstruction)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Positions & open questions](/projects/fairfax-boulevard-roadbed-reconstruction/positions.md)
+
+<!-- /curator:off -->

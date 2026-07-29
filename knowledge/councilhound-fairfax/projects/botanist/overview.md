@@ -31,7 +31,11 @@ The applicant proposes to replace existing surface parking at WillowWood Office 
 - **Applicant:** Capital City Real Estate, LLC  Chris Love Managing Partner, Washington DC 3000 K Street NW, Suite 270 Washington, DC 20007
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/N29-WillowWood-Plaza-Residential-Phase-I)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Positions & open questions](/projects/botanist/positions.md)
 - [Impact analysis](/projects/botanist/impact.md) — screening estimates with assumptions and ranges
+
+<!-- /curator:off -->

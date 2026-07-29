@@ -27,7 +27,11 @@ Construction of the missing link of Government Center Parkway, including sidewal
 - **Address:** Government Center Parkway, Fairfax, VA 22030
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Government-Center-Parkway-Extension)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Meeting history](/projects/government-center-parkway-extension/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/government-center-parkway-extension/positions.md)
+
+<!-- /curator:off -->

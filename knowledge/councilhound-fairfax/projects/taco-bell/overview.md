@@ -29,7 +29,11 @@ The applicant, ABTB Mid-Atlantic, LLC, is proposing to develop a 2,090 square fo
 - **Applicant:** ABTB Mid-Atlantic, LLC  Kathryn R. Taylor, Associate 2200 Clarendon Boulevard, Suite 1300 Arlington, VA 22201-3359
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Taco-Bell)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Meeting history](/projects/taco-bell/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/taco-bell/positions.md)
+
+<!-- /curator:off -->

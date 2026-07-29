@@ -29,6 +29,10 @@ Informational development briefings were held on January 7, 2020 for City Counci
 - **Applicant:** Northfax JV, LLC
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Northfax-West)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Positions & open questions](/projects/northfax-west/positions.md)
+
+<!-- /curator:off -->

@@ -24,6 +24,10 @@ The Gateway Regional Park Renovation project transforms the existing park into a
 - **Address:** Gateway Regional Park, 2823 Pickett Rd., Fairfax, VA 22030
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Gateway-Regional-Park-Renovation)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Positions & open questions](/projects/gateway-regional-park-renovation/positions.md)
+
+<!-- /curator:off -->

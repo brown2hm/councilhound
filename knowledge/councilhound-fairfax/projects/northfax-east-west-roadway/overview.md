@@ -28,7 +28,11 @@ A new east-west roadway connecting University Drive at Point 50 to Chain Bridge 
 - **Address:** Northfax Street and Chain Bridge Rd., Fairfax, VA 22030
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Northfax-East-West-Roadway)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Meeting history](/projects/northfax-east-west-roadway/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/northfax-east-west-roadway/positions.md)
+
+<!-- /curator:off -->

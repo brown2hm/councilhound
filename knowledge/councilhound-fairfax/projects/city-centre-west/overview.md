@@ -33,7 +33,11 @@ The applicant is proposing to replace a former bank with a drive-through, a form
 - **Applicant:** Ox Hill Realty, LLC  Robert D. Brant, Attorney Walsh, Colucci, Lubeley & Walsh, PC
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/City-Centre-West)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Positions & open questions](/projects/city-centre-west/positions.md)
 - [Impact analysis](/projects/city-centre-west/impact.md) — screening estimates with assumptions and ranges
+
+<!-- /curator:off -->

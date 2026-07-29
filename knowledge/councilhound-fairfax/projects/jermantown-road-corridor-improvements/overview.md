@@ -25,6 +25,10 @@ Improvements to Jermantown Road to enhance traffic flow, transit operations, ped
 - **Address:** Jermantown Road, Fairfax, VA 22030
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Jermantown-Road-Corridor-Improvements)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Positions & open questions](/projects/jermantown-road-corridor-improvements/positions.md)
+
+<!-- /curator:off -->

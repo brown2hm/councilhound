@@ -23,6 +23,10 @@ City of Fairfax project to extend South Street between University Drive and Chai
 - **Address:** South St., Fairfax, VA 22030
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/South-Street-Extension)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Positions & open questions](/projects/south-street-extension/positions.md)
+
+<!-- /curator:off -->

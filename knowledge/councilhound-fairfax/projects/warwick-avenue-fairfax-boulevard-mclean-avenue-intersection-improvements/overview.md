@@ -22,6 +22,10 @@ Improvement of the Warwick Ave./Fairfax Blvd./McLean Ave. intersection by realig
 - **Address:** Warwick Ave & Fairfax Blvd & McLean Ave, Fairfax, VA 22030
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Warwick-Ave-Fairfax-Blvd-McLean-Ave-Intersection-Improvements)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Positions & open questions](/projects/warwick-avenue-fairfax-boulevard-mclean-avenue-intersection-improvements/positions.md)
+
+<!-- /curator:off -->

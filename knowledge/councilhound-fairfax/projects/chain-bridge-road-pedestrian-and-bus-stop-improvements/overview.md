@@ -24,6 +24,10 @@ This project will build 1,850 feet of sidewalk and improve bus stops along Chain
 - **Address:** Taba Cove to Warwick Ave, Fairfax, VA 22030
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Chain-Bridge-Road-Pedestrian-and-Bus-Stop-Improvements-Taba-Cove-to-Warwick-Ave)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Positions & open questions](/projects/chain-bridge-road-pedestrian-and-bus-stop-improvements/positions.md)
+
+<!-- /curator:off -->

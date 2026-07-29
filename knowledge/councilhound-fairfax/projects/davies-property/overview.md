@@ -33,8 +33,12 @@ The applicant is proposing to replace a single-family home with up to 276 apartm
 - **Applicant:** The Hill, A Davies Family LLC  David Houston, Attorney Bean Kinney & Korman, PC 2311 Wilson Boulevard Suite 500 Arlington, VA 22201
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Davies-Property)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Meeting history](/projects/davies-property/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/davies-property/positions.md)
 - [Impact analysis](/projects/davies-property/impact.md) — screening estimates with assumptions and ranges
+
+<!-- /curator:off -->

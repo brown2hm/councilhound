@@ -27,6 +27,11 @@ Addition of bike facilities to University Drive, including shared lane markings 
 - **Address:** University Drive between North Street and Layton Hall Drive, Fairfax, VA 22030
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/University-Drive-Bicycle-Facilities)
 
+<!-- curator:off -->
+
 ## In this wiki
 
+- [Meeting history](/projects/university-drive-bicycle-lanes/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/university-drive-bicycle-lanes/positions.md)
+
+<!-- /curator:off -->

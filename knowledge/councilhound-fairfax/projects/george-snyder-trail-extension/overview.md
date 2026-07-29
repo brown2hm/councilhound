@@ -3,7 +3,7 @@ type: development-project
 title: George Snyder Trail Extension
 description: Fairfax City has developed a conceptual design for a shared-use path on Fairfax
   Boulevard.
-resource: https://councilhound.net/development/George-Snyder-Trail-Extension
+resource: https://councilhound.net/topics/george-snyder-trail-extension
 tags:
 - city-project
 timestamp: '2026-07-19'
@@ -24,6 +24,10 @@ Fairfax City has developed a conceptual design for a shared-use path on Fairfax 
 - **Address:** Fairfax Blvd. and Draper Drive, 22030
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/George-Snyder-Trail-Extension)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Positions & open questions](/projects/george-snyder-trail-extension/positions.md)
+
+<!-- /curator:off -->

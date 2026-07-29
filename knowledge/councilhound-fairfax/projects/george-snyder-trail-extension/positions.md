@@ -2,7 +2,7 @@
 type: project-positions
 title: George Snyder Trail Extension — positions & open questions
 description: Recorded member positions and unresolved questions on George Snyder Trail Extension.
-resource: https://councilhound.net/development/George-Snyder-Trail-Extension
+resource: https://councilhound.net/topics/george-snyder-trail-extension
 timestamp: '2026-07-19'
 ---
 

@@ -29,7 +29,11 @@ Connection of Thaiss Park to Route 50, linking the Wilcoxon, Cross-Country, and 
 - **Address:** Pickett Road, Fairfax, VA
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Pickett-Road-Connector-Trail)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Meeting history](/projects/pickett-road-connector-trail/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/pickett-road-connector-trail/positions.md)
+
+<!-- /curator:off -->

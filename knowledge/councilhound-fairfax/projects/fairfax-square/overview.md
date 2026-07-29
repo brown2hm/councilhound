@@ -31,7 +31,11 @@ The Applicant proposes a phased mixed-use development that would retain the exis
 - **Applicant:** Van Metre Companies 9900 Main Street, Suite 500 Fairfax, VA 22031
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Fairfax-Square)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Positions & open questions](/projects/fairfax-square/positions.md)
 - [Impact analysis](/projects/fairfax-square/impact.md) — screening estimates with assumptions and ranges
+
+<!-- /curator:off -->

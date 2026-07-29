@@ -32,8 +32,12 @@ The applicant is proposing to replace approximately 21,566 square feet of existi
 - **Applicant:** RJL Associates, Inc.  David S. Houston, Attorney Bean Kinney & Korman, PC 2311 Wilson Boulevard, Suite 500 Arlington, VA 22201-3359
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/The-Highlands-at-Mantua)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Meeting history](/projects/highlands-at-mantua/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/highlands-at-mantua/positions.md)
 - [Impact analysis](/projects/highlands-at-mantua/impact.md) — screening estimates with assumptions and ranges
+
+<!-- /curator:off -->

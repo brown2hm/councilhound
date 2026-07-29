@@ -31,7 +31,11 @@ The subject site has two existing buildings totaling 4,735 square feet.
 
 City Council approved the redevelopment on a 4-2 vote (Lim and Stehle opposed) at its December 10, 2024 meeting. Approvals include the Special Use Permit for vehicle service (car wash), Resolution R-24-40 adopting special exceptions for exterior vacuum stations, the fence in the transitional yard, and modified street tree requirements, and the Major Certificate of Appropriateness (2024-12-10 City Council).
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Meeting history](/projects/tommys-carwash/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/tommys-carwash/positions.md)
+
+<!-- /curator:off -->

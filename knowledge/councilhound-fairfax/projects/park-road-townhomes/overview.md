@@ -29,7 +29,11 @@ The applicant is proposing to build 13 three story, 2 car garage townhomes on 1.
 - **Applicant:** Caglayan Investment Group  Keith Martin The Law Office of Keith C. Martin PLLC
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Park-Rd-Townhomes)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Positions & open questions](/projects/park-road-townhomes/positions.md)
 - [Impact analysis](/projects/park-road-townhomes/impact.md) — screening estimates with assumptions and ranges
+
+<!-- /curator:off -->

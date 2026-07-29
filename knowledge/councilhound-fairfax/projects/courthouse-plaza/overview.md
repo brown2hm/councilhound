@@ -31,7 +31,11 @@ The potential applicant proposes a rezoning from CR Commercial Retail and CG Com
 - **Applicant:** Molly Novotny Curata Partners
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Courthouse-Plaza)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Meeting history](/projects/courthouse-plaza/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/courthouse-plaza/positions.md)
+
+<!-- /curator:off -->

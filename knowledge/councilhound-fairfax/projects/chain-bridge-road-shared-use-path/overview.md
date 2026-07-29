@@ -24,6 +24,10 @@ This project will construct a missing link of path on the west side of Chain Bri
 - **Address:** Assembly Drive, 22030
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Chain-Bridge-Road-Shared-Use-Path)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Positions & open questions](/projects/chain-bridge-road-shared-use-path/positions.md)
+
+<!-- /curator:off -->

@@ -29,8 +29,12 @@ The applicant is proposing to replace two existing commercial buildings (formerl
 - **Applicant:** Woodbridge Commons, LLC  Don Earl Stedham Woodbridge Commons, LLC Chief Operating Officer
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Circle-Gateway)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Meeting history](/projects/circle-gateway/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/circle-gateway/positions.md)
 - [Impact analysis](/projects/circle-gateway/impact.md) — screening estimates with assumptions and ranges
+
+<!-- /curator:off -->

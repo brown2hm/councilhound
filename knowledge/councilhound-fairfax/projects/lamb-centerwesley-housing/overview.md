@@ -30,7 +30,11 @@ The applicant proposes to redevelop the site with an upper story residential/mix
 - **Applicant:** The Lamb Center/Wesley Housing Gifford Hampshire Blankingship & Keith, PC.
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Lamb-Center-Wesley-Housing)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Positions & open questions](/projects/lamb-centerwesley-housing/positions.md)
 - [Impact analysis](/projects/lamb-centerwesley-housing/impact.md) — screening estimates with assumptions and ranges
+
+<!-- /curator:off -->

@@ -33,7 +33,11 @@ The approved project (PDF, 7MB) includes a total of 266 residential units, inclu
 - **Applicant:** IDI Fairfax, LC
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Paul-VI)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Positions & open questions](/projects/paul-vi/positions.md)
 - [Impact analysis](/projects/paul-vi/impact.md) — screening estimates with assumptions and ranges
+
+<!-- /curator:off -->

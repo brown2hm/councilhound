@@ -3,7 +3,7 @@ type: project-positions
 title: Blenheim Boulevard Multimodal Improvements — positions & open questions
 description: Recorded member positions and unresolved questions on Blenheim Boulevard Multimodal
   Improvements.
-resource: https://councilhound.net/topics/blenheim-boulevard-multimodal-improvements
+resource: https://councilhound.net/development/Blenheim-Blvd-Multimodal-Improvements
 timestamp: '2026-06-23'
 ---
 

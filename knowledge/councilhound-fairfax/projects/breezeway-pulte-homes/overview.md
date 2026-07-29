@@ -31,7 +31,11 @@ A rezoning application was submitted on August 6, 2018 for a mixed-use Planned D
 - **Applicant:** Pulte Home Company, LLC  Robert D. Brant, Attorney Walsh, Colucci, Lubeley & Walsh, PC
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Breezeway-Pulte-Homes)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Positions & open questions](/projects/breezeway-pulte-homes/positions.md)
 - [Impact analysis](/projects/breezeway-pulte-homes/impact.md) — screening estimates with assumptions and ranges
+
+<!-- /curator:off -->

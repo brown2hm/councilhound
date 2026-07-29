@@ -23,6 +23,10 @@ The project will construct a new biking and walking connection between Route 29 
 - **Address:** Fern Street and Draper Drive, 22030
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Fern-Street-Neighborhood-Connection)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Positions & open questions](/projects/fern-street-neighborhood-connection/positions.md)
+
+<!-- /curator:off -->

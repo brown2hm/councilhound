@@ -23,6 +23,10 @@ The city is rehabilitating Old Town Hall, the premier public facility and cultur
 - **Address:** 3999 University Dr., Fairfax, VA 22030
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Fairfax-Old-Town-Hall-Rehabilitation)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Positions & open questions](/projects/fairfax-old-town-hall-rehabilitation/positions.md)
+
+<!-- /curator:off -->

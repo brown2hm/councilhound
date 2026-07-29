@@ -30,7 +30,11 @@ The applicant, Fairfax Presbyterian Church, is proposing to add ten (10) townhou
 - **Applicant:** Fairfax Presbyterian Church  David S. Houston, Attorney Bean, Kinney & Korman, PC
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Fairfax-Presbyterian-Church)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Positions & open questions](/projects/fairfax-presbyterian-church/positions.md)
 - [Impact analysis](/projects/fairfax-presbyterian-church/impact.md) — screening estimates with assumptions and ranges
+
+<!-- /curator:off -->

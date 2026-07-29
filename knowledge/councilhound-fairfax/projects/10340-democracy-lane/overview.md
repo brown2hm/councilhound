@@ -31,8 +31,12 @@ The potential applicant is proposing to redevelop the property with a six-story 
 - **Applicant:** Evan Pritchard Wire Gill, LLP
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/10340-Democracy-Lane)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Meeting history](/projects/10340-democracy-lane/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/10340-democracy-lane/positions.md)
 - [Impact analysis](/projects/10340-democracy-lane/impact.md) — screening estimates with assumptions and ranges
+
+<!-- /curator:off -->

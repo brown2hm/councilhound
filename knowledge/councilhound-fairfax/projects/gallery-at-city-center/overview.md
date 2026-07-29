@@ -32,8 +32,12 @@ The applicant is proposing to replace three office buildings with a mixed-use de
 - **Applicant:** The Christopher Companies 10461 White Granite Drive, Suite 250 Oakton, VA 22124  Clark Massie, President Tetra Corporation 221 E. Main Street Purcellville, VA 20132
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Gallery-at-City-Center)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Meeting history](/projects/gallery-at-city-center/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/gallery-at-city-center/positions.md)
 - [Impact analysis](/projects/gallery-at-city-center/impact.md) — screening estimates with assumptions and ranges
+
+<!-- /curator:off -->

@@ -28,6 +28,10 @@ The potential applicant is proposing a hotel and hospitality venue with 96 rooms
 - **Applicant:** Ox Hill Companies
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Farr-House-aka-Five-Chimneys)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Positions & open questions](/projects/farr-house-aka-five-chimneys/positions.md)
+
+<!-- /curator:off -->

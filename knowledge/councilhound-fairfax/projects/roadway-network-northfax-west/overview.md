@@ -24,6 +24,10 @@ Creation of a new roadway between Fairfax Blvd/Farr Avenue and Orchard Street to
 - **Address:** Fairfax Blvd/Farr Avenue to Orchard Street, Fairfax, VA 22030
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Roadway-Network-Northfax-West)
 
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Positions & open questions](/projects/roadway-network-northfax-west/positions.md)
+
+<!-- /curator:off -->
