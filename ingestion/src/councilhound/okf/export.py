@@ -184,17 +184,133 @@ def _nav_block(slug: str, pages: set[str]) -> str:
     return "\n".join(lines)
 
 
-def _replace_nav(body: str, block: str) -> str:
-    """Swap in a freshly built nav section, whether the existing one is
-    already marked, still unmarked (pages seeded before markers existed), or
-    missing entirely (the curator dropped it)."""
+def _replace_marked_section(body: str, heading: str, block: str,
+                            before: str | None = None) -> str:
+    """Swap a pipeline-owned section into a curator-owned page, whether it is
+    already marked, still unmarked (seeded before markers existed), or absent
+    (never written, or the curator dropped it).
+
+    `before` places a first insertion above that heading; without it the
+    section lands at the end. Either way it only matters once — after the
+    first write the marked region is found and replaced in place."""
     for match in CURATOR_OFF_RE.finditer(body):
-        if f"## {NAV_HEADING}" in match.group(0):
+        if f"## {heading}" in match.group(0):
             return body[:match.start()] + block + body[match.end():]
-    match = _UNMARKED_NAV_RE.search(body)
-    if match:
-        return body[:match.start()] + block + "\n" + body[match.end():]
+    unmarked = re.compile(rf"^## {re.escape(heading)}\s*$.*?(?=^## |\Z)",
+                          re.MULTILINE | re.DOTALL).search(body)
+    if unmarked:
+        return body[:unmarked.start()] + block + "\n" + body[unmarked.end():]
+    if before:
+        anchor = re.search(rf"^## {re.escape(before)}\s*$", body, re.MULTILINE)
+        if anchor is None:
+            # the nav is always last; land above it rather than after
+            anchor = next((m for m in CURATOR_OFF_RE.finditer(body)
+                           if f"## {NAV_HEADING}" in m.group(0)), None)
+        if anchor is not None:
+            return body[:anchor.start()] + block + "\n\n" + body[anchor.start():]
     return body.rstrip("\n") + "\n\n" + block + "\n"
+
+
+def _replace_nav(body: str, block: str) -> str:
+    return _replace_marked_section(body, NAV_HEADING, block)
+
+
+FACTS_HEADING = "Proposal at a glance"
+MAX_QUOTE = 200
+
+
+def _num(value) -> str:
+    n = float(value)
+    return f"{int(n):,}" if n == int(n) else f"{n:,.2f}"
+
+
+def _sqft(value) -> str:
+    return f"{_num(value)} sq ft"
+
+
+def _acres(value) -> str:
+    return f"{_num(value)} acres"
+
+
+def _text(value) -> str:
+    return str(value).strip()
+
+
+# label, key under `existing`, key under `proposed`, formatter
+_FACT_ROWS = [
+    ("Use", "use", None, _text),
+    ("Floor area", "sqft", None, _sqft),
+    ("Dwelling units", "units", "units", _num),
+    ("Affordable units", None, "affordable_units", _num),
+    ("Retail", None, "retail_sqft", _sqft),
+    ("Office", None, "office_sqft", _sqft),
+    ("Stories", None, "stories", _num),
+    ("Parking spaces", None, "parking_spaces", _num),
+    ("Site area", None, "acres", _acres),
+    ("Corridor", None, "corridor", _text),
+]
+
+
+def _facts_block(ctx: dict) -> str | None:
+    """Existing vs proposed program, extracted from the city's documents.
+
+    The wiki otherwise describes a project only in prose lifted from the city
+    blurb, while the structured figures the impact model actually runs on sit
+    unread in ProjectEvaluation.spec.
+
+    Only populated fields get a row. That is what makes the confidence column
+    honest rather than noise: across prod every populated field grades high or
+    medium, and all 110 `low` grades sit on fields with no value — a `low`
+    means "could not find it", not "found it and doubt it"."""
+    evaluation = ctx["evaluation"]
+    spec = (evaluation.spec if evaluation else None) or {}
+    existing = spec.get("existing") or {}
+    proposed = spec.get("proposed") or {}
+    confidence = spec.get("extraction_confidence") or {}
+    quotes = spec.get("extraction_quotes") or {}
+
+    def cell(section: dict, key: str | None, fmt, path_prefix: str) -> str:
+        if key is None:
+            return "—"
+        value = section.get(key)
+        if value in (None, "", []):
+            return "—"
+        rendered = fmt(value)
+        grade = confidence.get(f"{path_prefix}.{key}")
+        # high is the norm, so flag only what is weaker
+        return f"{rendered} _({grade} confidence)_" if grade in {"medium", "low"} \
+            else rendered
+
+    rows, cited = [], []
+    for label, ex_key, pr_key, fmt in _FACT_ROWS:
+        left = cell(existing, ex_key, fmt, "existing")
+        right = cell(proposed, pr_key, fmt, "proposed")
+        if left == "—" and right == "—":
+            continue
+        rows.append(f"| {label} | {left} | {right} |")
+        for prefix, key in (("existing", ex_key), ("proposed", pr_key)):
+            quote = quotes.get(f"{prefix}.{key}") if key else None
+            if quote:
+                text = " ".join(str(quote).split())[:MAX_QUOTE]
+                # name the side: rows like "Dwelling units" carry a quote on
+                # each, and unlabelled they read as contradicting each other
+                cited.append(f'- **{label}** ({prefix}) — "{text}"')
+    if not rows:
+        return None
+
+    parts = [CURATOR_OFF_OPEN, "", f"## {FACTS_HEADING}", "",
+             "| | Existing | Proposed |", "|---|---|---|", *rows, ""]
+    # parcel ids arrive with runs of internal whitespace: "48 3 08    002 B"
+    parcels = [" ".join(str(p).split()) for p in (spec.get("parcels") or [])
+               if str(p).strip()]
+    if parcels:
+        parts += [f"Tax map parcel(s): {', '.join(parcels)}", ""]
+    if cited:
+        parts += ["Extracted from the city's submitted documents; each figure "
+                  "traces to the text it came from.", ""]
+        parts += cited + [""]
+    parts.append(CURATOR_OFF_CLOSE)
+    return "\n".join(parts)
 
 
 def _overview_body(entity: Entity, ctx: dict) -> str:
@@ -202,6 +318,9 @@ def _overview_body(entity: Entity, ctx: dict) -> str:
     parts = [CURATED_NOTE, ""]
     if profile and profile.summary:
         parts += [profile.summary.strip(), ""]
+    facts = _facts_block(ctx)
+    if facts:
+        parts += [facts, ""]
     if city:
         parts += ["## Official record", ""]
         if city.description:
@@ -462,6 +581,10 @@ def _refresh_overview(bundle_dir: str, entity: Entity, ctx: dict) -> bool:
     present = {f.removesuffix(".md")
                for f in os.listdir(os.path.join(bundle_dir, "projects", slug))
                if f.endswith(".md")}
+    facts = _facts_block(ctx)
+    if facts:
+        body = _replace_marked_section(body, FACTS_HEADING, facts,
+                                       before="Official record")
     body = _replace_nav(body, _nav_block(slug, present))
     return write_page(bundle_dir, rel, fm, body)
 

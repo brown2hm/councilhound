@@ -695,6 +695,91 @@ def test_no_documents_means_no_page(db_session, project, tmp_path):
     assert "/documents.md" not in overview
 
 
+def test_facts_table_renders_only_populated_fields(db_session, project,
+                                                   tmp_path):
+    """Confidence is only meaningful on fields that have a value: in prod all
+    110 `low` grades sit on null fields, meaning "could not find it". Render a
+    null row and the column fills with noise."""
+    ev = db_session.query(ProjectEvaluation).one()
+    ev.spec = {
+        "existing": {"use": "Two commercial buildings", "units": 0,
+                     "sqft": 12000.0, "assessed_value": None},
+        "proposed": {"units": 261, "retail_sqft": 16530.0, "stories": 11,
+                     "acres": 1.64, "office_sqft": None,
+                     "parking_spaces": None, "affordable_units": 16},
+        "parcels": ["48 3 08    002 B"],
+        "extraction_confidence": {"existing.units": "medium",
+                                  "proposed.units": "high",
+                                  "proposed.office_sqft": "low",
+                                  "existing.assessed_value": "low"},
+        "extraction_quotes": {
+            "existing.units": "two existing commercial buildings",
+            "proposed.units": "There are 261 multifamily homes"},
+    }
+    db_session.commit()
+    seed_bundle(db_session, str(tmp_path))
+    _, body = _read(tmp_path, "projects/circle-gateway/overview.md")
+
+    assert "## Proposal at a glance" in body
+    assert "| Dwelling units | 0 _(medium confidence)_ | 261 |" in body
+    assert "| Retail | — | 16,530 sq ft |" in body
+    assert "| Site area | — | 1.64 acres |" in body
+    assert "Office" not in body          # null on both sides: no row
+    assert "Parking spaces" not in body
+    assert "assessed" not in body
+    # high is the norm and goes unannotated; only weaker grades are marked,
+    # which the Dwelling units row above shows on the existing side alone
+    assert body.count("confidence)_") == 1
+    assert "48 3 08 002 B" in body       # internal whitespace collapsed
+
+    # a row can carry a quote on each side; unlabelled they read as
+    # contradicting one another
+    assert '- **Dwelling units** (existing) — "two existing commercial buildings"' in body
+    assert '- **Dwelling units** (proposed) — "There are 261 multifamily homes"' in body
+
+    # sits above the official record, and is protected like the nav
+    assert body.index("## Proposal at a glance") < body.index("## Official record")
+    protected = B.CURATOR_OFF_RE.findall(body)
+    assert len(protected) == 2
+    assert any("Proposal at a glance" in r for r in protected)
+    assert lint_bundle(str(tmp_path), db_session) == []
+
+
+def test_facts_table_is_refreshed_in_place(db_session, project, tmp_path):
+    """Pipeline-owned: a revised submission updates the table without
+    disturbing the curator's prose, and a curator deleting it is rejected."""
+    ev = db_session.query(ProjectEvaluation).one()
+    ev.spec = {"proposed": {"units": 261}, "extraction_confidence": {}}
+    db_session.commit()
+    seed_bundle(db_session, str(tmp_path))
+
+    overview = tmp_path / "projects/circle-gateway/overview.md"
+    fm, body = B.parse_page(overview.read_text())
+    overview.write_text(B.render_page(fm, body + "\n\nCurator paragraph.\n"))
+
+    ev.spec = {"proposed": {"units": 240, "stories": 11},
+               "extraction_confidence": {}}
+    db_session.commit()
+    assert refresh_bundle(db_session, str(tmp_path))["refreshed"] == 1
+
+    _, body = B.parse_page(overview.read_text())
+    assert "| Dwelling units | — | 240 |" in body
+    assert "| Stories | — | 11 |" in body
+    assert "261" not in body
+    assert "Curator paragraph." in body        # prose untouched
+    assert len(B.CURATOR_OFF_RE.findall(body)) == 2
+    assert refresh_bundle(db_session, str(tmp_path))["refreshed"] == 0   # no-op
+
+
+def test_no_spec_means_no_facts_table(db_session, project, tmp_path):
+    db_session.query(ProjectEvaluation).delete()
+    db_session.commit()
+    seed_bundle(db_session, str(tmp_path))
+    _, body = _read(tmp_path, "projects/circle-gateway/overview.md")
+    assert "Proposal at a glance" not in body
+    assert len(B.CURATOR_OFF_RE.findall(body)) == 1   # nav only
+
+
 # --- sync loop -------------------------------------------------------------
 
 def _init_repo(tmp_path):
