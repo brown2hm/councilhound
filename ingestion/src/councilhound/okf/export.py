@@ -177,6 +177,9 @@ def _nav_block(slug: str, pages: set[str]) -> str:
     if "impact" in pages:
         lines.append(f"- [Impact analysis](/projects/{slug}/impact.md) — screening "
                      "estimates with assumptions and ranges")
+    if "documents" in pages:
+        lines.append(f"- [Documents](/projects/{slug}/documents.md) — the city's "
+                     "published record for this project")
     lines += ["", CURATOR_OFF_CLOSE]
     return "\n".join(lines)
 
@@ -209,11 +212,15 @@ def _overview_body(entity: Entity, ctx: dict) -> str:
                  f"- **Division:** {city.division}" if city.division else None,
                  f"- [City record]({city.detail_url})"]
         parts += [f for f in facts if f] + [""]
+    # seed builds the page set from ctx because the files do not exist yet;
+    # refresh rebuilds it from disk, which is authoritative thereafter
     pages = {"positions"}
     if ctx["timeline"]:
         pages.add("history")
     if ctx["evaluation"]:
         pages.add("impact")
+    if ctx["city"] is not None and ctx["city"].documents:
+        pages.add("documents")
     parts += [_nav_block(entity.canonical_slug, pages)]
     return "\n".join(parts)
 
@@ -342,10 +349,57 @@ def _project_index(entity: Entity, existing_pages: list[str]) -> str:
         "history": "the dated meeting record",
         "positions": "member positions and open questions",
         "impact": "screening-level impact estimates",
+        "documents": "the city's published document record",
     }
     entries = [(f"/projects/{slug}/{p}.md", p.capitalize(), described.get(p, ""))
                for p in PAGE_ORDER if f"{p}.md" in existing_pages]
     return render_index(entity.name, entries)
+
+
+def _documents_body(ctx: dict) -> str | None:
+    """The city's own document list for the project — staff reports, plan
+    sets, traffic studies, FAQs. Nothing else in the product indexes these."""
+    city = ctx["city"]
+    docs = (city.documents if city else None) or []
+    entries = [(str(d.get("label") or "").strip(), str(d.get("url") or "").strip())
+               for d in docs]
+    entries = [(label, url) for label, url in entries if url]
+    if not entries:
+        return None
+    parts = [PIPELINE_NOTE, "",
+             "Documents published in the city's project record, in the order "
+             "the city lists them. Labels are the city's own and usually carry "
+             "the document date, format, and size.", ""]
+    for label, url in entries:
+        # labels are free text and do contain brackets; escaping keeps a
+        # stray one from swallowing the link
+        safe = (label or url).replace("[", "\\[").replace("]", "\\]")
+        parts.append(f"- [{safe}]({url})")
+    return "\n".join(parts)
+
+
+def _write_documents(bundle_dir: str, entity: Entity, ctx: dict) -> bool:
+    """Pipeline-owned, so regenerated rather than seeded once.
+
+    The timestamp is only bumped when the list actually changes. Deriving it
+    from CityProject.synced_at instead would re-date the page on every sync
+    and make refresh permanently dirty, which costs the loop its no-op."""
+    body = _documents_body(ctx)
+    if body is None:
+        return False
+    rel = f"projects/{entity.canonical_slug}/documents.md"
+    existing = read_page(os.path.join(bundle_dir, rel))
+    if existing is not None and existing[1].strip() == body.strip():
+        return False
+    n = len(ctx["city"].documents or [])
+    return write_page(bundle_dir, rel, {
+        "type": "project-documents",
+        "title": f"{entity.name} — documents",
+        "description": f"{n} document(s) published in the City of Fairfax "
+                       f"project record for {entity.name}.",
+        "resource": _resource_url(entity, ctx["city"]),
+        "timestamp": date.today().isoformat(),
+    }, body)
 
 
 def _write_impact(bundle_dir: str, entity: Entity, ctx: dict, stamp: str,
@@ -491,6 +545,7 @@ def seed_bundle(session: Session, bundle_dir: str,
             "timestamp": stamp,
         }, _positions_body(ctx))
         _write_impact(bundle_dir, entity, ctx, stamp)
+        _write_documents(bundle_dir, entity, ctx)
         _write_history(session, bundle_dir, entity, ctx)
         append_log(bundle_dir, rel_dir,
                    ["Seeded from the tracker profile and official records."])
@@ -527,6 +582,7 @@ def refresh_bundle(session: Session, bundle_dir: str) -> dict:
         seeded_impact = _write_impact(bundle_dir, entity, ctx,
                                       _narrative_stamp(ctx), only_if_missing=True)
         changed = seeded_impact or changed
+        changed = _write_documents(bundle_dir, entity, ctx) or changed
         changed = _refresh_overview(bundle_dir, entity, ctx) or changed
         changed = _refresh_sibling_resources(bundle_dir, entity, ctx) or changed
         if changed:

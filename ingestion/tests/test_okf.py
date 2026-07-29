@@ -635,6 +635,66 @@ def test_refresh_backfills_impact_for_a_later_synthesis(db_session, project,
     assert "Hand-written caveat." in impact.read_text()
 
 
+def test_documents_page_is_pipeline_owned_and_stable(db_session, project,
+                                                     tmp_path):
+    """483 documents across 31 projects live only in CityProject.documents;
+    nothing else in the product indexes them."""
+    city = db_session.query(CityProject).one()
+    city.documents = [
+        {"label": "February 15, 2022 Master Development Plan (PDF, 25MB)",
+         "url": "https://example.gov/files/mdp.pdf"},
+        {"label": "Traffic Impact Study [revised] (PDF, 9MB)",
+         "url": "https://example.gov/files/tis.pdf"},
+        {"label": "", "url": "https://example.gov/files/unlabelled.pdf"},
+        {"label": "Broken entry with no url", "url": ""},
+    ]
+    db_session.commit()
+    seed_bundle(db_session, str(tmp_path))
+
+    fm, body = _read(tmp_path, "projects/circle-gateway/documents.md")
+    assert fm["type"] == "project-documents"
+    assert "Pipeline-owned" in body
+    assert "[February 15, 2022 Master Development Plan (PDF, 25MB)](https://example.gov/files/mdp.pdf)" in body
+    assert "\\[revised\\]" in body          # brackets escaped, link intact
+    assert "unlabelled.pdf](https://example.gov/files/unlabelled.pdf)" in body
+    assert "Broken entry" not in body        # no url, no entry
+    assert "/projects/circle-gateway/documents.md" in _read(
+        tmp_path, "projects/circle-gateway/overview.md")[1]
+    assert lint_bundle(str(tmp_path), db_session) == []
+
+    # timestamp must not churn, or refresh is permanently dirty and the sync
+    # loop loses its no-op
+    stamped = fm["timestamp"]
+    assert refresh_bundle(db_session, str(tmp_path))["refreshed"] == 0
+    assert _read(tmp_path, "projects/circle-gateway/documents.md")[0][
+        "timestamp"] == stamped
+
+    # pipeline-owned: a hand edit is regenerated away, unlike impact.md
+    doc = tmp_path / "projects/circle-gateway/documents.md"
+    doc.write_text(doc.read_text().replace("Traffic Impact Study", "Tampered"))
+    assert refresh_bundle(db_session, str(tmp_path))["refreshed"] == 1
+    assert "Tampered" not in doc.read_text()
+
+    # a newly published document re-dates the page
+    city.documents = city.documents + [
+        {"label": "Staff Report (PDF, 1MB)", "url": "https://example.gov/sr.pdf"}]
+    db_session.commit()
+    refresh_bundle(db_session, str(tmp_path))
+    fm, body = _read(tmp_path, "projects/circle-gateway/documents.md")
+    assert "Staff Report" in body
+    assert fm["description"].startswith("5 document")
+
+
+def test_no_documents_means_no_page(db_session, project, tmp_path):
+    city = db_session.query(CityProject).one()
+    city.documents = []
+    db_session.commit()
+    seed_bundle(db_session, str(tmp_path))
+    assert not os.path.exists(tmp_path / "projects/circle-gateway/documents.md")
+    _, overview = _read(tmp_path, "projects/circle-gateway/overview.md")
+    assert "/documents.md" not in overview
+
+
 # --- sync loop -------------------------------------------------------------
 
 def _init_repo(tmp_path):

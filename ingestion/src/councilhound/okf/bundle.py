@@ -12,7 +12,7 @@ RESERVED = {"index.md", "log.md"}
 # curator-owned pages seeded by export.py; everything else generated in a
 # project dir (history.md, index.md, log.md) is pipeline-owned
 CURATED_PAGES = {"overview.md", "positions.md", "impact.md"}
-PAGE_ORDER = ["overview", "history", "positions", "impact"]
+PAGE_ORDER = ["overview", "history", "positions", "impact", "documents"]
 
 MARKER_RE = re.compile(r"\{\{(metric|map):([a-z0-9][a-z0-9-]*)\}\}")
 # root-absolute markdown links assert bundle-internal relationships

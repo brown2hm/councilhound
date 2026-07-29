@@ -8,7 +8,7 @@ from councilhound.db.models import Entity, WikiPage
 
 # reading order for concept pages; anything unknown sorts after, alphabetically
 _PAGE_ORDER = {name: i for i, name in enumerate(
-    ["overview", "history", "positions", "impact"])}
+    ["overview", "history", "positions", "impact", "documents"])}
 
 
 def wiki_payload(session: Session, entity: Entity) -> dict | None:

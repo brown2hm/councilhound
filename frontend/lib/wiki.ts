@@ -68,4 +68,5 @@ export const WIKI_PAGE_LABELS: Record<string, string> = {
   history: "Meeting history",
   positions: "Positions & open questions",
   impact: "Impact analysis",
+  documents: "Documents",
 };
