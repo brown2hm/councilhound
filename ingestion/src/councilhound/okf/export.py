@@ -20,6 +20,7 @@ from councilhound.db.models import (
     AgendaItem,
     CityProject,
     Entity,
+    EntityAlias,
     EntityProfile,
     EntityUpdate,
     Meeting,
@@ -589,6 +590,48 @@ def _refresh_overview(bundle_dir: str, entity: Entity, ctx: dict) -> bool:
     return write_page(bundle_dir, rel, fm, body)
 
 
+def _canonical_member_slugs(session: Session) -> dict[str, str]:
+    """Alias -> canonical slug for people, lowercased.
+
+    Merging a duplicate leaves its old slug behind as an alias, which keeps
+    /entities working but not /members: that route matches canonical_slug
+    exactly, so every wiki link to the merged-away slug becomes a 404 the
+    moment the merge lands."""
+    canonical = {e.id: e.canonical_slug for e in session.scalars(
+        select(Entity).where(Entity.entity_type == "person"))}
+    mapping = {}
+    for eid, alias in session.execute(
+            select(EntityAlias.entity_id, func.lower(EntityAlias.alias))):
+        if eid in canonical and alias != canonical[eid]:
+            mapping[alias] = canonical[eid]
+    return mapping
+
+
+def _refresh_member_links(bundle_dir: str, entity: Entity,
+                          aliases: dict[str, str]) -> bool:
+    """Repoint member links left dangling by an entity merge.
+
+    Only the slug inside a /members/ URL is touched — never prose. A member
+    reference is as derived as the `resource` key, so leaving it stale on a
+    curator-owned page would mean a merge permanently blocks the lint gate
+    until a human edits by hand."""
+    slug = entity.canonical_slug
+    changed = False
+    for page in ("overview", "positions", "impact", "documents", "history"):
+        rel = f"projects/{slug}/{page}.md"
+        parsed = read_page(os.path.join(bundle_dir, rel))
+        if parsed is None:
+            continue
+        fm, body = parsed
+        fixed = body
+        for stale, canon in aliases.items():
+            fixed = fixed.replace(f"{SITE_BASE_URL}/members/{stale})",
+                                  f"{SITE_BASE_URL}/members/{canon})")
+        if fixed != body:
+            changed = write_page(bundle_dir, rel, fm or {}, fixed) or changed
+    return changed
+
+
 def _refresh_sibling_resources(bundle_dir: str, entity: Entity,
                                ctx: dict) -> bool:
     """positions.md and impact.md carry the same derived `resource` URI as
@@ -689,6 +732,7 @@ def refresh_bundle(session: Session, bundle_dir: str) -> dict:
     if not os.path.isdir(projects_root):
         return {"refreshed": 0, "unchanged": 0, "orphaned": 0}
     refreshed = unchanged = orphaned = 0
+    member_aliases = _canonical_member_slugs(session)
     for slug in sorted(os.listdir(projects_root)):
         if not os.path.isdir(os.path.join(projects_root, slug)):
             continue
@@ -708,6 +752,8 @@ def refresh_bundle(session: Session, bundle_dir: str) -> dict:
         changed = _write_documents(bundle_dir, entity, ctx) or changed
         changed = _refresh_overview(bundle_dir, entity, ctx) or changed
         changed = _refresh_sibling_resources(bundle_dir, entity, ctx) or changed
+        changed = _refresh_member_links(bundle_dir, entity,
+                                       member_aliases) or changed
         if changed:
             latest = (ctx["timeline"][-1][1].meeting_date.isoformat()
                       if ctx["timeline"] else None)

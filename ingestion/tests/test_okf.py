@@ -780,6 +780,34 @@ def test_no_spec_means_no_facts_table(db_session, project, tmp_path):
     assert len(B.CURATOR_OFF_RE.findall(body)) == 1   # nav only
 
 
+def test_refresh_repoints_links_left_by_a_merge(db_session, project, tmp_path):
+    """A merge leaves the old slug as an alias, which keeps /entities working
+    but not /members — that route matches canonical_slug exactly, so every
+    wiki link to the merged-away slug becomes a 404 the moment it lands."""
+    survivor = Entity(entity_type="person", name="Kate Doyle Feingold",
+                      canonical_slug="kate-doyle-feingold")
+    db_session.add(survivor)
+    db_session.flush()
+    db_session.add(EntityAlias(entity_id=survivor.id, alias="doyle-feingold"))
+    db_session.commit()
+
+    seed_bundle(db_session, str(tmp_path))
+    positions = tmp_path / "projects/circle-gateway/positions.md"
+    fm, body = B.parse_page(positions.read_text())
+    positions.write_text(B.render_page(fm, body + (
+        f"\n- [Feingold]({SITE_BASE_URL}/members/doyle-feingold) — voted yes.\n"
+        f"- unaffected prose mentioning doyle-feingold in passing\n")))
+    assert lint_bundle(str(tmp_path), db_session)   # broken before the fix
+
+    refresh_bundle(db_session, str(tmp_path))
+    text = positions.read_text()
+    assert f"{SITE_BASE_URL}/members/kate-doyle-feingold)" in text
+    assert f"{SITE_BASE_URL}/members/doyle-feingold)" not in text
+    assert "prose mentioning doyle-feingold in passing" in text  # prose intact
+    assert lint_bundle(str(tmp_path), db_session) == []
+    assert refresh_bundle(db_session, str(tmp_path))["refreshed"] == 0
+
+
 # --- sync loop -------------------------------------------------------------
 
 def _init_repo(tmp_path):
