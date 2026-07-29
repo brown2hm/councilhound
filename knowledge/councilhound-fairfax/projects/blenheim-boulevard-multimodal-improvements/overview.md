@@ -19,6 +19,16 @@ The Blenheim Boulevard Multimodal Improvements Project is a City of Fairfax tran
 
 <!-- curator:off -->
 
+## Proposal at a glance
+
+| | Existing | Proposed |
+|---|---|---|
+| Corridor | — | {'length_ft': None, 'facilities': ['two-way cycle track', 'sidewalks', 'upgraded bus stops', 'additional turn lanes', 'roundabouts', 'separated bicycle lanes', 'upgraded pedestrian and transit amenities', 'improved landscaping and buffering', 'left turn pockets'], 'street_name': 'Blenheim Boulevard', 'from_street': None, 'to_street': None} |
+
+<!-- /curator:off -->
+
+<!-- curator:off -->
+
 ## In this wiki
 
 - [Meeting history](/projects/blenheim-boulevard-multimodal-improvements/history.md) — every action, vote, and update, with links to the moment in the meeting video

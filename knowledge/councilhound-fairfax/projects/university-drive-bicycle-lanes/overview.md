@@ -20,6 +20,18 @@ status: in_progress
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
 
+<!-- curator:off -->
+
+## Proposal at a glance
+
+| | Existing | Proposed |
+|---|---|---|
+| Corridor | — | {'length_ft': None, 'facilities': ['shared lane markings', 'bike lanes', 'bike lane conflict zone striping', 'bike warning box'], 'street_name': 'University Drive', 'from_street': 'North Street', 'to_street': 'Layton Hall Drive'} |
+
+Tax map parcel(s): 57 2 17 001 A, 57 2 17 002, 57 2 17 001, 57 2 20 007
+
+<!-- /curator:off -->
+
 ## Official record
 
 Addition of bike facilities to University Drive, including shared lane markings in Old Town and bike lanes to the north, with improvements at the University Drive and Layton Hall Drive intersection.

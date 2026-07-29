@@ -20,6 +20,30 @@ lng: -77.3273769
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
 
+<!-- curator:off -->
+
+## Proposal at a glance
+
+| | Existing | Proposed |
+|---|---|---|
+| Use | Commercial retail (CR-zoned) site, previously used as commercial/retail | — |
+| Dwelling units | 0 _(medium confidence)_ | 13 |
+| Stories | — | 3 |
+| Parking spaces | — | 26 |
+| Site area | — | 1.16 acres |
+
+Tax map parcel(s): 57 1 44 000 A
+
+Extracted from the city's submitted documents; each figure traces to the text it came from.
+
+- **Dwelling units** (existing) — "Rezone the 1.18 acre site from CR Commercial Retail zoning district"
+- **Dwelling units** (proposed) — "PROPOSED TOWNHOME UNITS 13"
+- **Stories** (proposed) — "13 three story, 2 car garage townhomes on 1.18 acres"
+- **Parking spaces** (proposed) — "PROPOSED SPACES 26 SPACES"
+- **Site area** (proposed) — "LOT AREA 1.16 AC (50,778 SF)"
+
+<!-- /curator:off -->
+
 ## Official record
 
 The applicant is proposing to build 13 three story, 2 car garage townhomes on 1.18 acres.

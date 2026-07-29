@@ -24,6 +24,38 @@ lng: -77.3087452
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
 
+<!-- curator:off -->
+
+## Proposal at a glance
+
+| | Existing | Proposed |
+|---|---|---|
+| Use | Three existing freestanding buildings: a vacant drive-through bank, a vacant restaurant, and a low-rise office building | — |
+| Floor area | 19,469 sq ft | — |
+| Dwelling units | 0 | 79 |
+| Affordable units | — | 5 |
+| Retail | — | 7,731 sq ft |
+| Office | — | 36,862 sq ft |
+| Stories | — | 8 |
+| Parking spaces | — | 309 |
+| Site area | — | 1.78 acres |
+
+Tax map parcel(s): 57 4 02 076
+
+Extracted from the city's submitted documents; each figure traces to the text it came from.
+
+- **Floor area** (existing) — "vacant 3,721 SF bank, a vacant 4,408 SF restaurant, and 11,340 SF of office"
+- **Dwelling units** (existing) — "The Subject Property is currently developed with three existing freestanding buildings"
+- **Dwelling units** (proposed) — "Multifamily residential up to a maximum of seventy-nine (79) for-sale condominium dwelling units."
+- **Affordable units** (proposed) — "five (5) units, representing 6% of the total number of units"
+- **Retail** (proposed) — "Approximately 7,731 square feet of ground floor retail and/or restaurant uses."
+- **Office** (proposed) — "Approximately 36,862 square feet of non-retail/restaurant commercial floor area"
+- **Stories** (proposed) — "a height of eight (8) stories and approximately 94 feet"
+- **Parking spaces** (proposed) — "a partially buried 4-level parking garage that includes a total of 309 parking spaces"
+- **Site area** (proposed) — "Subject Property includes a total of approximately 77,683 square feet (approximately 1.78 acres)"
+
+<!-- /curator:off -->
+
 ## Official record
 
 The applicant is proposing to replace a former bank with a drive-through, a former restaurant, and an existing low-rise office building with an upper-story residential/mixed use building with 79 multifamily condominium units, medical and general office space, a bank with a drive-through, and ground floor retail and/or restaurant uses on approximately 1.78 acres. The subject property is located in the Transition Overlay District and the Architecture Control Overlay District.

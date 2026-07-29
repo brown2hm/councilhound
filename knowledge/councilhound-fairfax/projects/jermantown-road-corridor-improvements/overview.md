@@ -18,6 +18,16 @@ evaluation_status: synthesized
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
 
+<!-- curator:off -->
+
+## Proposal at a glance
+
+| | Existing | Proposed |
+|---|---|---|
+| Corridor | — | {'length_ft': 6079.0, 'facilities': ['shared use path', 'right-of-way adjustments'], 'street_name': 'Jermantown Road', 'from_street': None, 'to_street': None} |
+
+<!-- /curator:off -->
+
 ## Official record
 
 Improvements to Jermantown Road to enhance traffic flow, transit operations, pedestrian and bicycle safety, and connectivity, including a shared use path and right-of-way adjustments, with construction expected between 2026-2028.

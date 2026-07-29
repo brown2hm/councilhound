@@ -21,6 +21,33 @@ lng: -77.27762
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
 
+<!-- curator:off -->
+
+## Proposal at a glance
+
+| | Existing | Proposed |
+|---|---|---|
+| Use | 12-room Hy-Way Motel (hotel/motel) | — |
+| Dwelling units | — | 54 |
+| Affordable units | — | 54 |
+| Office | — | 1,400 sq ft |
+| Stories | — | 5 |
+| Parking spaces | — | 18 |
+| Site area | — | 0.41 acres |
+
+Tax map parcel(s): 48 3 09 020
+
+Extracted from the city's submitted documents; each figure traces to the text it came from.
+
+- **Dwelling units** (proposed) — "The 54 residential units will be located on floors 2-5"
+- **Affordable units** (proposed) — "offering all 54 units to persons at 50% or below of area medium income"
+- **Office** (proposed) — "54 permanent supportive housing units and 1,400 SF of office space"
+- **Stories** (proposed) — "concept diagram shows a new, five-story structure"
+- **Parking spaces** (proposed) — "18 parking spaces are proposed"
+- **Site area** (proposed) — "48-3-09-020 9640 Fairfax Blvd. .41 acres"
+
+<!-- /curator:off -->
+
 ## Official record
 
 The applicant proposes to redevelop the site with an upper story residential/mixed use consisting of approximately 54 dwelling units and office space/parking spaces on the ground floor of the building. The upper story residential/mixed use requires a Special Use Permit within the CR Commercial Retail Zoning District.

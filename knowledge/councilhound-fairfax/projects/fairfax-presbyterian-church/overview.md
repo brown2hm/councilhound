@@ -21,6 +21,31 @@ lng: -77.3174874
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
 
+<!-- curator:off -->
+
+## Proposal at a glance
+
+| | Existing | Proposed |
+|---|---|---|
+| Floor area | 43,000 sq ft | — |
+| Dwelling units | 0 | 10 |
+| Affordable units | — | 10 |
+| Stories | — | 3 |
+| Site area | — | 8.25 acres |
+
+Tax map parcel(s): 57 1 02 123A
+
+Extracted from the city's submitted documents; each figure traces to the text it came from.
+
+- **Floor area** (existing) — "existing 43,000 square foot church with day care and parking"
+- **Dwelling units** (existing) — "The Property is currently used as a Religious Institution with an accessory Day Care Center."
+- **Dwelling units** (proposed) — "the Property may be developed with up to ten (10) townhouses"
+- **Affordable units** (proposed) — "ten new affordable residential townhouses in the northeast corner of the Property"
+- **Stories** (proposed) — "All ten units will have three levels, three bedrooms, two bathrooms"
+- **Site area** (proposed) — "Parcel 57-1-02-122-A (3.02 acres), and Parcel 57-1-02-123 (5.23 acres), for a total of 8.25 acres"
+
+<!-- /curator:off -->
+
 ## Official record
 
 The applicant, Fairfax Presbyterian Church, is proposing to add ten (10) townhouses to be developed on site in conjunction with an existing church and day care. The ten (10) townhouses are proposed as rear entry garage units that range from 1,600 sf to 2,400 sf. A maximum height of 40 feet is anticipated for the proposed townhouses. There are 30 proposed parking spaces for the townhouses. The applicant intends to provide these units as affordable dwelling units in partnership with Habitat for Humanity of Northern Virginia, Inc. The proposed plan also rearranges parking for the existing church and day care.

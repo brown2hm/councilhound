@@ -23,6 +23,35 @@ lng: -77.30743
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
 
+<!-- curator:off -->
+
+## Proposal at a glance
+
+| | Existing | Proposed |
+|---|---|---|
+| Dwelling units | 0 | 392 |
+| Affordable units | — | 24 |
+| Retail | — | 7,747 sq ft |
+| Office | — | 29,639 sq ft |
+| Stories | — | 6 |
+| Parking spaces | — | 655 _(medium confidence)_ |
+| Site area | — | 3.86 acres |
+
+Tax map parcel(s): 57 4 02 041
+
+Extracted from the city's submitted documents; each figure traces to the text it came from.
+
+- **Dwelling units** (existing) — "all of which are designated for office use"
+- **Dwelling units** (proposed) — "Residential/Multifamily Residential with up to 392dwelling units"
+- **Affordable units** (proposed) — "six percent (6%) of the total residential units (twenty-four (24) units) as affordable"
+- **Retail** (proposed) — "up to 7,747 square feet of retail"
+- **Office** (proposed) — "up to 29,639 square feet of office"
+- **Stories** (proposed) — "heights up to six (6) stories, with height tapering down"
+- **Parking spaces** (proposed) — "a total of 637 (655 total with surface) spaces"
+- **Site area** (proposed) — "four properties located at 4085, 4101, 4103 and 4117 Chain Bridge Road totaling 3.86 acres"
+
+<!-- /curator:off -->
+
 ## Official record
 
 The applicant is proposing to replace three office buildings with a mixed-use development consisting of three buildings that include up to 7,747 square feet of retail, up to 29,639 square feet of office, and up to 392 apartments (multifamily units), amenity space and plaza, and structured and surface parking. The applicant proposes a private east-west street and a north-south pedestrian path.

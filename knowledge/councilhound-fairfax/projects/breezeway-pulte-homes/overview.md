@@ -22,6 +22,28 @@ lng: -77.316327
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
 
+<!-- curator:off -->
+
+## Proposal at a glance
+
+| | Existing | Proposed |
+|---|---|---|
+| Use | Breezeway Motel (50 rooms), Fairfax Gardens Apartments (38 multifamily units), and four single-family homes | — |
+| Dwelling units | 42 | 60 |
+| Retail | — | 10,010 sq ft |
+| Site area | — | 4.63 acres |
+
+Tax map parcel(s): 57 1 41 038
+
+Extracted from the city's submitted documents; each figure traces to the text it came from.
+
+- **Dwelling units** (existing) — "50 motel units, 38 multifamily dwelling units and four (4) single family homes"
+- **Dwelling units** (proposed) — "forty (40) townhouses. The Master Development Plan also includes a commercial component"
+- **Retail** (proposed) — "commercial building includes a minimum of 8,000 and a maximum of 10,010 square feet"
+- **Site area** (proposed) — "Total 4.63 acres"
+
+<!-- /curator:off -->
+
 ## Official record
 
 A rezoning application was submitted on August 6, 2018 for a mixed-use Planned Development. The applicant proposes to redevelop six parcels including the Breezeway Motel, Fairfax Garden Apartments and 4 single-family homes into 40 townhomes, 20 two-over-two condos and 8,000 sf to 10,010 sf of commercial space along Fairfax Boulevard.

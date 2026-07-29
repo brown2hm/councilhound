@@ -23,6 +23,31 @@ lng: -77.2703447
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
 
+<!-- curator:off -->
+
+## Proposal at a glance
+
+| | Existing | Proposed |
+|---|---|---|
+| Use | Underutilized office buildings (Mantua Professional Center), one-to-three level buildings | — |
+| Floor area | 21,566 sq ft | — |
+| Dwelling units | — | 14 |
+| Stories | — | 3 |
+| Parking spaces | — | 62 |
+| Site area | — | 2.12 acres |
+
+Tax map parcel(s): 58 2 10 001A1
+
+Extracted from the city's submitted documents; each figure traces to the text it came from.
+
+- **Floor area** (existing) — "replace approximately 21,566 square feet of existing offices with fourteen (14) front loaded townhomes"
+- **Dwelling units** (proposed) — "The Property may be developed with up to fourteen (14) townhouses"
+- **Stories** (proposed) — "They will be three levels, with an option for a roof deck."
+- **Parking spaces** (proposed) — "PROVIDED: 62 (28 GARAGE AND 34 SURFACE PARKING SPACES (32 SHARED PARKING))"
+- **Site area** (proposed) — "TAX MAP PARCEL 58-2-10-001A1 COMPRISED OF 2.12 ACRES"
+
+<!-- /curator:off -->
+
 ## Official record
 
 The applicant is proposing to replace approximately 21,566 square feet of existing offices with fourteen (14) front loaded townhomes on a private street, and sidewalks on both sides of a private street with crosswalks connecting to two open space areas with amenities on 2.12 acres.

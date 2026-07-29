@@ -20,6 +20,34 @@ lng: -77.3069088
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
 
+<!-- curator:off -->
+
+## Proposal at a glance
+
+| | Existing | Proposed |
+|---|---|---|
+| Use | Gas station, retail outlet, and vacant/former restaurant (Fuddruckers) | — |
+| Dwelling units | 0 _(medium confidence)_ | 271 |
+| Affordable units | — | 16 _(medium confidence)_ |
+| Retail | — | 2,253 sq ft |
+| Stories | — | 8 |
+| Parking spaces | — | 316 |
+| Site area | — | 2.30 acres |
+
+Tax map parcel(s): 57 2 02 023
+
+Extracted from the city's submitted documents; each figure traces to the text it came from.
+
+- **Dwelling units** (existing) — "replace a gas station, retail and former restaurant with 271 multifamily"
+- **Dwelling units** (proposed) — "271 multifamily dwelling units in a proposed 8-story building"
+- **Affordable units** (proposed) — "6% of these units to affordable housing"
+- **Retail** (proposed) — "2,253 sq. ft. of ground floor commercial"
+- **Stories** (proposed) — "271 multifamily dwelling units in a proposed 8-story building"
+- **Parking spaces** (proposed) — "316 total parking spaces within 5-levels of structured parking"
+- **Site area** (proposed) — "The 2.30-acre site lies at the northeast corner of Chain Bridge Rd"
+
+<!-- /curator:off -->
+
 ## Official record
 
 The potential applicant is proposing to replace a gas station, retail and former restaurant with 271 multifamily dwelling units in a proposed 8-story building, 2,253 sq. ft. of ground floor commercial, 316 total parking spaces within 5-levels of structured parking, vehicular access to garage from Chain Bridge Road, a new proposed eat-west road (Northfax Street) and streetscape from Chain Bridge Road, and a new proposed north-south road from Fairfax Boulevard with garage access. The garage and portions of the residential building spans over existing box culvert and a stormwater easement.

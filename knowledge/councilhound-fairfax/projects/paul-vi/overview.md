@@ -24,6 +24,32 @@ lng: -77.3126378
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
 
+<!-- curator:off -->
+
+## Proposal at a glance
+
+| | Existing | Proposed |
+|---|---|---|
+| Use | Paul VI Catholic High School (private non-profit high school) plus two residential parcels (including the John C. Wood House) | — |
+| Floor area | 190,532 sq ft | — |
+| Dwelling units | 2 _(medium confidence)_ | 266 |
+| Retail | — | 20,000 sq ft |
+| Stories | — | 4 _(medium confidence)_ |
+| Site area | — | 18.51 acres |
+
+Tax map parcel(s): 57 1 39 02 120
+
+Extracted from the city's submitted documents; each figure traces to the text it came from.
+
+- **Floor area** (existing) — "School 190,532 $27,398,000 $0.000 $0"
+- **Dwelling units** (existing) — "two other properties (collectively, the "Property") owned by the Diocese"
+- **Dwelling units** (proposed) — "includes a total of 266 residential units, including 144 multifamily residential condominiums"
+- **Retail** (proposed) — "Commercial/Retail Space 20,000 square feet"
+- **Stories** (proposed) — "The multi-family condominium building shall be four (4) stories."
+- **Site area** (proposed) — "consolidation of three parcels for a total of 18.51 acres"
+
+<!-- /curator:off -->
+
 ## Official record
 
 The approved project (PDF, 7MB) includes a total of 266 residential units, including 144 multifamily residential condominiums, 115 townhomes, and seven single-family homes, as well as 20,000 square feet of retail space and the 24,000 square foot retained portion of the school building, which may contain a mix of commercial and/or undefined community uses.

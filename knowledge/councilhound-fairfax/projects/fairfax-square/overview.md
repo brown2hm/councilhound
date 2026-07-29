@@ -22,6 +22,36 @@ lng: -77.2868791
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
 
+<!-- curator:off -->
+
+## Proposal at a glance
+
+| | Existing | Proposed |
+|---|---|---|
+| Use | 12 existing commercial buildings comprising office, medical, personal services, retail, and church uses | — |
+| Floor area | 126,535 sq ft | — |
+| Dwelling units | 0 | 138 |
+| Affordable units | — | 11 |
+| Retail | — | 59,000 sq ft |
+| Office | — | 70,906 sq ft |
+| Stories | — | 5 _(medium confidence)_ |
+| Site area | — | 10.47 acres |
+
+Tax map parcel(s): 58 3 02 013 C
+
+Extracted from the city's submitted documents; each figure traces to the text it came from.
+
+- **Floor area** (existing) — "12 existing buildings with 126,535 square feet of a variety of commercial uses"
+- **Dwelling units** (existing) — "features 12 existing buildings with 126,535 square feet of a variety of commercial uses"
+- **Dwelling units** (proposed) — "comprising a total of 138 residential units across the Property"
+- **Affordable units** (proposed) — "Applicant shall construct a minimum of eleven (11) units within the first multifamily building"
+- **Retail** (proposed) — "up to 59,000 square feet of new commercial uses"
+- **Office** (proposed) — "retention of 70,906 square feet of office and commercial space in two buildings"
+- **Stories** (proposed) — "retain the existing five-story office building at 9900 Main Street"
+- **Site area** (proposed) — "located on 10.47 acres at the end of Burke Station Road"
+
+<!-- /curator:off -->
+
 ## Official record
 
 The Applicant proposes a phased mixed-use development that would retain the existing five-story office building at 9900 Main Street and the existing bank at 9910 Main Street, while adding four new commercial buildings along Main Street and two residential buildings with 48 townhomes to the rear of the property for a total of 138 units. The Applicant is also proposing 11 affordable units.

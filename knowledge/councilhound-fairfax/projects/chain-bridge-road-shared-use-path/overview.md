@@ -17,6 +17,18 @@ evaluation_status: synthesized
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
 
+<!-- curator:off -->
+
+## Proposal at a glance
+
+| | Existing | Proposed |
+|---|---|---|
+| Corridor | — | {'length_ft': None, 'facilities': ['shared use path'], 'street_name': 'Chain Bridge Road', 'from_street': 'Assembly Drive', 'to_street': 'Northfax Street'} |
+
+Tax map parcel(s): 57 2 18 001 A
+
+<!-- /curator:off -->
+
 ## Official record
 
 This project will construct a missing link of path on the west side of Chain Bridge Road between Assembly Drive and Northfax Street (formerly Orchard Street).
