@@ -135,6 +135,7 @@ export interface EntityDetail {
   current_status: string | null;
   status_source: StatusSource | null;
   profile: EntityProfileInfo | null;
+  has_wiki: boolean;
   official: CityProjectOfficial | null;
   related: RelatedEntity[];
   discussion: DiscussionPoint[];

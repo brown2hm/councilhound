@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from councilhound.db.models import (
     AgendaItem, CityProject, Entity, EntityAlias, EntityGeocode, EntityMention, EntityProfile,
-    EntityUpdate, Meeting, UpcomingMeeting, Vote,
+    EntityUpdate, Meeting, UpcomingMeeting, Vote, WikiPage,
 )
 from councilhound.hot_topics import MIN_VARIANT_LEN
 from councilhound.hot_topics import entity_discussion_series, hot_topics
@@ -275,6 +275,11 @@ def get_entity(slug: str, session: Session = Depends(db_session)):
             "updated_at": profile.updated_at.isoformat() if profile.updated_at else None,
         } if profile else None,
         "related": _related_entities(session, entity),
+        # meeting-derived entities have no /development route, so the topics
+        # page is the only place their wiki can be linked from
+        "has_wiki": session.scalar(
+            select(WikiPage.id).where(WikiPage.entity_id == entity.id).limit(1)
+        ) is not None,
         "official": _city_record(session, entity),
         "discussion": (entity_discussion_series(session, entity)
                        if entity.entity_type != "person" else []),

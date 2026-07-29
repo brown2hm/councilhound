@@ -36,7 +36,7 @@ export function resolveBody(
   body: string,
   metrics: Map<string, ImpactMetric>,
   entitySlug: string,
-  officialSlug: string,
+  officialSlug: string | null,
   wikiBase = "",
 ): string {
   return body
@@ -45,9 +45,11 @@ export function resolveBody(
       const m = metrics.get(key);
       return m ? fmtMetric(m) : `_metric ${key} unavailable_`;
     })
-    .replace(
-      /\{\{map:([a-z0-9-]+)\}\}/g,
-      () => `[maps on the analysis page](/development/${officialSlug})`,
+    .replace(/\{\{map:([a-z0-9-]+)\}\}/g, (_all, key: string) =>
+      // meeting-derived projects have no analysis page to link to
+      officialSlug
+        ? `[maps on the analysis page](/development/${officialSlug})`
+        : `_map ${key} unavailable_`,
     )
     .replace(
       new RegExp(`\\]\\(/projects/${entitySlug}/([a-z0-9-]+)\\.md\\)`, "g"),

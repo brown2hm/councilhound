@@ -75,6 +75,18 @@ export default async function TopicDetail({ params }: { params: { slug: string }
         <div className="mb-5" />
       )}
 
+      {entity.has_wiki && (
+        <p className="mb-5 text-[13px] text-muted">
+          <Link
+            href={`/topics/${params.slug}/wiki`}
+            className="font-semibold underline underline-offset-2 hover:text-ink"
+          >
+            Project wiki
+          </Link>{" "}
+          — a maintained overview, meeting history, and recorded positions.
+        </p>
+      )}
+
       <div className="mb-6">
         <FollowTopic entitySlug={entity.slug} />
       </div>
