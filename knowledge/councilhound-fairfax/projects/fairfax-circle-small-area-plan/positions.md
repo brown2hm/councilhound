@@ -19,5 +19,5 @@ timestamp: '2026-06-08'
 
 ## Member commentary
 
-- [Doyle Feingold](https://councilhound.net/members/doyle-feingold) — Councilmember Doyle Feingold voted no on July 23, 2024 adoption of the Fairfax Circle Small Area Plan by City Council.
+- [Doyle Feingold](https://councilhound.net/members/kate-doyle-feingold) — Councilmember Doyle Feingold voted no on July 23, 2024 adoption of the Fairfax Circle Small Area Plan by City Council.
 - [Greenfield](https://councilhound.net/members/jeffrey-greenfield) — Councilmember Greenfield voted no on July 23, 2024 adoption of the Fairfax Circle Small Area Plan by City Council.

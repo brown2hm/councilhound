@@ -15,7 +15,7 @@ timestamp: '2025-02-25'
 
 ## Member commentary
 
-- [Doyle Feingold](https://councilhound.net/members/doyle-feingold) — Voted no on the December 10, 2024 Special Use Permit for upper-story residential/mixed uses at 4010 University Drive.
+- [Doyle Feingold](https://councilhound.net/members/kate-doyle-feingold) — Voted no on the December 10, 2024 Special Use Permit for upper-story residential/mixed uses at 4010 University Drive.
 - [Greenfield](https://councilhound.net/members/jeffrey-greenfield) — Voted no on the December 10, 2024 Special Use Permit for upper-story residential/mixed uses at 4010 University Drive.
 - [Lim](https://councilhound.net/members/so-lim) — Voted no on the December 10, 2024 Special Use Permit for upper-story residential/mixed uses at 4010 University Drive.
 - [Hardy-Chandler](https://councilhound.net/members/stacey-hardy-chandler) — Made the motion to approve the February 25, 2025 Special Exception for Pathway Homes at 4010 University Drive, and voted yes.
