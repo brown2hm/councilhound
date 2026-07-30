@@ -1,5 +1,65 @@
 # Changelog
 
+## Unreleased — reading the record (July 2026)
+
+Three gaps a visitor hits that the roadmap never framed as user problems:
+the app could fail in front of them, it never said how fresh it was, and it
+held complete transcripts it wouldn't let anyone read.
+
+### Reliability
+
+- **Route-level boundaries.** There was no `error.tsx`, `loading.tsx`, or
+  `not-found.tsx` anywhere in `frontend/app/`, and `lib/api.ts` throws on
+  any non-OK response while the list pages don't catch — so a brief API
+  blip served Next's stock error screen on `/topics`, `/meetings`,
+  `/members`, `/map`, and `/development`. Adds a styled error card with
+  retry, a 404 that routes people onward (topics get merged as the record
+  grows), and skeletons on the five slowest routes.
+- **Per-panel degradation on the briefing.** The hot-topic rankings, stat
+  tiles, and per-meeting detail fetches now fall back individually, so one
+  dead endpoint blanks its own panel instead of the page. Only the meetings
+  list is load-bearing enough to reach the error boundary.
+- **Pagination.** `/meetings` and `/topics` hard-capped at 100 rows with no
+  paging, silently hiding everything older. Both now page (`offset` added
+  to `GET /entities/`, which lacked it), fetching `PAGE_SIZE + 1` to detect
+  a next page without a count query.
+
+### Freshness
+
+- **`GET /status`.** `ingest_runs` has always recorded phase, counts,
+  bytes, and errors per run, and nothing had ever read it back — so
+  "the council didn't meet this week" and "ingestion has been broken for a
+  week" looked identical on a machine-generated site. Every page footer now
+  carries the last-checked time, the meeting the record runs through, and
+  transcript coverage, turning coral when the last run recorded errors or
+  never wrote `finished_at`.
+
+### Reading a meeting
+
+- **`GET /meetings/{id}/transcript` and `/meetings/[id]/transcript`.** The
+  complete timestamped transcript has been sitting in `transcript_chunks`
+  backing `/search` and `/ask`, but only ever escaped as ~700-char
+  fragments — there was no way to actually read a meeting. The page slices
+  the segment stream at each agenda item's official Granicus index point,
+  deep-links every segment to that moment on the city's player, and adds
+  jump-to-item nav and find-in-transcript.
+- **Search results land somewhere.** Transcript hits now carry a "Read in
+  context" link that passes the query through, instead of dead-ending at
+  the fragment.
+
+### Access and reach
+
+- Skip link, `aria-live` on the Ask page's loading/error region, focus moved
+  to the map detail pane on selection, and timeline permalink anchors that
+  are reachable by keyboard (they were `opacity-0` until hover).
+- Mobile padding on all 16 page containers, the footer, and three
+  fixed-width filter inputs — every container was a flat `px-8` with no
+  mobile step, on a site whose audience is mostly on phones.
+- `/civic` joins the nav; it existed with content and was reachable only
+  from one link inside `/development`. Nine items no longer fit beside the
+  wordmark at `lg`, so the inline bar starts at `xl` and the menu covers
+  everything below it.
+
 ## Unreleased — bikes (July 2026)
 
 Bike infrastructure joins the impact pipeline: two new modules for corridor
