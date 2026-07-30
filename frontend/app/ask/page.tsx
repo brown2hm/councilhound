@@ -64,7 +64,7 @@ function AskInner() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-[760px] px-8 pb-16 pt-12">
+    <div className="mx-auto max-w-[760px] px-4 pb-16 pt-12 sm:px-8">
       <div className="mb-1 flex items-center gap-3">
         <Image src="/brand/hound.png" alt="" width={50} height={44} className="h-11 w-auto" />
         <h1 className="text-[32px] font-medium tracking-[-0.5px]">Ask the hound</h1>
@@ -111,14 +111,17 @@ function AskInner() {
         </div>
       )}
 
-      {loading && (
-        <div className="flex items-center gap-2.5 text-sm text-muted">
-          <Image src="/brand/hound.png" alt="" width={32} height={28} className="h-7 w-auto" />
-          Sniffing through the record…
-        </div>
-      )}
-
-      {error && <p className="text-sm text-tint-coral-text">{error}</p>}
+      {/* one live region for both states so a screen reader is told the
+          answer is being fetched, and told when it fails */}
+      <div role="status" aria-live="polite">
+        {loading && (
+          <div className="flex items-center gap-2.5 text-sm text-muted">
+            <Image src="/brand/hound.png" alt="" width={32} height={28} className="h-7 w-auto" />
+            Sniffing through the record…
+          </div>
+        )}
+        {error && <p className="text-sm text-tint-coral-text">{error}</p>}
+      </div>
 
       {result && (
         <div>

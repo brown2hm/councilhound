@@ -37,7 +37,7 @@ export default async function TopicDetail({ params }: { params: { slug: string }
   const profile = entity.profile;
 
   return (
-    <div className="mx-auto max-w-[860px] px-8 pb-16 pt-8">
+    <div className="mx-auto max-w-[860px] px-4 pb-16 pt-8 sm:px-8">
       <Link href="/topics" className="text-sm font-semibold text-muted hover:text-ink">
         ← Topic tracker
       </Link>
@@ -243,7 +243,7 @@ export default async function TopicDetail({ params }: { params: { slug: string }
                 <a
                   href={`#m-${t.meeting_id}`}
                   aria-label="Link to this update"
-                  className="text-muted-soft opacity-0 transition-opacity hover:text-ink group-hover:opacity-100"
+                  className="text-muted-soft opacity-0 transition-opacity hover:text-ink focus:opacity-100 focus-visible:opacity-100 group-hover:opacity-100"
                 >
                   #
                 </a>

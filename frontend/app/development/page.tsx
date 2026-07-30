@@ -31,7 +31,7 @@ export default async function DevelopmentPage({
   const statuses = Array.from(new Set(projects.map((p) => p.official_status).filter(Boolean))) as string[];
 
   return (
-    <div className="mx-auto max-w-[1280px] px-8 pb-16 pt-8">
+    <div className="mx-auto max-w-[1280px] px-4 pb-16 pt-8 sm:px-8">
       <h1 className="mb-1 text-[32px] font-medium tracking-[-0.5px]">Development directory</h1>
       <p className="mb-5 text-sm text-muted">
         Official City of Fairfax project records, linked back to CouncilHound topic history
@@ -52,12 +52,12 @@ export default async function DevelopmentPage({
             {status}
           </Link>
         ))}
-        <form className="ml-auto" action="/development">
+        <form className="w-full sm:ml-auto sm:w-auto" action="/development">
           <input
             name="q"
             defaultValue={searchParams.q ?? ""}
             placeholder="Search projects..."
-            className="w-[220px] rounded-xl border border-hairline bg-canvas px-4 py-2.5 text-sm outline-none placeholder:text-muted-soft focus:border-ink"
+            className="w-full rounded-xl border border-hairline bg-canvas px-4 py-2.5 text-sm outline-none placeholder:text-muted-soft focus:border-ink sm:w-[220px]"
           />
         </form>
       </div>

@@ -69,7 +69,7 @@ export default async function MembersPage() {
   );
 
   return (
-    <div className="mx-auto max-w-[1100px] px-8 pb-16 pt-8">
+    <div className="mx-auto max-w-[1100px] px-4 pb-16 pt-8 sm:px-8">
       <h1 className="mb-1 text-[32px] font-medium tracking-[-0.5px]">Members</h1>
       <p className="mb-8 text-sm text-muted">
         Voting records and recorded positions, parsed from meeting minutes and rosters.

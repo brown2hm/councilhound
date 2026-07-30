@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from councilhound.db.models import (
     AgendaItem, CityProject, Document, Entity, EntityAlias, EntityUpdate,
-    Meeting, ProjectEvaluation, UpcomingMeeting, Vote,
+    Meeting, ProjectEvaluation, TranscriptChunk, UpcomingMeeting, Vote,
 )
 from councilhound.hot_topics import MIN_VARIANT_LEN
 
@@ -315,5 +315,68 @@ def get_meeting(meeting_id: int, session: Session = Depends(db_session)):
         "documents": [
             {"doc_type": d.doc_type, "title": d.title, "source_url": d.source_url}
             for d in documents
+        ],
+    }
+
+
+@router.get("/{meeting_id}/transcript")
+def get_transcript(meeting_id: int, session: Session = Depends(db_session)):
+    """The whole timestamped transcript, in order.
+
+    These chunks have always been in the database — they back /search and
+    /ask — but they only ever escaped as ~700-char fragments, so there was no
+    way to actually read a meeting. Every segment carries its own Granicus
+    deep link, and the agenda items are returned alongside so the page can
+    show where each item starts.
+    """
+    meeting = session.get(Meeting, meeting_id)
+    if meeting is None:
+        raise HTTPException(404, "meeting not found")
+
+    chunks = session.scalars(
+        select(TranscriptChunk)
+        .where(TranscriptChunk.meeting_id == meeting.id)
+        .order_by(TranscriptChunk.start_seconds.asc().nulls_last(), TranscriptChunk.id)
+    ).all()
+
+    items = session.scalars(
+        select(AgendaItem)
+        .where(AgendaItem.meeting_id == meeting.id,
+               AgendaItem.start_seconds.isnot(None))
+        .order_by(AgendaItem.start_seconds)
+    ).all()
+
+    def link(seconds) -> str | None:
+        if seconds is None:
+            return None
+        return clip_link(meeting.granicus_view_id, meeting.granicus_clip_id, seconds)
+
+    return {
+        "id": meeting.id,
+        "date": meeting.meeting_date.isoformat(),
+        "title": meeting.title,
+        "body": meeting.body,
+        "video_url": meeting.video_url,
+        "duration_seconds": meeting.duration_seconds,
+        "segments": [
+            {
+                "id": c.id,
+                "start_seconds": float(c.start_seconds) if c.start_seconds is not None else None,
+                "end_seconds": float(c.end_seconds) if c.end_seconds is not None else None,
+                "text": c.text,
+                # populated once the diarization pass runs; null until then
+                "speaker_label": c.speaker_label,
+                "watch_url": link(c.start_seconds),
+            }
+            for c in chunks
+        ],
+        "agenda_items": [
+            {
+                "id": it.id,
+                "label": it.label,
+                "title": it.title,
+                "start_seconds": float(it.start_seconds),
+            }
+            for it in items
         ],
     }

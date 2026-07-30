@@ -78,7 +78,7 @@ export default async function DevelopmentAnalysisPage({
   ].filter(Boolean);
 
   return (
-    <div className="mx-auto max-w-[1180px] px-8 pb-16 pt-8">
+    <div className="mx-auto max-w-[1180px] px-4 pb-16 pt-8 sm:px-8">
       <Link href="/development" className="text-sm font-semibold text-muted hover:text-ink">
         ← Development directory
       </Link>

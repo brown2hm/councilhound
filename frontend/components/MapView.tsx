@@ -139,6 +139,15 @@ export default function MapView({ locations }: { locations: MapLocation[] }) {
   const selected = locations.find((l) => l.slug === selectedSlug) ?? null;
   const paneRef = useRef<HTMLElement>(null);
 
+  // Leaflet makes markers focusable and Enter-activatable, but activating one
+  // leaves focus back on the map while the content appears in the pane — so
+  // send focus there. preventScroll keeps the narrow-screen scroll below in
+  // charge of where the viewport lands.
+  useEffect(() => {
+    if (!selectedSlug || !paneRef.current) return;
+    paneRef.current.focus({ preventScroll: true });
+  }, [selectedSlug]);
+
   // On narrow screens the pane stacks below the tall map, so a tap on a pin
   // would otherwise scroll nothing into view — bring the pane up to it.
   useEffect(() => {
@@ -198,7 +207,9 @@ export default function MapView({ locations }: { locations: MapLocation[] }) {
 
       <aside
         ref={paneRef}
-        className="scroll-mt-4 lg:h-[calc(100vh-64px-140px)] lg:min-h-[480px] lg:w-[360px] lg:shrink-0"
+        tabIndex={-1}
+        aria-label="Location details"
+        className="scroll-mt-4 outline-none lg:h-[calc(100vh-64px-140px)] lg:min-h-[480px] lg:w-[360px] lg:shrink-0"
       >
         <DetailPane location={selected} onClose={() => setSelectedSlug(null)} />
       </aside>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import BodyTag, { BODY_DOTS } from "@/components/BodyTag";
+import Pagination from "@/components/Pagination";
 import { api, formatDate } from "@/lib/api";
 
 export const metadata = {
@@ -14,18 +15,27 @@ const BODIES = [
   { key: "planning_commission", label: "Planning Commission" },
 ];
 
+const PAGE_SIZE = 50;
+
 export default async function MeetingsPage({
   searchParams,
 }: {
-  searchParams: { body?: string };
+  searchParams: { body?: string; page?: string };
 }) {
   const body = searchParams.body ?? "";
-  const params = new URLSearchParams({ limit: "100" });
+  const page = Math.max(1, Number(searchParams.page) || 1);
+  // fetch one extra row to learn whether another page exists
+  const params = new URLSearchParams({
+    limit: String(PAGE_SIZE + 1),
+    offset: String((page - 1) * PAGE_SIZE),
+  });
   if (body) params.set("body", body);
-  const meetings = await api.meetings(params);
+  const fetched = await api.meetings(params);
+  const hasMore = fetched.length > PAGE_SIZE;
+  const meetings = fetched.slice(0, PAGE_SIZE);
 
   return (
-    <div className="mx-auto max-w-[1280px] px-8 pb-16 pt-8">
+    <div className="mx-auto max-w-[1280px] px-4 pb-16 pt-8 sm:px-8">
       <div className="mb-1 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-[32px] font-medium tracking-[-0.5px]">Meetings</h1>
         <a
@@ -76,7 +86,23 @@ export default async function MeetingsPage({
             </Link>
           </li>
         ))}
+        {meetings.length === 0 && (
+          <li className="px-5 py-6 text-sm text-muted">
+            No meetings on this page. Back to the{" "}
+            <Link href="/meetings" className="font-semibold underline underline-offset-2 hover:text-ink">
+              most recent
+            </Link>
+            .
+          </li>
+        )}
       </ul>
+
+      <Pagination
+        page={page}
+        hasMore={hasMore}
+        basePath="/meetings"
+        params={{ body: body || undefined }}
+      />
     </div>
   );
 }

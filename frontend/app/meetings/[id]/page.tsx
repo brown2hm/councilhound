@@ -29,7 +29,7 @@ export default async function MeetingPage({ params }: { params: { id: string } }
   }
 
   return (
-    <div className="mx-auto max-w-[860px] px-8 pb-16 pt-8">
+    <div className="mx-auto max-w-[860px] px-4 pb-16 pt-8 sm:px-8">
       <Link href="/meetings" className="text-sm font-semibold text-muted hover:text-ink">
         ← All meetings
       </Link>
@@ -65,6 +65,12 @@ export default async function MeetingPage({ params }: { params: { id: string } }
             Minutes ↗
           </a>
         )}
+        <Link
+          href={`/meetings/${params.id}/transcript`}
+          className="rounded-xl border border-hairline bg-canvas px-5 py-[11px] font-semibold leading-none hover:border-ink"
+        >
+          Read the transcript
+        </Link>
         <span className="text-[13px] text-muted">
           {meeting.agenda_items.length > 0 ? `${meeting.agenda_items.length} agenda items` : ""}
         </span>

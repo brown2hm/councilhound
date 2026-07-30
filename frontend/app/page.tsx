@@ -299,21 +299,36 @@ function NextUp({ events }: { events: UpcomingEvent[] }) {
   );
 }
 
+const NO_HOT: HotTopicsResponse = { meetings: [], topics: [] };
+const NO_STATS: MeetingStats = {
+  days: 30,
+  meetings_held: 0,
+  hours_of_meetings: 0,
+  votes_taken: 0,
+  motions_passed: 0,
+  motions_failed: 0,
+};
+
 export default async function Briefing() {
+  // The briefing is a dashboard of independent panels: one failing endpoint
+  // should blank its own panel, not the page. Only the meetings list is
+  // load-bearing enough to fall through to the error boundary.
   const [meetings, hotCouncil, hotPC, stats, upcoming] = await Promise.all([
     api.meetings(new URLSearchParams({ limit: "6" })),
-    api.hotTopics("city_council"),
-    api.hotTopics("planning_commission"),
-    api.stats(30),
+    api.hotTopics("city_council").catch(() => NO_HOT),
+    api.hotTopics("planning_commission").catch(() => NO_HOT),
+    api.stats(30).catch(() => NO_STATS),
     api.upcoming().catch(() => []),
   ]);
   const withItems = meetings.filter((m) => m.agenda_item_count > 0).slice(0, 4);
-  const details = await Promise.all(withItems.map((m) => api.meeting(String(m.id))));
+  const details = (
+    await Promise.all(withItems.map((m) => api.meeting(String(m.id)).catch(() => null)))
+  ).filter((m): m is MeetingDetail => m !== null);
   const decisions = deriveDecisions(details);
   const latest = meetings[0] ? formatDate(meetings[0].date) : "";
 
   return (
-    <div className="mx-auto max-w-[1280px] px-8 pb-16 pt-8">
+    <div className="mx-auto max-w-[1280px] px-4 pb-16 pt-8 sm:px-8">
       <div className="mb-2 text-xs font-semibold uppercase tracking-[1.5px] text-muted">
         The briefing · Week of {latest} · City of Fairfax, VA
       </div>

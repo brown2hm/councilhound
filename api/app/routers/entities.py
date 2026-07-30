@@ -82,6 +82,7 @@ def list_entities(
     status: str | None = None,
     q: str | None = Query(None, description="substring match on name"),
     limit: int = Query(50, le=200),
+    offset: int = 0,
     session: Session = Depends(db_session),
 ):
     update_counts = (
@@ -103,7 +104,7 @@ def list_entities(
     if q:
         query = query.where(Entity.name.ilike(f"%{q}%"))
 
-    rows = session.execute(query.limit(limit)).all()
+    rows = session.execute(query.limit(limit).offset(offset)).all()
     return [
         {
             "slug": e.canonical_slug,

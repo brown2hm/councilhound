@@ -26,7 +26,7 @@ export default async function CivicTopicsPage({
   );
 
   return (
-    <div className="mx-auto max-w-[1280px] px-8 pb-16 pt-8">
+    <div className="mx-auto max-w-[1280px] px-4 pb-16 pt-8 sm:px-8">
       <h1 className="mb-1 text-[32px] font-medium tracking-[-0.5px]">Civic topics</h1>
       <p className="mb-5 max-w-[820px] text-sm text-muted">
         Plans, contracts, studies, programs, and other initiatives surfaced from council
@@ -42,7 +42,7 @@ export default async function CivicTopicsPage({
           name="q"
           defaultValue={searchParams.q ?? ""}
           placeholder="Search topics..."
-          className="w-[260px] rounded-xl border border-hairline bg-canvas px-4 py-2.5 text-sm outline-none placeholder:text-muted-soft focus:border-ink"
+          className="w-full rounded-xl border border-hairline bg-canvas px-4 py-2.5 text-sm outline-none placeholder:text-muted-soft focus:border-ink sm:w-[260px]"
         />
       </form>
 

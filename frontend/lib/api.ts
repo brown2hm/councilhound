@@ -394,6 +394,40 @@ export interface AskResponse {
   citations: Citation[];
 }
 
+export interface TranscriptSegment {
+  id: number;
+  start_seconds: number | null;
+  end_seconds: number | null;
+  text: string;
+  speaker_label: string | null;
+  watch_url: string | null;
+}
+
+export interface MeetingTranscript {
+  id: number;
+  date: string;
+  title: string;
+  body: string;
+  video_url: string | null;
+  duration_seconds: number | null;
+  segments: TranscriptSegment[];
+  agenda_items: { id: number; label: string; title: string | null; start_seconds: number }[];
+}
+
+export interface RecordStatus {
+  last_run: {
+    started_at: string | null;
+    finished_at: string | null;
+    phase: string;
+    meetings_processed: number;
+    error_count: number;
+    ok: boolean;
+  } | null;
+  latest_meeting: { id: number; date: string; title: string; body: string } | null;
+  next_meeting: { event_id: string; title: string; starts_at: string } | null;
+  counts: { meetings: number; meetings_transcribed: number; topics: number };
+}
+
 async function get<T>(path: string): Promise<T> {
   const resp = await fetch(`${API_URL}${path}`, { cache: "no-store" });
   if (!resp.ok) throw new Error(`API ${path} -> ${resp.status}`);
@@ -403,6 +437,7 @@ async function get<T>(path: string): Promise<T> {
 export const api = {
   meetings: (params: URLSearchParams) => get<MeetingSummary[]>(`/meetings/?${params}`),
   meeting: (id: string) => get<MeetingDetail>(`/meetings/${id}`),
+  transcript: (id: string) => get<MeetingTranscript>(`/meetings/${id}/transcript`),
   entities: (params: URLSearchParams) => get<EntitySummary[]>(`/entities/?${params}`),
   entity: (slug: string) => get<EntityDetail>(`/entities/${encodeURIComponent(slug)}`),
   hotTopics: (body?: string, days = 60) =>
@@ -423,6 +458,7 @@ export const api = {
   search: (q: string, body?: string) =>
     get<SearchResponse>(`/search/?q=${encodeURIComponent(q)}${body ? `&body=${body}` : ""}`),
   member: (slug: string) => get<MemberDetail>(`/members/${encodeURIComponent(slug)}`),
+  status: () => get<RecordStatus>("/status/"),
 };
 
 export const BODY_LABELS: Record<string, string> = {

@@ -1,6 +1,9 @@
 import Link from "next/link";
+import Pagination from "@/components/Pagination";
 import StatusBadge from "@/components/StatusBadge";
 import { api, formatDate, type HotTopicsResponse } from "@/lib/api";
+
+const NO_HOT: HotTopicsResponse = { meetings: [], topics: [] };
 
 export const metadata = {
   title: "Topic tracker",
@@ -74,9 +77,10 @@ function HotSection({
 }
 
 async function HotList() {
+  // one body failing shouldn't blank the other's ranking
   const [council, pc] = await Promise.all([
-    api.hotTopics("city_council"),
-    api.hotTopics("planning_commission"),
+    api.hotTopics("city_council").catch(() => NO_HOT),
+    api.hotTopics("planning_commission").catch(() => NO_HOT),
   ]);
   return (
     <div>
@@ -86,19 +90,29 @@ async function HotList() {
   );
 }
 
+const PAGE_SIZE = 50;
+
 export default async function TopicsPage({
   searchParams,
 }: {
-  searchParams: { type?: string; q?: string };
+  searchParams: { type?: string; q?: string; page?: string };
 }) {
   const type = searchParams.type ?? "project";
   const isHot = type === "hot";
-  const params = new URLSearchParams({ entity_type: type, limit: "100" });
+  const page = Math.max(1, Number(searchParams.page) || 1);
+  // fetch one extra row to learn whether another page exists
+  const params = new URLSearchParams({
+    entity_type: type,
+    limit: String(PAGE_SIZE + 1),
+    offset: String((page - 1) * PAGE_SIZE),
+  });
   if (searchParams.q) params.set("q", searchParams.q);
-  const entities = isHot ? [] : await api.entities(params);
+  const fetched = isHot ? [] : await api.entities(params);
+  const hasMore = fetched.length > PAGE_SIZE;
+  const entities = fetched.slice(0, PAGE_SIZE);
 
   return (
-    <div className="mx-auto max-w-[1280px] px-8 pb-16 pt-8">
+    <div className="mx-auto max-w-[1280px] px-4 pb-16 pt-8 sm:px-8">
       <h1 className="mb-1 text-[32px] font-medium tracking-[-0.5px]">Topic tracker</h1>
       <p className="mb-5 text-sm text-muted">
         Everything the council and planning commission have touched, with current status and full
@@ -128,13 +142,13 @@ export default async function TopicsPage({
           </Link>
         ))}
         {!isHot && (
-          <form className="ml-auto" action="/topics">
+          <form className="w-full sm:ml-auto sm:w-auto" action="/topics">
             <input type="hidden" name="type" value={type} />
             <input
               name="q"
               defaultValue={searchParams.q ?? ""}
               placeholder="Search names…"
-              className="w-[220px] rounded-xl border border-hairline bg-canvas px-4 py-2.5 text-sm outline-none placeholder:text-muted-soft focus:border-ink"
+              className="w-full rounded-xl border border-hairline bg-canvas px-4 py-2.5 text-sm outline-none placeholder:text-muted-soft focus:border-ink sm:w-[220px]"
             />
           </form>
         )}
@@ -165,6 +179,15 @@ export default async function TopicsPage({
             <li className="px-5 py-6 text-sm text-muted">Nothing here yet.</li>
           )}
         </ul>
+      )}
+
+      {!isHot && (
+        <Pagination
+          page={page}
+          hasMore={hasMore}
+          basePath="/topics"
+          params={{ type, q: searchParams.q }}
+        />
       )}
     </div>
   );

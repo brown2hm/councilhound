@@ -8,6 +8,7 @@ const NAV = [
   { href: "/", label: "Briefing" },
   { href: "/topics", label: "Tracker" },
   { href: "/development", label: "Development" },
+  { href: "/civic", label: "Civic" },
   { href: "/meetings", label: "Meetings" },
   { href: "/members", label: "Members" },
   { href: "/map", label: "Map" },
@@ -33,7 +34,9 @@ export default function NavLinks() {
 
   return (
     <>
-      <nav className="hidden gap-1 lg:flex">
+      {/* nine items no longer fit beside the wordmark at lg — the inline bar
+          starts at xl and the menu covers everything below it */}
+      <nav className="hidden gap-1 xl:flex">
         {NAV.map((n) => (
           <Link key={n.href} href={n.href} className={linkClasses(n.href, pathname)}>
             {n.label}
@@ -46,7 +49,7 @@ export default function NavLinks() {
         aria-label={open ? "Close menu" : "Open menu"}
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="flex h-10 w-10 items-center justify-center rounded-xl border border-hairline lg:hidden"
+        className="flex h-10 w-10 items-center justify-center rounded-xl border border-hairline xl:hidden"
       >
         <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
           {open ? (
@@ -58,7 +61,7 @@ export default function NavLinks() {
       </button>
 
       {open && (
-        <nav className="absolute inset-x-0 top-16 z-20 border-b border-hairline bg-canvas px-4 pb-4 pt-2 shadow-lg lg:hidden">
+        <nav className="absolute inset-x-0 top-16 z-20 border-b border-hairline bg-canvas px-4 pb-4 pt-2 shadow-lg xl:hidden">
           {NAV.map((n) => (
             <Link key={n.href} href={n.href} className={linkClasses(n.href, pathname, true)}>
               {n.label}

@@ -60,15 +60,25 @@ function Result({ r, query }: { r: SearchResult; query: string }) {
             ~ related
           </span>
         )}
-        {r.watch_url && (
-          <a
-            href={r.watch_url}
-            target="_blank"
-            className="ml-auto whitespace-nowrap font-semibold text-muted hover:text-ink"
-          >
-            ▶ Watch
-          </a>
-        )}
+        <span className="ml-auto flex shrink-0 items-center gap-3">
+          {r.kind === "transcript" && (
+            <Link
+              href={`/meetings/${r.meeting_id}/transcript?q=${encodeURIComponent(query)}`}
+              className="whitespace-nowrap font-semibold text-muted hover:text-ink"
+            >
+              Read in context
+            </Link>
+          )}
+          {r.watch_url && (
+            <a
+              href={r.watch_url}
+              target="_blank"
+              className="whitespace-nowrap font-semibold text-muted hover:text-ink"
+            >
+              ▶ Watch
+            </a>
+          )}
+        </span>
       </div>
       <Excerpt text={r.text} query={query} />
     </li>
@@ -84,7 +94,7 @@ export default async function SearchPage({
   const data = q.length >= 2 ? await api.search(q, searchParams.body) : null;
 
   return (
-    <div className="mx-auto max-w-[820px] px-8 pb-16 pt-12">
+    <div className="mx-auto max-w-[820px] px-4 pb-16 pt-12 sm:px-8">
       <h1 className="mb-1 text-[32px] font-medium tracking-[-0.5px]">Search the record</h1>
       <p className="mb-6 text-sm text-muted">
         Every transcribed word and agenda item, with links to the moment on video.

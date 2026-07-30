@@ -41,7 +41,7 @@ export default async function ProjectWikiPage({
   }
 
   return (
-    <div className="mx-auto max-w-[880px] px-8 pb-16 pt-8">
+    <div className="mx-auto max-w-[880px] px-4 pb-16 pt-8 sm:px-8">
       <Link
         href={`/development/${params.slug}`}
         className="text-sm font-semibold text-muted hover:text-ink"

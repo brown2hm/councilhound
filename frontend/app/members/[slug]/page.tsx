@@ -39,7 +39,7 @@ export default async function MemberPage({ params }: { params: { slug: string } 
   const statOrder = ["yes", "no", "abstain", "absent"];
 
   return (
-    <div className="mx-auto max-w-[860px] px-8 pb-16 pt-8">
+    <div className="mx-auto max-w-[860px] px-4 pb-16 pt-8 sm:px-8">
       <Link href="/members" className="text-sm font-semibold text-muted hover:text-ink">
         ← All members
       </Link>
