@@ -4,9 +4,10 @@ seed_bundle creates a project's wiki directory once — curator-owned pages
 (overview/positions/impact) are drafted from the existing profile, official
 record, and synthesized evaluation, then never touched again by this module.
 refresh_bundle is the deterministic nightly pass: it regenerates only
-pipeline-owned artifacts (history.md, index.md files, status frontmatter and
-the curator:off "In this wiki" nav section on overview.md) so re-running it
-against unchanged data is a no-op."""
+pipeline-owned artifacts (history.md, index.md files, status frontmatter, the
+curator:off "In this wiki" nav section on overview.md, and impact.md's
+curator:off analysis-link paragraphs) so re-running it against unchanged data
+is a no-op."""
 import logging
 import os
 import re
@@ -160,6 +161,32 @@ NAV_HEADING = "In this wiki"
 # the nav section before markers were introduced: heading through the next h2
 _UNMARKED_NAV_RE = re.compile(rf"^## {NAV_HEADING}\s*$.*?(?=^## |\Z)",
                               re.MULTILINE | re.DOTALL)
+
+
+def _replace_marked_block(body: str, key: str, block: str,
+                          unmarked: re.Pattern) -> str | None:
+    """Swap in a freshly built curator:off block, matching either the marked
+    region carrying `key` or, on pages written before the markers existed, the
+    unmarked prose that block replaces. Returns None when the page has
+    neither — the caller decides whether a missing block means "append it" or
+    "leave this page alone".
+
+    The sibling of _replace_marked_section, for blocks that are bare
+    paragraphs rather than headed sections: it keys on an arbitrary marker
+    comment and takes the unmarked pattern explicitly, because there is no
+    heading to derive either from.
+
+    The trailing newlines of whatever was matched are kept, so a block in the
+    middle of a page stays separated from what follows it."""
+    for match in CURATOR_OFF_RE.finditer(body):
+        if key in match.group(0):
+            return body[:match.start()] + block + body[match.end():]
+    match = unmarked.search(body)
+    if match is None:
+        return None
+    matched = match.group(0)
+    trailing = matched[len(matched.rstrip("\n")):]
+    return body[:match.start()] + block + trailing + body[match.end():]
 
 
 def _nav_block(slug: str, pages: set[str]) -> str:
@@ -419,19 +446,57 @@ def _positions_body(ctx: dict) -> str:
     return "\n".join(parts)
 
 
+# impact.md's two link paragraphs, keyed so refresh can find them again. The
+# key rides inside the curator:off region; the frontend strips every HTML
+# comment before rendering (frontend/lib/wiki.ts), so readers never see it.
+IMPACT_INTRO_KEY = "<!-- block:impact-intro -->"
+IMPACT_NOTE_KEY = "<!-- block:impact-method-note -->"
+# ...and the same paragraphs on pages seeded before the markers existed. Each
+# is a single line identified by the link it carries.
+_UNMARKED_INTRO_RE = re.compile(r"^.*\[full analysis\]\(.*$", re.MULTILINE)
+_UNMARKED_NOTE_RE = re.compile(r"^.*\[analysis page\]\(.*$", re.MULTILINE)
+
+
+def _marked_block(key: str, lines: list[str]) -> str:
+    return "\n".join([CURATOR_OFF_OPEN, key, "", *lines, "", CURATOR_OFF_CLOSE])
+
+
+def _analysis_url(city: CityProject) -> str:
+    return f"{SITE_BASE_URL}/development/{city.external_slug}"
+
+
+def _impact_intro(entity: Entity, city: CityProject) -> str:
+    """The opening paragraph, pipeline-owned for the same reason the nav
+    section is: it is derived, not written. The analysis URL moves when the
+    city renames a project in its directory and 404s when the city drops one —
+    and a URL baked into prose at seed time outlives whatever it pointed at.
+    okf-lint flags the dead link, so the failure was already loud — owning the
+    paragraph is what makes it repairable."""
+    return _marked_block(IMPACT_INTRO_KEY, [
+        f"Screening-level estimates of the economic and fiscal effects of "
+        f"{entity.name}. Figures are decision-support context with named "
+        f"assumptions and sensitivity ranges — not predictions. The "
+        f"[full analysis]({_analysis_url(city)}) has the interactive "
+        f"assumptions panel and maps; "
+        f"[methods]({SITE_BASE_URL}/development/methods) "
+        "documents every formula."])
+
+
+def _impact_note(city: CityProject) -> str:
+    # method notes carry literal figures from the deterministic run, so they
+    # stay on the analysis page (always current) rather than in wiki prose
+    return _marked_block(IMPACT_NOTE_KEY, [
+        f"Method notes, caveats, and non-headline metrics live on the "
+        f"[analysis page]({_analysis_url(city)})."])
+
+
 def _impact_body(entity: Entity, ctx: dict) -> str | None:
     evaluation, city = ctx["evaluation"], ctx["city"]
     if not evaluation or not city:
         return None
-    analysis_url = f"{SITE_BASE_URL}/development/{city.external_slug}"
     parts = [
         CURATED_NOTE, "",
-        f"Screening-level estimates of the economic and fiscal effects of "
-        f"{entity.name}. Figures are decision-support context with named "
-        f"assumptions and sensitivity ranges — not predictions. The "
-        f"[full analysis]({analysis_url}) has the interactive assumptions "
-        f"panel and maps; [methods]({SITE_BASE_URL}/development/methods) "
-        "documents every formula.", "",
+        _impact_intro(entity, city), "",
         "## Headline estimates", "",
     ]
     seen = set()
@@ -447,10 +512,7 @@ def _impact_body(entity: Entity, ctx: dict) -> str | None:
             if m.get("method"):
                 line += f" — {m['method']}"
             parts.append(line)
-    # method notes carry literal figures from the deterministic run, so they
-    # stay on the analysis page (always current) rather than in wiki prose
-    parts += ["", f"Method notes, caveats, and non-headline metrics live on the "
-                  f"[analysis page]({analysis_url})."]
+    parts += ["", _impact_note(city)]
     return "\n".join(parts)
 
 
@@ -652,6 +714,36 @@ def _refresh_sibling_resources(bundle_dir: str, entity: Entity,
     return changed
 
 
+def _refresh_impact_links(bundle_dir: str, entity: Entity, ctx: dict) -> bool:
+    """Rebuild impact.md's analysis-link paragraphs from the current record.
+
+    The rest of the page is the curator's, and stays untouched: only the two
+    curator:off blocks are replaced, and only where the page still has them.
+    A human who deleted the closing pointer meant to delete it — unlike the
+    nav section, which the curator dropped silently, so nothing is appended
+    back.
+
+    Does nothing once the project has no CityProject: there is no analysis
+    page left to point at, and the evaluation cascaded away with it, so the
+    metric markers are orphaned too. Rewriting the links there would repair
+    half a page and quiet the lint that says a human should look at it."""
+    city = ctx["city"]
+    if city is None:
+        return False
+    rel = f"projects/{entity.canonical_slug}/impact.md"
+    parsed = read_page(os.path.join(bundle_dir, rel))
+    if parsed is None or parsed[0] is None:
+        return False
+    fm, body = parsed
+    for key, block, unmarked in (
+            (IMPACT_INTRO_KEY, _impact_intro(entity, city), _UNMARKED_INTRO_RE),
+            (IMPACT_NOTE_KEY, _impact_note(city), _UNMARKED_NOTE_RE)):
+        replaced = _replace_marked_block(body, key, block, unmarked)
+        if replaced is not None:
+            body = replaced
+    return write_page(bundle_dir, rel, fm, body)
+
+
 def _write_indexes(bundle_dir: str, session: Session) -> None:
     project_dirs = []
     projects_root = os.path.join(bundle_dir, "projects")
@@ -726,8 +818,9 @@ def seed_bundle(session: Session, bundle_dir: str,
 
 def refresh_bundle(session: Session, bundle_dir: str) -> dict:
     """Deterministic nightly pass over existing wiki directories: regenerate
-    history.md, refresh pipeline-owned overview frontmatter, rebuild
-    indexes. No-op (and no log entries) when nothing changed."""
+    history.md, refresh the pipeline-owned frontmatter keys and marked blocks
+    on the curator-owned pages, rebuild indexes. No-op (and no log entries)
+    when nothing changed."""
     projects_root = os.path.join(bundle_dir, "projects")
     if not os.path.isdir(projects_root):
         return {"refreshed": 0, "unchanged": 0, "orphaned": 0}
@@ -754,6 +847,7 @@ def refresh_bundle(session: Session, bundle_dir: str) -> dict:
         changed = _refresh_sibling_resources(bundle_dir, entity, ctx) or changed
         changed = _refresh_member_links(bundle_dir, entity,
                                        member_aliases) or changed
+        changed = _refresh_impact_links(bundle_dir, entity, ctx) or changed
         if changed:
             latest = (ctx["timeline"][-1][1].meeting_date.isoformat()
                       if ctx["timeline"] else None)

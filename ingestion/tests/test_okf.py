@@ -22,6 +22,7 @@ from councilhound.db.models import (
 )
 from councilhound.okf import bundle as B
 from councilhound.okf import curate
+from councilhound.okf import export
 from councilhound.okf import sync
 from councilhound.okf.export import refresh_bundle, seed_bundle, wiki_candidates
 from councilhound.okf.lint import lint_bundle
@@ -587,6 +588,80 @@ def test_refresh_recomputes_a_stale_resource_uri(db_session, project, tmp_path):
         fm, _ = _read(tmp_path, f"projects/circle-gateway/{page}.md")
         assert fm["resource"].endswith("/topics/circle-gateway"), page
     assert lint_bundle(str(tmp_path), db_session) == []
+
+
+def test_refresh_repairs_the_analysis_url_in_impact_prose(db_session, project,
+                                                          tmp_path):
+    """`resource` is not the only derived URL on the page: impact.md names the
+    analysis page twice in prose. Baked in at seed time, those links survive a
+    rename of the city's project and 404 — lint says so, and until the
+    paragraphs became pipeline-owned nothing repaired them."""
+    seed_bundle(db_session, str(tmp_path))
+    impact = tmp_path / "projects/circle-gateway/impact.md"
+    _, seeded = B.parse_page(impact.read_text())
+    assert len(B.CURATOR_OFF_RE.findall(seeded)) == 2
+    impact.write_text(impact.read_text().replace(
+        "## Headline estimates", "Hand-written caveat.\n\n## Headline estimates"))
+
+    city = db_session.query(CityProject).one()
+    city.external_slug = "circle-gateway-renamed"
+    db_session.commit()
+
+    assert refresh_bundle(db_session, str(tmp_path))["refreshed"] == 1
+    fm, body = _read(tmp_path, "projects/circle-gateway/impact.md")
+    assert "circle-gateway-official" not in body
+    assert body.count(f"{SITE_BASE_URL}/development/circle-gateway-renamed") == 2
+    assert fm["resource"].endswith("/development/circle-gateway-renamed")
+    assert "Hand-written caveat." in body        # curator prose is untouched
+    assert "{{metric:new-households}}" in body
+    assert lint_bundle(str(tmp_path), db_session) == []
+
+
+def test_refresh_marks_impact_links_written_before_the_markers(db_session,
+                                                               project, tmp_path):
+    """Pages seeded before the markers existed carry the same paragraphs as
+    plain prose; refresh takes ownership in place rather than duplicating
+    them."""
+    seed_bundle(db_session, str(tmp_path))
+    impact = tmp_path / "projects/circle-gateway/impact.md"
+    fm, body = B.parse_page(impact.read_text())
+    marker_lines = {B.CURATOR_OFF_OPEN, B.CURATOR_OFF_CLOSE,
+                    export.IMPACT_INTRO_KEY, export.IMPACT_NOTE_KEY}
+    body = "\n".join(line for line in body.split("\n")
+                     if line not in marker_lines)
+    impact.write_text(B.render_page(fm, body))
+    assert B.CURATOR_OFF_RE.findall(body) == []
+
+    city = db_session.query(CityProject).one()
+    city.external_slug = "circle-gateway-renamed"
+    db_session.commit()
+    refresh_bundle(db_session, str(tmp_path))
+
+    _, body = _read(tmp_path, "projects/circle-gateway/impact.md")
+    assert len(B.CURATOR_OFF_RE.findall(body)) == 2      # markers backfilled
+    assert body.count("[full analysis]") == 1            # not duplicated
+    assert body.count("[analysis page]") == 1
+    assert "circle-gateway-official" not in body
+    assert lint_bundle(str(tmp_path), db_session) == []
+
+
+def test_refresh_leaves_a_stranded_impact_page_alone(db_session, project,
+                                                     tmp_path):
+    """When the city drops a project outright there is no analysis page to
+    point at, and the evaluation cascades away with the record, so the metric
+    markers are orphaned too. Rewriting just the links would repair half a
+    page and quiet part of the lint telling a human to look at it."""
+    seed_bundle(db_session, str(tmp_path))
+    db_session.query(CityProject).delete()
+    db_session.commit()
+    refresh_bundle(db_session, str(tmp_path))
+
+    _, body = _read(tmp_path, "projects/circle-gateway/impact.md")
+    assert "/development/circle-gateway-official" in body
+    problems = "\n".join(lint_bundle(str(tmp_path), db_session))
+    assert ("impact.md: /development/circle-gateway-official is not a valid "
+            "development page") in problems
+    assert "no synthesized evaluation exists" in problems
 
 
 def test_refresh_backfills_impact_for_a_later_synthesis(db_session, project,

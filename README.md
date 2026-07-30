@@ -181,7 +181,12 @@ reviewable diff. Ownership is per-file:
 deterministically); `overview.md`/`positions.md`/`impact.md` are
 **curator-owned** — seeded once, then edited minimally by the LLM curator as
 new meetings land, so human edits survive (`<!-- curator:off -->` regions are
-enforced untouchable). Impact figures never appear literally in wiki prose:
+enforced untouchable). Ownership is finer-grained than the file where a
+passage is *derived* rather than written: the "In this wiki" nav on
+`overview.md` and the analysis-page links on `impact.md` sit in `curator:off`
+regions that `okf-refresh` rebuilds, so a project the city renames or drops
+does not leave a 404 in the prose. Impact figures never appear literally in
+wiki prose:
 pages carry `{{metric:...}}` markers the frontend resolves against the live
 evaluation, so wiki text can't go stale.
 
