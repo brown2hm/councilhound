@@ -30,7 +30,7 @@ Courthouse Plaza is a mixed-use redevelopment proposal for the shopping center a
 | | Existing | Proposed |
 |---|---|---|
 | Floor area | 91,850 sq ft | — |
-| Dwelling units | 0 | — |
+| Dwelling units | 0 | 630 |
 | Affordable units | — | 38 _(medium confidence)_ |
 | Retail | — | 74,059 sq ft |
 | Stories | — | 6 _(medium confidence)_ |
@@ -43,6 +43,7 @@ Extracted from the city's submitted documents; each figure traces to the text it
 
 - **Floor area** (existing) — "The existing site is currently occupied by 91,860 SF of retail and surface parking."
 - **Dwelling units** (existing) — "single-story retail shopping center and two accessory, standalone retail buildings"
+- **Dwelling units** (proposed) — "adding in the proposed 630 residential units"
 - **Affordable units** (proposed) — "NOTE: A TOTAL OF 6% OF THE UNITS WILL BE ADUS."
 - **Retail** (proposed) — "Total Retail: 74,059 sf"
 - **Stories** (proposed) — "Small Area Plan calls for buildings of six floors"
