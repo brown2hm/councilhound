@@ -1,9 +1,9 @@
 ---
 type: project-documents
 title: Paul VI — documents
-description: 36 document(s) published in the City of Fairfax project record for Paul VI.
+description: 49 document(s) published in the City of Fairfax project record for Paul VI.
 resource: https://councilhound.net/development/Paul-VI
-timestamp: '2026-07-28'
+timestamp: '2026-07-30'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
@@ -46,3 +46,16 @@ Documents published in the city's project record, in the order the city lists th
 - [April 17, 2017 Fiscal Impact Statement (PDF, 636KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/april-17-2017-fiscal-impact-statement.pdf)
 - [April 17, 2017 Traffic Impact Study (PDF, 5MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/april-17-2017-traffic-impact-study.pdf)
 - [April 17, 2017 Traffic Impact Study Appendices (PDF, 2MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/april-17-2017-appendices.pdf)
+- [September 11, 2018 City Council Public Hearing](https://fairfax.granicus.com/MetaViewer.php?view_id=11&clip_id=1971&meta_id=69613)
+- [September 11, 2018 City Council Public Hearing Video](https://fairfax.granicus.com/player/clip/1971?view_id=11&meta_id=69612&redirect=true)
+- [June 12, 2018 City Council Work Session](https://fairfax.granicus.com/MetaViewer.php?view_id=11&clip_id=1934&meta_id=68366)
+- [June 12, 2018 City Council Work Session Video](https://fairfax.granicus.com/player/clip/1934?view_id=11&meta_id=68376&redirect=true)
+- [April 23, 2018 Planning Commission Hearing](https://fairfax.granicus.com/MetaViewer.php?view_id=11&clip_id=1908&meta_id=67118)
+- [April 23, 2018 Planning Commission Hearing Video](https://fairfax.granicus.com/player/clip/1908?view_id=11&meta_id=67117&redirect=true)
+- [March 28, 2018 Board of Architectural Review Hearing (PDF, 218KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/march-28-2018-board-of-architectural-review-hearing.pdf)
+- [February 21, 2018 Board of Architectural Review Work Session (PDF, 153KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/february-21-2018-board-of-architectural-review-work-session.pdf)
+- [December 20, 2017 Board of Architectural Review Work Session (PDF, 12MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/december-20-2017-board-of-architectural-review-work-session.pdf)
+- [October 3, 2017 Joint City Council and Planning Commission Work Session](https://fairfax.granicus.com/MetaViewer.php?view_id=11&clip_id=1816&meta_id=63220)
+- [October 3, 2017 Joint City Council and Planning Commission Work Session Video](https://fairfax.granicus.com/player/clip/1816?view_id=11&meta_id=63219&redirect=true)
+- [September 6, 2016 Joint City Council and Planning Commission Work Session](https://fairfax.granicus.com/MetaViewer.php?view_id=11&clip_id=1608&meta_id=56478)
+- [September 6, 2016 Joint City Council and Planning Commission Work Session Video](https://fairfax.granicus.com/player/clip/1608?view_id=11&meta_id=56477&redirect=true)

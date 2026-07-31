@@ -3,7 +3,7 @@ type: development-project
 title: Willard-Sherwood Community Center
 description: The Willard-Sherwood Community Center expansion/rebuild is a major capital project
   for the City of Fairfax.
-resource: https://councilhound.net/development/Willard-Sherwood-Health-Community-Center
+resource: https://councilhound.net/topics/willard-sherwood-community-center
 tags:
 - city-project
 - in-progress

@@ -1,10 +1,10 @@
 ---
 type: project-documents
 title: City Centre West — documents
-description: 43 document(s) published in the City of Fairfax project record for City Centre
+description: 60 document(s) published in the City of Fairfax project record for City Centre
   West.
 resource: https://councilhound.net/development/City-Centre-West
-timestamp: '2026-07-28'
+timestamp: '2026-07-30'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
@@ -54,3 +54,20 @@ Documents published in the city's project record, in the order the city lists th
 - [January 24, 2022 Fiscal Impact Analysis Report (PDF, 4MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/city-centre-west/january-24-2022-fiscal-impact-analysis-report.pdf)
 - [March 18, 2019 Fairfax City Center West Summary (PDF, 139KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/city-centre-west/march-18-2019-fairfax-city-center-west-summary.pdf)
 - [March 18, 2019 Conceptual Site Plan (PDF, 3MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/city-centre-west/march-18-2019-conceptual-site-plan.pdf)
+- [July 11, 2023 City Council Public Hearing (PDF, 3MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/city-centre-west/july-11-2023-city-council-public-hearing.pdf)
+- [July 11, 2023 City Council Public Hearing Video](https://fairfax.granicus.com/player/clip/3086?view_id=11&meta_id=107032&redirect=true)
+- [June 26, 2023 Planning Commission Public Hearing (PDF, 3MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/city-centre-west/june-26-2023-planning-commission-public-hearing.pdf)
+- [June 26, 2023 Planning Commission Public Hearing Video](https://fairfax.granicus.com/player/clip/3076?view_id=11&meta_id=106602&redirect=true)
+- [June 21, 2023 Board of Architectural Review Public Hearing (PDF, 30MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/city-centre-west/june-21-2023-board-of-architectural-review-public-hearing.pdf)
+- [May 17, 2023 Board of Architectural Review Work Session 2](https://fairfax.granicus.com/MetaViewer.php?view_id=11&event_id=2727&meta_id=105537)
+- [May 17, 2023 Board of Architectural Review Work Session 2 Video](https://fairfax.granicus.com/player/clip/3056)
+- [November 15, 2022 City Council Post-Submission Work Session](https://fairfax.granicus.com/MetaViewer.php?view_id=11&event_id=1978&meta_id=101243)
+- [November 15, 2022 City Council Post-Submission Work Session Video](https://fairfax.granicus.com/player/clip/2946?view_id=11&meta_id=101323&redirect=true)
+- [November 2, 2022 Board of Architectural Review Work Session 1 (PDF, 9MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/city-centre-west/november-2-2022-board-of-architectural-review-work-session-1.pdf)
+- [November 2, 2022 Board of Architectural Review Work Session 1 Video](https://fairfax.granicus.com/player/clip/2937?view_id=11&redirect=true&h=5d65fc121c816c805fc8a6aa4c0a7182)
+- [October 24, 2022 Planning Commission Post-Submission Work Session (PDF, 1MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/city-centre-west/october-24-2022-planning-commission-post-submission-work-session.pdf)
+- [October 24, 2022 Planning Commission Post-Submission Work Session Video](https://fairfax.granicus.com/player/clip/2930?view_id=11&meta_id=100662&redirect=true)
+- [April 22, 2019 Planning Commission Work Session (PDF, 4MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/city-centre-west/april-22-2019-planning-commission-work-session.pdf)
+- [April 22, 2019 Planning Commission Work Session Video](https://fairfax.granicus.com/player/clip/2058?view_id=11&meta_id=73698&redirect=true)
+- [April 2, 2019 City Council Work Session (PDF, 110KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/city-centre-west/april-2-2019-city-council-work-session.pdf)
+- [April 2, 2019 City Council Work Session Video](https://fairfax.granicus.com/player/clip/2053?view_id=11&meta_id=73361&redirect=true)

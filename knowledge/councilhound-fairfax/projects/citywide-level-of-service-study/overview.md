@@ -4,7 +4,7 @@ title: Citywide Level of Service Study
 description: The Citywide Level of Service Study is an ongoing analytical project in which
   the City of Fairfax has contracted consulting firm TischlerBise — described as having nationwide
   experience in economic and fiscal analysis — to develop a dynamic capital impact model.
-resource: https://councilhound.net/topics/citywide-level-of-service-study
+resource: https://councilhound.net/topics
 tags:
 - in-progress
 timestamp: '2026-04-13'

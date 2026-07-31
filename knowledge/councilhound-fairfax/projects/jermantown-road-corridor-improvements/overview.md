@@ -7,7 +7,6 @@ description: Improvements to Jermantown Road to enhance traffic flow, transit op
 resource: https://councilhound.net/development/Jermantown-Road-Corridor-Improvements
 tags:
 - city-project
-- in-progress
 timestamp: '2026-07-19'
 source: official
 address: Jermantown Road, Fairfax, VA 22030

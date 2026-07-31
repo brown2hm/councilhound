@@ -3,7 +3,7 @@ type: project-positions
 title: Chain Bridge Road/Eaton Place Intersection Improvements — positions & open questions
 description: Recorded member positions and unresolved questions on Chain Bridge Road/Eaton
   Place Intersection Improvements.
-resource: https://councilhound.net/topics/chain-bridge-roadeaton-place-intersection-improvements
+resource: https://councilhound.net/topics/eaton-placechain-bridge-road-intersection-improvements
 timestamp: '2025-03-25'
 ---
 

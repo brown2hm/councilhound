@@ -33,7 +33,7 @@ lng: -77.3174874
 | Stories | — | 3 |
 | Site area | — | 8.25 acres |
 
-Tax map parcel(s): 57 1 02 123A
+Tax map parcel(s): 57 1 02 123A, 57 1 02 122
 
 Extracted from the city's submitted documents; each figure traces to the text it came from.
 

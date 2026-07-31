@@ -1,10 +1,10 @@
 ---
 type: project-documents
 title: Breezeway Pulte Homes — documents
-description: 83 document(s) published in the City of Fairfax project record for Breezeway
+description: 108 document(s) published in the City of Fairfax project record for Breezeway
   Pulte Homes.
 resource: https://councilhound.net/development/Breezeway-Pulte-Homes
-timestamp: '2026-07-28'
+timestamp: '2026-07-30'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
@@ -81,10 +81,6 @@ Documents published in the city's project record, in the order the city lists th
 - [November 2, 2020 Master Development Plan - Civil (PDF, 11MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/breezeway-pulte-homes/plans/november-2-2020/3-master-development-plan-civil.pdf)
 - [November 2, 2020 Master Development Plan - Architecture and Open Space (PDF, 5MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/breezeway-pulte-homes/plans/november-2-2020/4-master-development-plan-architecture-and-open-space.pdf)
 - [November 2, 2020 Traffic Impact Study - Revised (PDF, 5MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/breezeway-pulte-homes/plans/november-2-2020/5-traffic-impact-study-revised.pdf)
-- [September 28, 2020 Planned Development Application (PDF, 105KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/breezeway-pulte-homes/plans/november-2-2020/1-planned-development-application.pdf)
-- [September 28, 2020 Narrative (PDF, 192KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/breezeway-pulte-homes/plans/november-2-2020/2-narrative.pdf)
-- [September 28, 2020 Master Development Plan (PDF, 11MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/breezeway-pulte-homes/plans/november-2-2020/3-master-development-plan-civil.pdf)
-- [September 28, 2020 Traffic Impact Study (PDF, 5MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/breezeway-pulte-homes/plans/november-2-2020/5-traffic-impact-study-revised.pdf)
 - [November 21, 2019 Narrative (PDF, 36KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/breezeway-pulte-homes/plans/november-21-2019/1-narrative.pdf)
 - [November 21, 2019 Master Development Plan (PDF, 21MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/breezeway-pulte-homes/plans/november-21-2019/2-master-development-plan.pdf)
 - [November 21, 2019 Illustrative Site Plan (PDF, 1MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/breezeway-pulte-homes/plans/november-21-2019/3-illustrative-site-plan.pdf)
@@ -94,3 +90,32 @@ Documents published in the city's project record, in the order the city lists th
 - [June 11, 2018 Applicant Presentation Including Additional Architectural Elevations (PDF, 1MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/breezeway-pulte-homes/plans/june-11-2018/applicant-presentation-including-additional-architectural-elevations.pdf)
 - [May 21, 2018 Request for Work Sessions Letter (PDF, 207KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/breezeway-pulte-homes/plans/may-21-2018/1-request-for-work-sessions-letter.pdf)
 - [May 21, 2018 Conceptual Plans (PDF, 18MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/breezeway-pulte-homes/plans/may-21-2018/2-conceptual-plans.pdf)
+- [March 8, 2022 City Council Public Hearing Staff Report (PDF, 3MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/breezeway-pulte-homes/public-meetings/2022/staff-report-web.pdf)
+- [March 8, 2022 City Council Public Hearing Meeting Video](https://fairfax.granicus.com/MediaPlayer.php?view_id=11&clip_id=2829&meta_id=95659)
+- [January 11, 2022 City Council Public Hearing Staff Report (PDF, 4MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/breezeway-pulte-homes/public-meetings/2022/city-council-staff-report-web2.pdf)
+- [January 11, 2022 City Council Public Hearing Meeting Video](https://fairfax.granicus.com/MediaPlayer.php?view_id=11&clip_id=2792&meta_id=94094)
+- [January 11, 2022 City Council Public Hearing (Rights-of-Way Vacation request for a portion of Cedar Avenue and Walnut Street) Staff Report (PDF, 407KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/breezeway-pulte-homes/public-meetings/2022/right-of-way-staff-report.pdf)
+- [November 22, 2021 Planning Commission Public Hearing - Staff Report (PDF, 2MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/breezeway-pulte-homes/public-meetings/2021/breezeway-motel-staff-report-for-planning-commission.pdf)
+- [November 22, 2021 Planning Commission Public Hearing - Meeting Video](https://fairfax.granicus.com/MediaPlayer.php?view_id=11&clip_id=2772&meta_id=93161)
+- [November 9, 2021 Rights-of-Way Vacation Request for a portion of Cedar Avenue and Walnut Street (First Reading) - Staff Report (PDF, 89KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/breezeway-pulte-homes/public-meetings/2021/introduction-to-rightsofway-vacation.pdf)
+- [November 9, 2021 Rights-of-Way Vacation Request for a portion of Cedar Avenue and Walnut Street - Meeting Video](https://fairfax.granicus.com/MediaPlayer.php?view_id=11&clip_id=2768&meta_id=92948)
+- [November 3, 2021 Board of Architectural Review - Staff Report (PDF, 663KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/breezeway-pulte-homes/public-meetings/2021/bar-staff-report.pdf)
+- [November 3, 2021 Board of Architectural Review - Meeting Video](https://fairfax.granicus.com/player/clip/2765?view_id=11&redirect=true)
+- [March 9, 2021 City Council Pre-Hearing Work Session - Staff Report (PDF, 20MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/breezeway-pulte-homes/public-meetings/2021/prehearing-work-session-staff-report-memorandum.pdf)
+- [March 9, 2021 City Council Pre-Hearing Work Session - Meeting Video](https://fairfax.granicus.com/MediaPlayer.php?view_id=11&clip_id=2645&meta_id=87543)
+- [March 8, 2021 Planning Commission Pre-Hearing Work Session - Staff Report (PDF, 21MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/breezeway-pulte-homes/public-meetings/2021/prehearing-work-session-staff-report.pdf)
+- [March 8, 2021 Planning Commission Pre-Hearing Work Session - Meeting Video](https://fairfax.granicus.com/MediaPlayer.php?view_id=11&clip_id=2642&meta_id=87451)
+- [October 6, 2020 City Council Post-Submission Work Session - Staff Report (PDF, 13MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/breezeway-pulte-homes/public-meetings/2020/cc-staff-report.pdf)
+- [October 6, 2020 City Council Post-Submission Work Session - Meeting Video](https://fairfax.granicus.com/MediaPlayer.php?view_id=11&clip_id=2475&meta_id=83776)
+- [September 28, 2020 Planning Commission Post-Submission Work Session - Staff Report](https://fairfax.granicus.com/MetaViewer.php?view_id=11&clip_id=2463&meta_id=83603)
+- [September 28, 2020 Planning Commission Post-Submission Work Session - Meeting Video](https://fairfax.granicus.com/MediaPlayer.php?view_id=11&clip_id=2463&meta_id=83602)
+- [September 16, 2020 Board of Architectural Review Work Session - Staff Report (PDF, 12MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/breezeway-pulte-homes/public-meetings/2020/bar-work-session-staff-report.pdf)
+- [September 16, 2020 Board of Architectural Review Work Session - Meeting Video](https://www.youtube.com/watch?v=slppyYHlhTs)
+- [January 13, 2020 Planning Commission Post-Submission Work Session - Staff Report](http://fairfax.granicus.com/MetaViewer.php?view_id=11&clip_id=2160&meta_id=78194)
+- [January 13, 2020 Planning Commission Post-Submission Work Session - Meeting Video](https://fairfax.granicus.com/MediaPlayer.php?view_id=11&clip_id=2160&meta_id=78193)
+- [December 10, 2019 City Council Post-Submission Work Session - Staff Report](https://fairfax.granicus.com/MetaViewer.php?view_id=11&clip_id=2155&meta_id=77836)
+- [December 10, 2019 City Council Post-Submission Work Session - Meeting Video](https://fairfax.granicus.com/MediaPlayer.php?view_id=11&clip_id=2155&meta_id=77835)
+- [July 10, 2018 City Council Work Session - Staff Report](https://fairfax.granicus.com/MetaViewer.php?view_id=11&clip_id=1948&meta_id=68839)
+- [July 10, 2018 City Council Work Session - Meeting Video](https://fairfax.granicus.com/MediaPlayer.php?view_id=11&clip_id=1955&meta_id=69014)
+- [June 11, 2018 Planning Commission Work Session - Staff Report](https://fairfax.granicus.com/MetaViewer.php?view_id=11&clip_id=1932&meta_id=68291)
+- [June 11, 2018 Planning Commission Work Session - Meeting Video](http://fairfax.granicus.com/MediaPlayer.php?view_id=11&clip_id=1932&meta_id=68290)

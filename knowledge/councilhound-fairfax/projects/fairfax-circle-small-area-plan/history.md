@@ -3,7 +3,7 @@ type: project-history
 title: Fairfax Circle Small Area Plan — meeting history
 description: Dated record of every meeting action on Fairfax Circle Small Area Plan, through
   2026-06-08.
-resource: https://councilhound.net/topics/fairfax-circle-small-area-plan
+resource: https://councilhound.net/topics/fairfax-circle
 timestamp: '2026-06-08'
 ---
 

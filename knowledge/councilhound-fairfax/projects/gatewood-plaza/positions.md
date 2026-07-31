@@ -2,7 +2,7 @@
 type: project-positions
 title: Gatewood Plaza — positions & open questions
 description: Recorded member positions and unresolved questions on Gatewood Plaza.
-resource: https://councilhound.net/topics/gatewood-plaza
+resource: https://councilhound.net/topics
 timestamp: '2025-02-10'
 ---
 

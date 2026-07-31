@@ -2,7 +2,7 @@
 type: project-history
 title: Providence ES Vestibule — meeting history
 description: Dated record of every meeting action on Providence ES Vestibule, through 2025-11-18.
-resource: https://councilhound.net/topics/providence-es-vestibule
+resource: https://councilhound.net/topics
 timestamp: '2025-11-18'
 ---
 

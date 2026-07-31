@@ -2,7 +2,7 @@
 type: project-positions
 title: Dwight Avenue Improvements — positions & open questions
 description: Recorded member positions and unresolved questions on Dwight Avenue Improvements.
-resource: https://councilhound.net/topics/dwight-avenue-improvements
+resource: https://councilhound.net/topics
 timestamp: '2025-09-09'
 ---
 

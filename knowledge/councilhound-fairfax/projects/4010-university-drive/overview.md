@@ -4,7 +4,7 @@ title: 4010 University Drive
 description: 4010 University Drive (Tax Map 57-4-02-087-B) is a parcel in the CR Commercial
   Retail zoning district and Old Town Fairfax Historic Overlay District, located at the corner
   of University Drive and Sager Avenue.
-resource: https://councilhound.net/topics/4010-university-drive
+resource: https://councilhound.net/topics
 tags:
 - in-progress
 timestamp: '2025-02-25'

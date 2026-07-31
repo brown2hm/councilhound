@@ -4,7 +4,7 @@ title: Fairfax Circle Small Area Plan
 description: The Fairfax Circle Small Area Plan is a land-use and transportation planning
   document for the Fairfax Circle area of the City of Fairfax, developed beginning in Spring
   2023.
-resource: https://councilhound.net/topics/fairfax-circle-small-area-plan
+resource: https://councilhound.net/topics/fairfax-circle
 tags:
 - approved
 timestamp: '2026-06-08'

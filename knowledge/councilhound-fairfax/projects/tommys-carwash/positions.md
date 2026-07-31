@@ -19,8 +19,8 @@ All three motions at the December 10, 2024 City Council meeting — the Special 
 | Member | Vote |
 |---|---|
 | [Billy Bates](https://councilhound.net/members/billy-bates) | Yes |
-| [Kate Doyle Feingold](https://councilhound.net/members/kate-doyle-feingold) | Yes |
-| [Jeffrey Greenfield](https://councilhound.net/members/jeffrey-greenfield) | Yes |
-| [So Lim](https://councilhound.net/members/so-lim) | No |
-| [Thomas Ross](https://councilhound.net/members/thomas-ross) | Yes |
-| [Jon Stehle Jr](https://councilhound.net/members/jon-stehle-jr) | No |
+| Kate Doyle Feingold | Yes |
+| Jeffrey Greenfield | Yes |
+| So Lim | No |
+| Thomas Ross | Yes |
+| Jon Stehle Jr | No |

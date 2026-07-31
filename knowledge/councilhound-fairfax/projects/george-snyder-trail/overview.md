@@ -3,7 +3,7 @@ type: development-project
 title: George Snyder Trail
 description: The George Snyder Trail was a planned shared-use path project (VDOT UPC 112816)
   in the City of Fairfax aimed at improving multimodal connectivity along Fairfax Boulevard.
-resource: https://councilhound.net/topics/george-snyder-trail
+resource: https://councilhound.net/topics/george-snyder-trail-extension
 tags:
 - denied
 timestamp: '2026-05-26'

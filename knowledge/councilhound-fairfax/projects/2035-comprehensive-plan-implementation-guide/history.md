@@ -3,7 +3,7 @@ type: project-history
 title: 2035 Comprehensive Plan Implementation Guide — meeting history
 description: Dated record of every meeting action on 2035 Comprehensive Plan Implementation
   Guide, through 2026-07-13.
-resource: https://councilhound.net/topics/2035-comprehensive-plan-implementation-guide
+resource: https://councilhound.net/topics
 timestamp: '2026-07-13'
 ---
 

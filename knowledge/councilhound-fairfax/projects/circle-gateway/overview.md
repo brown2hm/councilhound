@@ -6,9 +6,9 @@ description: The applicant is proposing to replace two existing commercial build
 resource: https://councilhound.net/development/Circle-Gateway
 tags:
 - private-development
-- proposed
+- in-progress
 timestamp: '2026-07-13'
-status: proposed
+status: in_progress
 source: official
 address: 3250 Blenheim Boulevard, Fairfax, VA 22030
 applicant: Woodbridge Commons, LLC  Don Earl Stedham Woodbridge Commons, LLC Chief Operating

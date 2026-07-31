@@ -3,7 +3,7 @@ type: project-history
 title: Solid Waste Management Plan Update — meeting history
 description: Dated record of every meeting action on Solid Waste Management Plan Update, through
   2026-05-12.
-resource: https://councilhound.net/topics/solid-waste-management-plan-update
+resource: https://councilhound.net/topics/solid-waste-management-plan
 timestamp: '2026-05-12'
 ---
 

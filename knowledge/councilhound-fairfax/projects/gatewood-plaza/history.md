@@ -2,7 +2,7 @@
 type: project-history
 title: Gatewood Plaza — meeting history
 description: Dated record of every meeting action on Gatewood Plaza, through 2025-02-10.
-resource: https://councilhound.net/topics/gatewood-plaza
+resource: https://councilhound.net/topics
 timestamp: '2025-02-10'
 ---
 

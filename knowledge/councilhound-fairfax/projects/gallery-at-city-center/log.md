@@ -14,3 +14,7 @@
 - Meeting history updated through 2026-07-07.
 - Meeting history updated through 2026-07-07.
 - Added 2026-07-07 City Council work session discussion to overview Recent activity section; added open question about member positions from that informational session to positions page. (curator: claude-sonnet-4-6, through 2026-07-07)
+
+## 2026-07-30
+
+- Meeting history updated through 2026-06-22.

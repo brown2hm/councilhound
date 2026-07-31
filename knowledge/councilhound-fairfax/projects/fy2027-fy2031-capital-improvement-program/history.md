@@ -3,7 +3,7 @@ type: project-history
 title: FY2027-FY2031 Capital Improvement Program — meeting history
 description: Dated record of every meeting action on FY2027-FY2031 Capital Improvement Program,
   through 2026-05-05.
-resource: https://councilhound.net/topics/fy2027-fy2031-capital-improvement-program
+resource: https://councilhound.net/topics/fy-20272031-capital-improvement-program
 timestamp: '2026-05-05'
 ---
 

@@ -1,10 +1,10 @@
 ---
 type: project-documents
 title: Fairfax Presbyterian Church — documents
-description: 54 document(s) published in the City of Fairfax project record for Fairfax Presbyterian
+description: 66 document(s) published in the City of Fairfax project record for Fairfax Presbyterian
   Church.
 resource: https://councilhound.net/development/Fairfax-Presbyterian-Church
-timestamp: '2026-07-28'
+timestamp: '2026-07-30'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
@@ -65,3 +65,15 @@ Documents published in the city's project record, in the order the city lists th
 - [October 17, 2019 Project Summary (PDF, 2MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/october-17-2019-project-summary.pdf)
 - [October 17, 2019 Conceptual Plan (PDF, 3MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/october-17-2019-conceptual-plan.pdf)
 - [October 17, 2019 Conceptual Architectural Elevations (PDF, 7MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/october-17-2019-conceptual-architectural-elevations.pdf)
+- [November 15, 2022 City Council Public Hearing](https://fairfax.granicus.com/MetaViewer.php?view_id=11&event_id=1978&meta_id=101239)
+- [November 15, 2022 City Council Public Hearing Video](https://fairfax.granicus.com/player/clip/2946?view_id=11&meta_id=101301&redirect=true)
+- [October 24, 2022 Planning Commission Public Hearing (PDF, 6MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/october-24-2022-planning-commission-public-hearing.pdf)
+- [October 24, 2022 Planning Commission Public Hearing Video](https://fairfax.granicus.com/player/clip/2930?view_id=11&meta_id=100652&redirect=true)
+- [June 28, 2022 City Council Post-Submission Work Session](https://fairfax.granicus.com/MetaViewer.php?view_id=11&clip_id=2883&meta_id=98235)
+- [June 28, 2022 City Council Post-Submission Work Session Video](https://fairfax.granicus.com/player/clip/2883?view_id=11&meta_id=98234&redirect=true)
+- [June 15, 2022 Board of Architectural Review Public Hearing](https://fairfax.granicus.com/MetaViewer.php?view_id=11&clip_id=2879&meta_id=98100)
+- [June 13, 2022 Planning Commission Post-Submission Work Session](https://fairfax.granicus.com/MetaViewer.php?view_id=11&event_id=2561&meta_id=97866)
+- [June 13, 2022 Planning Commission Post-Submission Work Session Video](https://fairfax.granicus.com/player/clip/2874?view_id=11&meta_id=97926&redirect=true)
+- [March 2, 2022 Board of Architectural Review Work Session](https://fairfax.granicus.com/GeneratedAgendaViewer.php?view_id=11&event_id=2579)
+- [November 5, 2019 City Council-Planning Commission Joint Work Session (PDF, 27MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/november-5-2019-city-council-planning-commission-joint-work-session.pdf)
+- [November 5, 2019 City Council-Planning Commission Joint Work Session Video](https://fairfax.granicus.com/player/clip/2141?view_id=11&meta_id=77050&redirect=true)

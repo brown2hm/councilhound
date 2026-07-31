@@ -7,7 +7,8 @@ description: The potential applicant is proposing to redevelop the property with
 resource: https://councilhound.net/development/3541-Chain-Bridge-Road
 tags:
 - private-development
-timestamp: '2026-06-22'
+- in-progress
+timestamp: '2026-07-28'
 source: official
 address: 3541 Chain Bridge Road, Fairfax, VA 22030
 applicant: Evan Pritchard Wire Gill, LLP
@@ -15,6 +16,7 @@ city_detail_url: https://www.fairfaxva.gov/Property-Business/Development/Project
 evaluation_status: synthesized
 lat: 38.8607598
 lng: -77.3061536
+status: in_progress
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
@@ -55,6 +57,10 @@ The potential applicant is proposing to redevelop the property with a mixed-use 
 - **Address:** 3541 Chain Bridge Road, Fairfax, VA 22030
 - **Applicant:** Evan Pritchard Wire Gill, LLP
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/3541-Chain-Bridge-Road)
+
+## Recent activity
+
+- **2026-07-28 City Council** — Council received a pre-application briefing from Network Realty Partners regarding the proposed redevelopment during a work session. No action taken.
 
 <!-- curator:off -->
 

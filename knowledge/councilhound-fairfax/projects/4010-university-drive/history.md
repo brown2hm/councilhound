@@ -2,7 +2,7 @@
 type: project-history
 title: 4010 University Drive — meeting history
 description: Dated record of every meeting action on 4010 University Drive, through 2025-02-25.
-resource: https://councilhound.net/topics/4010-university-drive
+resource: https://councilhound.net/topics
 timestamp: '2025-02-25'
 ---
 

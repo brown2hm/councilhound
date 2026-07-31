@@ -3,7 +3,7 @@ type: development-project
 title: Beacon Landing
 description: Beacon Landing is a 54-unit supportive/affordable housing development in the
   City of Fairfax, developed by Wesley/Lamb (Wesley Housing).
-resource: https://councilhound.net/topics/beacon-landing
+resource: https://councilhound.net/topics
 tags:
 - in-progress
 timestamp: '2026-05-05'

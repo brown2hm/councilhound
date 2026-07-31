@@ -2,7 +2,7 @@
 type: project-history
 title: George Snyder Trail — meeting history
 description: Dated record of every meeting action on George Snyder Trail, through 2026-05-26.
-resource: https://councilhound.net/topics/george-snyder-trail
+resource: https://councilhound.net/topics/george-snyder-trail-extension
 timestamp: '2026-05-26'
 ---
 

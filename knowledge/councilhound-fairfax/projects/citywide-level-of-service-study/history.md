@@ -3,7 +3,7 @@ type: project-history
 title: Citywide Level of Service Study — meeting history
 description: Dated record of every meeting action on Citywide Level of Service Study, through
   2026-04-13.
-resource: https://councilhound.net/topics/citywide-level-of-service-study
+resource: https://councilhound.net/topics
 timestamp: '2026-04-13'
 ---
 

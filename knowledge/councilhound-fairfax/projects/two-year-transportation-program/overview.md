@@ -4,7 +4,7 @@ title: Two-Year Transportation Program
 description: The Two-Year Transportation Program is a City of Fairfax planning and funding
   mechanism that identifies and prioritizes transportation projects for advancement through
   feasibility study, design, and construction.
-resource: https://councilhound.net/topics/two-year-transportation-program
+resource: https://councilhound.net/topics
 tags:
 - proposed
 timestamp: '2025-02-18'

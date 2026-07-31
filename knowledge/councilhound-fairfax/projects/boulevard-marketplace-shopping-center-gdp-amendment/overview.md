@@ -6,7 +6,7 @@ description: The Boulevard Marketplace Shopping Center GDP Amendment concerns a 
   10120 and 10140–10160 Fairfax Boulevard (Tax Map Parcels 47-4-23-000-A and 47-4-23-000-D)
   in order to construct a 2,090-square-foot Taco Bell restaurant with a drive-through and
   walk-up window.
-resource: https://councilhound.net/topics/boulevard-marketplace-shopping-center-gdp-amendment
+resource: https://councilhound.net/topics
 tags:
 - approved
 timestamp: '2024-12-10'

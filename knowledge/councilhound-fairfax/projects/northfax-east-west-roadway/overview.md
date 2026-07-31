@@ -7,7 +7,6 @@ description: The Northfax East-West Roadway is a City of Fairfax capital project
 resource: https://councilhound.net/development/Northfax-East-West-Roadway
 tags:
 - city-project
-- in-progress
 timestamp: '2025-09-09'
 status: in_progress
 source: official

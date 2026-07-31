@@ -1,4 +1,4 @@
-# Blenheim Boulevard Multimodal Improvements
+# Blenheim Boulevard Multimodal Improvements Project
 
 - [Overview](/projects/blenheim-boulevard-multimodal-improvements/overview.md) — what this project is and where it stands
 - [History](/projects/blenheim-boulevard-multimodal-improvements/history.md) — the dated meeting record

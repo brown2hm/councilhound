@@ -5,9 +5,9 @@ description: The subject site has two existing buildings totaling 4,735 square f
 resource: https://councilhound.net/development/Tommys-Carwash
 tags:
 - private-development
-- approved
+- under-construction
 timestamp: '2024-12-10'
-status: approved
+status: under_construction
 source: official
 address: 9917 Fairfax Blvd, Fairfax, VA 22030
 applicant: Robert D. Brant Walsh, Colucci, Lubeley & Walsh, P.C.

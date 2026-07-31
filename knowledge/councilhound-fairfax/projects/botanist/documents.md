@@ -1,9 +1,9 @@
 ---
 type: project-documents
 title: The Botanist — documents
-description: 53 document(s) published in the City of Fairfax project record for The Botanist.
+description: 70 document(s) published in the City of Fairfax project record for The Botanist.
 resource: https://councilhound.net/development/N29-WillowWood-Plaza-Residential-Phase-I
-timestamp: '2026-07-28'
+timestamp: '2026-07-30'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
@@ -63,3 +63,20 @@ Documents published in the city's project record, in the order the city lists th
 - [July 22, 2022 N29 Residential Phase I General Development Plan (PDF, 16MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/july-22-2022-n29-residential-phase-i-general-development-plan.pdf)
 - [April 13, 2022 N29 WillowWood Plaza Residential Briefing Letter (PDF, 200KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/april-13-2022-n29-willowwood-plaza-residential-briefing-letter.pdf)
 - [April 13, 2022 N29 WillowWood Plaza Residential Concept Plan (PDF, 13MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/april-13-2022-n29-willowwood-plaza-residential-concept-plan.pdf)
+- [July 9, 2024 City Council Public Hearing (PDF, 20MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/july-9-2024-city-council-public-hearing.pdf)
+- [April 22, 2024 Planning Commission Public Hearing (PDF, 16MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/april-22-2024-planning-commission-public-hearing.pdf)
+- [April 22, 2024 Planning Commission Public Hearing](https://fairfax.granicus.com/player/clip/3251?view_id=11&meta_id=113718&redirect=true)
+- [February 7, 2024 Board of Architectural Review Public Hearing (PDF, 12MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/february-7-2024-board-of-architectural-review-public-hearing.pdf)
+- [December 20, 2023 Board of Architectural Review Public Hearing (PDF, 11MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/december-20-2023-board-of-architectural-review-public-hearing.pdf)
+- [December 20, 2023 Board of Architectural Review Public Hearing Video](https://fairfax.granicus.com/player/clip/3179?view_id=11&redirect=true&h=368dd6832d826a8e2dc1041aa7c1243a)
+- [November 15, 2023 Board of Architectural Review Work Session (PDF, 9MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/november-15-2023-board-of-architectural-review-work-session.pdf)
+- [November 15, 2023 Board of Architectural Review Work Session Video](https://fairfax.granicus.com/player/clip/3156?view_id=11&redirect=true&h=fb2f5e1b2a5988803398e8ec3fa18c66)
+- [June 27, 2023 City Council Post-Submission Work Session (PDF, 20MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/june-27-2023-city-council-post-submission-work-session.pdf)
+- [June 27, 2023 City Council Post-Submission Work Session Video](https://fairfax.granicus.com/player/clip/3077?view_id=11&meta_id=106659&redirect=true)
+- [June 21, 2023 Board of Architectural Review Work Session (PDF, 28MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/june-21-2023-board-of-architectural-review-work-session.pdf)
+- [June 12, 2023 Planning Commission Post-Submission Work Session (PDF, 2MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/june-12-2023-planning-commission-post-submission-work-session.pdf)
+- [June 12, 2023 Planning Commission Post-Submission Work Session Video](https://fairfax.granicus.com/player/clip/3066?view_id=11&meta_id=106139&redirect=true)
+- [April 25, 2022 Planning Commission Pre-Application Briefing (PDF, 11MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/april-25-2022-planning-commission-pre-application-briefing.pdf)
+- [April 25, 2022 Planning Commission Pre-Application Briefing Video](https://fairfax.granicus.com/player/clip/2849?view_id=11&meta_id=96749&redirect=true)
+- [May 10, 2022 City Council Pre-Application Briefing (PDF, 14MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/n29-willowwood-phase-i/may-10-2022-city-council-pre-application-briefing.pdf)
+- [May 10, 2022 City Council Pre-Application Briefing Video](https://fairfax.granicus.com/player/clip/2859?view_id=11&meta_id=97267&redirect=true)

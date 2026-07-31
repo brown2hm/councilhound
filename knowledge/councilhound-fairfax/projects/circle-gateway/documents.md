@@ -1,9 +1,9 @@
 ---
 type: project-documents
 title: Circle Gateway — documents
-description: 2 document(s) published in the City of Fairfax project record for Circle Gateway.
+description: 4 document(s) published in the City of Fairfax project record for Circle Gateway.
 resource: https://councilhound.net/development/Circle-Gateway
-timestamp: '2026-07-28'
+timestamp: '2026-07-30'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
@@ -12,3 +12,5 @@ Documents published in the city's project record, in the order the city lists th
 
 - [(PDF, 16MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/july-12-2022-circle-gateway-conceptual-plan.pdf)
 - [June 5, 2026 Circle Gateway Conceptual Plan (PDF, 6MB)](https://www.fairfaxva.gov/files/content/city/v/10/property-business/development/projects/circle-gateway/circle-gateway-pre-app-briefing.pdf)
+- [July 13, 2026 Planning Commission Pre-Application Briefing](https://fairfax.granicus.com/MetaViewer.php?view_id=13&clip_id=4611&meta_id=134055)
+- [July 13, 2026 Planning Commission Presentation](https://fairfax.granicus.com/MediaPlayer.php?view_id=13&clip_id=4611&meta_id=134054)

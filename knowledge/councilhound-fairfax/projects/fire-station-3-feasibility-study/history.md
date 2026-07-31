@@ -3,7 +3,7 @@ type: project-history
 title: 'Fire Station #3 Feasibility Study — meeting history'
 description: 'Dated record of every meeting action on Fire Station #3 Feasibility Study, through
   2025-05-12.'
-resource: https://councilhound.net/topics/fire-station-3-feasibility-study
+resource: https://councilhound.net/topics
 timestamp: '2025-05-12'
 ---
 

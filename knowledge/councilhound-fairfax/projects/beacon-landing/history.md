@@ -2,7 +2,7 @@
 type: project-history
 title: Beacon Landing — meeting history
 description: Dated record of every meeting action on Beacon Landing, through 2026-05-05.
-resource: https://councilhound.net/topics/beacon-landing
+resource: https://councilhound.net/topics
 timestamp: '2026-05-05'
 ---
 

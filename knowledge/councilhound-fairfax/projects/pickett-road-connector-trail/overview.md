@@ -7,7 +7,6 @@ description: The Pickett Road Connector Trail is a planned trail project in Fair
 resource: https://councilhound.net/development/Pickett-Road-Connector-Trail
 tags:
 - city-project
-- in-progress
 timestamp: '2025-11-18'
 status: in_progress
 source: official

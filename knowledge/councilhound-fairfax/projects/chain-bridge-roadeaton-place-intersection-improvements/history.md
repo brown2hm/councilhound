@@ -3,7 +3,7 @@ type: project-history
 title: Chain Bridge Road/Eaton Place Intersection Improvements — meeting history
 description: Dated record of every meeting action on Chain Bridge Road/Eaton Place Intersection
   Improvements, through 2025-03-25.
-resource: https://councilhound.net/topics/chain-bridge-roadeaton-place-intersection-improvements
+resource: https://councilhound.net/topics/eaton-placechain-bridge-road-intersection-improvements
 timestamp: '2025-03-25'
 ---
 

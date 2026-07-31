@@ -1,10 +1,10 @@
 ---
 type: project-documents
-title: Highlands at Mantua — documents
-description: 23 document(s) published in the City of Fairfax project record for Highlands
+title: The Highlands at Mantua — documents
+description: 35 document(s) published in the City of Fairfax project record for The Highlands
   at Mantua.
 resource: https://councilhound.net/development/The-Highlands-at-Mantua
-timestamp: '2026-07-28'
+timestamp: '2026-07-30'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
@@ -34,3 +34,15 @@ Documents published in the city's project record, in the order the city lists th
 - [April 28, 2024 Trip Generation Memo (PDF, 1000KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/the-highlands-at-mantua/april-28-2024-trip-generation-memo.pdf)
 - [June 2, 2023 Request for Pre-Application Briefing (PDF, 119KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/the-highlands-at-mantua/june-2-2023-request-for-pre-application-briefing.pdf)
 - [June 2, 2023 Pre-Application Briefing Concept Plan (PDF, 4MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/the-highlands-at-mantua/june-2-2023-pre-application-briefing-concept-plan.pdf)
+- [July 16, 2025 BAR Public Hearing Staff Report (PDF, 25MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/the-highlands-at-mantua/staff-report-20250716-highlands-at-mantua.pdf)
+- [July 16, 2025 BAR Public Hearing Video](https://fairfax.granicus.com/player/clip/4282?view_id=13&redirect=true)
+- [February 25, 2025 City Council Post-Submission Work Session (PDF, 5MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/the-highlands-at-mantua/february-25-2025-city-council-post-submission-work-session.pdf)
+- [February 25, 2025 City Council Post-Submission Work Session Video](https://fairfax.granicus.com/player/clip/4109?view_id=11&meta_id=121339&redirect=true)
+- [February 10, 2025 Planning Commission Post-Submission Work Session (PDF, 26MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/the-highlands-at-mantua/february-10-2025-planning-commission-post-submission-work-session.pdf)
+- [February 10, 2025 Planning Commission Post-Submission Work Session Video](https://fairfax.granicus.com/player/clip/4091?view_id=11&meta_id=120972&redirect=true)
+- [November 6, 2024 Board of Architectural Review Work Session (PDF, 12MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/the-highlands-at-mantua/november-6-2024-board-of-architectural-review-work-session.pdf)
+- [November 6, 2024 Board of Architectural Review Work Session Video](https://fairfax.granicus.com/player/clip/3341?view_id=11&redirect=true)
+- [July 11,2023 City Council Pre-Application Briefing (PDF, 4MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/the-highlands-at-mantua/july-112023-city-council-pre-application-briefing.pdf)
+- [July 11,2023 City Council Pre-Application Briefing Video](https://fairfax.granicus.com/player/clip/3086?view_id=11&meta_id=107040&redirect=true)
+- [June 26, 2023 Planning Commission Pre-Application Briefing (PDF, 4MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/the-highlands-at-mantua/june-26-2023-planning-commission-pre-application-briefing.pdf)
+- [June 26, 2023 Planning Commission Pre-Application Briefing Video](https://fairfax.granicus.com/player/clip/3076?view_id=11&meta_id=106613&redirect=true)

@@ -8,9 +8,9 @@ description: The applicant is proposing to replace three office buildings with a
 resource: https://councilhound.net/development/Gallery-at-City-Center
 tags:
 - private-development
-- in-progress
+- under-review
 timestamp: '2026-07-07'
-status: in_progress
+status: under_review
 source: official
 address: 4085, 4101, 4103 and 4117 Chain Bridge Road, Fairfax, VA 22030
 applicant: The Christopher Companies 10461 White Granite Drive, Suite 250 Oakton, VA 22124  Clark
@@ -37,7 +37,7 @@ lng: -77.30743
 | Parking spaces | — | 655 _(medium confidence)_ |
 | Site area | — | 3.86 acres |
 
-Tax map parcel(s): 57 4 02 041
+Tax map parcel(s): 57 4 02 041, 57 4 02 054, 57 4 02 053, 57 4 02 051
 
 Extracted from the city's submitted documents; each figure traces to the text it came from.
 

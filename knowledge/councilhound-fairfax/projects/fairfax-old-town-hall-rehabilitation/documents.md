@@ -1,10 +1,10 @@
 ---
 type: project-documents
 title: Fairfax Old Town Hall Rehabilitation — documents
-description: 6 document(s) published in the City of Fairfax project record for Fairfax Old
+description: 9 document(s) published in the City of Fairfax project record for Fairfax Old
   Town Hall Rehabilitation.
 resource: https://councilhound.net/development/Fairfax-Old-Town-Hall-Rehabilitation
-timestamp: '2026-07-28'
+timestamp: '2026-07-30'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
@@ -17,3 +17,6 @@ Documents published in the city's project record, in the order the city lists th
 - [Historical Summary Research (PDF, 286KB)](https://www.fairfaxva.gov/files/assets/city/v/1/public-works/documents/projects/old-town-hall-renovation/4-oth-historical-summary-and-loc-sources_20230925-final.pdf)
 - [HUD Letter (PDF, 213KB)](https://www.fairfaxva.gov/files/assets/city/v/1/public-works/documents/projects/old-town-hall-renovation/5-hud-no-adverse-letter-10jan25.pdf)
 - [Final Design (PDF, 32MB)](https://www.fairfaxva.gov/files/assets/city/v/1/public-works/documents/projects/old-town-hall-renovation/6-oth-final-design.pdf)
+- [City Council Meeting December 2, 2023](https://fairfax.granicus.com/player/clip/3175?view_id=13&redirect=true)
+- [City Council Meeting June 24, 2025](https://fairfax.granicus.com/player/clip/4239?view_id=13&redirect=true)
+- [City Council Award of Construction Contract](https://fairfax.granicus.com/player/clip/4284?view_id=13&redirect=true)

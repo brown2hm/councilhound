@@ -2,7 +2,7 @@
 type: project-positions
 title: INOVA site demolition — positions & open questions
 description: Recorded member positions and unresolved questions on INOVA site demolition.
-resource: https://councilhound.net/topics/inova-site-demolition
+resource: https://councilhound.net/topics
 timestamp: '2025-05-12'
 ---
 

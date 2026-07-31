@@ -4,7 +4,7 @@ title: Country Club Hills Connector Trail
 description: The Country Club Hills Connector Trail was a planned trail project in the design
   phase, associated with at least one grant of approximately $9 million (referenced as roughly
   $9 million in later public comment).
-resource: https://councilhound.net/topics/country-club-hills-connector-trail
+resource: https://councilhound.net/topics
 tags:
 - withdrawn
 timestamp: '2025-04-22'

@@ -1,4 +1,4 @@
-# Highlands at Mantua
+# The Highlands at Mantua
 
 - [Overview](/projects/highlands-at-mantua/overview.md) — what this project is and where it stands
 - [History](/projects/highlands-at-mantua/history.md) — the dated meeting record

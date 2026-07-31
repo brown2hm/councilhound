@@ -34,7 +34,7 @@ lng: -77.3069088
 | Parking spaces | — | 316 |
 | Site area | — | 2.30 acres |
 
-Tax map parcel(s): 57 2 02 023
+Tax map parcel(s): 57 2 02 024 B, 57 2 02 024 A, 57 2 02 021, 57 2 02 023, 57 2 02 022
 
 Extracted from the city's submitted documents; each figure traces to the text it came from.
 
