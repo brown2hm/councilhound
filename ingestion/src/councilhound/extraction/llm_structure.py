@@ -19,6 +19,7 @@ entity_update with a status_after.
 """
 import logging
 import os
+from datetime import datetime, timezone
 
 from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
@@ -265,6 +266,10 @@ def structure_meeting(session: Session, meeting: Meeting, force: bool = False,
             session.add(extraction)
         extraction.model = DEFAULT_MODEL
         extraction.raw_json = data
+        # a re-extraction is a NEW extraction of newer inputs: refresh the
+        # timestamp so the late-document trigger sees the meeting as current
+        # again instead of re-firing every night
+        extraction.created_at = datetime.now(timezone.utc)
         session.flush()
 
     apply_extraction(session, meeting, data)
@@ -373,9 +378,38 @@ def _rollup_status(session: Session, entity_ids: list[int]) -> None:
             session.get(Entity, entity_id).current_status = latest
 
 
+def late_document_meetings(session: Session) -> list[Meeting]:
+    """Meetings whose minutes or actions report arrived AFTER their extraction.
+
+    Minutes post weeks after a meeting (they are approved at the next one) and
+    the official actions report typically posts a day or two later, so the
+    nightly job routinely extracts a fresh meeting from its agenda alone —
+    recording scheduled items with no votes or outcomes, as instructed. Nothing
+    then revisited the meeting when the decision documents landed: the
+    extraction row existed, so structure_pending skipped it forever and the
+    homepage never saw the meeting's votes. Comparing Document.fetched_at
+    against Extraction.created_at (which a re-extraction refreshes) makes the
+    trigger fire exactly once per late arrival.
+    """
+    q = (
+        select(Meeting)
+        .join(Extraction, (Extraction.meeting_id == Meeting.id)
+              & (Extraction.prompt_version == PROMPT_VERSION))
+        .join(Document, Document.meeting_id == Meeting.id)
+        .where(Document.doc_type.in_(("minutes", "actions_report")),
+               Document.raw_text.isnot(None),
+               Document.fetched_at.isnot(None),
+               Document.fetched_at > Extraction.created_at)
+        .order_by(Meeting.meeting_date.asc())
+        .distinct()
+    )
+    return list(session.scalars(q).all())
+
+
 def structure_pending(session: Session, limit: int | None = None) -> dict:
     """Run the structuring pass over every fetched meeting without an
-    extraction yet, oldest first (so entity timelines build in order)."""
+    extraction yet (oldest first, so entity timelines build in order), then
+    re-run it for meetings whose minutes/actions report arrived late."""
     sub = select(Extraction.meeting_id).where(Extraction.prompt_version == PROMPT_VERSION)
     q = (
         select(Meeting)
@@ -397,4 +431,20 @@ def structure_pending(session: Session, limit: int | None = None) -> dict:
             log.exception("structuring failed for meeting %s (clip %s)",
                           meeting.id, meeting.granicus_clip_id)
             failed += 1
-    return {"structured": done, "failed": failed, "candidates": len(meetings)}
+
+    stale = late_document_meetings(session)
+    restructured = 0
+    for meeting in stale:
+        try:
+            log.info("re-extracting meeting %s (%s): minutes/actions report "
+                     "arrived after the stored extraction",
+                     meeting.id, meeting.meeting_date)
+            structure_meeting(session, meeting, force=True)
+            restructured += 1
+        except Exception:
+            session.rollback()
+            log.exception("re-extraction failed for meeting %s (clip %s)",
+                          meeting.id, meeting.granicus_clip_id)
+            failed += 1
+    return {"structured": done, "restructured": restructured, "failed": failed,
+            "candidates": len(meetings) + len(stale)}
