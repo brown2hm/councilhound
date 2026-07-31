@@ -1,4 +1,4 @@
-# University Drive Bicycle Lanes Project
+# University Drive Bicycle Facilities
 
 - [Overview](/projects/university-drive-bicycle-facilities/overview.md) — what this project is and where it stands
 - [History](/projects/university-drive-bicycle-facilities/history.md) — the dated meeting record
