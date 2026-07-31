@@ -38,6 +38,21 @@ RATE_SOURCES: dict[str, tuple[str, str, list[str]]] = {
     "tax.personal_property_per_household": (
         "Personal property tax revenue per household", "$/household/yr (budget actuals)",
         ["https://www.fairfaxva.gov/Government/Finance/Budget"]),
+    "tax.bpol_retail_rate_per_100": (
+        "BPOL business license rate, retail sales class",
+        "$ per $100 of gross receipts",
+        ["https://www.fairfaxva.gov/Property-Business/Taxes/Business-Taxes",
+         "https://www.fairfaxva.gov/Government/Finance/Budget"]),
+    "tax.bpol_office_rate_per_100": (
+        "BPOL business license rate, financial/professional services class",
+        "$ per $100 of gross receipts",
+        ["https://www.fairfaxva.gov/Property-Business/Taxes/Business-Taxes",
+         "https://www.fairfaxva.gov/Government/Finance/Budget"]),
+    "tax.bpp_rate_per_100": (
+        "Business tangible personal property tax rate",
+        "$ per $100 of assessed/market value",
+        ["https://www.fairfaxva.gov/Property-Business/Taxes/Business-Taxes",
+         "https://www.fairfaxva.gov/Government/Finance/Budget"]),
     "budget.general_fund_expenditure": (
         "General Fund expenditure", "$ total, adopted budget",
         ["https://www.fairfaxva.gov/Government/Finance/Budget"]),

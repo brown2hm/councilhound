@@ -9,7 +9,8 @@
       "Bash(grep -oiE '\"?\\(captionURL|subtitles?|cc_url|closedCaption\\)[^,}]{0,120}' /tmp/clip.html)",
       "Bash(curl -s --max-time 15 \"https://fairfax.granicus.com/videos/2633/captions.vtt\")",
       "Bash(curl -s --max-time 25 \"https://fairfax.granicus.com/ViewPublisher.php?view_id=11\")",
-      "Bash(sort -t= -k2 -n -u)"
+      "Bash(sort -t= -k2 -n -u)",
+      "Bash(/Users/hunterbrown/.local/bin/flyctl ssh *)"
     ]
   }
 }

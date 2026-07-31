@@ -25,6 +25,10 @@ FAIRFAX_HEADERS = {
     "Referer": BASE + "/",
 }
 
+# heading words that mark a section of linked project documents
+DOCUMENT_SECTION_WORDS = ("plan", "document", "report", "hearing", "meeting",
+                          "stud", "analysis", "proffer", "submission", "exhibit")
+
 STATUS_LABELS = {
     0: "Pre-Application",
     1: "Under Review",
@@ -196,11 +200,20 @@ def parse_project_detail(html: str, fallback: DiscoveredProject) -> DiscoveredPr
     project.official_timeline = [t for t in timeline if t]
     project.description = _section_text(sections, "background") or project.description
     project.requests = _section_text(sections, "requests") or _section_text(sections, "potential requests")
-    # document sections vary by page: "Plans", "Concept Plans", "Documents", ...
+    # Document sections vary by page: "Plans", "Concept Plans", "Documents",
+    # but also "Public Hearings", "Staff Reports", "Meetings", "Studies".
+    # Matching only plan/document dropped the city's own staff reports — the
+    # documents that carry staff's independent fiscal estimate and the program
+    # council actually voted on — while keeping every applicant submission.
     documents = []
+    seen_urls = set()
     for label in sections:
-        if "plan" in label or "document" in label:
-            documents.extend(_section_links(sections, label))
+        if not any(word in label for word in DOCUMENT_SECTION_WORDS):
+            continue
+        for entry in _section_links(sections, label):
+            if entry.get("url") and entry["url"] not in seen_urls:
+                seen_urls.add(entry["url"])
+                documents.append(entry)
     project.documents = documents
 
     location_text = _section_text(sections, "location")

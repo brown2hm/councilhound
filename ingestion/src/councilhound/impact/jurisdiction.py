@@ -40,6 +40,11 @@ class TaxRates(BaseModel):
     personal_property_per_household: PinnedValue = Field(default_factory=PinnedValue)
     personal_property_rate_per_100: PinnedValue = Field(default_factory=PinnedValue)
     bpol_retail_rate_per_100: PinnedValue = Field(default_factory=PinnedValue)
+    # BPOL is levied by business class; professional/business-service rates run
+    # several times the retail rate, so office tenants need their own
+    bpol_office_rate_per_100: PinnedValue = Field(default_factory=PinnedValue)
+    # business tangible personal property (furniture, fixtures, equipment)
+    bpp_rate_per_100: PinnedValue = Field(default_factory=PinnedValue)
 
 
 class BudgetFacts(BaseModel):
@@ -74,6 +79,12 @@ class JurisdictionConfig(BaseModel):
     geohub_portal_url: str | None = None
     tax: TaxRates = Field(default_factory=TaxRates)
     budget: BudgetFacts = Field(default_factory=BudgetFacts)
+    # assessment land-use codes for comp selection, by product class. Condo
+    # comps are what a for-sale project should be valued against; when the
+    # condo code is unpinned the fiscal module falls back to its screening
+    # default rather than pricing condos off apartment buildings.
+    assessment_lucs: dict[str, str | None] = Field(
+        default_factory=lambda: {"apartment": "352", "condo": None})
     transit_feeds: list[str] = Field(default_factory=list)
     fringe_reference_blockgroup: str | None = None  # environmental module (M6 seam)
     calibration_counts: dict | None = None  # optional pedestrian counts

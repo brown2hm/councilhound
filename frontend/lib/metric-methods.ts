@@ -55,9 +55,15 @@ export const METRIC_METHODS: MetricMethod[] = [
     assumptions: ["Proposed retail floor area", "Square feet per retail job"],
   },
   {
+    name: "On-site office jobs added",
+    description: "Estimates the permanent office jobs supported by the project's proposed non-retail commercial space.",
+    method: "Proposed office floor area converted to an estimated job count",
+    assumptions: ["Proposed office floor area", "Square feet per office job"],
+  },
+  {
     name: "Net on-site job change",
     description: "Shows whether the completed project is expected to support more or fewer on-site jobs than the current use.",
-    method: "New on-site retail jobs less jobs associated with removed commercial space",
+    method: "New on-site retail and office jobs less jobs associated with removed commercial space",
     assumptions: ["Square feet per office job", "Square feet per retail job"],
   },
   {
@@ -104,9 +110,9 @@ export const METRIC_METHODS: MetricMethod[] = [
   },
   {
     name: "Projected assessed value",
-    description: "Estimates the taxable real estate value of the completed development.",
-    method: "Residential value plus the estimated value of proposed commercial floor area",
-    assumptions: ["Proposed housing units", "Comparable value per housing unit", "Proposed retail floor area", "Commercial value per square foot"],
+    description: "Estimates the taxable real estate value of the completed development, across housing, ground-floor retail, and office space. The value per dwelling unit is drawn from assessment comparables of the same product class — for-sale condominiums are valued against condominium comparables, not apartment buildings.",
+    method: "Housing units multiplied by assessed value per unit, plus retail floor area multiplied by retail value per square foot, plus office floor area multiplied by office value per square foot",
+    assumptions: ["Proposed housing units", "Assessed value per dwelling unit", "Proposed retail floor area", "Retail value per sq ft", "Proposed office floor area", "Office value per sq ft"],
   },
   {
     name: "Projected real estate tax",
@@ -134,9 +140,33 @@ export const METRIC_METHODS: MetricMethod[] = [
   },
   {
     name: "BPOL business license tax on project retail (rough estimate)",
-    description: "Rough estimate of annual business-license (BPOL) tax from the project's own shops and restaurants. The city's rate schedule is real; tenant sales are assumed from typical sales per square foot.",
-    method: "Proposed retail floor area multiplied by assumed gross sales per square foot, taxed at the city's BPOL retail rate",
-    assumptions: ["Proposed retail floor area", "Retail sales per square foot", "BPOL retail rate"],
+    description: "Rough estimate of annual business-license (BPOL) tax from the project's own shops and restaurants, counting only the share of sales that is new to the city. Sales captured from existing city businesses stop being taxed at their old location, so they move the tax base rather than adding to it. The city's rate schedule is real; tenant sales are assumed from typical sales per square foot.",
+    method: "Proposed retail floor area multiplied by assumed gross sales per square foot, less resident spending already counted elsewhere, taxed at the city's BPOL retail rate and scaled by the net-new share",
+    assumptions: ["Proposed retail floor area", "Retail sales per square foot", "BPOL retail rate", "Share of on-site sales that is new to the city"],
+  },
+  {
+    name: "BPOL business license tax on project office (rough estimate)",
+    description: "Rough estimate of annual business-license tax from the project's office tenants, at the city's financial and professional services rate. Not reduced for displacement: professional and medical practices largely serve regional demand rather than recirculating local spending.",
+    method: "Proposed office floor area multiplied by assumed gross receipts per square foot, taxed at the city's professional-services BPOL rate",
+    assumptions: ["Proposed office floor area", "Office gross receipts per sq ft", "BPOL professional rate"],
+  },
+  {
+    name: "Business tangible property tax (rough estimate)",
+    description: "Rough estimate of annual tax on business furniture, fixtures, and equipment in the project's commercial space. Not reduced for displacement, since the equipment is physically new to the city — though a relocating tenant brings existing equipment with it.",
+    method: "Proposed commercial floor area multiplied by assumed equipment value per square foot, taxed at the business tangible property rate",
+    assumptions: ["Proposed commercial floor area", "Business equipment value per sq ft", "Business tangible property rate"],
+  },
+  {
+    name: "Meals tax on the project's own restaurants (net-new, rough estimate)",
+    description: "Rough estimate of meals-tax revenue from restaurants in the development, counting only the share of sales that is new to the city rather than captured from existing city restaurants. Applicant analyses typically count these sales in full, which overstates the city's gain.",
+    method: "Ground-floor sales less resident spending already counted elsewhere, multiplied by the assumed restaurant share, the meals tax rate, and the net-new share",
+    assumptions: ["Proposed retail floor area", "Retail sales per square foot", "Restaurant share of ground-floor space", "Meals tax rate", "Share of on-site sales that is new to the city"],
+  },
+  {
+    name: "Local sales tax on the project's own retail (net-new, rough estimate)",
+    description: "Rough estimate of the city's share of sales tax on the development's own retail sales, counting only the share that is new to the city.",
+    method: "Ground-floor sales less resident spending already counted elsewhere, multiplied by the local sales tax share and the net-new share",
+    assumptions: ["Proposed retail floor area", "Retail sales per square foot", "Local sales tax share", "Share of on-site sales that is new to the city"],
   },
   {
     name: "Meals tax on captured in-city dining",
@@ -185,6 +215,12 @@ export const METRIC_METHODS: MetricMethod[] = [
     description: "Presents a practical range of possible yearly gains or losses rather than relying on one cost estimate. Revenue includes the rough-estimate personal property and BPOL lines.",
     method: "Range bounded by the naive per-capita and marginal service-cost estimates",
     assumptions: ["New recurring revenue", "Naive per-capita service cost", "Marginal service cost"],
+  },
+  {
+    name: "External estimate — net annual fiscal impact",
+    description: "Reports the fiscal estimate the applicant or city staff published for this project, so it can be compared against this analysis. These figures are reproduced as published and are never averaged into, or substituted for, the estimates above. Where the ranges disagree, the report says so and names the methodological differences.",
+    method: "Reported by the applicant's fiscal impact analysis or the city staff report; not computed by this pipeline",
+    assumptions: [],
   },
   {
     name: "New annual spending arriving by bike",

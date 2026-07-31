@@ -259,13 +259,15 @@ standard caution that neither is universally correct for infill
 \subsection{Revenue}
 Real-estate (RE) tax lines use assessed value ($AV$) at the adopted rate $r$
 per \$100 of value, with $p_{sqft}$ the assumed commercial value per square
-foot (\assum{commercial\_value\_per\_sqft}); BPOL is Virginia's Business,
+foot (\assum{commercial\_value\_per\_sqft}), $p_{office}$ the assumed office
+value per square foot (\assum{office\_value\_per\_sqft}), $p_{unit}$ the assumed
+assessed value per dwelling unit (\assum{residential\_value\_per\_unit}), and
+$\eta$ the net-new share of on-site sales (\assum{net\_new\_share}); BPOL is Virginia's Business,
 Professional and Occupational License tax on gross receipts.
 \begin{align}
 \text{current RE tax} &= AV_{now} \cdot r / 100 \\
-AV_{proj} &= \mathrm{median}\!\left(\tfrac{AV_i}{\mathrm{units}_i}\right)
-             \cdot U \;+\; \mathrm{retail\ sqft} \cdot p_{sqft}
-             \qquad \text{(bounds: comp 25th--75th pct)} \\
+AV_{proj} &= U \cdot p_{unit} \;+\; \mathrm{retail\ sqft} \cdot p_{sqft}
+             \;+\; \mathrm{office\ sqft} \cdot p_{office} \\
 \text{projected RE tax} &= AV_{proj} \cdot r / 100 \\
 \text{RE tax increase} &= (AV_{proj} - AV_{now}) \cdot r / 100 \\
 \text{meals tax} &= S_{\mathrm{food\ away}} \cdot \theta_{\mathrm{food}} \cdot r_{\mathrm{meals}} \\
@@ -275,17 +277,62 @@ AV_{proj} &= \mathrm{median}\!\left(\tfrac{AV_i}{\mathrm{units}_i}\right)
 \text{personal property} &\approx N_{hh} \cdot \nu_{hh} \cdot \bar{v}_{veh}
                           \cdot r_{pp} / 100
     \qquad \text{(rough estimate)} \label{eq:ppest} \\
-\text{BPOL} &\approx \mathrm{retail\ sqft} \cdot g_{sf} \cdot r_{bpol} / 100
-    \qquad \text{(rough estimate)} \label{eq:bpolest}
+B_{onsite} &= \mathrm{retail\ sqft} \cdot g_{sf} \;-\; C_{own}
+    \label{eq:onsitebase} \\
+\text{retail BPOL} &\approx B_{onsite} \cdot r_{bpol} / 100 \cdot \eta
+    \qquad \text{(rough estimate)} \label{eq:bpolest} \\
+\text{office BPOL} &\approx \mathrm{office\ sqft} \cdot g_{office}
+                      \cdot r_{bpol,off} / 100
+    \qquad \text{(rough estimate)} \\
+\text{BPP} &\approx (\mathrm{retail} + \mathrm{office})\,\mathrm{sqft}
+              \cdot p_{bpp} \cdot r_{bpp} / 100
+    \qquad \text{(rough estimate)} \\
+\text{on-site meals tax} &\approx B_{onsite} \cdot \phi_{rest}
+                            \cdot r_{\mathrm{meals}} \cdot \eta
+    \qquad \text{(rough estimate)} \\
+\text{on-site sales tax} &\approx B_{onsite} \cdot r_{\mathrm{sales}} \cdot \eta
+    \qquad \text{(rough estimate)}
 \end{align}
-Comparables are apartment-class parcels (land-use code 352) built within a
-15-year lookback, pulled from the city's public assessment database with
-per-unit values $AV_i / \mathrm{units}_i$; fewer than three comps degrades the
-metric with a low-confidence flag. All rates ($r$, $r_{\mathrm{meals}}$,
-$r_{\mathrm{sales}}$) are jurisdiction configuration pinned with source URL and
-fiscal year. Virginia's 1\% local-option sales tax applies to food for home
-consumption, so grocery is correctly in the taxable base; personal services are
-excluded as generally non-taxable.
+
+\paragraph{Assessed value per unit.}
+$p_{unit}$ (\assum{residential\_value\_per\_unit}) is a first-class assumption
+whose default is seeded from assessment comparables of the project's own
+product class: the median per-unit value with 25th--75th percentile bounds,
+over parcels built within a 15-year lookback. Product class is selected from
+the project's residential tenure. For-sale projects are valued against
+condominium-class comparables and rental projects against apartment-class
+parcels (land-use code 352); an assessed condominium unit is its own account,
+so its per-unit value is the account total, while an apartment building holds
+all units on one account and per-unit value is $AV_i / \mathrm{units}_i$.
+Applying apartment comparables to for-sale condominiums understates assessed
+value several-fold and is the reason tenure is extracted at all. When no
+comparables of the right class are available, $p_{unit}$ falls back to a
+deliberately wide screening default and the report says so explicitly.
+Because $p_{unit}$ is an assumption rather than internal arithmetic, it is
+adjustable by the reader and is ranked in the report's sensitivity list.
+
+\paragraph{Displacement adjustment on on-site sales.}
+Taxes on the project's own commercial sales are scaled by the net-new share
+$\eta$ (\assum{net\_new\_share}). A new restaurant collects meals tax, but
+most of its receipts are captured from existing restaurants in the same
+jurisdiction, which stop collecting it; only the net-new portion --- new
+resident and visitor demand, plus sales recaptured from outside the city ---
+adds to the city's base. Counting gross on-site receipts, as applicant fiscal
+analyses conventionally do, overstates the municipal gain. Equation
+\eqref{eq:onsitebase} also subtracts $C_{own}$, the new residents' own modeled
+spending at the project's ground floor, which is already counted at full weight
+in the resident-side capture lines and is genuinely new to the city; without
+that subtraction it would be both double-counted and wrongly discounted.
+Office BPOL and business tangible property (BPP) are \emph{not} scaled by
+$\eta$: professional and medical practices largely serve regional demand, and
+equipment is physically new to the city.
+
+All rates ($r$, $r_{\mathrm{meals}}$, $r_{\mathrm{sales}}$, $r_{bpol}$,
+$r_{bpol,off}$, $r_{bpp}$) are jurisdiction configuration pinned with source URL
+and fiscal year; an unpinned rate degrades its metric to a stated ``not
+computed'' rather than a guess. Virginia's 1\% local-option sales tax applies to
+food for home consumption, so grocery is correctly in the taxable base;
+personal services are excluded as generally non-taxable.
 
 Personal property and BPOL revenue are \emph{rough estimates}, and are labeled
 as such wherever they appear. Their tax rates are pinned city policy ---
@@ -296,13 +343,35 @@ schedule --- but the bases are assumptions: vehicles per household
 per square foot ($g_{sf}$) have no project-specific data behind them and carry
 wide bounds. When per-household personal-property budget actuals ($p_{pp}$)
 are pinned, the actuals path $N_{hh} \cdot p_{pp}$ replaces
-Equation~\eqref{eq:ppest}. Both estimate lines enter incremental recurring
+Equation~\eqref{eq:ppest}. Every such line enters incremental recurring
 revenue: omitting them would systematically understate revenue for taxes the
 city does levy. (Car-tax relief under Virginia's Personal Property Tax Relief
 Act is a fixed state block grant, so
 marginal vehicles yield the city the full levy; the services BPOL
 classification at \$0.27 per \$100 is slightly above the retail rate applied
-here.)
+here.) The office BPOL rate $r_{bpol,off} = \$0.40$ per \$100 is the financial
+and professional services class, and $r_{bpp} = \$4.13$ per \$100 is the single
+personal property rate the city's schedule sets --- it defines no separate
+business-tangible class.
+
+Membership in the revenue roll-up is explicit: each recurring-revenue metric
+registers itself as it is created, and the net figures sum the registered set.
+An earlier version matched revenue lines against a hard-coded list of metric
+names, so a newly added line could be computed and displayed and then silently
+omitted from the net; a test now asserts that every positive recurring-revenue
+metric reaches the net.
+
+\paragraph{External estimates and the cost-basis check.}
+When the applicant's fiscal impact analysis or the city staff report states a
+fiscal estimate, it is extracted under the same verbatim-quote firewall as the
+project quantities and published as its own metric, attributed and marked as
+not computed here. These figures are never averaged into ours: the report
+states both ranges and whether they overlap, because a disagreement between
+independent methods is more informative to a reader than a blended number.
+A stated construction cost basis additionally drives a sanity check --- new
+construction typically assesses at roughly 70--110\% of hard cost, so a
+projected assessed value far outside that band is flagged as a probable
+wrong-product-class $p_{unit}$ rather than published unremarked.
 
 \subsection{Service costs and net impact}
 When the city's education transfer $E$ and school enrollment $N_{enr}$ are
@@ -357,8 +426,11 @@ that touched it.
 Key & Value & Range & Basis \\
 \midrule
 \assum{occupancy\_rate} & 0.95 & 0.90--0.97 & stabilized MF occupancy; cf.\ HVS vacancy \cite{hvs} \\
+\quad\emph{for-sale} & 0.97 & 0.93--0.99 & sold units occupied; low bound = absorption lag \\
 \assum{avg\_hh\_size\_multifamily} & 1.8 & 1.5--2.2 & bedroom-mix multipliers \cite{listokin2006} \\
+\quad\emph{for-sale} & 2.0 & 1.6--2.4 & owner-occupied MF multipliers \cite{listokin2006} \\
 \assum{income\_premium\_new\_construction} & 1.125 & 1.0--1.25 & screening premium, stated openly \\
+\quad\emph{for-sale} & 1.35 & 1.15--1.60 & buyers anchor to price, not rent \\
 \assum{ces\_scale} & 1.0 & 0.85--1.15 & CES national-average drift allowance \cite{blsces} \\
 \assum{beta\_walk} (min$^{-1}$) & 0.10 & 0.05--0.15 & purpose-specific walk decay 0.09--0.11 \cite{iacono2008}; national NHTS duration decay 0.073 \cite{yang2012} \\
 $\beta_d$ (min$^{-1}$, fixed) & 0.15 & --- & drive impedance decay \\
@@ -366,15 +438,24 @@ $\beta_d$ (min$^{-1}$, fixed) & 0.15 & --- & drive impedance decay \\
 \assum{walk\_share\_comparison} & 0.10 & 0.00--0.30 & comparison goods travel by car \\
 \assum{walk\_share\_grocery\_entertainment} & 0.30 & 0.10--0.50 & interpolated \\
 \assum{walk\_trips\_per\_resident\_day} & 1.0 & 0.5--2.0 & NHTS metro rates + walkability uplift \cite{nhts, ewing2010} \\
-\assum{sqft\_per\_office\_job} & 300 & 200--450 & planning standard; cf.\ CBECS \cite{cbecs} \\
+\assum{sqft\_per\_office\_job} & 350 & 250--500 & CBECS gross sqft/worker; older part-vacant stock \cite{cbecs} \\
 \assum{sqft\_per\_retail\_job} & 500 & 400--700 & planning standard; cf.\ CBECS \cite{cbecs} \\
 \assum{own\_retail\_sqft\_per\_equiv\_poi} & 2{,}000 & 1{,}500--3{,}000 & typical inline suite size \\
+\assum{residential\_value\_per\_unit} & comps & comp 25th--75th & median per-unit AV, product-class comps \\
+\quad\emph{fallback, rental} & \$360k & \$275k--\$450k & screening default when no comps \\
+\quad\emph{fallback, for-sale} & \$750k & \$450k--\$1.2M & screening default when no comps \\
 \assum{commercial\_value\_per\_sqft} & \$275 & \$200--\$400 & screening; replace with comps \\
+\assum{office\_value\_per\_sqft} & \$300 & \$200--\$450 & new-construction NoVA office AV (estimate) \\
 \assum{students\_per\_unit} & 0.10 & 0.05--0.15 & high-rise MF, univ.-adjacent \cite{listokin2006} \\
+\quad\emph{for-sale} & 0.12 & 0.05--0.20 & owner-occupied condo yield \cite{listokin2006} \\
 \assum{marginal\_cost\_factor} & 0.40 & 0.25--0.60 & share of average cost that scales \\
 \assum{vehicles\_per\_household} & 1.4 & 1.0--1.8 & ACS vehicle norms, MF renters (estimate) \\
 \assum{avg\_vehicle\_assessed\_value} & \$14{,}000 & \$9k--\$20k & Northern Virginia vehicle rolls (estimate) \\
 \assum{retail\_sales\_per\_sqft} & \$400 & \$250--\$600 & neighborhood retail gross sales (estimate) \\
+\assum{office\_receipts\_per\_sqft} & \$500 & \$300--\$800 & professional-services receipts/sqft (estimate) \\
+\assum{bpp\_value\_per\_sqft} & \$8 & \$4--\$15 & business FF\&E per commercial sqft (estimate) \\
+\assum{net\_new\_share} & 0.30 & 0.15--0.50 & share of on-site sales new to the city; retail displacement \\
+\assum{onsite\_restaurant\_share\_of\_retail} & 0.50 & 0.30--0.70 & ground-floor tenant mix \\
 \bottomrule
 \end{tabular}
 \end{center}

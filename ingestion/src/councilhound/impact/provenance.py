@@ -146,6 +146,27 @@ def metric(
     )
 
 
+def recompute_metric(m: MetricValue, baseline: dict[str, float],
+                     adjusted: dict[str, float]) -> float:
+    """Evaluate a metric's power-law decomposition at shifted assumption
+    centrals: value' = sum_t t.value * prod_k (adjusted[k]/baseline[k])^exps[k].
+
+    The Python twin of recompute() in frontend/lib/assumptions.ts — same
+    formula, so a sensitivity ranking computed here matches what the reader
+    sees when they move a slider in the assumptions lab.
+    """
+    total = 0.0
+    for t in m.adjust or []:
+        factor = 1.0
+        for key, exponent in (t.exps or {}).items():
+            base = baseline.get(key)
+            now = adjusted.get(key, base)
+            if base and now is not None and now != base:
+                factor *= (now / base) ** exponent
+        total += t.value * factor
+    return total
+
+
 def rank_assumptions_by_sensitivity(
     headline_value: float, assumptions: list[Assumption], recompute
 ) -> list[tuple[Assumption, float]]:

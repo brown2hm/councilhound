@@ -1,5 +1,140 @@
 # Changelog
 
+## Unreleased — checking our own numbers (July 2026)
+
+Comparing City Centre West against the applicant's fiscal impact analysis
+(+$1.6–2.2M/yr) and the July 11, 2023 city staff report (+$543–741K/yr) put
+our estimate at −$776K to +$338K — the wrong *sign*, not merely a different
+magnitude. Five of the causes were defects rather than framing differences,
+and all of them were systemic.
+
+### Parcel resolution
+
+- **PIN normalization.** `intake/parcels.py` collapsed whitespace only, so a
+  document's `57-4-02-076` never matched the GIS layer's `57 4 02    076`.
+  Resolution then fell through to the address rung, which resolves exactly
+  one parcel by point-in-polygon. **20 of 26 specs had resolved a single
+  parcel this way**; City Centre West's baseline used $2.0M of $7.0M in
+  assessed value. New `impact/pins.py` gives every comparison one canonical
+  form — the extractor's own quote firewall already normalized on alnum, and
+  the two normalizers disagreeing was the whole bug.
+- **Failures are visible.** `resolve_site` returns warnings that land in
+  `extraction_notes`; an unmatched PIN used to be a log line nobody saw.
+- **Superseded parents dropped.** Documents name pre-subdivision parcels
+  alongside their children; summing both double-counts the site.
+- **`impact-reresolve`** re-resolves existing specs without re-extracting
+  (`impact-extract --force` would discard hand edits). Dry-run by default,
+  with a no-regression guard: a candidate set that fits the document-stated
+  acreage *worse* than the current geometry is reported for review, not
+  proposed. Across the corpus: 5 clean fixes (City Centre West 53% → 1%
+  acreage drift, Breezeway 99% → 27%, Northfax West 71% → 18%), 5 flagged.
+- **Baseline honesty.** `_site_assessment` fills WebPro misses from the bulk
+  parcel layer, cross-checks the two, and names any parcel it couldn't value.
+  Partial success used to pass silently.
+
+### Fiscal model
+
+- **`office_sqft` entered no computation.** Projected assessed value counted
+  only retail; City Centre West's 36,862 proffered square feet were worth
+  $0. Office space now enters assessed value, BPOL at the professional-
+  services class rate, business tangible property, and the jobs ledger.
+- **Residential tenure.** New `proposed.tenure`, extracted under a new
+  enum firewall (the value is our code word, so the quote must carry
+  evidence for the class claimed). For-sale projects are valued against
+  condominium comps instead of apartment buildings — a 5× understatement —
+  and get their own household-size, occupancy, income-premium and school-
+  yield defaults. Tenure changes a default's value, never its key.
+- **`residential_value_per_unit` is a real assumption**, seeded from comps.
+  The largest single input to the result was previously buried in comp
+  arithmetic: not adjustable, not sensitivity-ranked, and unable to warn
+  that it came from the wrong product class.
+- **On-site commercial taxes**, displacement-adjusted by a new
+  `net_new_share` (0.15–0.50). Meals and sales tax on the project's own
+  restaurants and shops were missing entirely; counting them gross, as
+  applicant analyses do, would overstate the city's gain, since sales
+  captured from existing city businesses stop being taxed there. Resident
+  spending already counted at the project's own ground floor is subtracted
+  so it is neither double-counted nor discounted.
+- **Revenue lines register themselves.** Membership in the net was a
+  hard-coded tuple of metric names, so a new line could be computed,
+  displayed, and silently omitted. A test now asserts every recurring-
+  revenue metric reaches the net.
+- Pinned `bpol_office_rate_per_100` ($0.40, financial and professional
+  services) and `bpp_rate_per_100` ($4.13) from the FY2024 Rates & Levies
+  schedule.
+
+### Checking against others, and ourselves
+
+- **External estimates.** Applicant FIA and staff-report figures are
+  extracted under the same verbatim-quote firewall, published as attributed
+  metrics, and compared: the report states both ranges and whether they
+  overlap. They are never averaged into ours.
+- **Cost-basis sanity gate.** New construction assesses at roughly 70–110%
+  of hard cost; a projected value far outside that band is flagged. This
+  alone would have caught the original defect ($30.6M against a stated
+  $136.3M cost basis).
+- **Council packets reach the extractor.** Staff reports — carrying the
+  city's own fiscal estimate and the program council voted on — were absent
+  from every spec corpus, though the meeting pipeline had already ingested
+  and text-extracted them. Also widened the project scraper's document
+  sections beyond "plan"/"document", which was skipping staff reports and
+  hearing packets outright.
+- **Method claims are checked.** A report once said office square footage
+  "is accounted for in the tax value estimate" when nothing read that field,
+  and it passed validation because the number itself was real. The
+  synthesizer may now describe how a figure was computed only from that
+  metric's method string and term labels; an advisory validator flags
+  inclusion claims no method supports. The sensitivity ranking the executive
+  summary asks for is now computed rather than guessed —
+  `rank_assumptions_by_sensitivity` was imported and never called.
+- **`assumption_overrides`** lets a reviewer replace any default at the
+  confirm gate (e.g. applicant per-unit pricing comps can't see).
+- **Tests.** `tests/impact/` goes 128 → 178. The fiscal module had **zero**
+  tests while producing the headline numbers; it now has 17, plus the
+  hyphenated-PIN regression, the enum firewall, the packet bridge, and a
+  guard that every declared assumption has a frontend label.
+
+### The parcel corpus, hand-verified
+
+Working the whole corpus through the new tooling surfaced two more
+normalizer gaps and settled every open site:
+
+- **Suffix letters.** Documents write `58-3-02-013C`; this GIS layer stores
+  `58 3 02    013 C`. `norm_pin` now splits every digit↔letter boundary, so
+  both spellings canonicalize identically — this alone resolved Fairfax
+  Square (1 parcel/4.14 ac → 3 parcels/10.06 ac, the Statement of Support's
+  exact list) and Courthouse Plaza (004-D + 003-A = 10.57 ac vs 10.34
+  stated; the old norm couldn't see `004D`).
+- **Stacked condominium records.** `_dissolve` and the reresolve acreage
+  check summed per-parcel areas, so 138 condo units sharing one 1.9-ac
+  footprint read as ~280 acres. Both now use the union.
+- **Built-out sites.** Breezeway, Northfax West, Paul VI, and Park Rd were
+  approved assemblages since re-subdivided — the original parcels no longer
+  exist in the layer, which is why no amount of PIN recovery could fix
+  them. Their specs now carry the full post-development block (65, 60, 269,
+  and 14 parcels; unions within 2% of stated acreage) plus a note that the
+  "current" assessed value reflects the built project, so the
+  tax-increase metric understates the true increment for them.
+- **Judgment calls recorded in the YAML**: City Centre West (the staff
+  report's three tax maps; neighbour 070 is the same size as 071, so
+  acreage alone genuinely couldn't distinguish the sets), N29 WillowWood
+  (the proffers put Phase I on post-split 002A1, 2.95 ac, not sibling
+  002B1 where the geocode landed), Northfax-Chain-Bridge (pre-application,
+  no plat — the five corner parcels its addresses geocode onto sum to 2.29
+  vs 2.3 +/- stated).
+- `impact-reresolve` now skips any spec whose current parcels already fit
+  the stated acreage, so a hand-set answer is never re-flagged, and REVIEW
+  ties print the differing pins rather than entire condo blocks.
+
+**All 25 non-corridor specs now resolve within the acreage gate** (the
+sweep reports "fits stated" for every one), against 20-of-26
+single-parcel-by-geocode before.
+
+Existing analyses need re-runs:
+`impact-enrich <slug> --tenure --external-estimates` → `impact-confirm` →
+`impact-evaluate --force` → `impact-push --all`. Headline metric names are
+unchanged, so curator-owned `{{metric:…}}` markers keep resolving.
+
 ## Unreleased — reading the record (July 2026)
 
 Three gaps a visitor hits that the roadmap never framed as user problems:

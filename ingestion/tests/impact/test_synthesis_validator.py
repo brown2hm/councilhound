@@ -5,7 +5,9 @@ from councilhound.impact.schemas import (
     Assumption, EvaluationBundle, MetricValue, ModuleResult, ProjectSpec, Provenance,
 )
 from councilhound.impact.synthesis import report as report_mod
-from councilhound.impact.synthesis.validate import extract_numbers, validate_report
+from councilhound.impact.synthesis.validate import (extract_numbers,
+                                                    validate_method_claims,
+                                                    validate_report)
 
 
 def _bundle():
@@ -112,3 +114,83 @@ def test_hard_fail_after_second_violation(monkeypatch):
                         lambda prompt: "Still claiming $9,999,123 in revenue.")
     with pytest.raises(RuntimeError, match="untraceable"):
         report_mod.synthesize_report(_bundle())
+
+
+# --- method claims: the failure the number validator cannot see -------------
+
+
+def _claims_bundle(method="units x assessed value per unit + retail sqft x $/sqft",
+                   label="Residential value"):
+    p = Provenance(source_name="test", url="u", vintage="2026")
+    return EvaluationBundle(
+        spec=ProjectSpec(
+            name="City Centre West", jurisdiction="fairfax_city_va",
+            city_project_slug="ccw", source_url="u",
+            project_type="mixed_use", status="Approved",
+            proposed={"units": 79, "retail_sqft": 7731, "office_sqft": 36862},
+        ),
+        results=[ModuleResult(
+            module="fiscal",
+            metrics=[MetricValue(
+                name="Projected assessed value", value=1000.0, unit="$",
+                provenance=[p], method=method,
+                adjust=[{"value": 1000.0, "exps": {}, "label": label}])],
+        )],
+    )
+
+
+def test_unsupported_inclusion_claim_is_flagged():
+    """The exact sentence that shipped: the fiscal module never read
+    proposed.office_sqft, yet the draft said it was accounted for — and the
+    number itself was a real spec quantity, so number validation passed."""
+    bundle = _claims_bundle()
+    draft = ("The proposed 36,862 square feet of office space is accounted for in "
+             "the tax value estimate but not converted to an on-site job count.")
+    flags = validate_method_claims(draft, bundle)
+    assert any("office" in f for f in flags)
+
+
+def test_inclusion_claim_passes_when_the_method_names_the_input():
+    bundle = _claims_bundle(
+        method="units x value per unit + retail sqft x $/sqft + office sqft x $/sqft",
+        label="Office/non-retail commercial value")
+    draft = ("The proposed 36,862 square feet of office space is accounted for in "
+             "the tax value estimate.")
+    assert validate_method_claims(draft, bundle) == []
+
+
+def test_plain_description_is_not_flagged():
+    bundle = _claims_bundle()
+    draft = ("The project proposes 36,862 square feet of office space. Residential "
+             "value is estimated from assessment comps.")
+    assert validate_method_claims(draft, bundle) == []
+
+
+def test_claim_grounded_by_a_narrative_note_passes():
+    bundle = _claims_bundle()
+    bundle.results[0].narrative_notes = [
+        "Parking is not counted in any revenue or cost line in this version."]
+    draft = "Parking is not counted in the fiscal estimates."
+    assert validate_method_claims(draft, bundle) == []
+
+
+def test_external_estimate_numbers_are_quotable():
+    p = Provenance(source_name="test", url="u", vintage="2026")
+    bundle = EvaluationBundle(
+        spec=ProjectSpec(
+            name="City Centre West", jurisdiction="fairfax_city_va",
+            city_project_slug="ccw", source_url="u",
+            project_type="mixed_use", status="Approved",
+            proposed={"units": 79},
+            external_estimates=[{
+                "source": "July 11 2023 staff report", "kind": "staff_report",
+                "net_annual_low": 543000, "net_annual_high": 741000,
+                "quote": "ranges from $543,000 and $741,000 annually"}],
+        ),
+        results=[ModuleResult(module="fiscal", metrics=[MetricValue(
+            name="Net annual fiscal impact — marginal framing", value=100887.0,
+            unit="$/yr", low=-338898.0, high=607082.0, provenance=[p], method="m")])],
+    )
+    draft = ("City staff estimated a net annual impact of $543,000 to $741,000; this "
+             "analysis puts it at -$338,898 to $607,082.")
+    assert validate_report(draft, bundle) == []

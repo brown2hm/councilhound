@@ -35,6 +35,18 @@ tax:
     value: 0.20
     source: https://portal2.fairfaxva.gov/Budget/edoc/704029/19%20FY%202024%20Rates%20and%20Levies.pdf?dbid=0&repo=cityoffairfax
     fy: FY2024 adopted (Rates & Levies — retail sales all types)
+  bpol_office_rate_per_100:
+    value: 0.40
+    source: https://portal2.fairfaxva.gov/Budget/edoc/704029/19%20FY%202024%20Rates%20and%20Levies.pdf?dbid=0&repo=cityoffairfax
+    fy: FY2024 adopted (Rates & Levies, acct 312012 — "Financial and Professional
+      Services $0.40 per $100 gross receipts"). Medical, legal and financial office
+      tenants fall in this class; repair/personal/business services are $0.27
+  bpp_rate_per_100:
+    value: 4.13
+    source: https://portal2.fairfaxva.gov/Budget/edoc/704029/19%20FY%202024%20Rates%20and%20Levies.pdf?dbid=0&repo=cityoffairfax
+    fy: FY2024 adopted (Rates & Levies, acct 311210 — "Personal Property Tax $4.13
+      per $100 market value"). The schedule sets no separate business-tangible class,
+      so business equipment is taxed at the single personal property rate
 budget:
   general_fund_expenditure:
     value: 207912496
@@ -56,6 +68,12 @@ budget:
     value: 14492271
     source: https://fairfaxva.openbook.questica.com/#/budget-book/35EE7255-C107-483D-8AD6-CBB272D5F9CD
     fy: FY2027 adopted (GF Revenue Detail — 424202 Basic School Aid $9,526,349 + 424201 State Sales Tax $4,965,922)
+assessment_lucs:
+  # WebPro land-use codes for comp selection, discovered with impact-probe-luc.
+  # For-sale projects must be valued against condominium comps: apartment
+  # comps understate a for-sale unit's assessed value several-fold.
+  apartment: '352'
+  condo: '280'
 transit_feeds: []
 fringe_reference_blockgroup: null
 calibration_counts: null

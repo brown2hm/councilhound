@@ -71,7 +71,49 @@ class ProposedProgram(BaseModel):
     acres: float | None = None
     parking_spaces: int | None = None
     affordable_units: int | None = None
+    # for-sale condos assess several times an apartment building's per-unit
+    # value and carry different household size/occupancy/school yield; None
+    # means the documents never said, and consumers use rental defaults.
+    tenure: Literal["for_sale", "rental", "mixed", "unknown"] | None = None
     corridor: CorridorSpec | None = None
+
+
+class ExternalEstimate(BaseModel):
+    """A fiscal estimate somebody else published for this project — the
+    applicant's fiscal impact analysis or the city staff report.
+
+    These are recorded, never averaged into our own numbers: the point is to
+    show the reader where an independent estimate lands relative to ours and
+    let them weigh the methods. Every figure needs a verbatim quote.
+    """
+    source: str  # document label it came from
+    kind: Literal["applicant_fia", "staff_report", "other"]
+    net_annual_low: float | None = None
+    net_annual_high: float | None = None
+    revenue_total: float | None = None
+    expenditure_total: float | None = None
+    assessed_value: float | None = None
+    construction_cost: float | None = None
+    fy: str | None = None
+    quote: str | None = None
+    url: str | None = None
+
+
+class AssumptionOverride(BaseModel):
+    """A human's replacement for a module's default assumption, set in the
+    spec YAML at confirm time. The escape hatch for cases where the reviewer
+    has better information than the pipeline's screening defaults (e.g. an
+    applicant's per-unit condo values that comps can't see)."""
+    value: float
+    low: float
+    high: float
+    rationale: str | None = None
+
+    @model_validator(mode="after")
+    def _ordered(self) -> "AssumptionOverride":
+        if not (self.low <= self.value <= self.high):
+            raise ValueError("assumption override: expected low <= value <= high")
+        return self
 
 
 class ProjectSpec(BaseModel):
@@ -84,6 +126,10 @@ class ProjectSpec(BaseModel):
     ]
     status: str
     parcels: list[str] = Field(default_factory=list)  # parcel PINs; may be empty pre-resolution
+    # PINs as the documents stated them, firewall-verified, kept even when
+    # resolution fell through to the address rung. Without this, a failed
+    # match is unrecoverable without re-running extraction.
+    document_pins: list[str] = Field(default_factory=list)
     geometry: dict | None = None  # GeoJSON geometry (site polygon or corridor line), EPSG:4326
     existing: ExistingConditions = Field(default_factory=ExistingConditions)
     proposed: ProposedProgram = Field(default_factory=ProposedProgram)
@@ -91,6 +137,11 @@ class ProjectSpec(BaseModel):
     extraction_quotes: dict[str, str] = Field(default_factory=dict)  # field -> verbatim ≤15 words
     extraction_notes: list[str] = Field(default_factory=list)  # e.g. document conflicts
     documents: list[Provenance] = Field(default_factory=list)
+    # Assumption.key -> human replacement, applied by every module's
+    # _assumptions(). Survives re-resolution; reviewed at the confirm gate.
+    assumption_overrides: dict[str, AssumptionOverride] = Field(default_factory=dict)
+    # applicant/staff fiscal estimates, for benchmarking against our own
+    external_estimates: list[ExternalEstimate] = Field(default_factory=list)
 
 
 class AdjustTerm(BaseModel):

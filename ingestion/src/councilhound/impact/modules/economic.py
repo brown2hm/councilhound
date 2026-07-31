@@ -25,6 +25,7 @@ from __future__ import annotations
 import logging
 import math
 
+from councilhound.impact.assumption_util import apply_overrides, is_for_sale
 from councilhound.impact.provenance import (Interval, metric, prov, term,
                                             terms_pow_extend, terms_scale)
 from councilhound.impact.schemas import Assumption, MetricValue, ModuleResult
@@ -72,23 +73,47 @@ OWN_RETAIL_MIX = {"restaurant_bar": 0.5, "retail_comparison": 0.15,
                   "retail_convenience": 0.15, "personal_services": 0.2}
 
 
-def _assumptions(ctx) -> dict[str, Assumption]:
+def _assumptions(ctx, spec=None) -> dict[str, Assumption]:
+    """Economic assumptions. Three of them are tenure-sensitive: for-sale
+    product sells to larger, higher-income households and stabilizes at higher
+    occupancy than small-unit rental. Tenure changes the default, never the
+    key — see councilhound.impact.assumption_util."""
     ces = ces_shares.provenance()
-    return {a.key: a for a in [
-        Assumption(key="occupancy_rate", value=0.95, low=0.90, high=0.97,
-                   basis="stabilized multifamily occupancy, industry norm",
+    for_sale = spec is not None and is_for_sale(spec)
+    occupancy = (dict(value=0.97, low=0.93, high=0.99) if for_sale
+                 else dict(value=0.95, low=0.90, high=0.97))
+    hh_size = (dict(value=2.0, low=1.6, high=2.4) if for_sale
+               else dict(value=1.8, low=1.5, high=2.2))
+    income_premium = (dict(value=1.35, low=1.15, high=1.60) if for_sale
+                      else dict(value=1.125, low=1.0, high=1.25))
+    out = {a.key: a for a in [
+        Assumption(key="occupancy_rate", **occupancy,
+                   basis=("stabilized owner occupancy for new for-sale product; "
+                          "sold units are occupied, and the low bound absorbs "
+                          "absorption/settlement lag"
+                          if for_sale else
+                          "stabilized multifamily occupancy, industry norm"),
                    rationale="share of proposed units occupied at stabilization"),
-        Assumption(key="avg_hh_size_multifamily", value=1.8, low=1.5, high=2.2,
+        Assumption(key="avg_hh_size_multifamily", **hh_size,
                    basis="Rutgers CUPR residential demographic multipliers "
                          "(Listokin et al. 2006), multifamily by bedroom mix; the "
                          "ACS B25010 tenure average (~3.1 locally) is unit-mix-"
-                         "blind and rejected as an estimator for new 1-2BR product",
-                   rationale="persons per occupied new multifamily unit for a "
-                             "typical studio/1BR/2BR mix"),
-        Assumption(key="income_premium_new_construction", value=1.125, low=1.0, high=1.25,
+                         "blind and rejected as an estimator for new 1-2BR product"
+                         + (". Owner-occupied condominium multipliers run above "
+                            "rental multipliers at the same bedroom count"
+                            if for_sale else ""),
+                   rationale=("persons per occupied new for-sale condominium unit"
+                              if for_sale else
+                              "persons per occupied new multifamily unit for a "
+                              "typical studio/1BR/2BR mix")),
+        Assumption(key="income_premium_new_construction", **income_premium,
                    basis="documented openly per the methodology brief",
-                   rationale="new-construction multifamily rents draw higher-income "
-                             "households than the area median"),
+                   rationale=("for-sale condominium buyers anchor to purchase "
+                              "price rather than rent, drawing incomes further "
+                              "above the area median than new rental does"
+                              if for_sale else
+                              "new-construction multifamily rents draw higher-income "
+                              "households than the area median")),
         Assumption(key="ces_scale", value=1.0, low=0.85, high=1.15,
                    basis=ces,
                    rationale="CES line items are national averages; ±15% covers "
@@ -196,6 +221,7 @@ def _assumptions(ctx) -> dict[str, Assumption]:
                    rationale="converts the project's retail sqft into POI-count-"
                              "equivalent attractiveness for the Huff run"),
     ]}
+    return out
 
 
 def _walk_share_for(category: str, a: dict[str, Assumption]) -> Assumption:
@@ -721,13 +747,19 @@ def _cluster_layer(ctx, rolled: dict) -> dict:
 
 
 def run(spec, ctx, prior=None):
-    a = _assumptions(ctx)
     notes = [
         "Huff capture is a screening estimate computed per business location "
         "(every retail POI is an individual destination) and aggregated to "
         "named areas for reporting; it ranks where new spending is likely to "
         "land, with sensitivity bounds — it is not a prediction.",
     ]
+    a = apply_overrides(_assumptions(ctx, spec), spec, notes)
+    if spec.proposed.tenure in (None, "unknown"):
+        notes.append(
+            "Residential tenure (for-sale vs rental) is not established in the "
+            "project documents; rental defaults are used for household size, "
+            "occupancy, and the income premium. For-sale product would raise all "
+            "three.")
 
     if spec.proposed.units is None:
         return (ModuleResult(
@@ -855,7 +887,13 @@ def run(spec, ctx, prior=None):
     retail_sqft = spec.proposed.retail_sqft or 0.0
     jobs_added = (Interval.point(retail_sqft)
                   / Interval.from_assumption(a["sqft_per_retail_job"]))
-    net_jobs = jobs_added - jobs_removed
+    # proposed office space employs people too — omitting it made every
+    # mixed-use project look like a pure job loser whenever it replaced
+    # commercial floor area with a mix that included office
+    office_sqft = spec.proposed.office_sqft or 0.0
+    office_jobs = (Interval.point(office_sqft)
+                   / Interval.from_assumption(a["sqft_per_office_job"]))
+    net_jobs = jobs_added + office_jobs - jobs_removed
     site_prov = prov("Project documents (extracted spec)", spec.source_url, "current")
     metrics.append(metric("On-site jobs removed (existing space)", jobs_removed, "jobs",
                           [site_prov], [a["sqft_per_office_job"]],
@@ -867,11 +905,19 @@ def run(spec, ctx, prior=None):
                           "proposed retail sqft / sqft-per-retail-job",
                           adjust=[term(jobs_added.value, "On-site retail jobs",
                                        sqft_per_retail_job=-1.0)]))
+    if office_sqft:
+        metrics.append(metric("On-site office jobs added", office_jobs, "jobs",
+                              [site_prov], [a["sqft_per_office_job"]],
+                              "proposed office sqft / sqft-per-office-job",
+                              adjust=[term(office_jobs.value, "On-site office jobs",
+                                           sqft_per_office_job=-1.0)]))
     metrics.append(metric("Net on-site job change", net_jobs, "jobs",
                           [site_prov], [a["sqft_per_office_job"], a["sqft_per_retail_job"]],
-                          "retail jobs added - existing jobs removed",
+                          "retail jobs added + office jobs added - existing jobs removed",
                           adjust=[term(jobs_added.value, "Retail jobs added",
                                        sqft_per_retail_job=-1.0),
+                                  term(office_jobs.value, "Office jobs added",
+                                       sqft_per_office_job=-1.0),
                                   term(-jobs_removed.value, "Jobs removed",
                                        sqft_per_office_job=-1.0)]))
     if spec.existing.use:

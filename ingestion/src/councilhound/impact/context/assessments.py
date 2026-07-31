@@ -21,9 +21,11 @@ import ssl
 import time
 import urllib.parse
 import urllib.request
+from datetime import date
 from http.cookiejar import CookieJar
 
 from councilhound.impact.cache import atomic_write_json, raw_path
+from councilhound.impact.pins import norm_pin, pins_match
 
 log = logging.getLogger(__name__)
 
@@ -156,31 +158,94 @@ class WebProClient:
         return record
 
     # -- higher-level queries ---------------------------------------------
-    def multifamily_comps(self, built_since: int) -> list[dict]:
-        """Apartment-class properties (LUC 352) built since `built_since`,
-        with per-unit assessed values where the narrative reports units."""
-        rows = self.search(SearchLUC=APARTMENT_LUC,
-                           SearchYearBuilt=str(built_since), SearchYearBuiltThru="2100")
+    def discover_lucs(self, description_like: str) -> list[tuple[str, str]]:
+        """Distinct (code, description) land-use codes whose description matches
+        a wildcard pattern, e.g. "%CONDO%". Used once per jurisdiction by
+        impact-probe-luc so a human can pin the right code in the YAML —
+        WebPro publishes no code list."""
+        rows = self.search(SearchLUCDescription=description_like)
+        seen: dict[str, str] = {}
+        for row in rows:
+            if row.get("luc"):
+                seen.setdefault(row["luc"], row.get("luc_description") or "")
+        return sorted(seen.items())
+
+    def residential_comps(self, built_since: int, luc: str = APARTMENT_LUC,
+                          unit_mode: str = "per_building",
+                          year_window: int = 0) -> list[dict]:
+        """Residential comps of one assessment class built since `built_since`,
+        carrying per-unit assessed values.
+
+        unit_mode="per_building" (apartments): one account holds the whole
+        building, so per-unit value is total / residential_units.
+        unit_mode="per_account" (condos): each unit is its own account, so the
+        account's total value IS the per-unit value.
+
+        `year_window` splits the query into N-year slices. WebPro returns only
+        the first result page (52 rows), and condo classes have far more
+        accounts than apartment buildings do, so windowing is how a condo
+        query stays inside one page per slice.
+        """
+        this_year = date.today().year
+        windows = []
+        if year_window and year_window > 0:
+            start = built_since
+            while start <= this_year:
+                windows.append((start, min(start + year_window - 1, this_year)))
+                start += year_window
+        else:
+            windows.append((built_since, 2100))
+
+        rows: list[dict] = []
+        seen_accounts: set[str] = set()
+        for lo, hi in windows:
+            for row in self.search(SearchLUC=luc, SearchYearBuilt=str(lo),
+                                   SearchYearBuiltThru=str(hi)):
+                if row["account"] not in seen_accounts:
+                    seen_accounts.add(row["account"])
+                    rows.append(row)
+
         comps = []
         for row in rows:
             det = self.detail(row["account"])
             units = det.get("residential_units")
             total = det.get("total_value") or row.get("total_value")
-            if units and total and units > 0:
-                comps.append({**det, "total_value": total,
-                              "per_unit_value": total / units})
+            if not total:
+                log.info("comp %s (%s) lacks value — skipped", row["pin"], row.get("address"))
+                continue
+            if unit_mode == "per_account":
+                # a condo account is a single dwelling; some carry units=1,
+                # some carry none at all
+                if units and units > 1:
+                    per_unit = total / units
+                else:
+                    per_unit = total
+                    units = units or 1
+            elif units and units > 0:
+                per_unit = total / units
             else:
-                log.info("comp %s (%s) lacks units/value — skipped",
-                         row["pin"], row.get("address"))
+                log.info("comp %s (%s) lacks units — skipped", row["pin"], row.get("address"))
+                continue
+            comps.append({**det, "total_value": total, "residential_units": units,
+                          "luc": row.get("luc"), "per_unit_value": per_unit})
         return comps
 
+    def multifamily_comps(self, built_since: int) -> list[dict]:
+        """Apartment-class comps (LUC 352). Kept as the historical entry
+        point; residential_comps is the general form."""
+        return self.residential_comps(built_since, luc=APARTMENT_LUC,
+                                      unit_mode="per_building")
+
     def assessment_for_pin(self, pin: str) -> dict | None:
-        """Site-parcel lookup. GeoHub PINs collapse whitespace; WebPro pads
-        groups, so fall back to a wildcarded form."""
-        for query in (pin, "%".join(pin.split()) + "%"):
+        """Site-parcel lookup. Documents hyphenate PINs, GeoHub pads groups
+        with spaces, and WebPro pads differently again — compare canonical
+        forms (councilhound.impact.pins) and fall back to a wildcarded query
+        built from the canonical groups."""
+        groups = norm_pin(pin).split()
+        for query in (pin, "%".join(groups) + "%"):
             rows = self.search(SearchParcel=query)
             for row in rows:
-                if re.sub(r"\s+", " ", row["pin"]) == re.sub(r"\s+", " ", pin):
+                if pins_match(row["pin"], pin):
                     return self.detail(row["account"])
             if rows and len(rows) == 1:
                 return self.detail(rows[0]["account"])

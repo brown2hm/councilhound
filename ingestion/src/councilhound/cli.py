@@ -474,6 +474,61 @@ def impact_confirm(slug, spec_path, geometry_path, yes):
                            geometry_path=geometry_path))
 
 
+@cli.command("impact-enrich")
+@click.argument("slug")
+@click.option("--external-estimates", "external", is_flag=True,
+              help="extract applicant/staff fiscal estimates for benchmarking")
+@click.option("--tenure", is_flag=True,
+              help="extract residential tenure (for-sale vs rental)")
+def impact_enrich(slug, external, tenure):
+    """Backfill narrowly-scoped extracted fields into an existing spec.
+
+    Runs only the requested targeted extraction pass and merges the result,
+    leaving every other hand-edited field alone.
+    """
+    from councilhound.db.session import get_session
+    from councilhound.impact.evaluate import enrich
+
+    with get_session() as session:
+        click.echo(enrich(session, slug, external=external, tenure=tenure))
+
+
+@cli.command("impact-probe-luc")
+@jurisdiction_option
+@click.option("--like", default="%CONDO%", show_default=True,
+              help="land-use description wildcard to probe for")
+def impact_probe_luc(jurisdiction, like):
+    """List assessment land-use codes matching a description pattern.
+
+    WebPro publishes no code list, so run this once and pin the right code
+    under `assessment_lucs` in the jurisdiction YAML.
+    """
+    from councilhound.impact.context.assessments import WebProClient
+
+    for code, description in WebProClient().discover_lucs(like):
+        click.echo(f"  {code}  {description}")
+
+
+@cli.command("impact-reresolve")
+@click.argument("slugs", nargs=-1)
+@click.option("--all", "all_specs", is_flag=True, help="every extracted evaluation")
+@click.option("--apply", "apply_changes", is_flag=True,
+              help="write the new parcels/geometry (default: dry-run diff only)")
+def impact_reresolve(slugs, all_specs, apply_changes):
+    """Re-resolve site parcels for existing specs without re-extracting.
+
+    Recovers the document-stated PINs and re-runs parcel resolution, touching
+    only parcels/document_pins/geometry — hand edits elsewhere in the spec
+    YAML survive. Dry-run by default.
+    """
+    from councilhound.db.session import get_session
+    from councilhound.impact.evaluate import reresolve
+
+    with get_session() as session:
+        click.echo(reresolve(session, slugs=slugs, all_specs=all_specs,
+                             apply=apply_changes))
+
+
 @cli.command("impact-evaluate")
 @click.argument("slug")
 @click.option("--modules", "module_names", default=None,

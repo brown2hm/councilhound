@@ -42,8 +42,11 @@ function formulaForMetric(name: string): string | null {
   if (name === "On-site retail jobs added") {
     return String.raw`J_{\mathrm{added}} = \frac{F_{\mathrm{retail}}}{f_{\mathrm{retail/job}}}`;
   }
+  if (name === "On-site office jobs added") {
+    return String.raw`J_{\mathrm{office}} = \frac{F_{\mathrm{office}}}{f_{\mathrm{office/job}}}`;
+  }
   if (name === "Net on-site job change") {
-    return String.raw`\Delta J = J_{\mathrm{added}} - J_{\mathrm{removed}}`;
+    return String.raw`\Delta J = J_{\mathrm{added}} + J_{\mathrm{office}} - J_{\mathrm{removed}}`;
   }
   if (name === "New annual spending arriving on foot") {
     return String.raw`\begin{aligned}
@@ -75,7 +78,8 @@ function formulaForMetric(name: string): string | null {
   }
   if (name === "Current value per acre") return String.raw`V_{0,\mathrm{acre}} = \frac{V_0}{A}`;
   if (name === "Projected assessed value") {
-    return String.raw`V_1 = U\,v_{\mathrm{unit}} + F_{\mathrm{retail}}\,v_{\mathrm{sf}}`;
+    return String.raw`V_1 = U\,v_{\mathrm{unit}} + F_{\mathrm{retail}}\,v_{\mathrm{sf}}
+      + F_{\mathrm{office}}\,v_{\mathrm{office}}`;
   }
   if (name === "Projected real estate tax") {
     return String.raw`T_{\mathrm{RE},1} = V_1 \times \frac{r_{\mathrm{RE}}}{100}`;
@@ -88,7 +92,28 @@ function formulaForMetric(name: string): string | null {
     return String.raw`T_{\mathrm{pp}} \approx H \times \nu_{\mathrm{hh}} \times \bar{v}_{\mathrm{veh}} \times \frac{r_{\mathrm{pp}}}{100}`;
   }
   if (name === "BPOL business license tax on project retail (rough estimate)") {
-    return String.raw`T_{\mathrm{bpol}} \approx F_{\mathrm{retail}} \times g_{\mathrm{sf}} \times \frac{r_{\mathrm{bpol}}}{100}`;
+    return String.raw`\begin{aligned}
+      B_{\mathrm{onsite}} &= F_{\mathrm{retail}}\,g_{\mathrm{sf}} - C_{\mathrm{own}} \\
+      T_{\mathrm{bpol}} &\approx B_{\mathrm{onsite}} \times \frac{r_{\mathrm{bpol}}}{100} \times \eta
+    \end{aligned}`;
+  }
+  if (name === "BPOL business license tax on project office (rough estimate)") {
+    return String.raw`T_{\mathrm{bpol,off}} \approx F_{\mathrm{office}} \times g_{\mathrm{office}} \times \frac{r_{\mathrm{bpol,off}}}{100}`;
+  }
+  if (name === "Business tangible property tax (rough estimate)") {
+    return String.raw`T_{\mathrm{bpp}} \approx (F_{\mathrm{retail}} + F_{\mathrm{office}}) \times v_{\mathrm{bpp}} \times \frac{r_{\mathrm{bpp}}}{100}`;
+  }
+  if (name.startsWith("Meals tax on the project's own restaurants")) {
+    return String.raw`\begin{aligned}
+      B_{\mathrm{onsite}} &= F_{\mathrm{retail}}\,g_{\mathrm{sf}} - C_{\mathrm{own}} \\
+      T_{\mathrm{meals,own}} &\approx B_{\mathrm{onsite}}\,\phi_{\mathrm{rest}}\,r_{\mathrm{meals}}\,\eta
+    \end{aligned}`;
+  }
+  if (name.startsWith("Local sales tax on the project's own retail")) {
+    return String.raw`\begin{aligned}
+      B_{\mathrm{onsite}} &= F_{\mathrm{retail}}\,g_{\mathrm{sf}} - C_{\mathrm{own}} \\
+      T_{\mathrm{sales,own}} &\approx B_{\mathrm{onsite}}\,r_{\mathrm{local}}\,\eta
+    \end{aligned}`;
   }
   if (name === "Meals tax on captured in-city dining") {
     return String.raw`T_{\mathrm{meals}} = S_{\mathrm{restaurant}}\,q_{\mathrm{city,food}}\,r_{\mathrm{meals}}`;

@@ -149,3 +149,90 @@ def test_unverifiable_facilities_dropped(monkeypatch):
     assert result["corridor_facilities"] == ["protected bike lane"]
     assert result["strings"]["corridor.street_name"] == "Main Street"
     assert any("cycle superhighway" in n for n in result["notes"])
+
+
+# --- tenure: an enum whose value never appears in the documents ------------
+#
+# The verbatim rule can't apply to the VALUE ("for_sale" is our code word, not
+# the city's words), so the quote carries the burden and must contain evidence
+# for the class claimed. Getting this wrong prices condos off apartment comps.
+
+TENURE_CORPUS = """\
+Multifamily residential up to a maximum of seventy-nine (79) for-sale
+condominium dwelling units above ground floor retail.
+"""
+
+RENTAL_CORPUS = """\
+The project proposes 240 apartments for lease above structured parking.
+"""
+
+
+def _tenure(value, quote, confidence="high"):
+    return {"value": value, "confidence": confidence, "source_quote": quote}
+
+
+def test_tenure_with_evidence_bearing_quote_passes():
+    entry, notes = extractor.enforce_enum_firewall(
+        _tenure("for_sale", "seventy-nine (79) for-sale condominium dwelling units"),
+        TENURE_CORPUS, "proposed.tenure", extractor.TENURE_EVIDENCE)
+    assert entry["value"] == "for_sale"
+    assert notes == []
+
+
+def test_tenure_quote_without_evidence_for_the_claim_demotes():
+    """A real quote that says nothing about tenure cannot establish tenure."""
+    entry, notes = extractor.enforce_enum_firewall(
+        _tenure("for_sale", "above ground floor retail"),
+        TENURE_CORPUS, "proposed.tenure", extractor.TENURE_EVIDENCE)
+    assert entry["value"] is None
+    assert any("no evidence" in n for n in notes)
+
+
+def test_tenure_fabricated_quote_demotes():
+    entry, notes = extractor.enforce_enum_firewall(
+        _tenure("for_sale", "these luxury condominiums will be sold individually"),
+        TENURE_CORPUS, "proposed.tenure", extractor.TENURE_EVIDENCE)
+    assert entry["value"] is None
+    assert any("not found verbatim" in n for n in notes)
+
+
+def test_tenure_wrong_class_demotes():
+    entry, notes = extractor.enforce_enum_firewall(
+        _tenure("rental", "for-sale condominium dwelling units"),
+        TENURE_CORPUS, "proposed.tenure", extractor.TENURE_EVIDENCE)
+    assert entry["value"] is None
+
+
+def test_rental_tenure_passes():
+    entry, notes = extractor.enforce_enum_firewall(
+        _tenure("rental", "240 apartments for lease"),
+        RENTAL_CORPUS, "proposed.tenure", extractor.TENURE_EVIDENCE)
+    assert entry["value"] == "rental"
+    assert notes == []
+
+
+def test_mixed_requires_evidence_for_both_classes():
+    entry, notes = extractor.enforce_enum_firewall(
+        _tenure("mixed", "for-sale condominium dwelling units"),
+        TENURE_CORPUS, "proposed.tenure", extractor.TENURE_EVIDENCE)
+    assert entry["value"] is None
+    assert any("mixed" in n for n in notes)
+
+
+def test_unknown_enum_value_demotes():
+    entry, notes = extractor.enforce_enum_firewall(
+        _tenure("timeshare", "for-sale condominium dwelling units"),
+        TENURE_CORPUS, "proposed.tenure", extractor.TENURE_EVIDENCE)
+    assert entry["value"] is None
+
+
+def test_corpus_budget_caps_the_prompt():
+    """The largest projects carry 70+ documents; an unbounded corpus buries the
+    authoritative staff report and costs a fortune."""
+    big = "x" * 100_000
+    docs = [ProjectDocument(label=f"doc {i}", url=f"https://example/{i}", text=big,
+                            provenance=prov(f"doc {i}", f"https://example/{i}", "current"))
+            for i in range(20)]
+    prompt = extractor._build_prompt(docs)
+    assert len(prompt) < extractor.MAX_TOTAL_CHARS + 5_000
+    assert "DOCUMENT(S) OMITTED" in prompt or "truncated" in prompt

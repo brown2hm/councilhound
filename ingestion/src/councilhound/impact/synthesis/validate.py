@@ -53,6 +53,13 @@ def allowed_values(bundle) -> set[float]:
                   spec.proposed.affordable_units, spec.existing.sqft, spec.existing.units,
                   spec.existing.assessed_value):
         add(value)
+    # figures published by the applicant/staff, quotable in the comparison
+    # section (their metrics cover these too; this is belt-and-braces)
+    for est in getattr(spec, "external_estimates", None) or []:
+        for value in (est.net_annual_low, est.net_annual_high, est.revenue_total,
+                      est.expenditure_total, est.assessed_value,
+                      est.construction_cost):
+            add(value)
     # in-city shares etc. expressed as percents ("fraction", "fraction of
     # baseline sales", ...)
     for m in bundle.all_metrics():
@@ -87,6 +94,8 @@ def allowed_values(bundle) -> set[float]:
     quotable.extend(bundle.spec.parcels)  # PINs the draft may cite ("57 2 18 001 A")
     quotable.extend(bundle.spec.extraction_quotes.values())
     quotable.extend(bundle.spec.extraction_notes)
+    for est in getattr(bundle.spec, "external_estimates", None) or []:
+        quotable += [est.quote or "", est.source, est.fy or ""]
     for text in quotable:
         for value, _context in extract_numbers(text):
             add(value)
@@ -153,6 +162,63 @@ def _matches(value: float, allowed: set[float], sig: int | None = None) -> bool:
             if abs(value - a) <= 0.51 * quantum:
                 return True
     return False
+
+
+# Claims that an input was USED in a computation. The number validator can't
+# catch these: a draft once said the proposed office square footage "is
+# accounted for in the tax value estimate" while the fiscal module never read
+# that field, and the figure itself was a legitimate spec quantity, so every
+# number checked out.
+_INCLUSION_CLAIM = re.compile(
+    r"\b(?:is|are|was|were|been|being)\s+(?:\w+\s+){0,3}?"
+    r"(accounted for|included|counted|captured|reflected|incorporated|"
+    r"factored)\b", re.IGNORECASE)
+
+# spec quantities a draft might claim were used, and the words that would show
+# up in a metric's method string or adjust-term labels if they actually were
+_CLAIMABLE_INPUTS = {
+    "office": ("office",),
+    "retail": ("retail", "commercial", "ground-floor", "ground floor"),
+    "parking": ("parking",),
+    "affordable": ("affordable",),
+    "student": ("student", "school"),
+    "vehicle": ("vehicle",),
+    "restaurant": ("restaurant", "meals", "dining"),
+}
+
+_SENTENCE = re.compile(r"[^.!?\n]+[.!?]?")
+
+
+def validate_method_claims(markdown: str, bundle) -> list[str]:
+    """Flags sentences claiming an input was used in a computation when no
+    metric's method or adjust-term label mentions it.
+
+    Advisory (the caller logs rather than rejects): the patterns are heuristic
+    and a false positive should not block a report.
+    """
+    grounded = []
+    for m in bundle.all_metrics():
+        grounded.append(m.method or "")
+        grounded.append(m.name)
+        for t in m.adjust or []:
+            grounded.append(t.label or "")
+    for result in bundle.results:
+        grounded.extend(result.narrative_notes)
+    grounded_text = " ".join(grounded).lower()
+
+    flags = []
+    for sentence in _SENTENCE.findall(markdown):
+        if not _INCLUSION_CLAIM.search(sentence):
+            continue
+        lowered = sentence.lower()
+        for topic, words in _CLAIMABLE_INPUTS.items():
+            if not any(w in lowered for w in words):
+                continue
+            if not any(w in grounded_text for w in words):
+                flags.append(f"unsupported '{topic}' inclusion claim: "
+                             f"\"{sentence.strip()[:160]}\"")
+                break
+    return flags
 
 
 def validate_report(markdown: str, bundle) -> list[str]:

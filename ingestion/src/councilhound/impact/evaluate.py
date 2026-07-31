@@ -20,7 +20,8 @@ from sqlalchemy.orm import Session
 
 from councilhound.db.models import CityProject, ProjectEvaluation
 from councilhound.impact.cache import atomic_write_json, run_dir, specs_dir
-from councilhound.impact.schemas import EvaluationBundle, ModuleResult, ProjectSpec
+from councilhound.impact.schemas import (EvaluationBundle, ExternalEstimate,
+                                         ModuleResult, ProjectSpec)
 
 log = logging.getLogger(__name__)
 
@@ -63,14 +64,15 @@ def extract(session: Session, slug: str, jurisdiction: str = "fairfax_city_va",
         raise SystemExit(f"evaluation for '{slug}' already exists (status={evaluation.status}) "
                          "— pass --force to re-extract")
 
-    docs = gather_documents(project)
+    docs = gather_documents(project, session=session)
     extracted = extract_spec_fields(docs)
 
     ctx = JurisdictionContext(jurisdiction)
     pins, geometry, resolved_acres, method = [], None, None, None
     try:
-        pins, geometry, resolved_acres, method = resolve_site(
+        pins, geometry, resolved_acres, method, resolve_warnings = resolve_site(
             ctx, project, extracted["parcel_pins"])
+        extracted["notes"].extend(resolve_warnings)
     except ParcelResolutionError as exc:
         extracted["notes"].append(str(exc))
         log.warning("%s", exc)
@@ -100,6 +102,7 @@ def extract(session: Session, slug: str, jurisdiction: str = "fairfax_city_va",
         project_type=extracted["project_type"],
         status=project.official_status or "unknown",
         parcels=pins,
+        document_pins=extracted["parcel_pins"],
         geometry=geometry,
         existing={
             "use": extracted["existing_use"],
@@ -258,12 +261,13 @@ def confirm(session: Session, slug: str, spec_path: str | None = None,
         from councilhound.impact.intake.parcels import ParcelResolutionError, resolve_site
         from councilhound.impact.jurisdiction import JurisdictionContext
         try:
-            pins, geometry, acres, method = resolve_site(
+            pins, geometry, acres, method, resolve_warnings = resolve_site(
                 JurisdictionContext(spec.jurisdiction), project, spec.parcels)
             spec.parcels, spec.geometry = pins, geometry
             spec.extraction_notes.append(
                 f"geometry re-resolved at confirm from edited parcels via {method}: "
                 f"{acres:.2f} ac")
+            spec.extraction_notes.extend(resolve_warnings)
             path_obj = _spec_yaml_path(slug)
             path_obj.write_text(_spec_to_yaml(spec))
         except ParcelResolutionError as exc:
@@ -308,6 +312,329 @@ def confirm(session: Session, slug: str, spec_path: str | None = None,
     return f"confirmed '{slug}' — next: impact-evaluate {slug}"
 
 
+def _recover_document_pins(project, ctx) -> tuple[list[str], str]:
+    """PIN-shaped tokens from the already-downloaded document corpus, kept only
+    when they name a real parcel in the layer.
+
+    Specs extracted before `document_pins` existed discarded the stated PINs
+    whenever resolution fell through, so recovering them from the cached text
+    is the only alternative to a fresh (LLM) extraction. The parcel-layer
+    filter is what makes a bare regex safe: a PIN-shaped token that matches no
+    parcel is dropped rather than resolved.
+    """
+    from councilhound.impact.intake.documents import gather_documents
+    from councilhound.impact.pins import candidate_pins, norm_pin
+
+    docs = gather_documents(project)  # disk-cached; no re-download, no LLM
+    corpus = "\n".join(doc.text for doc in docs)
+    known = {norm_pin(p) for p in ctx.parcels["pin"]}
+    found = [p for p in candidate_pins(corpus) if p in known]
+    return found, f"{len(docs)} cached document(s)"
+
+
+def enrich(session: Session, slug: str, external: bool = False,
+           tenure: bool = False) -> str:
+    """Add narrowly-scoped extracted fields to an existing spec.
+
+    The backfill path for specs predating a field. `impact-extract --force`
+    would rewrite the whole YAML and discard hand edits, so this runs only the
+    targeted extraction pass(es) and merges their results.
+    """
+    from councilhound.impact.intake.documents import gather_documents
+    from councilhound.impact.intake.extractor import (
+        TENURE_EVIDENCE, enforce_enum_firewall, extract_external_estimates,
+        _call_claude, _build_prompt)
+
+    if not external and not tenure:
+        raise SystemExit("pass --external-estimates and/or --tenure")
+
+    project = _project(session, slug)
+    evaluation = _evaluation(session, project)
+    if evaluation is None:
+        raise SystemExit(f"no extraction for '{slug}' — run impact-extract first")
+    spec = ProjectSpec.model_validate(evaluation.spec)
+
+    docs = gather_documents(project, session=session)
+    lines = [f"{slug}: {len(docs)} document(s) in corpus"]
+
+    if external:
+        estimates, notes = extract_external_estimates(docs, project_name=project.name)
+        spec.external_estimates = [ExternalEstimate.model_validate(e) for e in estimates]
+        spec.extraction_notes.extend(notes)
+        for e in spec.external_estimates:
+            span = ""
+            if e.net_annual_low is not None or e.net_annual_high is not None:
+                span = (f" net ${(e.net_annual_low or 0):,.0f}"
+                        f"-${(e.net_annual_high or 0):,.0f}/yr")
+            lines.append(f"  external [{e.kind}] {e.source}{span}")
+            lines.append(f"      \"{e.quote}\"")
+        for note in notes:
+            lines.append(f"  ! {note}")
+
+    if tenure:
+        corpus = "\n".join(d.text for d in docs)
+        raw = _call_claude(_build_prompt(docs))
+        entry, notes = enforce_enum_firewall(
+            raw.get("proposed_tenure"), corpus, "proposed.tenure", TENURE_EVIDENCE)
+        spec.proposed.tenure = entry["value"]
+        if entry["value"]:
+            spec.extraction_confidence["proposed.tenure"] = entry["confidence"]
+            if entry["source_quote"]:
+                spec.extraction_quotes["proposed.tenure"] = entry["source_quote"]
+        spec.extraction_notes.extend(notes)
+        lines.append(f"  tenure: {entry['value']} [{entry['confidence']}]"
+                     + (f'  "{entry["source_quote"]}"' if entry["source_quote"] else ""))
+        for note in notes:
+            lines.append(f"  ! {note}")
+
+    evaluation.spec = spec.model_dump(mode="json")
+    if evaluation.status in ("computed", "synthesized"):
+        evaluation.status = "confirmed"
+    session.commit()
+    _spec_yaml_path(slug).write_text(_spec_to_yaml(spec))
+    lines.append(f"wrote {_spec_yaml_path(slug)}; next: impact-confirm {slug} then "
+                 f"impact-evaluate {slug} --force")
+    return "\n".join(lines)
+
+
+def _trim_to_stated_acreage(ctx, candidates: list[str], stated: float,
+                            gate: float = 0.15, max_drop: int = 2,
+                            tie: float = 0.03,
+                            ) -> tuple[list[str], list[str], list[list[str]]]:
+    """Drop up to `max_drop` candidate parcels when doing so brings the site
+    area materially closer to the document-stated acreage.
+
+    Returns (kept, dropped, ties). A set already inside the drift gate is left
+    alone — the goal is to catch the cross-referenced-neighbour case, not to
+    optimize against a figure that is itself approximate ("1.78 +/- acres").
+
+    Similarly-sized parcels make this genuinely ambiguous: at City Centre West
+    two candidates are both ~0.34 ac, so dropping either one fits the stated
+    1.78 ac equally well while naming a different site. When that happens the
+    alternatives are returned in `ties` and the caller must not pick one —
+    acreage cannot settle it, and guessing produces a confident wrong answer.
+    """
+    from itertools import combinations
+
+    def drift(pins):
+        acres = _resolved_acres(ctx, pins)
+        return None if acres is None else abs(acres - stated) / stated
+
+    best = drift(candidates)
+    if best is None or best <= gate:
+        return candidates, [], []
+
+    scored: list[tuple[float, list[str], list[str]]] = []
+    for size in range(1, min(max_drop, len(candidates) - 1) + 1):
+        for combo in combinations(candidates, size):
+            subset = [p for p in candidates if p not in combo]
+            d = drift(subset)
+            if d is not None and d < best - 0.02:  # a real improvement, not noise
+                scored.append((d, subset, list(combo)))
+        if scored and min(s[0] for s in scored) <= gate:
+            break
+    if not scored:
+        return candidates, [], []
+
+    scored.sort(key=lambda s: s[0])
+    best_drift, kept, dropped = scored[0]
+    # any equally-good subset that names a DIFFERENT set of parcels is a tie
+    ties = [subset for d, subset, _ in scored[1:]
+            if d <= best_drift + tie and set(subset) != set(kept)]
+    return kept, dropped, ties
+
+
+def _resolved_acres(ctx, pins) -> float | None:
+    """Projected-CRS acreage of the parcels currently on a spec, for the
+    no-regression comparison. None when none of them match the layer.
+
+    Union, not sum: stacked condominium records share one footprint, and
+    summing per-parcel areas counts it once per unit."""
+    from shapely.ops import unary_union
+
+    from councilhound.impact.pins import norm_pin
+
+    if not pins:
+        return None
+    wanted = {norm_pin(p) for p in pins}
+    parcels = ctx.parcels
+    hit = parcels[parcels["pin"].map(norm_pin).isin(wanted)]
+    if not len(hit):
+        return None
+    projected = hit.geometry.to_crs(ctx.cfg.crs_projected)
+    return float(unary_union(list(projected)).area / 43_560.0)
+
+
+def reresolve(session: Session, slugs: tuple[str, ...] = (),
+              all_specs: bool = False, apply: bool = False) -> str:
+    """Re-run parcel resolution for existing specs after the PIN-normalization
+    fix, without re-extracting.
+
+    `impact-extract --force` would rewrite the whole spec YAML and discard
+    every hand edit, so this walks the narrower path: recover the stated PINs,
+    re-resolve geometry from them, and touch only parcels/document_pins/
+    geometry. Dry-run by default — the printed diff is the review artifact.
+    """
+    from councilhound.impact.intake.parcels import ParcelResolutionError, resolve_site
+    from councilhound.impact.jurisdiction import JurisdictionContext
+    from councilhound.impact.pins import norm_pin
+
+    if not slugs and not all_specs:
+        raise SystemExit("pass project slugs or --all")
+
+    query = (select(CityProject.external_slug, ProjectEvaluation)
+             .join(ProjectEvaluation, ProjectEvaluation.city_project_id == CityProject.id))
+    if slugs:
+        query = query.where(CityProject.external_slug.in_(slugs))
+    rows = session.execute(query).all()
+    missing = set(slugs) - {slug for slug, _ in rows}
+    if missing:
+        raise SystemExit(f"no evaluation for: {', '.join(sorted(missing))}")
+
+    contexts: dict[str, object] = {}
+    lines: list[str] = []
+    changed = 0
+    for slug, evaluation in sorted(rows, key=lambda row: row[0]):
+        spec = ProjectSpec.model_validate(evaluation.spec)
+        if spec.project_type in ("street_multimodal", "park"):
+            lines.append(f"{slug}: skipped (corridor project — geometry is a line)")
+            continue
+        ctx = contexts.setdefault(spec.jurisdiction,
+                                  JurisdictionContext(spec.jurisdiction))
+        project = _project(session, slug)
+
+        # a spec whose current parcels already fit the stated acreage needs no
+        # churn — this is also what keeps a hand-set parcel list (the human
+        # answer to an earlier REVIEW) from being re-flagged on every sweep
+        current_acres = _resolved_acres(ctx, spec.parcels)
+        if (spec.proposed.acres and current_acres is not None
+                and abs(current_acres - spec.proposed.acres) / spec.proposed.acres <= 0.15):
+            lines.append(f"{slug}: unchanged ({len(spec.parcels)} parcel(s), "
+                         f"{current_acres:.2f} ac fits stated "
+                         f"{spec.proposed.acres:.2f} ac)")
+            continue
+
+        stated = list(spec.document_pins)
+        source = "spec.document_pins"
+        if not stated:
+            stated, source = _recover_document_pins(project, ctx)
+        candidates = list(dict.fromkeys(
+            [norm_pin(p) for p in stated] + [norm_pin(p) for p in spec.parcels]))
+        if not candidates:
+            lines.append(f"{slug}: no candidate PINs (from {source}) — unchanged")
+            continue
+
+        # A regex over the corpus also picks up parcels the documents merely
+        # cross-reference (an adjacent property, a neighbouring driveway in a
+        # traffic study). The document-stated acreage is the independent check:
+        # when the full candidate set overshoots it, drop the one or two
+        # candidates whose removal best restores the fit.
+        stated_acres = spec.proposed.acres
+        trimmed: list[str] = []
+        if stated_acres and len(candidates) > 1:
+            candidates, trimmed, ties = _trim_to_stated_acreage(
+                ctx, candidates, stated_acres)
+            if ties:
+                # print what DIFFERS between the tied subsets, not every pin —
+                # a large condo block would otherwise dump hundreds per line
+                all_sets = [set(candidates)] + [set(t) for t in ties]
+                common = set.intersection(*all_sets)
+                pool_set = set(candidates) | set(trimmed)
+                alternatives = "\n".join(
+                    "      without " + ", ".join(sorted(pool_set - s)[:8])
+                    for s in all_sets)
+                pool = sorted(set(candidates) | set(trimmed))
+                shown = ", ".join(pool[:12]) + (f", ... and {len(pool) - 12} more"
+                                                if len(pool) > 12 else "")
+                lines.append(
+                    f"{slug}: REVIEW — several parcel sets fit the stated "
+                    f"{stated_acres:.2f} ac equally well ({len(common)} pins in "
+                    "common), so acreage cannot say which is the site. Set "
+                    "`parcels:` by hand from the documents and run impact-confirm.\n"
+                    f"    candidates  {shown}\n"
+                    f"    equally-good subsets:\n{alternatives}")
+                continue
+
+        try:
+            pins, geometry, acres, method, warnings = resolve_site(ctx, project, candidates)
+        except ParcelResolutionError as exc:
+            lines.append(f"{slug}: resolution failed — {exc}")
+            continue
+        if trimmed:
+            warnings.append(
+                f"dropped candidate parcel(s) {', '.join(trimmed)}: the documents "
+                "mention them, but including them puts the site area further from "
+                f"the stated {stated_acres:.2f} ac (they are most likely "
+                "cross-referenced neighbours rather than part of the site)")
+
+        old_pins = [norm_pin(p) for p in spec.parcels]
+        if [norm_pin(p) for p in pins] == old_pins:
+            lines.append(f"{slug}: unchanged ({len(pins)} parcel(s), {acres:.2f} ac)")
+            continue
+
+        from councilhound.impact.modules.fiscal import _giscama_values
+        old_av = sum(_giscama_values(ctx, spec.parcels).values())
+        new_av = sum(_giscama_values(ctx, pins).values())
+        stated_acres = spec.proposed.acres
+
+        # no-regression guard. Recovered PINs are only as good as the regex
+        # that found them: a document naming an adjacent or superseded parcel
+        # produces a candidate set that resolves to the wrong extent. The
+        # document-stated acreage is the independent check, so a proposal that
+        # fits it WORSE than the current geometry is reported for human
+        # attention rather than offered as a fix.
+        drift_note = ""
+        if stated_acres:
+            old_acres = _resolved_acres(ctx, spec.parcels)
+            new_drift = abs(acres - stated_acres) / stated_acres
+            old_drift = (abs(old_acres - stated_acres) / stated_acres
+                         if old_acres is not None else None)
+            drift_note = (f", stated {stated_acres:.2f} ac (drift "
+                          + (f"{old_drift:.0%} -> " if old_drift is not None else "")
+                          + f"{new_drift:.0%})")
+            if old_drift is not None and new_drift > old_drift + 0.02:
+                lines.append(
+                    f"{slug}: REVIEW — recovered PINs resolve to {acres:.2f} ac "
+                    f"({new_drift:.0%} off the stated {stated_acres:.2f} ac), worse "
+                    f"than the current {old_acres:.2f} ac ({old_drift:.0%}). Not "
+                    "proposed; set `parcels:` by hand in the spec YAML and run "
+                    "impact-confirm if the recovered set is right.\n"
+                    f"    candidates  {', '.join(pins)}")
+                continue
+
+        lines.append(
+            f"{slug}: {len(spec.parcels)} -> {len(pins)} parcel(s) via {method} "
+            f"[candidates from {source}]\n"
+            f"    acres  {acres:.2f}{drift_note}\n"
+            f"    pins   {', '.join(spec.parcels) or '(none)'} -> {', '.join(pins)}\n"
+            f"    bulk AV  ${old_av:,.0f} -> ${new_av:,.0f}")
+        for warning in warnings:
+            lines.append(f"    ! {warning}")
+        changed += 1
+
+        if apply:
+            spec.parcels = pins
+            spec.document_pins = stated or spec.document_pins
+            spec.geometry = geometry
+            spec.extraction_notes.append(
+                f"parcels re-resolved after the PIN-normalization fix via {method}: "
+                f"{len(pins)} parcel(s), {acres:.2f} ac (was {len(old_pins)} parcel(s))")
+            spec.extraction_notes.extend(warnings)
+            evaluation.spec = spec.model_dump(mode="json")
+            # computed artifacts are stale by construction now
+            if evaluation.status in ("computed", "synthesized"):
+                evaluation.status = "confirmed"
+            _spec_yaml_path(slug).write_text(_spec_to_yaml(spec))
+
+    if apply:
+        session.commit()
+        lines.append(f"\napplied to {changed} spec(s); next: impact-confirm <slug> then "
+                     "impact-evaluate <slug> --force")
+    else:
+        lines.append(f"\n{changed} spec(s) would change — re-run with --apply to write")
+    return "\n".join(lines)
+
+
 def _check_adjust_terms(result: ModuleResult) -> None:
     """Invariant: a metric's adjustment terms must reproduce its value exactly
     at the published assumption centrals (sum of term values == value). This
@@ -350,6 +677,16 @@ def evaluate(session: Session, slug: str, modules: tuple[str, ...] | None = None
         _check_adjust_terms(result)
         results.append(result)
         map_layers.update(layers)
+
+    # an override key no module declares is almost always a typo in the spec
+    # YAML, and it would otherwise look exactly like a working override
+    from councilhound.impact.assumption_util import unknown_override_keys
+    declared = {a.key for r in results for a in r.assumptions}
+    stray = unknown_override_keys(spec, declared)
+    if stray:
+        raise SystemExit(
+            f"spec.assumption_overrides names assumption(s) no module declares: "
+            f"{', '.join(stray)}. Known keys: {', '.join(sorted(declared))}")
 
     encoded = json.dumps(map_layers)
     if len(encoded) > MAP_LAYERS_MAX_BYTES:
