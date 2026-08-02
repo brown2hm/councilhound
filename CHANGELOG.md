@@ -1,5 +1,26 @@
 # Changelog
 
+## Unreleased — the nightly stops lying to itself (August 2026)
+
+- **Late minutes/actions reports re-trigger extraction.** The nightly
+  structures a fresh meeting from its agenda alone and honestly records "no
+  votes"; nothing revisited it when the decision documents landed days later.
+  The July 28 council meeting sat on the homepage with zero votes while its
+  actions report (with the 4-2 zoning vote) was already in the database, and
+  four older meetings had the same gap. `structure_pending` now re-extracts
+  any meeting whose minutes/actions report text arrived after its stored
+  extraction, exactly once per late arrival.
+- **Granicus 403s fail fast on the datacenter-IP block.** A Fly-side probe
+  confirmed CloudFront blocks BOTH archive-video and the archive-stream HLS
+  host, so there is no unauthenticated cloud path to meeting media — and the
+  download ladder was treating the hard block as throttling, sleeping 180s
+  per meeting per night. The ladder is now success-aware: cold 403 fails in
+  ~5s; post-success 403 keeps the full 30/60/90 back-off for residential
+  backfills. Audio continues to be fetched and transcribed locally.
+- Fly gotcha, hard-won: `flyctl machine update` leaves scheduled machines
+  disarmed — each needs one manual `flyctl machine start` afterwards or the
+  daily/hourly schedules silently stop firing.
+
 ## Unreleased — checking our own numbers (July 2026)
 
 Comparing City Centre West against the applicant's fiscal impact analysis
