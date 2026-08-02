@@ -333,8 +333,13 @@ def sync_projects(session: Session, fetch_details: bool = True) -> dict:
 
 
 def fetch_media(session: Session, meeting: Meeting) -> str | None:
-    """Download the meeting MP3 (audio for Phase 2 transcription). Direct
-    archive-video.granicus.com URLs work with our browser User-Agent."""
+    """Download the meeting MP3 (audio for Phase 2 transcription).
+
+    Works from residential IPs with our browser User-Agent. Granicus's CDN
+    hard-blocks datacenter IPs (verified from Fly 2026-08-02: 403 on both
+    archive-video and the archive-stream HLS host), so cloud runs fail fast
+    here (http.download's cold-403 path) and audio is fetched/transcribed
+    from a residential machine instead."""
     if not meeting.audio_url:
         log.warning("meeting %s (%s) has no audio_url", meeting.id, meeting.title)
         return None
