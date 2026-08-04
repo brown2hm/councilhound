@@ -3,9 +3,10 @@ type: development-project
 title: George Snyder Trail Extension
 description: Fairfax City has developed a conceptual design for a shared-use path on Fairfax
   Boulevard.
-resource: https://councilhound.net/topics/george-snyder-trail-extension
+resource: https://councilhound.net/development/Wilcoxon-Trail-Extension
 tags:
 - city-project
+- in-progress
 timestamp: '2026-07-19'
 source: official
 address: Fairfax Blvd. and Draper Drive, 22030
@@ -13,6 +14,7 @@ city_detail_url: https://www.fairfaxva.gov/Property-Business/Development/Project
 lat: 38.8639907
 lng: -77.2812858
 evaluation_status: synthesized
+status: in_progress
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
@@ -28,6 +30,7 @@ Fairfax City has developed a conceptual design for a shared-use path on Fairfax 
 
 ## In this wiki
 
+- [Meeting history](/projects/wilcoxon-trail-extension/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/wilcoxon-trail-extension/positions.md)
 
 <!-- /curator:off -->

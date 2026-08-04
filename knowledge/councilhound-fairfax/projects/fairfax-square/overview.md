@@ -8,9 +8,9 @@ description: The Applicant proposes a phased mixed-use development that would re
 resource: https://councilhound.net/development/Fairfax-Square
 tags:
 - private-development
-- under-review
+- proposed
 timestamp: '2026-07-19'
-status: under_review
+status: proposed
 source: official
 address: 9840-9946 Main Street, Fairfax, VA 22030
 applicant: Van Metre Companies 9900 Main Street, Suite 500 Fairfax, VA 22031
@@ -65,6 +65,7 @@ The Applicant proposes a phased mixed-use development that would retain the exis
 
 ## In this wiki
 
+- [Meeting history](/projects/fairfax-square/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/fairfax-square/positions.md)
 - [Impact analysis](/projects/fairfax-square/impact.md) — screening estimates with assumptions and ranges
 - [Documents](/projects/fairfax-square/documents.md) — the city's published record for this project
