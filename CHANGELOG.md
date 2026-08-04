@@ -1,6 +1,39 @@
 # Changelog
 
-## Unreleased — the nightly stops lying to itself (August 2026)
+## Unreleased — the wiki becomes the front door (August 2026)
+
+The development detail page was really an impact-analysis page: it keyed on
+a synthesized evaluation and 404'd otherwise, so 19 of 41 official records
+had no page at all — while 38 of them carry a project wiki, the richest
+record we maintain. The section is now wiki-first.
+
+- **`/development/[slug]` is sub-route tabs under one shared header:
+  Wiki (default), Impact analysis, Documents.** The wiki tab renders every
+  concept page inline with `{{metric:...}}` markers still resolving against
+  the live evaluation; `/analysis` carries everything the old page had
+  (headline metrics, maps, assumptions lab, full report) and exists only
+  when synthesized; `/documents` lists the city's document record un-capped
+  — City Centre West shows all 60 where the topics page chips six. Old
+  `/development/[slug]/wiki` URLs redirect permanently.
+- **Every official project resolves.** New `GET /development/{slug}` shell
+  endpoint: the full city record (requests, planner, documents, official
+  timeline) plus `has_wiki`/`evaluation_status`/`no_analysis_reason`, 404
+  only on unknown slugs. Projects without a wiki fall back to the city's
+  own record; the missing analysis keeps its legible reason as a muted
+  chip in the tab bar.
+- **`has_wiki` now means "servable wiki" everywhere.** The entities route
+  counted reserved index/log rows, so an entity whose concept pages were
+  gone could advertise a wiki that 404s. One shared helper (concept-kind
+  only, matching `wiki_payload`'s own 404 condition) now feeds all three
+  flags, with a regression test.
+- **The directory treats the project page as canonical.** Names link to
+  `/development/[slug]` instead of the topic page, each wiki'd row carries
+  a "wiki · synced <date>" chip (one grouped `wiki_pages` query, no N+1),
+  "impact analysis" buttons point at the analysis tab, and meeting-derived
+  rows get their `/topics/[slug]/wiki` chip.
+- Side effect worth keeping: the default project page no longer ships
+  Leaflet/KaTeX — ~216 B of route JS, with the heavy chunks loading only
+  on `/analysis`.
 
 - **Late minutes/actions reports re-trigger extraction.** The nightly
   structures a fresh meeting from its agenda alone and honestly records "no
