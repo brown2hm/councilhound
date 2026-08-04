@@ -190,6 +190,39 @@ export interface CityProjectSummary {
   synced_at: string | null;
   has_evaluation: boolean;
   no_analysis_reason?: string | null;
+  has_wiki: boolean;
+  wiki_pushed_at: string | null;
+}
+
+/** GET /development/{slug} — the tab-shell payload: the full official record
+ * plus which views (wiki / analysis / documents) exist for the project. */
+export interface CityProjectDetail {
+  slug: string;
+  name: string;
+  entity_slug: string | null;
+  entity_status: string | null;
+  project_type: string | null;
+  division: string | null;
+  official_status: string | null;
+  description: string | null;
+  requests: string | null;
+  address: string | null;
+  applicant: string | null;
+  planner_name: string | null;
+  planner_phone: string | null;
+  planner_email: string | null;
+  detail_url: string;
+  image_url: string | null;
+  documents: { label: string; url: string }[];
+  official_timeline: string[];
+  lat: number | null;
+  lng: number | null;
+  synced_at: string | null;
+  has_wiki: boolean;
+  wiki_pushed_at: string | null;
+  evaluation_status: "extracted" | "confirmed" | "computed" | "synthesized" | null;
+  has_evaluation: boolean;
+  no_analysis_reason: string | null;
 }
 
 export interface ImpactProvenance {
@@ -450,6 +483,8 @@ export const api = {
   mapLocations: () => get<MapLocation[]>("/entities/map"),
   developmentProjects: (params: URLSearchParams) =>
     get<CityProjectSummary[]>(`/development/?${params}`),
+  developmentProject: (slug: string) =>
+    get<CityProjectDetail>(`/development/${encodeURIComponent(slug)}`),
   developmentEvaluation: (slug: string) =>
     get<ProjectEvaluation>(`/development/${encodeURIComponent(slug)}/evaluation`),
   developmentWiki: (slug: string) =>

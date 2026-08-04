@@ -47,3 +47,8 @@ def test_no_analysis_reasons(db, client):
     assert rows["Farr-House"]["no_analysis_reason"] == "no residential program to model"
     assert rows["Courthouse-Plaza"]["no_analysis_reason"] == "awaiting submitted plans"
     assert rows["Northfax-West"]["no_analysis_reason"] == "not yet evaluated"
+
+    # the per-project shell endpoint agrees with the list row
+    for slug in ("Davies-Property", "Gallery", "Taco-Bell", "Northfax-West"):
+        detail = client.get(f"/development/{slug}").json()
+        assert detail["no_analysis_reason"] == rows[slug]["no_analysis_reason"]

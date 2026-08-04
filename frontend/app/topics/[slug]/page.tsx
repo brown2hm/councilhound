@@ -173,12 +173,18 @@ export default async function TopicDetail({ params }: { params: { slug: string }
             </div>
           )}
           <div className="mt-4 flex flex-wrap items-center gap-4">
+            <Link
+              href={`/development/${entity.official.slug}`}
+              className="rounded-full border border-ink px-3.5 py-1.5 text-sm font-semibold text-ink hover:bg-ink hover:text-canvas"
+            >
+              Project page →
+            </Link>
             {entity.official.has_evaluation && (
               <Link
-                href={`/development/${entity.official.slug}`}
-                className="rounded-full border border-ink px-3.5 py-1.5 text-sm font-semibold text-ink hover:bg-ink hover:text-canvas"
+                href={`/development/${entity.official.slug}/analysis`}
+                className="text-sm font-semibold text-muted underline underline-offset-2 hover:text-ink"
               >
-                Impact analysis →
+                Impact analysis
               </Link>
             )}
             <a href={entity.official.detail_url} target="_blank" className="inline-block text-sm font-semibold text-muted underline underline-offset-2 hover:text-ink">

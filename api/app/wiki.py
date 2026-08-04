@@ -11,6 +11,18 @@ _PAGE_ORDER = {name: i for i, name in enumerate(
     ["overview", "history", "positions", "impact", "documents"])}
 
 
+def entity_has_wiki(session: Session, entity_id: int | None) -> bool:
+    """Concept pages only — matches wiki_payload's 404 condition, so the flag
+    never advertises a wiki the wiki routes would 404 on (an entity whose only
+    rows are the reserved index/log files has no servable wiki)."""
+    if entity_id is None:
+        return False
+    return session.scalar(
+        select(WikiPage.id)
+        .where(WikiPage.entity_id == entity_id, WikiPage.kind == "concept")
+        .limit(1)) is not None
+
+
 def wiki_payload(session: Session, entity: Entity) -> dict | None:
     rows = session.scalars(
         select(WikiPage).where(WikiPage.entity_id == entity.id)).all()

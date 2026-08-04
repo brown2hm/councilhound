@@ -12,13 +12,13 @@ the directory never conflates the three sources.
 import re
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from councilhound.db.models import CityProject, Entity, ProjectEvaluation, WikiPage
 
 from app.db import db_session
-from app.wiki import wiki_payload
+from app.wiki import entity_has_wiki, wiki_payload
 
 router = APIRouter()
 
@@ -106,7 +106,8 @@ def _no_analysis_reason(row: CityProject, eval_status: str | None) -> str | None
 
 
 def _serialize(row: CityProject, entity: Entity | None, has_evaluation: bool,
-               no_analysis_reason: str | None = None) -> dict:
+               no_analysis_reason: str | None = None,
+               has_wiki: bool = False, wiki_pushed_at=None) -> dict:
     return {
         "source": "official",
         "category": "development",
@@ -127,6 +128,8 @@ def _serialize(row: CityProject, entity: Entity | None, has_evaluation: bool,
         "lng": float(row.lng) if row.lng is not None else None,
         "synced_at": row.synced_at.isoformat() if row.synced_at else None,
         "has_evaluation": has_evaluation,
+        "has_wiki": has_wiki,
+        "wiki_pushed_at": wiki_pushed_at.isoformat() if wiki_pushed_at else None,
     }
 
 
@@ -152,9 +155,16 @@ def list_development_projects(
         query = query.where(CityProject.official_status == status)
     if q:
         query = query.where(CityProject.name.ilike(f"%{q}%"))
+    # one grouped query for wiki presence/freshness across every row
+    wiki_by_entity: dict[int, object] = dict(session.execute(
+        select(WikiPage.entity_id, func.max(WikiPage.pushed_at))
+        .where(WikiPage.kind == "concept")
+        .group_by(WikiPage.entity_id)).all())
     items = [
         _serialize(row, entity, eval_status == "synthesized",
-                   no_analysis_reason=_no_analysis_reason(row, eval_status))
+                   no_analysis_reason=_no_analysis_reason(row, eval_status),
+                   has_wiki=row.entity_id in wiki_by_entity,
+                   wiki_pushed_at=wiki_by_entity.get(row.entity_id))
         for row, entity, eval_status in session.execute(query).all()
     ]
 
@@ -182,6 +192,7 @@ def list_development_projects(
             if _is_duplicate(tokens, seen_tokens):  # collapse near-identical mentions
                 continue
             seen_tokens.append(tokens)
+            wiki_pushed = wiki_by_entity.get(entity.id)
             items.append({
                 "source": "meetings",
                 "category": _category(entity.name),
@@ -201,6 +212,8 @@ def list_development_projects(
                 "lng": None,
                 "synced_at": None,
                 "has_evaluation": False,
+                "has_wiki": entity.id in wiki_by_entity,
+                "wiki_pushed_at": wiki_pushed.isoformat() if wiki_pushed else None,
             })
     return items
 
@@ -243,9 +256,7 @@ def get_evaluation(slug: str, session: Session = Depends(db_session)):
         for note in module_result.get("narrative_notes", [])
     ]
     entity = (session.get(Entity, project.entity_id) if project.entity_id else None)
-    has_wiki = entity is not None and session.scalar(
-        select(WikiPage.id).where(WikiPage.entity_id == entity.id,
-                                  WikiPage.kind == "concept").limit(1)) is not None
+    has_wiki = entity_has_wiki(session, project.entity_id)
     return {
         "slug": project.external_slug,
         "name": project.name,
@@ -264,4 +275,55 @@ def get_evaluation(slug: str, session: Session = Depends(db_session)):
         "report_model": evaluation.report_model,
         "report_prompt_version": evaluation.report_prompt_version,
         "synthesized_at": evaluation.synthesized_at.isoformat() if evaluation.synthesized_at else None,
+    }
+
+
+@router.get("/{slug}")
+def get_project(slug: str, session: Session = Depends(db_session)):
+    """The full official project record plus which views exist for it — the
+    light shell payload behind every tab of the development page. Heavy
+    payloads (wiki bodies, evaluation GeoJSON) stay on the sub-endpoints."""
+    row = session.scalar(
+        select(CityProject).where(CityProject.external_slug == slug))
+    if row is None:
+        raise HTTPException(status_code=404, detail="unknown project")
+    entity = session.get(Entity, row.entity_id) if row.entity_id else None
+    eval_row = session.execute(
+        select(ProjectEvaluation.status,
+               ProjectEvaluation.report_markdown.isnot(None))
+        .where(ProjectEvaluation.city_project_id == row.id)).first()
+    eval_status, has_report = eval_row if eval_row else (None, False)
+    wiki_pushed_at = None
+    if entity is not None:
+        wiki_pushed_at = session.scalar(
+            select(func.max(WikiPage.pushed_at))
+            .where(WikiPage.entity_id == entity.id,
+                   WikiPage.kind == "concept"))
+    return {
+        "slug": row.external_slug,
+        "name": row.name,
+        "entity_slug": entity.canonical_slug if entity else None,
+        "entity_status": entity.current_status if entity else None,
+        "project_type": row.project_type,
+        "division": row.division,
+        "official_status": row.official_status,
+        "description": row.description,
+        "requests": row.requests,
+        "address": row.address,
+        "applicant": row.applicant,
+        "planner_name": row.planner_name,
+        "planner_phone": row.planner_phone,
+        "planner_email": row.planner_email,
+        "detail_url": row.detail_url,
+        "image_url": row.image_url,
+        "documents": row.documents or [],
+        "official_timeline": row.official_timeline or [],
+        "lat": float(row.lat) if row.lat is not None else None,
+        "lng": float(row.lng) if row.lng is not None else None,
+        "synced_at": row.synced_at.isoformat() if row.synced_at else None,
+        "has_wiki": entity_has_wiki(session, row.entity_id),
+        "wiki_pushed_at": wiki_pushed_at.isoformat() if wiki_pushed_at else None,
+        "evaluation_status": eval_status,
+        "has_evaluation": eval_status == "synthesized" and bool(has_report),
+        "no_analysis_reason": _no_analysis_reason(row, eval_status),
     }

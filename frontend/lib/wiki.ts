@@ -29,15 +29,17 @@ export function fmtMetric(m: ImpactMetric): string {
 }
 
 /** Resolve wiki source into renderable markdown. `wikiBase` is where the
- * wiki's own pages live relative to the hosting page: "" on the wiki page
- * itself (in-page anchors), "/development/<slug>/wiki" when embedding a
- * single page elsewhere. */
+ * wiki's own pages live relative to the hosting page: "" on the wiki tab
+ * itself (in-page anchors), "/development/<slug>" when embedding a single
+ * page elsewhere. `pageHrefs` overrides the target for specific bundle pages
+ * that live on their own route (e.g. documents → the Documents tab). */
 export function resolveBody(
   body: string,
   metrics: Map<string, ImpactMetric>,
   entitySlug: string,
   officialSlug: string | null,
   wikiBase = "",
+  pageHrefs: Record<string, string> = {},
 ): string {
   return body
     .replace(/<!--[\s\S]*?-->/g, "") // ownership notes are for editors, not readers
@@ -48,12 +50,12 @@ export function resolveBody(
     .replace(/\{\{map:([a-z0-9-]+)\}\}/g, (_all, key: string) =>
       // meeting-derived projects have no analysis page to link to
       officialSlug
-        ? `[maps on the analysis page](/development/${officialSlug})`
+        ? `[maps on the analysis page](/development/${officialSlug}/analysis)`
         : `_map ${key} unavailable_`,
     )
     .replace(
       new RegExp(`\\]\\(/projects/${entitySlug}/([a-z0-9-]+)\\.md\\)`, "g"),
-      (_all, page: string) => `](${wikiBase}#${page})`,
+      (_all, page: string) => `](${pageHrefs[page] ?? `${wikiBase}#${page}`})`,
     );
 }
 

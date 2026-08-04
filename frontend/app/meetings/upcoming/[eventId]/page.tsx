@@ -107,7 +107,7 @@ export default async function UpcomingMeetingPage({
                   </Link>
                   {t.evaluation_slug && (
                     <Link
-                      href={`/development/${t.evaluation_slug}`}
+                      href={`/development/${t.evaluation_slug}/analysis`}
                       className="underline underline-offset-2 hover:text-muted"
                     >
                       impact analysis

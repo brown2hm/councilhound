@@ -68,6 +68,35 @@ def test_wiki_404s(client, db):
     assert client.get("/entities/no-wiki/wiki").status_code == 404
 
 
+def test_reserved_pages_do_not_count_as_wiki(client, db):
+    """An entity whose only wiki rows are the reserved index/log files has no
+    servable wiki — every has_wiki flag must agree with the wiki routes' 404."""
+    entity = Entity(entity_type="project", name="Reserved Only",
+                    canonical_slug="reserved-only")
+    db.add(entity)
+    db.flush()
+    project = CityProject(external_slug="Reserved-Only", entity_id=entity.id,
+                          name="Reserved Only",
+                          detail_url="https://example.gov/reserved-only")
+    db.add(project)
+    db.flush()
+    db.add(WikiPage(path="projects/reserved-only/log.md", entity_id=entity.id,
+                    kind="log", page="log", frontmatter=None,
+                    body="# Log\n", content_hash="log"))
+    db.add(WikiPage(path="projects/reserved-only/index.md", entity_id=entity.id,
+                    kind="index", page="index", frontmatter=None,
+                    body="# Reserved Only\n", content_hash="idx"))
+    db.add(ProjectEvaluation(city_project_id=project.id, status="synthesized",
+                             spec={"name": "Reserved Only"},
+                             module_results=[], report_markdown="# Impact\n"))
+    db.commit()
+    assert client.get("/development/Reserved-Only/wiki").status_code == 404
+    assert client.get("/entities/reserved-only").json()["has_wiki"] is False
+    assert client.get("/development/Reserved-Only").json()["has_wiki"] is False
+    assert client.get(
+        "/development/Reserved-Only/evaluation").json()["has_wiki"] is False
+
+
 def test_evaluation_has_wiki_flag(client, db):
     entity, project = _wiki_project(db)
     db.add(ProjectEvaluation(

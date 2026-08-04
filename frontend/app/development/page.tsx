@@ -1,11 +1,11 @@
 import Link from "next/link";
 import StatusBadge from "@/components/StatusBadge";
-import { api } from "@/lib/api";
+import { api, formatDate } from "@/lib/api";
 
 export const metadata = {
   title: "Development directory",
   description:
-    "Official City of Fairfax development project records plus projects surfaced from council-meeting discussion, linked to topic history and impact analysis.",
+    "Official City of Fairfax development project records with maintained project wikis, meeting history, and impact analysis — plus projects surfaced from council-meeting discussion.",
 };
 
 export const dynamic = "force-dynamic";
@@ -34,8 +34,9 @@ export default async function DevelopmentPage({
     <div className="mx-auto max-w-[1280px] px-4 pb-16 pt-8 sm:px-8">
       <h1 className="mb-1 text-[32px] font-medium tracking-[-0.5px]">Development directory</h1>
       <p className="mb-5 text-sm text-muted">
-        Official City of Fairfax project records, linked back to CouncilHound topic history
-        where available — followed by projects surfaced only from council-meeting discussion.
+        Official City of Fairfax project records, each with a maintained project wiki
+        built from council meetings and city records — followed by projects surfaced
+        only from council-meeting discussion.
       </p>
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -74,8 +75,8 @@ export default async function DevelopmentPage({
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <div className="mb-1 flex flex-wrap items-center gap-2">
-                  {project.entity_slug ? (
-                    <Link href={`/topics/${project.entity_slug}`} className="text-sm font-semibold text-ink underline underline-offset-2">
+                  {project.slug ? (
+                    <Link href={`/development/${project.slug}`} className="text-sm font-semibold text-ink underline underline-offset-2">
                       {project.name}
                     </Link>
                   ) : (
@@ -85,6 +86,14 @@ export default async function DevelopmentPage({
                 </div>
                 <div className="mb-2 text-[13px] text-muted">
                   {[project.project_type, project.division, project.address].filter(Boolean).join(" · ")}
+                  {project.entity_slug && (
+                    <>
+                      {" · "}
+                      <Link href={`/topics/${project.entity_slug}`} className="font-semibold underline underline-offset-2 hover:text-ink">
+                        topic history
+                      </Link>
+                    </>
+                  )}
                 </div>
                 {project.description && (
                   <p className="max-w-[820px] text-sm leading-[1.55] text-body">{project.description}</p>
@@ -96,9 +105,19 @@ export default async function DevelopmentPage({
                     {project.official_status}
                   </span>
                 )}
-                {project.has_evaluation && (
+                {project.has_wiki && (
                   <Link
                     href={`/development/${project.slug}`}
+                    className="rounded-full border border-hairline bg-canvas px-3 py-1 text-xs font-semibold text-body hover:bg-strong"
+                  >
+                    wiki
+                    {project.wiki_pushed_at &&
+                      ` · synced ${formatDate(project.wiki_pushed_at.slice(0, 10))}`}
+                  </Link>
+                )}
+                {project.has_evaluation && (
+                  <Link
+                    href={`/development/${project.slug}/analysis`}
                     className="rounded-full border border-ink px-3 py-1 text-xs font-semibold text-ink hover:bg-ink hover:text-canvas"
                   >
                     impact analysis
@@ -160,14 +179,24 @@ export default async function DevelopmentPage({
                       from meetings
                     </span>
                   </div>
-                  {project.entity_slug && (
-                    <Link
-                      href={`/topics/${project.entity_slug}`}
-                      className="text-[13px] font-semibold text-muted underline underline-offset-2 hover:text-ink"
-                    >
-                      topic history
-                    </Link>
-                  )}
+                  <div className="flex flex-wrap items-center gap-3">
+                    {project.has_wiki && project.entity_slug && (
+                      <Link
+                        href={`/topics/${project.entity_slug}/wiki`}
+                        className="rounded-full border border-hairline bg-canvas px-2.5 py-0.5 text-[11px] font-semibold text-muted hover:bg-strong"
+                      >
+                        wiki
+                      </Link>
+                    )}
+                    {project.entity_slug && (
+                      <Link
+                        href={`/topics/${project.entity_slug}`}
+                        className="text-[13px] font-semibold text-muted underline underline-offset-2 hover:text-ink"
+                      >
+                        topic history
+                      </Link>
+                    )}
+                  </div>
                 </div>
               </li>
             ))}

@@ -6,14 +6,14 @@ from sqlalchemy.orm import Session
 
 from councilhound.db.models import (
     AgendaItem, CityProject, Entity, EntityAlias, EntityGeocode, EntityMention, EntityProfile,
-    EntityUpdate, Meeting, UpcomingMeeting, Vote, WikiPage,
+    EntityUpdate, Meeting, UpcomingMeeting, Vote,
 )
 from councilhound.hot_topics import MIN_VARIANT_LEN
 from councilhound.hot_topics import entity_discussion_series, hot_topics
 
 from app.db import db_session
 from app.links import clip_link
-from app.wiki import wiki_payload
+from app.wiki import entity_has_wiki, wiki_payload
 
 router = APIRouter()
 
@@ -278,9 +278,7 @@ def get_entity(slug: str, session: Session = Depends(db_session)):
         "related": _related_entities(session, entity),
         # meeting-derived entities have no /development route, so the topics
         # page is the only place their wiki can be linked from
-        "has_wiki": session.scalar(
-            select(WikiPage.id).where(WikiPage.entity_id == entity.id).limit(1)
-        ) is not None,
+        "has_wiki": entity_has_wiki(session, entity.id),
         "official": _city_record(session, entity),
         "discussion": (entity_discussion_series(session, entity)
                        if entity.entity_type != "person" else []),

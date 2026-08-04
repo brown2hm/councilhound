@@ -1,5 +1,5 @@
-"""Impact-evaluation endpoints: 404 states, response shape, list flag."""
-from councilhound.db.models import CityProject, ProjectEvaluation
+"""Impact-evaluation endpoints: 404 states, response shape, list flags."""
+from councilhound.db.models import CityProject, Entity, ProjectEvaluation, WikiPage
 
 
 def _project(db, slug="circle-gateway"):
@@ -68,8 +68,21 @@ def test_evaluation_shape(client, db):
 def test_list_has_evaluation_flag(client, db):
     with_eval = _project(db, "with-eval")
     _synthesized(db, with_eval)
-    _project(db, "without-eval")
+    without = _project(db, "without-eval")
+    entity = Entity(entity_type="project", name="Without Eval",
+                    canonical_slug="without-eval-entity")
+    db.add(entity)
+    db.flush()
+    without.entity_id = entity.id
+    db.add(WikiPage(path="projects/without-eval-entity/overview.md",
+                    entity_id=entity.id, kind="concept", page="overview",
+                    frontmatter={"title": "Without Eval"},
+                    body="An overview.\n", content_hash="ov"))
     db.commit()
     rows = {r["slug"]: r for r in client.get("/development/").json()}
     assert rows["with-eval"]["has_evaluation"] is True
+    assert rows["with-eval"]["has_wiki"] is False
+    assert rows["with-eval"]["wiki_pushed_at"] is None
     assert rows["without-eval"]["has_evaluation"] is False
+    assert rows["without-eval"]["has_wiki"] is True
+    assert rows["without-eval"]["wiki_pushed_at"] is not None
