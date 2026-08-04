@@ -4,7 +4,7 @@ title: Old Town Parking Study
 description: The Old Town Parking Study is a city-commissioned project that analyzed parking
   utilization across Old Town, with field observations conducted by a consultant in the fall
   of 2024.
-resource: https://councilhound.net/topics/old-town
+resource: https://councilhound.net/topics/old-town-parking-study
 tags:
 - in-progress
 timestamp: '2025-06-23'

@@ -4,7 +4,7 @@ title: Gatewood Plaza
 description: Gatewood Plaza is a proposed redevelopment of an existing office building (and
   adjacent parking structure) at 10201 Fairfax Boulevard, located at a signalized intersection
   directly across from Boulevard Marketplace.
-resource: https://councilhound.net/topics
+resource: https://councilhound.net/topics/gatewood-plaza
 tags:
 - proposed
 timestamp: '2025-02-10'

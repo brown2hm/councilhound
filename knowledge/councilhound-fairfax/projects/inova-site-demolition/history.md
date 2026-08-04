@@ -2,7 +2,7 @@
 type: project-history
 title: INOVA site demolition — meeting history
 description: Dated record of every meeting action on INOVA site demolition, through 2025-05-12.
-resource: https://councilhound.net/topics
+resource: https://councilhound.net/topics/inova-site-demolition
 timestamp: '2025-05-12'
 ---
 

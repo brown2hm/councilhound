@@ -6,6 +6,7 @@ description: The Government Center Parkway Extension is a road construction proj
 resource: https://councilhound.net/development/Government-Center-Parkway-Extension
 tags:
 - city-project
+- in-progress
 timestamp: '2025-06-10'
 status: in_progress
 source: official

@@ -1,24 +1,24 @@
 ---
 type: project-documents
-title: The Highlands at Mantua — documents
-description: 35 document(s) published in the City of Fairfax project record for The Highlands
+title: Highlands at Mantua — documents
+description: 37 document(s) published in the City of Fairfax project record for Highlands
   at Mantua.
 resource: https://councilhound.net/development/The-Highlands-at-Mantua
-timestamp: '2026-07-30'
+timestamp: '2026-08-04'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
 
 Documents published in the city's project record, in the order the city lists them. Labels are the city's own and usually carry the document date, format, and size.
 
-- [Master-Development-Plan.pdf (PDF, 83MB)](https://www.fairfaxva.gov/files/content/city/v/11/property-business/development/projects/the-highlands-at-mantua/master-development-plan_2.pdf)
-- [Draft-Summary-of-Commitments.pdf (PDF, 167KB)](https://www.fairfaxva.gov/files/content/city/v/11/property-business/development/projects/the-highlands-at-mantua/draft-summary-of-commitments_2.pdf)
-- [Narrative.pdf (PDF, 238KB)](https://www.fairfaxva.gov/files/content/city/v/11/property-business/development/projects/the-highlands-at-mantua/narrative_1.pdf)
-- [Master-Development-Plan.pdf (PDF, 86MB)](https://www.fairfaxva.gov/files/content/city/v/11/property-business/development/projects/the-highlands-at-mantua/master-development-plan_1.pdf)
-- [Draft-Summary-of-Commitments.pdf (PDF, 166KB)](https://www.fairfaxva.gov/files/content/city/v/11/property-business/development/projects/the-highlands-at-mantua/draft-summary-of-commitments_1.pdf)
-- [Narrative.pdf (PDF, 488KB)](https://www.fairfaxva.gov/files/content/city/v/11/property-business/development/projects/the-highlands-at-mantua/narrative.pdf)
-- [Master-Development-Plan.pdf (PDF, 68MB)](https://www.fairfaxva.gov/files/content/city/v/11/property-business/development/projects/the-highlands-at-mantua/master-development-plan.pdf)
-- [Draft-Summary-of-Commitments.pdf (PDF, 465KB)](https://www.fairfaxva.gov/files/content/city/v/11/property-business/development/projects/the-highlands-at-mantua/draft-summary-of-commitments.pdf)
+- [Master-Development-Plan.pdf (PDF, 83MB)](https://www.fairfaxva.gov/files/content/city/v/12/property-business/development/projects/the-highlands-at-mantua/master-development-plan_2.pdf)
+- [Draft-Summary-of-Commitments.pdf (PDF, 167KB)](https://www.fairfaxva.gov/files/content/city/v/12/property-business/development/projects/the-highlands-at-mantua/draft-summary-of-commitments_2.pdf)
+- [Narrative.pdf (PDF, 238KB)](https://www.fairfaxva.gov/files/content/city/v/12/property-business/development/projects/the-highlands-at-mantua/narrative_1.pdf)
+- [Master-Development-Plan.pdf (PDF, 86MB)](https://www.fairfaxva.gov/files/content/city/v/12/property-business/development/projects/the-highlands-at-mantua/master-development-plan_1.pdf)
+- [Draft-Summary-of-Commitments.pdf (PDF, 166KB)](https://www.fairfaxva.gov/files/content/city/v/12/property-business/development/projects/the-highlands-at-mantua/draft-summary-of-commitments_1.pdf)
+- [Narrative.pdf (PDF, 488KB)](https://www.fairfaxva.gov/files/content/city/v/12/property-business/development/projects/the-highlands-at-mantua/narrative.pdf)
+- [Master-Development-Plan.pdf (PDF, 68MB)](https://www.fairfaxva.gov/files/content/city/v/12/property-business/development/projects/the-highlands-at-mantua/master-development-plan.pdf)
+- [Draft-Summary-of-Commitments.pdf (PDF, 465KB)](https://www.fairfaxva.gov/files/content/city/v/12/property-business/development/projects/the-highlands-at-mantua/draft-summary-of-commitments.pdf)
 - [July 7, 2025 Statement of Intent (PDF, 120KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/the-highlands-at-mantua/highlands-at-mantua-statement-of-intent-2025-05-05.pdf)
 - [July 7, 2025 BAR Plan Submission (PDF, 25MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/the-highlands-at-mantua/highlands-at-mantua-updated-bar-2025-07-07.pdf)
 - [January 7, 2025 Narrative (PDF, 135KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/the-highlands-at-mantua/january-7-2025-narrative.pdf)
@@ -34,6 +34,8 @@ Documents published in the city's project record, in the order the city lists th
 - [April 28, 2024 Trip Generation Memo (PDF, 1000KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/the-highlands-at-mantua/april-28-2024-trip-generation-memo.pdf)
 - [June 2, 2023 Request for Pre-Application Briefing (PDF, 119KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/the-highlands-at-mantua/june-2-2023-request-for-pre-application-briefing.pdf)
 - [June 2, 2023 Pre-Application Briefing Concept Plan (PDF, 4MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/the-highlands-at-mantua/june-2-2023-pre-application-briefing-concept-plan.pdf)
+- [July 27, 2026 Planning Commission Public Hearing Staff Report](https://fairfax.granicus.com/MetaViewer.php?view_id=13&clip_id=4622&meta_id=134375)
+- [July 27, 2026 Planning Commission Public Hearing Video](https://fairfax.granicus.com/MediaPlayer.php?view_id=13&clip_id=4622&meta_id=134374)
 - [July 16, 2025 BAR Public Hearing Staff Report (PDF, 25MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/the-highlands-at-mantua/staff-report-20250716-highlands-at-mantua.pdf)
 - [July 16, 2025 BAR Public Hearing Video](https://fairfax.granicus.com/player/clip/4282?view_id=13&redirect=true)
 - [February 25, 2025 City Council Post-Submission Work Session (PDF, 5MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/the-highlands-at-mantua/february-25-2025-city-council-post-submission-work-session.pdf)

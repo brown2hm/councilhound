@@ -7,7 +7,7 @@ description: The potential applicant is proposing to redevelop the property with
 resource: https://councilhound.net/development/3541-Chain-Bridge-Road
 tags:
 - private-development
-- in-progress
+- proposed
 timestamp: '2026-07-28'
 source: official
 address: 3541 Chain Bridge Road, Fairfax, VA 22030
@@ -16,7 +16,7 @@ city_detail_url: https://www.fairfaxva.gov/Property-Business/Development/Project
 evaluation_status: synthesized
 lat: 38.8607598
 lng: -77.3061536
-status: in_progress
+status: proposed
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->

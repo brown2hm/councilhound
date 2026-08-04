@@ -3,7 +3,7 @@ type: project-history
 title: CUE Transit Development Plan (TDP) — meeting history
 description: Dated record of every meeting action on CUE Transit Development Plan (TDP), through
   2026-06-02.
-resource: https://councilhound.net/topics/cue-bus-transit-development-plan-update
+resource: https://councilhound.net/topics/cue-transit-development-plan-tdp
 timestamp: '2026-06-02'
 ---
 

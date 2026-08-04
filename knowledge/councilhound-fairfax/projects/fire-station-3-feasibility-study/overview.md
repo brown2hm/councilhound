@@ -3,7 +3,7 @@ type: development-project
 title: 'Fire Station #3 Feasibility Study'
 description: 'The Fire Station #3 Feasibility Study is an ongoing city project examining the
   future of the Fire Station #3 site.'
-resource: https://councilhound.net/topics
+resource: https://councilhound.net/topics/fire-station-3-feasibility-study
 tags:
 - in-progress
 timestamp: '2025-05-12'

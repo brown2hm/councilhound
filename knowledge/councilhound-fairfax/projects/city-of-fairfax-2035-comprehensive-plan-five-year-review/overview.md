@@ -4,7 +4,7 @@ title: City of Fairfax 2035 Comprehensive Plan Five Year Review
 description: The City of Fairfax 2035 Comprehensive Plan Five Year Review is a statutorily
   required periodic review (per Code of Virginia Section 15.2-2230) of the city's long-range
   land use and policy planning document.
-resource: https://councilhound.net/topics/city-of-fairfax-2035-comprehensive-plan
+resource: https://councilhound.net/topics/city-of-fairfax-2035-comprehensive-plan-five-year-review
 tags:
 - approved
 timestamp: '2024-09-23'

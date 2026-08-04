@@ -3,7 +3,7 @@ type: project-positions
 title: 'Fire Station #3 Feasibility Study — positions & open questions'
 description: 'Recorded member positions and unresolved questions on Fire Station #3 Feasibility
   Study.'
-resource: https://councilhound.net/topics
+resource: https://councilhound.net/topics/fire-station-3-feasibility-study
 timestamp: '2025-05-12'
 ---
 

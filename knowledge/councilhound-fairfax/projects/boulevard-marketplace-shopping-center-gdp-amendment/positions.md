@@ -3,7 +3,7 @@ type: project-positions
 title: Boulevard Marketplace Shopping Center GDP Amendment — positions & open questions
 description: Recorded member positions and unresolved questions on Boulevard Marketplace Shopping
   Center GDP Amendment.
-resource: https://councilhound.net/topics
+resource: https://councilhound.net/topics/boulevard-marketplace-shopping-center-gdp-amendment
 timestamp: '2024-12-10'
 ---
 

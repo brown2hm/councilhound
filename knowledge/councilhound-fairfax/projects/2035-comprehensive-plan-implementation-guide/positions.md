@@ -3,7 +3,7 @@ type: project-positions
 title: 2035 Comprehensive Plan Implementation Guide — positions & open questions
 description: Recorded member positions and unresolved questions on 2035 Comprehensive Plan
   Implementation Guide.
-resource: https://councilhound.net/topics
+resource: https://councilhound.net/topics/2035-comprehensive-plan-implementation-guide
 timestamp: '2026-07-13'
 ---
 

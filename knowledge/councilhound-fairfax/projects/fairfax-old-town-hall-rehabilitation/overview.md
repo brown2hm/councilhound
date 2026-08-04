@@ -6,6 +6,7 @@ description: The city is rehabilitating Old Town Hall, the premier public facili
 resource: https://councilhound.net/development/Fairfax-Old-Town-Hall-Rehabilitation
 tags:
 - city-project
+- in-progress
 timestamp: '2026-07-19'
 source: official
 address: 3999 University Dr., Fairfax, VA 22030

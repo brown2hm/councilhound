@@ -3,7 +3,7 @@ type: project-history
 title: City of Fairfax 2035 Comprehensive Plan Five Year Review — meeting history
 description: Dated record of every meeting action on City of Fairfax 2035 Comprehensive Plan
   Five Year Review, through 2024-09-23.
-resource: https://councilhound.net/topics/city-of-fairfax-2035-comprehensive-plan
+resource: https://councilhound.net/topics/city-of-fairfax-2035-comprehensive-plan-five-year-review
 timestamp: '2024-09-23'
 ---
 

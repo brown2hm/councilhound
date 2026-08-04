@@ -3,7 +3,7 @@ type: development-project
 title: 1st/2nd Street Sidewalks
 description: The 1st/2nd Street Sidewalks project involves the construction of three blocks
   of sidewalk, curb, and gutter along 1st and 2nd Streets between Hallman and Oak Streets.
-resource: https://councilhound.net/topics
+resource: https://councilhound.net/topics/1st2nd-street-sidewalks
 tags:
 - in-progress
 timestamp: '2025-09-09'

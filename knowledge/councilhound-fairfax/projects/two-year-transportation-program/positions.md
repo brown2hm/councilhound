@@ -3,7 +3,7 @@ type: project-positions
 title: Two-Year Transportation Program — positions & open questions
 description: Recorded member positions and unresolved questions on Two-Year Transportation
   Program.
-resource: https://councilhound.net/topics
+resource: https://councilhound.net/topics/two-year-transportation-program
 timestamp: '2025-02-18'
 ---
 

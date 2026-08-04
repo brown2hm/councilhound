@@ -14,3 +14,7 @@
 
 - Meeting history updated through 2026-07-28.
 - Added 2026-07-28 City Council pre-application briefing to overview recent activity and raised open question about applicant name discrepancy (Network Realty Partners vs. Evan Pritchard Wire Gill, LLP). (curator: claude-sonnet-4-6, through 2026-07-28)
+
+## 2026-08-04
+
+- Meeting history updated through 2026-07-28.

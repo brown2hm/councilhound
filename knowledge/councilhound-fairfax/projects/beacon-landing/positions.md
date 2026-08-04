@@ -2,7 +2,7 @@
 type: project-positions
 title: Beacon Landing — positions & open questions
 description: Recorded member positions and unresolved questions on Beacon Landing.
-resource: https://councilhound.net/topics
+resource: https://councilhound.net/topics/beacon-landing
 timestamp: '2026-05-05'
 ---
 

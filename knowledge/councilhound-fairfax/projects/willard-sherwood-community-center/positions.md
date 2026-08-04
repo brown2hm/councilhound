@@ -3,7 +3,7 @@ type: project-positions
 title: Willard-Sherwood Community Center — positions & open questions
 description: Recorded member positions and unresolved questions on Willard-Sherwood Community
   Center.
-resource: https://councilhound.net/topics/willard-sherwood-community-center
+resource: https://councilhound.net/development/Willard-Sherwood-Health-Community-Center
 timestamp: '2026-05-11'
 ---
 

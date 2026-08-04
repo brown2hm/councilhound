@@ -3,7 +3,7 @@ type: project-positions
 title: Fairfax HS Electrical Program Build-Out — positions & open questions
 description: Recorded member positions and unresolved questions on Fairfax HS Electrical Program
   Build-Out.
-resource: https://councilhound.net/topics
+resource: https://councilhound.net/topics/fairfax-hs-electrical-program-build-out
 timestamp: '2025-11-18'
 ---
 

@@ -4,7 +4,7 @@ title: 2035 Comprehensive Plan Implementation Guide
 description: The 2035 Comprehensive Plan Implementation Guide is an ongoing project that tracks
   the City's progress in carrying out the policies of its 2035 Comprehensive Plan, including
   associated Small Area Plan Implementation Guides.
-resource: https://councilhound.net/topics
+resource: https://councilhound.net/topics/2035-comprehensive-plan-implementation-guide
 tags:
 - in-progress
 timestamp: '2026-07-13'

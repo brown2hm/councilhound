@@ -1,10 +1,10 @@
 ---
 type: project-documents
 title: Courthouse Plaza — documents
-description: 16 document(s) published in the City of Fairfax project record for Courthouse
+description: 22 document(s) published in the City of Fairfax project record for Courthouse
   Plaza.
 resource: https://councilhound.net/development/Courthouse-Plaza
-timestamp: '2026-07-30'
+timestamp: '2026-08-04'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
@@ -23,6 +23,12 @@ Documents published in the city's project record, in the order the city lists th
 - [January 27, 2026 Concept Plans (PDF, 31MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/courthouse-plaza/2026/pre-application/jan.-2026_concept-plans.pdf)
 - [January 27, 2026 Statement of Support (PDF, 673KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/courthouse-plaza/2026/pre-application/01_22_26_statement-of-support.pdf)
 - [January 27, 2026 Retail Strategy (DOCX, 122KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/courthouse-plaza/2026/pre-application/2026-0120_courthouse-plaza-redevelopment_proposed-retail-strategy_draft.docx)
+- [July 28, 2026 City Council Work Session Video](https://fairfax.granicus.com/player/clip/4623?view_id=13&meta_id=134463&redirect=true)
+- [July 28, 2026 City Council Work Session](https://fairfax.granicus.com/GeneratedAgendaViewer.php?view_id=13&clip_id=4623)
+- [June 22, 2026 Planning Commission Work Session Video](https://fairfax.granicus.com/player/clip/4595?view_id=13&meta_id=133715&redirect=true)
+- [June 22, 2026 Planning Commission Work Session](https://fairfax.granicus.com/GeneratedAgendaViewer.php?view_id=13&clip_id=4595)
+- [June 3, 2026 Board of Architectural Review Work Session Video](https://fairfax.granicus.com/player/clip/4572?view_id=13&redirect=true)
+- [June 3, 2026 Board of Architectural Review Work Session](https://fairfax.granicus.com/GeneratedAgendaViewer.php?view_id=13&clip_id=4572)
 - [February 24, 2026 City Council Briefing Video](https://fairfax.granicus.com/player/clip/4474?view_id=13&redirect=true)
 - [February 24, 2026 City Council Briefing](https://fairfax.granicus.com/GeneratedAgendaViewer.php?view_id=13&clip_id=4474)
 - [February 9, 2026 Planning Commission Briefing Video](https://fairfax.granicus.com/player/clip/4460?view_id=13&redirect=true)

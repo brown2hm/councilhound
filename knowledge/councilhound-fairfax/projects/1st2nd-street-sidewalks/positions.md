@@ -2,7 +2,7 @@
 type: project-positions
 title: 1st/2nd Street Sidewalks — positions & open questions
 description: Recorded member positions and unresolved questions on 1st/2nd Street Sidewalks.
-resource: https://councilhound.net/topics
+resource: https://councilhound.net/topics/1st2nd-street-sidewalks
 timestamp: '2025-09-09'
 ---
 

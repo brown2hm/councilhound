@@ -2,7 +2,7 @@
 type: project-history
 title: Old Town Parking Study — meeting history
 description: Dated record of every meeting action on Old Town Parking Study, through 2025-06-23.
-resource: https://councilhound.net/topics/old-town
+resource: https://councilhound.net/topics/old-town-parking-study
 timestamp: '2025-06-23'
 ---
 

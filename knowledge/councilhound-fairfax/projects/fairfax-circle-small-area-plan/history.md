@@ -2,9 +2,9 @@
 type: project-history
 title: Fairfax Circle Small Area Plan — meeting history
 description: Dated record of every meeting action on Fairfax Circle Small Area Plan, through
-  2026-06-08.
-resource: https://councilhound.net/topics/fairfax-circle
-timestamp: '2026-06-08'
+  2025-10-27.
+resource: https://councilhound.net/topics/fairfax-circle-small-area-plan
+timestamp: '2025-10-27'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
@@ -43,9 +43,3 @@ timestamp: '2026-06-08'
 **Agenda item 10**: Staff Report ([watch the moment](https://fairfax.granicus.com/MediaPlayer.php?view_id=13&clip_id=4368&starttime=1989&entrytime=1989))
 - Outcome: Staff reported on several recent and upcoming items, including City Council actions, ongoing plans, and commission vacancies.
 - [10] Staff discussed the Fairfax Circle Small Area Plan at a transportation department meeting focused on the Fairfax Circle area, with follow-up meetings with local homeowner associations anticipated.
-
-## 2026-06-08 — Planning Commission Regular Meeting/Work Session
-
-**Agenda item 8b**: Discussion of a potential review and update to adopted small area plans for Old Town, Northfax, Kamp Washington, and Fairfax Circle ([watch the moment](https://fairfax.granicus.com/MediaPlayer.php?view_id=13&clip_id=4575&starttime=7169&entrytime=7169))
-- Outcome: Scheduled per agenda as a work session discussion item. No minutes or actions report yet; outcome not confirmed.
-- [8b] A potential review and update of the adopted Fairfax Circle small area plan was scheduled for discussion at this work session.

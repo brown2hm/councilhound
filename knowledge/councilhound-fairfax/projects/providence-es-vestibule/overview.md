@@ -3,7 +3,7 @@ type: development-project
 title: Providence ES Vestibule
 description: The Providence ES Vestibule is a Schools Capital Improvement Program (CIP) project
   requiring a reappropriation of funds.
-resource: https://councilhound.net/topics
+resource: https://councilhound.net/topics/providence-es-vestibule
 tags:
 - approved
 timestamp: '2025-11-18'

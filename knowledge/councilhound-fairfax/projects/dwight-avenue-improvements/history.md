@@ -2,7 +2,7 @@
 type: project-history
 title: Dwight Avenue Improvements — meeting history
 description: Dated record of every meeting action on Dwight Avenue Improvements, through 2025-09-09.
-resource: https://councilhound.net/topics
+resource: https://councilhound.net/topics/dwight-avenue-improvements
 timestamp: '2025-09-09'
 ---
 

@@ -3,7 +3,7 @@ type: project-positions
 title: Citywide Level of Service Study — positions & open questions
 description: Recorded member positions and unresolved questions on Citywide Level of Service
   Study.
-resource: https://councilhound.net/topics
+resource: https://councilhound.net/topics/citywide-level-of-service-study
 timestamp: '2026-04-13'
 ---
 

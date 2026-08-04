@@ -2,7 +2,7 @@
 type: project-positions
 title: Providence ES Vestibule — positions & open questions
 description: Recorded member positions and unresolved questions on Providence ES Vestibule.
-resource: https://councilhound.net/topics
+resource: https://councilhound.net/topics/providence-es-vestibule
 timestamp: '2025-11-18'
 ---
 

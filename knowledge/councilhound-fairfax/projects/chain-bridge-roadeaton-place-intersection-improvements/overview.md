@@ -4,7 +4,7 @@ title: Chain Bridge Road/Eaton Place Intersection Improvements
 description: The Chain Bridge Road/Eaton Place Intersection Improvements project involves
   proposed physical changes to the intersection of Chain Bridge Road and Eaton Place within
   the city.
-resource: https://councilhound.net/topics/eaton-placechain-bridge-road-intersection-improvements
+resource: https://councilhound.net/topics/chain-bridge-roadeaton-place-intersection-improvements
 tags:
 - in-progress
 timestamp: '2025-03-25'

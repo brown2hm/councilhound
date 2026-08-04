@@ -3,7 +3,7 @@ type: development-project
 title: INOVA site demolition
 description: The INOVA site demolition project involves the removal of an unused portion of
   the INOVA site within the city.
-resource: https://councilhound.net/topics
+resource: https://councilhound.net/topics/inova-site-demolition
 tags:
 - in-progress
 timestamp: '2025-05-12'

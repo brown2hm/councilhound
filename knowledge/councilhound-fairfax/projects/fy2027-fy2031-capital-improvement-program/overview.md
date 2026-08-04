@@ -3,7 +3,7 @@ type: development-project
 title: FY2027-FY2031 Capital Improvement Program
 description: The FY2027–FY2031 Capital Improvement Program (CIP) is a multi-year municipal
   capital planning document currently under review by the Planning Commission.
-resource: https://councilhound.net/topics/fy-20272031-capital-improvement-program
+resource: https://councilhound.net/topics/fy2027-fy2031-capital-improvement-program
 tags:
 - approved
 timestamp: '2026-05-05'

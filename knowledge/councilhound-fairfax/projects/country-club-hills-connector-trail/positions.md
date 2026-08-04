@@ -3,7 +3,7 @@ type: project-positions
 title: Country Club Hills Connector Trail — positions & open questions
 description: Recorded member positions and unresolved questions on Country Club Hills Connector
   Trail.
-resource: https://councilhound.net/topics
+resource: https://councilhound.net/topics/country-club-hills-connector-trail
 timestamp: '2025-04-22'
 ---
 

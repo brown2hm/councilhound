@@ -2,7 +2,7 @@
 type: project-history
 title: George Snyder Trail — meeting history
 description: Dated record of every meeting action on George Snyder Trail, through 2026-05-26.
-resource: https://councilhound.net/topics/george-snyder-trail-extension
+resource: https://councilhound.net/topics/george-snyder-trail
 timestamp: '2026-05-26'
 ---
 
@@ -73,9 +73,9 @@ timestamp: '2026-05-26'
 
 ## 2025-05-27 — City Council Meeting
 
-**Agenda item 13c**: Discussion on the George Snyder Trail
-- Outcome: Discussion held during work session and extended into Council Comments. No formal vote taken. A consensus of four Councilmembers directed staff to inquire with VDOT whether constructing only the western half of the trail remains an option. Additional financial information regarding potential VDOT repayment was requested via email rather than a full presentation at the next meeting.
-- [13c] The Council discussed the George Snyder Trail at length in the work session and during Council Comments. A consensus of four Councilmembers directed staff to ask VDOT whether a western-half-only construction option is still available. Councilmember Peterson sought a CFO repayment structure analysis for the potential $3.7M VDOT repayment, but no formal consensus was reached on that request; Councilmember Amos indicated the matter should wait until a cancellation decision is made. Significant public opposition to the trail was expressed during both public comment periods.
+**Agenda item 13c**: Work Session: Discussion on the George Snyder Trail
+- Outcome: Extensive public comment was heard both before and after the work session, with the large majority of speakers opposing the trail. During Council Comments following the work session, four councilmembers reached consensus to direct staff to ask VDOT whether constructing only the western half of the trail remains an option. Councilmember Amos requested related financial information be provided via email rather than presented at the next meeting. No formal resolution was voted on at this meeting.
+- [13c] The trail was discussed extensively in a work session and drew large public comment (predominantly in opposition). Four councilmembers reached consensus to direct staff to ask VDOT whether building only the western half of the trail is still an option; financial repayment structure information was requested via email. No vote to cancel or proceed was taken at this meeting.
 - Status after: **in_progress**
 
 ## 2025-06-03 — City Council Work Session
@@ -138,9 +138,9 @@ timestamp: '2026-05-26'
 ## 2026-01-13 — City Council Meeting
 
 **Agenda item 7e**: Public Hearing and Council Action on a Grant Supplemental Appropriation Resolution – $4,600,000 from Transform 66 Outside the Beltway Concession Funding for the George Snyder Trail
-- Outcome: Motion failed 3-3. Councilmembers Hall, McQuillen, and Peterson voted in opposition; Councilmembers Amos, Bates, and Hardy-Chandler voted in favor. The additional $4.6 million appropriation was not approved.
-- Vote (failed): Approve the supplemental appropriation resolution in the amount of $4,600,000 from Transform 66 Outside the Beltway Concession Funding for the George Snyder Trail. — Amos: yes, Bates: yes, Hall: no, Hardy-Chandler: yes, McQuillen: no, Peterson: no
-- [7e] The $4,600,000 supplemental appropriation resolution for the George Snyder Trail, funded through Transform 66 Outside the Beltway Concession Funding, failed on a 3-3 tie vote. [9a] Following the failed funding vote on item 7e, the City Council voted 4-2 to adopt a resolution cancelling the George Snyder Trail Project (VDOT UPC 112816) in its entirety.
+- Outcome: Motion failed 3-3. The $4.6 million supplemental appropriation from Transform 66 Outside the Beltway Concession Funding for the George Snyder Trail was not approved.
+- Vote (failed): Approve the supplemental appropriation resolution in the amount of $4,600,000 from Transform 66 Outside the Beltway Concession Funding for the George Snyder Trail — Amos: yes, Bates: yes, Hall: no, Hardy-Chandler: yes, McQuillen: no, Peterson: no
+- [7e] The motion to approve a $4.6 million supplemental appropriation to cover construction bids exceeding the remaining $16 million project budget failed 3-3. [9a] Following the failed supplemental appropriation vote, the City Council voted 4-2 to cancel the George Snyder Trail Project in its entirety.
 - Status after: **denied**
 
 ## 2026-05-26 — City Council Meeting

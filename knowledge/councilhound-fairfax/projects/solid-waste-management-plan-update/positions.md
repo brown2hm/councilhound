@@ -3,7 +3,7 @@ type: project-positions
 title: Solid Waste Management Plan Update — positions & open questions
 description: Recorded member positions and unresolved questions on Solid Waste Management
   Plan Update.
-resource: https://councilhound.net/topics/solid-waste-management-plan
+resource: https://councilhound.net/topics/solid-waste-management-plan-update
 timestamp: '2026-05-12'
 ---
 

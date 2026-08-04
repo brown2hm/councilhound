@@ -1,16 +1,17 @@
 ---
 type: project-documents
 title: Chain Bridge Road Pedestrian and Bus Stop Improvements — documents
-description: 7 document(s) published in the City of Fairfax project record for Chain Bridge
+description: 8 document(s) published in the City of Fairfax project record for Chain Bridge
   Road Pedestrian and Bus Stop Improvements.
 resource: https://councilhound.net/development/Chain-Bridge-Road-Pedestrian-and-Bus-Stop-Improvements-Taba-Cove-to-Warwick-Ave
-timestamp: '2026-07-28'
+timestamp: '2026-08-04'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
 
 Documents published in the city's project record, in the order the city lists them. Labels are the city's own and usually carry the document date, format, and size.
 
+- [07_29_26_Pop-Up-Information-Session-Handout.pdf (PDF, 1MB)](https://www.fairfaxva.gov/files/assets/city/v/1/public-works/documents/projects/warwick-ave/07_29_26_pop-up-information-session-handout.pdf)
 - [Chain Bridge Road Sidewalk and Bus Stop Improvements 60% Plans](https://engage.fairfaxva.gov/22660/widgets/83934/documents/56083)
 - [Chain Bridge Road Sidewalk and Bus Stop Improvement Concept Plan Exhibit 1 (April 10, 2020) (PDF, 9MB)](https://www.fairfaxva.gov/files/assets/city/v/1/public-works/documents/projects/chain-bridge-road-pedestrian-and-bus-stop-improvements-taba-cove-to-warwick-ave/chain-bridge-road-sidewalk-and-bus-stop-improvement-concept-plan-exhibit-1-april-10-2020.pdf)
 - [Chain Bridge Road Sidewalk and Bus Stop Improvement Concept Plan Exhibit 2 (April 10, 2020) (PDF, 10MB)](https://www.fairfaxva.gov/files/assets/city/v/1/public-works/documents/projects/chain-bridge-road-pedestrian-and-bus-stop-improvements-taba-cove-to-warwick-ave/chain-bridge-road-sidewalk-and-bus-stop-improvement-concept-plan-exhibit-2-april-10-2020.pdf)

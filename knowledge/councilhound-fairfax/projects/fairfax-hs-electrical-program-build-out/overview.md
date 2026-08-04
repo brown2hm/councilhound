@@ -3,7 +3,7 @@ type: development-project
 title: Fairfax HS Electrical Program Build-Out
 description: The Fairfax HS Electrical Program Build-Out is a Schools Capital Improvement
   Program (CIP) project requiring a reappropriation of funds.
-resource: https://councilhound.net/topics
+resource: https://councilhound.net/topics/fairfax-hs-electrical-program-build-out
 tags:
 - approved
 timestamp: '2025-11-18'

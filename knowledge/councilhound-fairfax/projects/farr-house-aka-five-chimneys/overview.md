@@ -7,9 +7,9 @@ description: The potential applicant is proposing a hotel and hospitality venue 
 resource: https://councilhound.net/development/Farr-House-aka-Five-Chimneys
 tags:
 - private-development
-- pre-application
+- proposed
 timestamp: '2026-07-19'
-status: pre_application
+status: proposed
 source: official
 address: 10230 Main Street, Fairfax, VA 22030
 applicant: Ox Hill Companies

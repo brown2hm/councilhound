@@ -4,7 +4,7 @@ title: Solid Waste Management Plan Update
 description: The City of Fairfax's Solid Waste Management Plan (SWMP) Update is a state-mandated
   five-year update to the city's solid waste management plan, covering a twenty-year planning
   horizon, required under Virginia state code.
-resource: https://councilhound.net/topics/solid-waste-management-plan
+resource: https://councilhound.net/topics/solid-waste-management-plan-update
 tags:
 - approved
 timestamp: '2026-05-12'
