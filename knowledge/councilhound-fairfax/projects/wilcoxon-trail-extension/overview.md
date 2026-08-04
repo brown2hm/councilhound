@@ -28,6 +28,6 @@ Fairfax City has developed a conceptual design for a shared-use path on Fairfax 
 
 ## In this wiki
 
-- [Positions & open questions](/projects/george-snyder-trail-extension/positions.md)
+- [Positions & open questions](/projects/wilcoxon-trail-extension/positions.md)
 
 <!-- /curator:off -->
