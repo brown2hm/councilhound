@@ -43,6 +43,20 @@ record we maintain. The section is now wiki-first.
   four older meetings had the same gap. `structure_pending` now re-extracts
   any meeting whose minutes/actions report text arrived after its stored
   extraction, exactly once per late arrival.
+- **Upcoming meetings came back.** Granicus moved the event id off the row's
+  links and into a `data-event-id` attribute on the eComment anchor;
+  `parse_upcoming` required an `event_id=`-bearing href/onclick and so hit
+  `continue` on every row. Because `sync_upcoming` is a full replacement per
+  view, the nightly then deleted the rows it already had — the homepage "Next
+  up" panel, `next_meeting`, the topic-page "on the upcoming agenda" callouts,
+  and `upcoming.ics` all went quiet while the city had 35 events posted, 5 of
+  them council or planning commission. The rows with nothing else to match on
+  are meetings announced before their agenda is posted: the agenda cell is
+  empty, so there is no AgendaViewer link to fall back to. Falls back to
+  `data-event-id`, skipping the `data-rollover-id="0"` on the same anchor.
+  The weekly canary never caught this because every assertion it makes is
+  about the archive, which never drifted — it now checks the upcoming table
+  parses with ids, dates, and at least one in-scope body.
 - **Granicus 403s fail fast on the datacenter-IP block.** A Fly-side probe
   confirmed CloudFront blocks BOTH archive-video and the archive-stream HLS
   host, so there is no unauthenticated cloud path to meeting media — and the
@@ -53,6 +67,26 @@ record we maintain. The section is now wiki-first.
 - Fly gotcha, hard-won: `flyctl machine update` leaves scheduled machines
   disarmed — each needs one manual `flyctl machine start` afterwards or the
   daily/hourly schedules silently stop firing.
+- Fly gotcha, hard-won: the depot builder pushes manifests the machine API
+  cannot resolve. `flyctl deploy --build-only --push` reported success and a
+  digest on two consecutive builds; both times `machine update` 404'd with
+  `MANIFEST_UNKNOWN`, naming a repo (`jlyv9r73737vq8xr`) that is not
+  `councilhound-jobs`. `--depot=false` pushes straight to `registry.fly.io`
+  and worked first try, with a different digest. Build the jobs image with
+  `--depot=false` until this is understood — same family as the depot-builder
+  401 that once looked like a successful deploy.
+- Fly gotcha, hard-won: `flyctl machine update` on the jobs machines **always**
+  ends in `machine failed to reach desired start state, and restart policy was
+  set to no restart`. That is flyctl waiting for a "started" state on a
+  one-shot machine whose command runs and exits; the update itself succeeded.
+  Confirm with `machine status --display-config` — image, `schedule`, and
+  `cmd` all survive — rather than reading the error as a failed deploy. The
+  cost of misreading it is a second update on top of a good one.
+- The "watch deploy exit codes" rule in `docs/ARCHITECTURE.md` needs
+  `set -o pipefail` to actually hold: `flyctl … | tail` reports the exit code
+  of `tail`, so a failed deploy reads as 0. The first depot build above
+  printed `error releasing builder: deadline_exceeded` beside a valid-looking
+  `image:` line and still came back "successful" through a bare pipe.
 
 ## Unreleased — checking our own numbers (July 2026)
 
