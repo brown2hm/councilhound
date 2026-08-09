@@ -159,3 +159,39 @@ def test_parse_upcoming():
     assert council.starts_at.isoformat() == "2026-07-14T19:00:00"
     assert council.agenda_url.startswith("https://fairfax.granicus.com/AgendaViewer.php")
     assert committee.body is None  # out of scope, still listed
+
+
+def test_parse_upcoming_without_agenda_link():
+    """A meeting announced before its agenda is posted has an empty agenda
+    cell and no event_id-bearing link at all — the id lives only in the
+    eComment anchor's data attribute. This silently emptied the whole
+    upcoming table (August 2026)."""
+    from councilhound.scraper.granicus import parse_upcoming
+
+    html = """
+    <table class="listingTable" id="upcoming">
+      <tr>
+        <th id="EventName" scope="col">Name</th>
+        <th id="EventDate" scope="col">Date</th>
+      </tr>
+      <tr class="odd">
+        <td class="listItem" headers="EventName" id="City-Council-Special-Meeting-" scope="row">City Council Special Meeting </td>
+        <td class="listItem" headers="EventDate City-Council-Special-Meeting-" nowrap="">
+                August 18, 2026 - 06:00 PM
+        </td>
+        <td class="listItem" headers="EventAgendaLink City-Council-Special-Meeting-">
+        </td>
+        <td class="listItem" headers="EcommentsLink City-Council-Special-Meeting-"><a aria-label="eComment: City Council Special Meeting " class="ecomment" data-event-id="3682" data-rollover-id="0" href="#" link="#" rel="ecomment" style="display:none;" target="_blank">eComment</a></td>
+      </tr>
+    </table>
+    """
+    events = parse_upcoming(html, "13")
+    assert [e.event_id for e in events] == ["3682"]
+
+    ev = events[0]
+    assert ev.body == "city_council"
+    assert ev.starts_at.isoformat() == "2026-08-18T18:00:00"
+    assert ev.agenda_url is None
+    assert not ev.in_progress
+    # data-rollover-id="0" sits on the same anchor and must never win
+    assert ev.event_id != "0"

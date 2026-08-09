@@ -251,6 +251,17 @@ def parse_upcoming(html: str, view_id: str) -> list[UpcomingEvent]:
                 event_id = m.group(1)
                 break
         if not event_id:
+            # Rows with no agenda posted yet carry no event_id-bearing link at
+            # all: the agenda cell is empty and the eComment anchor is
+            # href="#" with the id in a data attribute. That is the normal
+            # state for a meeting announced before its agenda, so treating it
+            # as unparseable silently emptied the whole upcoming table.
+            for a in tr.find_all("a", attrs={"data-event-id": True}):
+                candidate = a["data-event-id"].strip()
+                if candidate.isdigit() and candidate != "0":
+                    event_id = candidate
+                    break
+        if not event_id:
             continue
 
         date_td = tr.find("td", headers=re.compile(r"^EventDate"))
