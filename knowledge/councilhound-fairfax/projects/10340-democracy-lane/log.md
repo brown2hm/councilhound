@@ -13,3 +13,7 @@
 ## 2026-07-30
 
 - Pipeline refresh.
+
+## 2026-08-22
+
+- Meeting history updated through 2026-03-09.

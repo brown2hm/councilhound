@@ -8,7 +8,12 @@ timestamp: '2026-07-19'
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
 
+<!-- curator:off -->
+<!-- block:impact-intro -->
+
 Screening-level estimates of the economic and fiscal effects of Fairfax Presbyterian Church. Figures are decision-support context with named assumptions and sensitivity ranges — not predictions. The [full analysis](https://councilhound.net/development/Fairfax-Presbyterian-Church) has the interactive assumptions panel and maps; [methods](https://councilhound.net/development/methods) documents every formula.
+
+<!-- /curator:off -->
 
 ## Headline estimates
 
@@ -19,4 +24,9 @@ Screening-level estimates of the economic and fiscal effects of Fairfax Presbyte
 - {{metric:net-annual-fiscal-impact-naive-per-capita-method}} — incremental new recurring revenue minus service cost (upper-bound cost framing; allocates fixed citywide costs)
 - {{metric:net-annual-fiscal-impact-marginal-framing}} — incremental new recurring revenue minus service cost (only services that scale with new residents)
 
+<!-- curator:off -->
+<!-- block:impact-method-note -->
+
 Method notes, caveats, and non-headline metrics live on the [analysis page](https://councilhound.net/development/Fairfax-Presbyterian-Church).
+
+<!-- /curator:off -->
