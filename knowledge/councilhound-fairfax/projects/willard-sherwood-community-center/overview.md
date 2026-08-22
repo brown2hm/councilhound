@@ -22,5 +22,6 @@ The Willard-Sherwood Community Center expansion/rebuild is a major capital proje
 
 - [Meeting history](/projects/willard-sherwood-community-center/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/willard-sherwood-community-center/positions.md)
+- [Documents](/projects/willard-sherwood-community-center/documents.md) — the city's published record for this project
 
 <!-- /curator:off -->

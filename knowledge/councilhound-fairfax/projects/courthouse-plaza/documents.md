@@ -1,16 +1,20 @@
 ---
 type: project-documents
 title: Courthouse Plaza — documents
-description: 22 document(s) published in the City of Fairfax project record for Courthouse
+description: 26 document(s) published in the City of Fairfax project record for Courthouse
   Plaza.
 resource: https://councilhound.net/development/Courthouse-Plaza
-timestamp: '2026-08-04'
+timestamp: '2026-08-22'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
 
 Documents published in the city's project record, in the order the city lists them. Labels are the city's own and usually carry the document date, format, and size.
 
+- [August 11, 2026 Master Development Plan (PDF, 85MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/courthouse-plaza/2026/mdp-courthouse-3.pdf)
+- [August 11, 2026 Statement of Support (PDF, 664KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/courthouse-plaza/2026/sos-courthouse-3.pdf)
+- [August 11, 2026 Commitments (PDF, 271KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/courthouse-plaza/2026/commitments-courthosue-3.pdf)
+- [August 11, 2026 Transportation Impact Assessment (PDF, 15MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/courthouse-plaza/2026/tia-courthouse-3.pdf)
 - [May 7, 2026 Master Development Plan (PDF, 73MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/courthouse-plaza/2026/new-folder/new-folder/master-development-plan.pdf)
 - [May 7, 2026 Statement of Support (PDF, 685KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/courthouse-plaza/2026/new-folder/new-folder/statement-of-support.pdf)
 - [May 7, 2026 Commitments (PDF, 280KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/courthouse-plaza/2026/new-folder/new-folder/commitments.pdf)
