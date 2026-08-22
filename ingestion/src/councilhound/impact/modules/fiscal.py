@@ -102,18 +102,26 @@ def _assumptions(spec, comps, notes) -> tuple[dict[str, Assumption], object | No
     dead knobs in the assumptions lab.
     """
     residential, comp_prov = _residential_value_assumption(spec, comps, notes)
-    # for-sale product skews slightly more family-ward than small-unit rental
-    students = (dict(value=0.12, low=0.05, high=0.20) if is_for_sale(spec)
-                else dict(value=0.10, low=0.05, high=0.15))
+    # for-sale product skews slightly more family-ward than small-unit rental.
+    # Centrals recalibrated 2026-08-22 from the Rutgers literature midpoints
+    # (0.12/0.10) toward local evidence: benchmarking against City of Fairfax
+    # staff fiscal estimates (WillowWood Jul 2024, Davies Jun 2025) implies
+    # 0.057-0.073 students/unit for new multifamily; values sit above that
+    # implied range on purpose, moving only partway from the literature.
+    students = (dict(value=0.10, low=0.05, high=0.16) if is_for_sale(spec)
+                else dict(value=0.08, low=0.05, high=0.12))
     students_basis = (
         "owner-occupied condominium student generation (Rutgers demographic "
         "multipliers for owner-occupied multifamily run above small-unit "
-        "rental rates, below garden-apartment and single-family rates)"
+        "rental rates, below garden-apartment and single-family rates), "
+        "shaded down toward City of Fairfax staff fiscal-estimate benchmarks"
         if is_for_sale(spec) else
         "high-rise/small-unit multifamily student generation rates "
         "(below garden-apartment averages per the Rutgers demographic "
-        "multipliers); university-adjacent renter pools skew to "
-        "single/roommate households over families")
+        "multipliers, shaded down toward the 0.06-0.07 implied by City of "
+        "Fairfax staff fiscal estimates for comparable projects); "
+        "university-adjacent renter pools skew to single/roommate "
+        "households over families")
     out = {a.key: a for a in [
         residential,
         Assumption(key="commercial_value_per_sqft", value=275.0, low=200.0, high=400.0,
@@ -153,9 +161,12 @@ def _assumptions(spec, comps, notes) -> tuple[dict[str, Assumption], object | No
                    rationale="drives the school-cost component when the education "
                              "transfer and enrollment are pinned (school-split cost "
                              "model); otherwise informs the school note only"),
-        Assumption(key="marginal_cost_factor", value=0.40, low=0.25, high=0.60,
+        Assumption(key="marginal_cost_factor", value=0.35, low=0.25, high=0.55,
                    basis="marginal-cost framing: fixed services (roads, admin) don't "
-                         "scale with infill residents",
+                         "scale with infill residents. Central recalibrated 2026-08-22 "
+                         "from the 0.40 literature midpoint toward the 0.30-0.34 "
+                         "implied by City of Fairfax staff fiscal estimates "
+                         "(WillowWood Jul 2024, Davies Jun 2025)",
                    rationale="share of the NON-school per-capita cost that scales at "
                              "the margin (school costs follow the student estimate "
                              "directly under the school-split model)"),

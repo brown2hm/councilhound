@@ -1,5 +1,55 @@
 # Changelog
 
+## Unreleased — calibrating the fiscal model against the city's own estimates (August 2026)
+
+The pipeline's net-fiscal estimates ran systematically below the city's:
+across every project where a staff report states a fiscal estimate, ours was
+the more pessimistic, and the naive per-capita framing never once landed in
+the neighborhood of a published city figure. The city's estimates have
+tracked outcomes well, while several of our screening defaults were
+literature-range midpoints — so this round benchmarks ours against theirs
+and recalibrates where the evidence supports it.
+
+- **Two cost-side defaults recalibrated toward local evidence.** Every
+  metric ships an exact power-law decomposition over its assumptions, which
+  makes gap attribution solvable in closed form: for each assumption, the
+  value that would move our estimate onto the staff figure, classified
+  in-band or out. Two staff comparisons whose ranges already overlapped ours
+  (WillowWood Jul 2024, Davies Jun 2025) implied `marginal_cost_factor`
+  0.30–0.34 and `students_per_unit` 0.057–0.073 — clustered, in-band, same
+  direction. The defaults move partway: `marginal_cost_factor` 0.40 → 0.35
+  [0.25..0.55]; `students_per_unit` rental 0.10 → 0.08 [0.05..0.12],
+  for-sale 0.12 → 0.10 [0.05..0.16]. Deliberately above the implied points,
+  and chosen jointly — the pair centers both evidence projects in their
+  staff ranges without overshooting anywhere. The recomputed pipeline
+  matched the closed-form predictions to the dollar (Davies +92,981 vs
+  +93k predicted), so the decomposition is load-bearing, not decorative.
+- **The doctrine boundary is now written down.** External estimates stay a
+  benchmark — never averaged in, per-project divergence reported, not
+  reconciled away — but benchmarks may inform a *default* as a considered,
+  cited revision. The methodology report documents the calibration and its
+  evidence; each changed assumption's `basis` names the staff reports.
+  Applicant FIAs are excluded from calibration on the gross-receipts
+  convention (they count displaced sales as new).
+- **Paul-VI is for-sale, established by negation.** The documents commit to
+  "No rental units shall be developed or offered." — the strongest possible
+  tenure evidence, and structurally unacceptable to the evidence-token
+  firewall, which reads the word "rental" as rental-class evidence. The
+  extraction was correctly rejected three times; the value is now set by
+  hand at the confirm gate with the verbatim quote recorded, and the spec
+  note preserves the case for a future negation-aware firewall. Marginal
+  net moved −$2.17M → −$1.50M. The four other tenure-missing projects were
+  checked token-by-token and genuinely lack documentary evidence (what
+  looked like evidence was Comprehensive-Plan boilerplate and neighboring
+  parcels — "Fairfax Square Apartments" is the property next door), so
+  their conservative rental defaults stand.
+- All 16 residential evaluations re-evaluated under the new defaults and
+  pushed. The two evidence projects now sit centered in their staff ranges;
+  the residual gaps elsewhere are value-side (per-unit assessed values,
+  unknown tenure) or structural (affordable housing has no modeling of
+  assessment restrictions yet) — known, documented, and deliberately not
+  chased with cost-side knobs.
+
 ## Unreleased — the wiki becomes the front door (August 2026)
 
 The development detail page was really an impact-analysis page: it keyed on

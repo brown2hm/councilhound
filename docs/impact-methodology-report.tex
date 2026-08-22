@@ -373,6 +373,18 @@ construction typically assesses at roughly 70--110\% of hard cost, so a
 projected assessed value far outside that band is flagged as a probable
 wrong-product-class $p_{unit}$ rather than published unremarked.
 
+Benchmarks do, however, inform the screening defaults themselves. A 2026
+cross-project comparison against City of Fairfax staff fiscal estimates
+(the staff figures have tracked outcomes more closely than literature
+midpoints) implied a marginal-cost share of 0.30--0.34 and multifamily
+student yields of 0.06--0.07; the defaults for
+\assum{marginal\_cost\_factor} and \assum{students\_per\_unit} were
+recalibrated partway toward those values (0.35 and 0.08/0.10 respectively),
+staying above the implied points deliberately. This is a considered revision
+of the defaults on local evidence, documented in each assumption's basis ---
+not a fit: no external figure ever enters the computation, and per-project
+divergence from a staff estimate is still reported, not reconciled away.
+
 \subsection{Service costs and net impact}
 When the city's education transfer $E$ and school enrollment $N_{enr}$ are
 pinned, costs use the \emph{school-split} model --- the per-capita-multiplier
@@ -446,9 +458,9 @@ $\beta_d$ (min$^{-1}$, fixed) & 0.15 & --- & drive impedance decay \\
 \quad\emph{fallback, for-sale} & \$750k & \$450k--\$1.2M & screening default when no comps \\
 \assum{commercial\_value\_per\_sqft} & \$275 & \$200--\$400 & screening; replace with comps \\
 \assum{office\_value\_per\_sqft} & \$300 & \$200--\$450 & new-construction NoVA office AV (estimate) \\
-\assum{students\_per\_unit} & 0.10 & 0.05--0.15 & high-rise MF, univ.-adjacent \cite{listokin2006} \\
-\quad\emph{for-sale} & 0.12 & 0.05--0.20 & owner-occupied condo yield \cite{listokin2006} \\
-\assum{marginal\_cost\_factor} & 0.40 & 0.25--0.60 & share of average cost that scales \\
+\assum{students\_per\_unit} & 0.08 & 0.05--0.12 & high-rise MF \cite{listokin2006}, shaded to local staff-estimate benchmarks \\
+\quad\emph{for-sale} & 0.10 & 0.05--0.16 & owner-occupied condo yield \cite{listokin2006}, shaded likewise \\
+\assum{marginal\_cost\_factor} & 0.35 & 0.25--0.55 & share of average cost that scales; calibrated to local staff estimates \\
 \assum{vehicles\_per\_household} & 1.4 & 1.0--1.8 & ACS vehicle norms, MF renters (estimate) \\
 \assum{avg\_vehicle\_assessed\_value} & \$14{,}000 & \$9k--\$20k & Northern Virginia vehicle rolls (estimate) \\
 \assum{retail\_sales\_per\_sqft} & \$400 & \$250--\$600 & neighborhood retail gross sales (estimate) \\
