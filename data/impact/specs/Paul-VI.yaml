@@ -1,0 +1,659 @@
+# ProjectSpec awaiting human confirmation (impact-confirm).
+# Edit values freely — numbers you set here are treated as human-
+# confirmed. extraction_confidence/quotes document where LLM values
+# came from; notes list demotions and document conflicts.
+name: Paul VI
+jurisdiction: fairfax_city_va
+city_project_slug: Paul-VI
+source_url: https://www.fairfaxva.gov/Property-Business/Development/Projects/Paul-VI
+project_type: mixed_use
+status: Under Construction
+parcels:
+- 57 1 39 03 103
+- 57 1 39    000 C
+- 57 1 39 01 001
+- 57 1 39 01 002
+- 57 1 39 01 003
+- 57 1 39 01 004
+- 57 1 39 01 005
+- 57 1 39 01 006
+- 57 1 39 01 007
+- 57 1 39 01 008
+- 57 1 39 01 009
+- 57 1 39 01 010
+- 57 1 39 01 011
+- 57 1 39 01 012
+- 57 1 39 01 013
+- 57 1 39 01 014
+- 57 1 39 01 015
+- 57 1 39    000 A
+- 57 1 39 01 049
+- 57 1 39 01 048
+- 57 1 39 01 047
+- 57 1 39 01 020
+- 57 1 39 01 019
+- 57 1 39 01 018
+- 57 1 39 01 017
+- 57 1 39 01 016
+- 57 1 39 01 000 F
+- 57 1 39 02 119
+- 57 1 39 02 070
+- 57 1 39 02 069
+- 57 1 39 02 068
+- 57 1 39 02 067
+- 57 1 39 02 066
+- 57 1 39 02 000 G
+- 57 1 39 04 114
+- 57 1 39 CG 000
+- 57 1 39    101
+- 57 1 39    102
+- 57 1 39    103
+- 57 1 39    104
+- 57 1 39    105
+- 57 1 39    111
+- 57 1 39    112
+- 57 1 39    114
+- 57 1 39    115
+- 57 1 39    117
+- 57 1 39    119
+- 57 1 39    120
+- 57 1 39    121
+- 57 1 39    122
+- 57 1 39    123
+- 57 1 39    124
+- 57 1 39    125
+- 57 1 39    126
+- 57 1 39    127
+- 57 1 39    128
+- 57 1 39    129
+- 57 1 39    130
+- 57 1 39    131
+- 57 1 39    133
+- 57 1 39    134
+- 57 1 39    135
+- 57 1 39    136
+- 57 1 39    137
+- 57 1 39    138
+- 57 1 39    140
+- 57 1 39    200
+- 57 1 39    201
+- 57 1 39    202
+- 57 1 39    203
+- 57 1 39    204
+- 57 1 39    205
+- 57 1 39    206
+- 57 1 39    207
+- 57 1 39    208
+- 57 1 39    210
+- 57 1 39    211
+- 57 1 39    212
+- 57 1 39    214
+- 57 1 39    217
+- 57 1 39    218
+- 57 1 39    220
+- 57 1 39    221
+- 57 1 39    222
+- 57 1 39    223
+- 57 1 39    224
+- 57 1 39    225
+- 57 1 39    226
+- 57 1 39    227
+- 57 1 39    228
+- 57 1 39    229
+- 57 1 39    230
+- 57 1 39    231
+- 57 1 39    232
+- 57 1 39    233
+- 57 1 39    234
+- 57 1 39    235
+- 57 1 39    236
+- 57 1 39    237
+- 57 1 39    238
+- 57 1 39    240
+- 57 1 39    300
+- 57 1 39    301
+- 57 1 39    302
+- 57 1 39    303
+- 57 1 39    304
+- 57 1 39    305
+- 57 1 39    306
+- 57 1 39    307
+- 57 1 39    308
+- 57 1 39    310
+- 57 1 39    311
+- 57 1 39    312
+- 57 1 39    314
+- 57 1 39    316
+- 57 1 39    317
+- 57 1 39    318
+- 57 1 39    320
+- 57 1 39    321
+- 57 1 39    322
+- 57 1 39    323
+- 57 1 39    324
+- 57 1 39    325
+- 57 1 39    326
+- 57 1 39    327
+- 57 1 39    328
+- 57 1 39    329
+- 57 1 39    330
+- 57 1 39    331
+- 57 1 39    332
+- 57 1 39    333
+- 57 1 39    334
+- 57 1 39    335
+- 57 1 39    336
+- 57 1 39    337
+- 57 1 39    338
+- 57 1 39    340
+- 57 1 39    400
+- 57 1 39    401
+- 57 1 39    402
+- 57 1 39    403
+- 57 1 39    405
+- 57 1 39    406
+- 57 1 39    407
+- 57 1 39    408
+- 57 1 39    410
+- 57 1 39    411
+- 57 1 39    412
+- 57 1 39    414
+- 57 1 39    416
+- 57 1 39    417
+- 57 1 39    418
+- 57 1 39    420
+- 57 1 39    421
+- 57 1 39    422
+- 57 1 39    423
+- 57 1 39    424
+- 57 1 39    425
+- 57 1 39    426
+- 57 1 39    427
+- 57 1 39    428
+- 57 1 39    429
+- 57 1 39    430
+- 57 1 39    431
+- 57 1 39    432
+- 57 1 39    433
+- 57 1 39    434
+- 57 1 39    435
+- 57 1 39    436
+- 57 1 39    437
+- 57 1 39    438
+- 57 1 39    440
+- 57 1 39 03 102
+- 57 1 39 03 101
+- 57 1 39 03 100
+- 57 1 39 03 099
+- 57 1 39 02 122
+- 57 1 39 02 121
+- 57 1 39 03 098
+- 57 1 39 03 097
+- 57 1 39 04 104
+- 57 1 39 03 096
+- 57 1 39 02 071
+- 57 1 39 04 105
+- 57 1 39 03 095
+- 57 1 39 02 072
+- 57 1 39 02 118
+- 57 1 39 04 106
+- 57 1 39 03 094
+- 57 1 39 02 073
+- 57 1 39 04 107
+- 57 1 39 03 093
+- 57 1 39 02 074
+- 57 1 39 04 108
+- 57 1 39 03 092
+- 57 1 39 02 075
+- 57 1 39 02 117
+- 57 1 39 03 000 H
+- 57 1 39 04 109
+- 57 1 39 04 110
+- 57 1 39 02 091
+- 57 1 39 02 076
+- 57 1 39 02 065
+- 57 1 39 04 111
+- 57 1 39 02 090
+- 57 1 39 02 077
+- 57 1 39 02 064
+- 57 1 39 04 112
+- 57 1 39 02 089
+- 57 1 39 02 078
+- 57 1 39 02 063
+- 57 1 39 02 116
+- 57 1 39 02 088
+- 57 1 39 02 079
+- 57 1 39 04 113
+- 57 1 39 02 087
+- 57 1 39 02 080
+- 57 1 39 02 086
+- 57 1 39 02 081
+- 57 1 39 04 115
+- 57 1 39 04 000 I
+- 57 1 39 02 085
+- 57 1 39 02 082
+- 57 1 39 02 084
+- 57 1 39 02 083
+- 57 1 39 02 062
+- 57 1 39 02 061
+- 57 1 39 02 060
+- 57 1 39 02 059
+- 57 1 39 02 058
+- 57 1 39 02 057
+- 57 1 39 02 120
+- 57 1 39    100
+- 57 1 39 01 040
+- 57 1 39 01 039
+- 57 1 39 01 038
+- 57 1 39 01 037
+- 57 1 39 01 036
+- 57 1 39 01 035
+- 57 1 39 01 034
+- 57 1 39 01 033
+- 57 1 39 01 032
+- 57 1 39 01 031
+- 57 1 39 01 030
+- 57 1 39 01 029
+- 57 1 39 01 028
+- 57 1 39    000 J
+- 57 1 39    000 E
+- 57 1 39    000 D
+- 57 1 39 01 041
+- 57 1 39 01 056
+- 57 1 39 01 027
+- 57 1 39 01 042
+- 57 1 39 01 055
+- 57 1 39 01 026
+- 57 1 39 01 043
+- 57 1 39 01 054
+- 57 1 39 01 025
+- 57 1 39 01 044
+- 57 1 39 01 053
+- 57 1 39 01 024
+- 57 1 39 01 045
+- 57 1 39 01 052
+- 57 1 39 01 023
+- 57 1 39 01 051
+- 57 1 39 01 022
+- 57 1 39 01 046
+- 57 1 39 01 050
+- 57 1 39 01 021
+document_pins: []
+geometry:
+  type: Polygon
+  coordinates:
+  - - - -77.312122
+      - 38.853494
+    - - -77.312822
+      - 38.853485
+    - - -77.313371
+      - 38.853478
+    - - -77.313597
+      - 38.853476
+    - - -77.313595
+      - 38.853401
+    - - -77.314235
+      - 38.853406
+    - - -77.314233
+      - 38.853375
+    - - -77.314236
+      - 38.853344
+    - - -77.314247
+      - 38.853314
+    - - -77.314263
+      - 38.853286
+    - - -77.314285
+      - 38.85326
+    - - -77.314312
+      - 38.853237
+    - - -77.314344
+      - 38.853218
+    - - -77.314379
+      - 38.853204
+    - - -77.314416
+      - 38.853194
+    - - -77.314455
+      - 38.853189
+    - - -77.314495
+      - 38.853189
+    - - -77.314534
+      - 38.853194
+    - - -77.314572
+      - 38.853204
+    - - -77.314726
+      - 38.853268
+    - - -77.314814
+      - 38.853301
+    - - -77.314905
+      - 38.85333
+    - - -77.314998
+      - 38.853353
+    - - -77.315166
+      - 38.853351
+    - - -77.315186
+      - 38.85348
+    - - -77.315234
+      - 38.853793
+    - - -77.315341
+      - 38.854492
+    - - -77.315341
+      - 38.854495
+    - - -77.315674
+      - 38.855084
+    - - -77.312411
+      - 38.856359
+    - - -77.312389
+      - 38.856325
+    - - -77.312357
+      - 38.856275
+    - - -77.312085
+      - 38.855842
+    - - -77.312151
+      - 38.855162
+    - - -77.312145
+      - 38.854753
+    - - -77.312136
+      - 38.854182
+    - - -77.312122
+      - 38.853494
+existing:
+  use: Paul VI Catholic High School (private non-profit high school) plus two residential
+    parcels (including the John C. Wood House)
+  sqft: 190532.0
+  units: 2
+  assessed_value: null
+  jobs_estimate: null
+proposed:
+  units: 266
+  retail_sqft: 20000.0
+  office_sqft: null
+  stories: 4
+  acres: 18.51
+  parking_spaces: null
+  affordable_units: null
+  tenure: for_sale
+  corridor: null
+extraction_confidence:
+  existing.sqft: high
+  existing.units: medium
+  existing.assessed_value: low
+  proposed.units: high
+  proposed.retail_sqft: high
+  proposed.office_sqft: low
+  proposed.stories: medium
+  proposed.acres: high
+  proposed.parking_spaces: low
+  proposed.affordable_units: low
+extraction_quotes:
+  proposed.tenure: No rental units shall be developed or offered.
+  existing.sqft: School 190,532 $27,398,000 $0.000 $0
+  existing.units: two other properties (collectively, the "Property") owned by the
+    Diocese
+  proposed.units: includes a total of 266 residential units, including 144 multifamily
+    residential condominiums
+  proposed.retail_sqft: Commercial/Retail Space 20,000 square feet
+  proposed.stories: The multi-family condominium building shall be four (4) stories.
+  proposed.acres: consolidation of three parcels for a total of 18.51 acres
+extraction_notes:
+- 'proposed.tenure: set to for_sale by hand at the confirm gate. The documents establish
+  it by negation — the commitment "No rental units shall be developed or offered."
+  (verbatim in the corpus) plus a program of 144 condominiums, 115 townhomes, and 7
+  single-family homes — but the evidence-token firewall cannot accept a negated quote
+  (it reads the word "rental" as rental-class evidence), so the LLM extraction was
+  correctly rejected and a human transcription is used instead (2026-08-22).'
+- 'Proposed residential unit count changed across plan versions: the approved/final
+  project directory (Doc 1) states 266 total units (144 condominiums + 115 townhomes
+  + 7 single-family); the August 2018 Narrative (Doc 3) also states 266 units; but
+  the May 2018 Statement of Support (Doc 5) shows 295 units (131 townhomes + 164 condominiums);
+  the March 2018 Narrative (Doc 13) shows 301 units (137 townhomes + 164 condominiums);
+  the November 2017/February 2018 submissions (Docs 19, 23) show 321 units (137 townhomes
+  + 184 condominiums); and the April 2017 submission (Doc 31) shows 555 units. The
+  most authoritative and recent approved figure is 266 units per Doc 1.'
+- 'Proposed condominium building height conflicts: August 2018 Narrative (Doc 3) states
+  ''The multi-family condominium building shall be four (4) stories)''; earlier submissions
+  (Docs 19, 23, 31) describe a 5-story condominium building; the city project directory
+  does not specify stories.'
+- Retail square footage is consistently stated at 20,000 SF in the later/approved
+  submissions (Docs 1, 3, 5, 13), but the April 2017 submission (Doc 31) shows only
+  10,000 SF of retail.
+- 'Total commercial+community space: all versions consistently include 24,000 SF for
+  the preserved school building in addition to the retail, making total commercial/community
+  SF either 44,000 (later versions) or 34,000 (April 2017 version).'
+- 'Parking spaces provided: Feb 2018 Statement of Support (Doc 19) states 987 provided
+  spaces; the April 2017 submission (Doc 31) states 1,130 spaces. The approved plan
+  parking total is not explicitly stated in Doc 1.'
+- 'Single-family detached homes: Doc 1 and Doc 3 (August 2018) include 7 single-family
+  homes in the 266-unit total; earlier versions (Docs 5, 13, 19, 23) did not include
+  single-family detached units.'
+- parcel PIN '57-1-02-114' not found in documents — dropped
+- parcel PIN '57-1-02-113' not found in documents — dropped
+- parcels resolved via address_geocode; polygon area 0.11 ac
+- 'WARNING: resolved parcel area 0.11 ac differs from stated 18.51 ac by 99%'
+- 'parcels set by hand: the 18.51-ac former Paul VI school site has been re-subdivided
+  into block 57 1 39 (269 lots/units, union 18.52 ac); the geocode had landed on a
+  single 0.11-ac lot of the redevelopment. NOTE: current assessed values reflect the
+  built/under-construction project, not the pre-development baseline; the real-estate-tax-increase
+  metric understates the true increment'
+- 'geometry re-resolved at confirm from edited parcels via document_pins: 285.30 ac'
+- Recorded 4 external fiscal estimate(s) for comparison from 5 document(s).
+- 'proposed.tenure: demoted to null (quote states no evidence for ''for_sale''; model
+  claimed ''for_sale'')'
+- 'removed by hand: estimates for Highlands at Mantua (2026 staff memo) and Mantua
+  Professional Center (2015 staff report excerpt quoted in the parking analysis) are
+  for OTHER projects, not Paul VI'
+- 'proposed.tenure: demoted to null (quote states no evidence for ''for_sale''; model
+  claimed ''for_sale'')'
+- 'proposed.tenure: demoted to null (quote states no evidence for ''for_sale''; model
+  claimed ''for_sale'')'
+documents:
+- source_name: City project directory record
+  url: https://www.fairfaxva.gov/Property-Business/Development/Projects/Paul-VI
+  vintage: '2026-07-18'
+  retrieved_at: '2026-07-19T16:07:36.003026Z'
+  notes: null
+- source_name: 'Project document: August 21, 2018 Master Development Plan (PDF, 29MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/august-21-2018-master-development-plan.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:07:37.854181Z'
+  notes: null
+- source_name: 'Project document: August 21, 2018 Narrative (PDF, 291KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/august-21-2018-narrative.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:07:37.950590Z'
+  notes: null
+- source_name: 'Project document: May 22, 2018 Master Development Plan (PDF, 22MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/may-22-2018-master-development-plan.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:07:41.362058Z'
+  notes: null
+- source_name: 'Project document: May 22, 2018 Statement of Support (PDF, 280KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/may-22-2018-statement-of-support.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:07:41.471248Z'
+  notes: null
+- source_name: 'Project document: May 22, 2018 Architecture (PDF, 7MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/may-22-2018-architecture.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:07:43.223906Z'
+  notes: null
+- source_name: 'Project document: May 22, 2018 Architecture Addendum (PDF, 6MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/may-22-2018-architecture-addendum.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:07:43.509244Z'
+  notes: null
+- source_name: 'Project document: May 22, 2018 Traffic Impact Study (PDF, 5MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/may-22-2018-traffic-impact-study.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:07:46.253147Z'
+  notes: null
+- source_name: 'Project document: May 22, 2018 Traffic Impact Study Addendum (PDF,
+    200KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/may-22-2018-traffic-impact-study-addendum.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:07:46.564084Z'
+  notes: null
+- source_name: 'Project document: May 22, 2018 High School (PDF, 19MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/may-22-2018-high-school.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:07:47.989269Z'
+  notes: null
+- source_name: 'Project document: May 22, 2018 Wood House (PDF, 15MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/may-22-2018-wood-house.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:07:49.700493Z'
+  notes: null
+- source_name: 'Project document: March 28, 2018 Master Development Plan (PDF, 18MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/march-28-2018-master-development-plan.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:07:51.662926Z'
+  notes: null
+- source_name: 'Project document: March 28, 2018 Narrative to Master Development Plan
+    (PDF, 241KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/march-28-2018-narrative-to-master-development-plan.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:07:52.180330Z'
+  notes: null
+- source_name: 'Project document: March 28, 2018 Fiscal Impact Statement (PDF, 103KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/march-28-2018-fiscal-impact-statement.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:07:52.779514Z'
+  notes: null
+- source_name: 'Project document: March 28, 2018 Residential Condominium - Parking
+    Modification Analysis (PDF, 810KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/march-28-2018-residential-condominium-parking-modification-analysis.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:07:54.116796Z'
+  notes: null
+- source_name: 'Project document: March 28, 2018 Shared Parking Analysis - Retail,
+    Restaurant, and Community/Office Uses (PDF, 527KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/march-28-2018-shared-parking-analysis-retail-restaurant-and-community-office-uses.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:07:54.799240Z'
+  notes: null
+- source_name: 'Project document: March 28, 2018 Comprehensive Plan Amendment Map
+    Exhibit (PDF, 56KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/march-28-2018-comprehensive-plan-amendment-map-exhibit.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:07:55.973082Z'
+  notes: null
+- source_name: 'Project document: February 6, 2018 Master Development Plan (PDF, 13MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/february-6-2018-master-development-plan.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:07:57.894318Z'
+  notes: null
+- source_name: 'Project document: February 6, 2018 Statement of Support (PDF, 286KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/february-6-2018-statement-of-support.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:07:57.978224Z'
+  notes: null
+- source_name: 'Project document: February 6, 2018 Exhibits (PDF, 13MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/february-6-2018-exhibits.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:08:00.132362Z'
+  notes: null
+- source_name: 'Project document: February 6, 2018 Proffers (PDF, 152KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/february-6-2018-proffers.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:08:00.197268Z'
+  notes: null
+- source_name: 'Project document: November 16, 2017 Master Development Plan (PDF,
+    9MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/november-16-2017-master-development-plan.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:08:01.996555Z'
+  notes: null
+- source_name: 'Project document: November 16, 2017 Statement of Support (PDF, 228KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/november-16-2017-statement-of-support.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:08:02.494225Z'
+  notes: null
+- source_name: 'Project document: November 16, 2017 Fiscal Impact Statement (PDF,
+    49KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/november-16-2017-fiscal-impact-statement.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:08:03.370454Z'
+  notes: null
+- source_name: 'Project document: November 16, 2017 Traffic Impact Study (PDF, 5MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/november-16-2017-traffic-impact-study.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:08:04.718066Z'
+  notes: null
+- source_name: 'Project document: November 16, 2017 Residential Condominium Supplemental
+    Parking Analysis (PDF, 400KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/november-16-2017-residential-condominium-supplemental-parking-analysis.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:08:05.349317Z'
+  notes: null
+- source_name: 'Project document: November 16, 2017 Waters of the U.S. (Including
+    Wetlands) Delineation and Resource Protection Area Evaluation (PDF, 7MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/november-16-2017-waters-of-the-u.s.-including-wetlands-delineation-and-resource-protection-area-evaluation.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:08:06.392053Z'
+  notes: null
+- source_name: 'Project document: November 16, 2017 Condition Assessment Study of
+    Original School Section (PDF, 10MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/november-16-2017-condition-assessment-study-of-original-school-section.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:08:07.947454Z'
+  notes: null
+- source_name: 'Project document: November 16, 2017 Yellow House Conditions Assessment
+    (PDF, 10MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/november-16-2017-yellow-house-conditions-assessment.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:08:08.904875Z'
+  notes: null
+- source_name: 'Project document: April 17, 2017 Master Development Plan (PDF, 6MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/april-17-2017-master-development-plan.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:08:09.976082Z'
+  notes: null
+- source_name: 'Project document: April 17, 2017 Statement of Support (PDF, 405KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/april-17-2017-statement-of-support.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:08:10.260457Z'
+  notes: null
+- source_name: 'Project document: April 17, 2017 Certified Plat (PDF, 521KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/april-17-2017-certified-plat.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:08:11.538008Z'
+  notes: null
+- source_name: 'Project document: April 17, 2017 Floodplain Study (PDF, 14MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/april-17-2017-floodplain-study.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:08:13.544058Z'
+  notes: null
+- source_name: 'Project document: April 17, 2017 Traffic Impact Study (PDF, 5MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/april-17-2017-traffic-impact-study.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:08:15.455052Z'
+  notes: null
+- source_name: 'Project document: April 17, 2017 Traffic Impact Study Appendices (PDF,
+    2MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/paul-vi/april-17-2017-appendices.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:08:16.027110Z'
+  notes: null
+assumption_overrides: {}
+external_estimates:
+- source: March 28, 2018 Fiscal Impact Statement – Paul VI Redevelopment
+  kind: applicant_fia
+  net_annual_low: 733000.0
+  net_annual_high: 1145000.0
+  revenue_total: null
+  expenditure_total: null
+  assessed_value: 180226000.0
+  construction_cost: null
+  fy: null
+  quote: 'BALANCE ($300,000) $733,000 $1,145,000 Note: All figures rounded.'
+  url: null
+- source: November 16, 2017 Fiscal Impact Statement – Paul VI Redevelopment
+  kind: applicant_fia
+  net_annual_low: 761000.0
+  net_annual_high: 1193000.0
+  revenue_total: null
+  expenditure_total: null
+  assessed_value: 188638000.0
+  construction_cost: null
+  fy: null
+  quote: 'BALANCE ($300,000) $761,000 $1,193,000 Note: All figures rounded.'
+  url: null

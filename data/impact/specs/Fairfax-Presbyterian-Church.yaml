@@ -1,0 +1,382 @@
+# ProjectSpec awaiting human confirmation (impact-confirm).
+# Edit values freely — numbers you set here are treated as human-
+# confirmed. extraction_confidence/quotes document where LLM values
+# came from; notes list demotions and document conflicts.
+name: Fairfax Presbyterian Church
+jurisdiction: fairfax_city_va
+city_project_slug: Fairfax-Presbyterian-Church
+source_url: https://www.fairfaxva.gov/Property-Business/Development/Projects/Fairfax-Presbyterian-Church
+project_type: mixed_use
+status: Under Construction
+parcels:
+- 57 1 02    123A
+- 57 1 02    122
+document_pins:
+- 57 1 02 122
+geometry:
+  type: Polygon
+  coordinates:
+  - - - -77.317446
+      - 38.848211
+    - - -77.317421
+      - 38.8482
+    - - -77.316648
+      - 38.847883
+    - - -77.316603
+      - 38.847864
+    - - -77.315799
+      - 38.849205
+    - - -77.315786
+      - 38.849228
+    - - -77.315782
+      - 38.849226
+    - - -77.315652
+      - 38.849172
+    - - -77.315522
+      - 38.849118
+    - - -77.315412
+      - 38.849074
+    - - -77.315402
+      - 38.84907
+    - - -77.315391
+      - 38.849066
+    - - -77.315392
+      - 38.849064
+    - - -77.315739
+      - 38.848487
+    - - -77.31574
+      - 38.848486
+    - - -77.31574
+      - 38.848485
+    - - -77.315738
+      - 38.848484
+    - - -77.315418
+      - 38.848366
+    - - -77.315409
+      - 38.848363
+    - - -77.315407
+      - 38.848362
+    - - -77.315405
+      - 38.848362
+    - - -77.315742
+      - 38.847802
+    - - -77.31584
+      - 38.847639
+    - - -77.315916
+      - 38.847513
+    - - -77.315927
+      - 38.847493
+    - - -77.315929
+      - 38.847494
+    - - -77.316466
+      - 38.847702
+    - - -77.316656
+      - 38.847775
+    - - -77.31756
+      - 38.846268
+    - - -77.317573
+      - 38.846246
+    - - -77.31768
+      - 38.846253
+    - - -77.317963
+      - 38.846272
+    - - -77.31823
+      - 38.846289
+    - - -77.318493
+      - 38.846307
+    - - -77.318739
+      - 38.846323
+    - - -77.318814
+      - 38.846327
+    - - -77.318786
+      - 38.846349
+    - - -77.318676
+      - 38.846431
+    - - -77.318553
+      - 38.846524
+    - - -77.317562
+      - 38.848211
+    - - -77.317172
+      - 38.848876
+    - - -77.317077
+      - 38.848842
+    - - -77.317075
+      - 38.848841
+    - - -77.317446
+      - 38.848211
+existing:
+  use: null
+  sqft: 43000.0
+  units: 0
+  assessed_value: null
+  jobs_estimate: null
+proposed:
+  units: 10
+  retail_sqft: null
+  office_sqft: null
+  stories: 3
+  acres: 8.25
+  parking_spaces: null
+  affordable_units: 10
+  tenure: mixed
+  corridor: null
+extraction_confidence:
+  existing.sqft: high
+  existing.units: high
+  existing.assessed_value: low
+  proposed.units: high
+  proposed.retail_sqft: low
+  proposed.office_sqft: low
+  proposed.stories: high
+  proposed.acres: high
+  proposed.parking_spaces: low
+  proposed.affordable_units: high
+  proposed.tenure: high
+extraction_quotes:
+  existing.sqft: existing 43,000 square foot church with day care and parking
+  existing.units: The Property is currently used as a Religious Institution with an
+    accessory Day Care Center.
+  proposed.units: the Property may be developed with up to ten (10) townhouses
+  proposed.stories: All ten units will have three levels, three bedrooms, two bathrooms
+  proposed.acres: Parcel 57-1-02-122-A (3.02 acres), and Parcel 57-1-02-123 (5.23
+    acres), for a total of 8.25 acres
+  proposed.affordable_units: ten new affordable residential townhouses in the northeast
+    corner of the Property
+  proposed.tenure: eight for sale units that would be owner-occupied and two rental
+    units
+extraction_notes:
+- 'external_estimates: staff estimate transcribed by hand at the confirm gate
+  (2026-08-22). The October 24, 2022 PC Public Hearing staff report states it at char
+  ~144k of the extracted text, beyond the extraction pass''s 60,000-char per-document
+  budget, so the LLM never saw the sentence; the quote is verbatim from the document.'
+- 'Proposed parking spaces: April 19, 2022 Narrative (Doc 22) and October 27, 2021
+  Narrative (Doc 27) and March 2, 2021 Statement of Justification (Doc 30) state 38
+  parking spaces in the southwest corner; July 26, 2022 Narrative (Doc 16) and all
+  later narratives (Aug 24, Sep 30, Oct 25 2022) and Summary of Commitments (Docs
+  6 & 11) state up to 30 parking spaces. The most recent authoritative documents (October
+  25, 2022 Summary of Commitments) use 30.'
+- 'Open space percentage: July 26, 2022 Narrative (Doc 16) and April 19, 2022 Narrative
+  (Doc 22) state approximately 54% of site area as open space; later narratives (Aug
+  24, Sep 30, Oct 25 2022) revised this to approximately 32% of site area.'
+- 'Tree canopy coverage: July 26, 2022 Narrative (Doc 16) and earlier narratives state
+  40% of site area; later narratives (Aug 24, Sep 30, Oct 25 2022) revised to approximately
+  36.5% of site area.'
+- 'Tree-save area: July 26, 2022 Narrative (Doc 16) and earlier narratives state approximately
+  133,400 square feet; later narratives (Aug 24, Sep 30, Oct 25 2022) revised to approximately
+  116,100 square feet.'
+- March 2021 Statement of Justification (Doc 30) Item B.1 describes all units as owner-occupied
+  with no rental units; later narratives from Oct 2021 onward describe 8 for-sale/owner-occupied
+  units and 2 rental units (sold to Homestretch).
+- 'proposed.parking_spaces: demoted to null (quote longer than 15 words; model claimed
+  30)'
+- parcels resolved via address_geocode; polygon area 5.09 ac
+- 'WARNING: resolved parcel area 5.09 ac differs from stated 8.25 ac by 38%'
+- 'parcels re-resolved after the PIN-normalization fix via document_pins: 2 parcel(s),
+  7.62 ac (was 1 parcel(s))'
+documents:
+- source_name: City project directory record
+  url: https://www.fairfaxva.gov/Property-Business/Development/Projects/Fairfax-Presbyterian-Church
+  vintage: '2026-07-18'
+  retrieved_at: '2026-07-19T16:00:53.867550Z'
+  notes: null
+- source_name: 'Project document: October 25, 2022 Narrative (PDF, 298KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/october-25-2022-narrative.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:00:54.096303Z'
+  notes: null
+- source_name: 'Project document: October 25, 2022 MDP Sheets 1-8 (PDF, 9MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/october-25-2022-mdp-sheets-1-8.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:00:55.453519Z'
+  notes: null
+- source_name: 'Project document: October 25, 2022 MDP Sheets 18-27 (PDF, 7MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/october-25-2022-mdp-sheets-18-27.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:00:57.735213Z'
+  notes: null
+- source_name: 'Project document: October 25, 2022 MDP Sheets 28-41 (PDF, 17MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/october-25-2022-mdp-sheets-28-41.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:00:59.535207Z'
+  notes: null
+- source_name: 'Project document: October 25, 2022 Summary of Commitments (PDF, 152KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/october-25-2022-summary-of-commitments.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:01.677430Z'
+  notes: null
+- source_name: 'Project document: September 30, 2022 Narrative (PDF, 298KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/september-30-2022-narrative.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:02.452251Z'
+  notes: null
+- source_name: 'Project document: September 30, 2022 MDP Sheets 1-8 (PDF, 6MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/september-30-2022-mdp-sheets-1-8.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:03.855427Z'
+  notes: null
+- source_name: 'Project document: September 30, 2022 MDP Sheets 18-27 (PDF, 6MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/september-30-2022-mdp-sheets-18-27.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:05.792297Z'
+  notes: null
+- source_name: 'Project document: September 30, 2022 MDP Sheets 28-41 (PDF, 14MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/september-30-2022-mdp-sheets-28-41.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:07.375034Z'
+  notes: null
+- source_name: 'Project document: September 30, 2022 Summary of Commitments (PDF,
+    238KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/september-30-2022-summary-of-commitments.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:08.778796Z'
+  notes: null
+- source_name: 'Project document: August 24, 2022 Narrative (PDF, 228KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/august-24-2022-narrative.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:10.001781Z'
+  notes: null
+- source_name: 'Project document: August 24, 2022 MDP Sheet 1-8 (PDF, 6MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/august-24-2022-mdp-sheet-1-8.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:11.220766Z'
+  notes: null
+- source_name: 'Project document: August 24, 2022 MDP Sheet 18-27 (PDF, 5MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/august-24-2022-mdp-sheet-18-27.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:13.088467Z'
+  notes: null
+- source_name: 'Project document: August 24, 2022 MDP Sheet 28-41 (PDF, 15MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/august-24-2022-mdp-sheet-28-41.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:14.921859Z'
+  notes: null
+- source_name: 'Project document: July 26, 2022 Narrative (PDF, 227KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/july-26-2022-narrative.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:16.165107Z'
+  notes: null
+- source_name: 'Project document: July 26, 2022 MDP Sheet 1-8 (PDF, 6MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/july-26-2022-mdp-sheet-1-8.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:17.967168Z'
+  notes: null
+- source_name: 'Project document: July 26, 2022 MDP Sheet 18-27 (PDF, 5MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/july-26-2022-mdp-sheet-18-27.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:20.286082Z'
+  notes: null
+- source_name: 'Project document: July 26, 2022 MDP Sheet 28-40 (PDF, 14MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/july-26-2022-mdp-sheet-28-40.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:21.308158Z'
+  notes: null
+- source_name: 'Project document: July 26, 2022 WQIA Application (PDF, 687KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/july-26-2022-wqia-application.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:22.649452Z'
+  notes: null
+- source_name: 'Project document: July 26, 2022 Major WQIA Report (PDF, 10MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/july-26-2022-major-wqia-report.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:24.687686Z'
+  notes: null
+- source_name: 'Project document: April 19, 2022 Narrative (PDF, 222KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/april-19-2022-narrative.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:24.845759Z'
+  notes: null
+- source_name: 'Project document: April 19, 2022 MDP Sheet 1-8 (PDF, 5MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/april-19-2022-mdp-sheet-1-8.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:26.186050Z'
+  notes: null
+- source_name: 'Project document: April 19, 2022 MDP Sheet 18-27 (PDF, 5MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/april-19-2022-mdp-sheet-18-27.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:28.118505Z'
+  notes: null
+- source_name: 'Project document: February 9, 2022 Board of Architectural Review Application
+    (PDF, 9MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/february-9-2022-board-of-architectural-review-application.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:31.474695Z'
+  notes: null
+- source_name: 'Project document: February 9, 2022 Proposed Architecture (PDF, 20MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/february-9-2022-proposed-architecture.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:33.224699Z'
+  notes: null
+- source_name: 'Project document: October 27, 2021 Narrative (PDF, 192KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/october-27-2021-narrative.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:34.417618Z'
+  notes: null
+- source_name: 'Project document: October 27, 2021 MDP Sheet 1-11 (PDF, 5MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/october-27-2021-mdp-sheet-1-11.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:35.981915Z'
+  notes: null
+- source_name: 'Project document: March 2, 2021 Application (PDF, 425KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/march-2-2021-application.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:40.609281Z'
+  notes: null
+- source_name: 'Project document: March 2, 2021 Statement of Justification (PDF, 264KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/march-2-2021-statement-of-justification.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:41.903340Z'
+  notes: null
+- source_name: 'Project document: March 2, 2021 Master Development Plan (PDF, 14MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/march-2-2021-master-development-plan.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:43.317674Z'
+  notes: null
+- source_name: 'Project document: March 2, 2021 Traffic Impact Study (PDF, 815KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/march-2-2021-traffic-impact-study.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:43.989213Z'
+  notes: null
+- source_name: 'Project document: March 2, 2021 RPA Application (PDF, 1023KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/march-2-2021-rpa-application.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:44.716356Z'
+  notes: null
+- source_name: 'Project document: March 2, 2021 RPA Delineation Plan (PDF, 25MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/march-2-2021-rpa-delineation-plan.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:46.548408Z'
+  notes: null
+- source_name: 'Project document: March 2, 2021 WQIA Application (PDF, 2MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/march-2-2021-wqia-application.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:47.001185Z'
+  notes: null
+- source_name: 'Project document: March 2, 2021 WQIA Assessment Letter (PDF, 785KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/march-2-2021-wqia-assessment-letter.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:47.725192Z'
+  notes: null
+- source_name: 'Project document: October 17, 2019 Project Summary (PDF, 2MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/october-17-2019-project-summary.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:48.875617Z'
+  notes: null
+- source_name: 'Project document: October 17, 2019 Conceptual Plan (PDF, 3MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/fairfax-presbyterian-church/october-17-2019-conceptual-plan.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:01:49.874439Z'
+  notes: null
+assumption_overrides: {}
+external_estimates:
+- source: October 24, 2022 Planning Commission Public Hearing (PDF, 6MB)
+  kind: staff_report
+  net_annual_low: -85000.0
+  net_annual_high: -52000.0
+  revenue_total: null
+  expenditure_total: null
+  assessed_value: null
+  construction_cost: null
+  fy: null
+  quote: Staff anticipated fiscal impact estimate for the proposed development of
+    ten affordable townhomes ranges from -$52,000 to -$85,000.
+  url: null

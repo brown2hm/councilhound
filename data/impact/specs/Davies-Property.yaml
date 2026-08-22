@@ -1,0 +1,311 @@
+# ProjectSpec awaiting human confirmation (impact-confirm).
+# Edit values freely — numbers you set here are treated as human-
+# confirmed. extraction_confidence/quotes document where LLM values
+# came from; notes list demotions and document conflicts.
+name: Davies Property
+jurisdiction: fairfax_city_va
+city_project_slug: Davies-Property
+source_url: https://www.fairfaxva.gov/Property-Business/Development/Projects/Davies-Property
+project_type: mixed_use
+status: Approved
+parcels:
+- 57 4 02    040
+document_pins: []
+geometry:
+  type: Polygon
+  coordinates:
+  - - - -77.306681
+      - 38.842471
+    - - -77.306865
+      - 38.84191
+    - - -77.308747
+      - 38.842575
+    - - -77.308416
+      - 38.843085
+    - - -77.306681
+      - 38.842471
+existing:
+  use: null
+  sqft: null
+  units: 1
+  assessed_value: null
+  jobs_estimate: null
+proposed:
+  units: 276
+  retail_sqft: 6608.0
+  office_sqft: 4188.0
+  stories: null
+  acres: 2.69
+  parking_spaces: 423
+  affordable_units: null
+  tenure: rental
+  corridor: null
+extraction_confidence:
+  existing.sqft: low
+  existing.units: medium
+  existing.assessed_value: low
+  proposed.units: high
+  proposed.retail_sqft: high
+  proposed.office_sqft: high
+  proposed.stories: low
+  proposed.acres: high
+  proposed.parking_spaces: high
+  proposed.affordable_units: low
+  proposed.tenure: high
+extraction_quotes:
+  existing.units: a single-family home is built on the parcel (Davies Property)
+  proposed.units: 'Residential: Upper Story Residential/Multifamily Residential with
+    up to 276 dwelling units'
+  proposed.retail_sqft: 'RETAIL
+
+    6,608 GSF'
+  proposed.office_sqft: approximately 4,188 square feet of office use
+  proposed.acres: approximately 2.69 acres
+  proposed.parking_spaces: Applicant proposes to provide a total of approximately
+    423 parking spaces
+  proposed.tenure: up to 276 upper-story residential apartments
+extraction_notes:
+- 'external_estimates: staff estimate transcribed by hand at the confirm gate
+  (2026-08-22). The June 23, 2025 PC Public Hearing staff report states it at char
+  ~108k of the extracted text, beyond the extraction pass''s 60,000-char per-document
+  budget, so the LLM never saw the sentence; the quote is verbatim from the document.'
+- 'Retail sq ft: City project directory (Doc 1) and Transportation Impact Studies
+  (Docs 7, 11, 14) state 6,608 sq ft of retail use and 4,188 sq ft of office use separately
+  (total ~10,796 sq ft nonresidential); the July 3, 2025 Statement of Support (Doc
+  2) and proffers (Doc 4) describe ''approximately 10,796 square feet of retail, office
+  or other commercial nonresidential uses'' as a combined figure. The GDP plan sheets
+  (Docs 3, 6) show RETAIL=6,608 GSF, CO-WORK=2,653 GSF, and BUSINESS CENTER=1,535
+  GSF as distinct labeled spaces.'
+- 'Parking spaces: City project directory (Doc 1) states ''424 spaces in structured
+  parking''; the July 3, 2025 Statement of Support (Doc 2), May 2025 Statement of
+  Support (Doc 5), and April 2025 Statement of Support (Doc 9) all state ''approximately
+  423 shared parking spaces''. The most recent applicant documents (Docs 2, 4, 5)
+  consistently use 423.'
+- 'Building height (Building B): The April 2025 GDP (Doc 10) labels Building B as
+  ''5 STORIES / 46'' - 9"'', while the July 2025 and May 2025 GDP (Docs 3 and 6) label
+  Building B as ''5 STORIES / 58'' - 1"'', indicating the height was revised upward
+  between the April and May 2025 resubmissions.'
+- 'Office sq ft characterization: The July 2025 Statement of Support (Doc 2) and proffers
+  (Doc 4) describe the nonresidential space as ''retail, office or other commercial
+  nonresidential uses'' without separately stating office sq ft; the Transportation
+  Impact Studies (Docs 7, 11, 14) explicitly state ''4,188 square feet of office use''
+  as a discrete component. The GDP shows CO-WORK (2,653 GSF) + BUSINESS CENTER (1,535
+  GSF) = 4,188 GSF, which aligns with the TIS figure.'
+- 'proposed.stories: demoted to null (quote longer than 15 words; model claimed 5)'
+- 'proposed.affordable_units: demoted to null (quote longer than 15 words; model claimed
+  17)'
+- parcels resolved via address_geocode; polygon area 2.70 ac
+- 'external estimate from ''December 5, 2023 City Council Post-Submission Work Session
+  Staff Report (https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/december-5-2023-city-council-post-submission-work-session.pdf)''
+  dropped: no figures'
+- 'external estimate from ''March 14, 2022 Planning Commission Pre-Application Briefing
+  Staff Memo (https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/march-14-2022-planning-commission-pre-application-briefing.pdf)''
+  dropped: no figures'
+- 'external estimate from ''Council packet: Staff Report (2026-07-07) – Gallery at
+  City Center (https://fairfax.granicus.com/MetaViewer.php?view_id=13&clip_id=4609&meta_id=134021)''
+  dropped: no figures'
+- 'external estimate from ''Council packet: Staff Report (2026-07-28) – Courthouse
+  Plaza (https://fairfax.granicus.com/MetaViewer.php?view_id=13&clip_id=4623&meta_id=134464)''
+  dropped: no figures'
+- 'external estimate from ''December 5, 2023 City Council Post-Submission Work Session
+  (https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/december-5-2023-city-council-post-submission-work-session.pdf)''
+  dropped: no figures'
+- 'external estimate from ''March 14, 2022 Planning Commission Pre-Application Briefing
+  (https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/march-14-2022-planning-commission-pre-application-briefing.pdf)''
+  dropped: no figures'
+documents:
+- source_name: City project directory record
+  url: https://www.fairfaxva.gov/Property-Business/Development/Projects/Davies-Property
+  vintage: '2026-07-18'
+  retrieved_at: '2026-07-19T15:59:34.600021Z'
+  notes: null
+- source_name: 'Project document: July 3, 2025 Statement of Support (PDF, 2MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/jul-2025-statement-of-support.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T15:59:34.963935Z'
+  notes: null
+- source_name: 'Project document: July 3, 2025 General Development Plan (PDF, 68MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/jul-2025-general-development-plan.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T15:59:38.325948Z'
+  notes: null
+- source_name: 'Project document: July 3, 2025 Proffers (PDF, 200KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/jul-2025-proffers.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T15:59:38.454804Z'
+  notes: null
+- source_name: 'Project document: May 25, 2025 Statement of Support (PDF, 2MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/may-2025-statement-of-support-1.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T15:59:39.713312Z'
+  notes: null
+- source_name: 'Project document: May 25, 2025 General Development Plan (PDF, 49MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/may-2025-general-development-plan.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T15:59:43.902691Z'
+  notes: null
+- source_name: 'Project document: May 25, 2025 Transportation Impact Study (PDF, 8MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/may-2025-transportation-impact-study.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T15:59:44.434366Z'
+  notes: null
+- source_name: 'Project document: May 25, 2025 Proffers (PDF, 252KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/may-2025-proffers.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T15:59:44.971986Z'
+  notes: null
+- source_name: 'Project document: April 18, 2025 Statement of Support (PDF, 2MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/apr-2025-statement-of-support.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T15:59:46.109596Z'
+  notes: null
+- source_name: 'Project document: April 18, 2025 General Development Plan (PDF, 51MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/apr-2025-general-dev.-plan.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T15:59:48.904629Z'
+  notes: null
+- source_name: 'Project document: April 18, 2025 Transportation Impact Study (PDF,
+    11MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/apr-2025-transportation-impact-study.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T15:59:49.280233Z'
+  notes: null
+- source_name: 'Project document: April 18, 2025 Proffers (PDF, 146KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/apr-2025-proffers.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T15:59:50.115270Z'
+  notes: null
+- source_name: 'Project document: April 18, 2025 Architectural Plans (PDF, 101MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/apr-2025-architectural-plans.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T15:59:55.021051Z'
+  notes: null
+- source_name: 'Project document: January 27, 2025 Transportation Impact Study (PDF,
+    8MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/january-27-2025-transportation-impact-study.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T15:59:55.386483Z'
+  notes: null
+- source_name: 'Project document: December 3, 2024 Statement of Support (PDF, 2MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/december-3-2024-statement-of-support.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T15:59:56.553314Z'
+  notes: null
+- source_name: 'Project document: December 3, 2024 General Development Plan (PDF,
+    29MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/december-3-2024-general-development-plan.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T15:59:58.912554Z'
+  notes: null
+- source_name: 'Project document: December 3, 2024 Draft Proffers (PDF, 141KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/december-3-2024-draft-proffers.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T15:59:59.239640Z'
+  notes: null
+- source_name: 'Project document: September 5, 2024 Statement of Support (PDF, 2MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/september-5-2024-statement-of-support.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:00:05.504621Z'
+  notes: null
+- source_name: 'Project document: September 5, 2024 General Development Plan (PDF,
+    2MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/september-5-2024-statement-of-support.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:00:05.540167Z'
+  notes: null
+- source_name: 'Project document: September 5, 2024 Draft Proffers (PDF, 136KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/september-5-2024-draft-proffers.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:00:06.452916Z'
+  notes: null
+- source_name: 'Project document: September 5, 2024 Architectural Plan Sheets (PDF,
+    136MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/september-5-2024-architectural-plan-sheets.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:00:09.223269Z'
+  notes: null
+- source_name: 'Project document: September 28, 2023 Statement of Support (PDF, 12MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/september-28-2023-statement-of-support.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:00:10.176537Z'
+  notes: null
+- source_name: 'Project document: September 28, 2023 General Development Plan (PDF,
+    22MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/september-28-2023-general-development-plan.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:00:12.116142Z'
+  notes: null
+- source_name: 'Project document: September 28, 2023 Garage Floor Plan Exhibits (PDF,
+    3MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/september-28-2023-garage-floor-plan-exhibits.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:00:12.890541Z'
+  notes: null
+- source_name: 'Project document: September 28, 2023 AutoTurn Exhibits (PDF, 16MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/september-28-2023-autoturn-exhibits.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:00:15.096822Z'
+  notes: null
+- source_name: 'Project document: September 28, 2023 Transportation Impact Study w
+    Appendix (PDF, 15MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/september-28-2023-transportation-impact-study-w-appendix.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:00:16.242084Z'
+  notes: null
+- source_name: 'Project document: September 28, 2023 Compact Parking Space Ratio Memo
+    (PDF, 1MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/september-28-2023-compact-parking-space-ratio-memo.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:00:16.305047Z'
+  notes: null
+- source_name: 'Project document: September 28, 2023 Draft Proffers (PDF, 34KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/september-28-2023-draft-proffers.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:00:17.348487Z'
+  notes: null
+- source_name: 'Project document: August 22, 2023 BAR Statement of Intent (PDF, 249KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/august-22-2023-bar-statement-of-intent.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:00:18.527318Z'
+  notes: null
+- source_name: 'Project document: August 22, 2023 BAR Submission Plans (PDF, 12MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/august-22-2023-bar-submission-plans.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:00:20.330131Z'
+  notes: null
+- source_name: 'Project document: February 2, 2023 Statement of Support (PDF, 11MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/february-2-2023-statement-of-support.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:00:20.568530Z'
+  notes: null
+- source_name: 'Project document: February 2, 2023 General Development Plan (PDF,
+    19MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/february-2-2023-general-development-plan.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:00:22.973942Z'
+  notes: null
+- source_name: 'Project document: February 17, 2022 Briefing Request Letter (PDF,
+    113KB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/february-17-2022-briefing-request-letter.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:00:23.141963Z'
+  notes: null
+- source_name: 'Project document: February 17, 2022 Conceptual Plan (PDF, 10MB)'
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/february-17-2022-conceptual-plan.pdf
+  vintage: current
+  retrieved_at: '2026-07-19T16:00:24.773302Z'
+  notes: null
+assumption_overrides: {}
+external_estimates:
+- source: June 23, 2025 Planning Commission Public Hearing (PDF, 29MB)
+  kind: staff_report
+  net_annual_low: -308000.0
+  net_annual_high: 321000.0
+  revenue_total: null
+  expenditure_total: null
+  assessed_value: null
+  construction_cost: null
+  fy: null
+  quote: The estimated net fiscal balance is calculated as a range between -$308,000
+    and +$321,000 annually.
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/june-23-2025-planning-commission-public-hearing.pdf
