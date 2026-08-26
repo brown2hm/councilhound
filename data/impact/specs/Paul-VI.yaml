@@ -397,10 +397,10 @@ extraction_quotes:
 extraction_notes:
 - 'proposed.tenure: set to for_sale by hand at the confirm gate. The documents establish
   it by negation — the commitment "No rental units shall be developed or offered."
-  (verbatim in the corpus) plus a program of 144 condominiums, 115 townhomes, and 7
-  single-family homes — but the evidence-token firewall cannot accept a negated quote
-  (it reads the word "rental" as rental-class evidence), so the LLM extraction was
-  correctly rejected and a human transcription is used instead (2026-08-22).'
+  (verbatim in the corpus) plus a program of 144 condominiums, 115 townhomes, and
+  7 single-family homes — but the evidence-token firewall cannot accept a negated
+  quote (it reads the word "rental" as rental-class evidence), so the LLM extraction
+  was correctly rejected and a human transcription is used instead (2026-08-22).'
 - 'Proposed residential unit count changed across plan versions: the approved/final
   project directory (Doc 1) states 266 total units (144 condominiums + 115 townhomes
   + 7 single-family); the August 2018 Narrative (Doc 3) also states 266 units; but
@@ -445,6 +445,12 @@ extraction_notes:
   claimed ''for_sale'')'
 - 'proposed.tenure: demoted to null (quote states no evidence for ''for_sale''; model
   claimed ''for_sale'')'
+- Recorded 2 external fiscal estimate(s) for comparison from 5 document(s).
+- 'external_estimates: assessed_value re-added by hand after the windowed re-extraction
+  (2026-08-26). The Fiscal Impact Statements state projected assessed values of $180,226,000
+  (Mar 2018) and $188,638,000 (Nov 2017); the re-extraction returned the same net
+  annual ranges but omitted these, and the hand-transcribed values (2026-08-22) are
+  kept.'
 documents:
 - source_name: City project directory record
   url: https://www.fairfaxva.gov/Property-Business/Development/Projects/Paul-VI
@@ -635,7 +641,7 @@ documents:
   notes: null
 assumption_overrides: {}
 external_estimates:
-- source: March 28, 2018 Fiscal Impact Statement – Paul VI Redevelopment
+- source: March 28, 2018 Fiscal Impact Statement
   kind: applicant_fia
   net_annual_low: 733000.0
   net_annual_high: 1145000.0
@@ -644,9 +650,9 @@ external_estimates:
   assessed_value: 180226000.0
   construction_cost: null
   fy: null
-  quote: 'BALANCE ($300,000) $733,000 $1,145,000 Note: All figures rounded.'
+  quote: BALANCE ($300,000) $733,000 $1,145,000
   url: null
-- source: November 16, 2017 Fiscal Impact Statement – Paul VI Redevelopment
+- source: November 16, 2017 Fiscal Impact Statement
   kind: applicant_fia
   net_annual_low: 761000.0
   net_annual_high: 1193000.0
@@ -655,5 +661,5 @@ external_estimates:
   assessed_value: 188638000.0
   construction_cost: null
   fy: null
-  quote: 'BALANCE ($300,000) $761,000 $1,193,000 Note: All figures rounded.'
+  quote: BALANCE ($300,000) $761,000 $1,193,000
   url: null

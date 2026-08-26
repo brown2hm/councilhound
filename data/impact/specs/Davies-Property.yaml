@@ -65,10 +65,10 @@ extraction_quotes:
     423 parking spaces
   proposed.tenure: up to 276 upper-story residential apartments
 extraction_notes:
-- 'external_estimates: staff estimate transcribed by hand at the confirm gate
-  (2026-08-22). The June 23, 2025 PC Public Hearing staff report states it at char
-  ~108k of the extracted text, beyond the extraction pass''s 60,000-char per-document
-  budget, so the LLM never saw the sentence; the quote is verbatim from the document.'
+- 'external_estimates: staff estimate transcribed by hand at the confirm gate (2026-08-22).
+  The June 23, 2025 PC Public Hearing staff report states it at char ~108k of the
+  extracted text, beyond the extraction pass''s 60,000-char per-document budget, so
+  the LLM never saw the sentence; the quote is verbatim from the document.'
 - 'Retail sq ft: City project directory (Doc 1) and Transportation Impact Studies
   (Docs 7, 11, 14) state 6,608 sq ft of retail use and 4,188 sq ft of office use separately
   (total ~10,796 sq ft nonresidential); the July 3, 2025 Statement of Support (Doc
@@ -113,6 +113,7 @@ extraction_notes:
 - 'external estimate from ''March 14, 2022 Planning Commission Pre-Application Briefing
   (https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/march-14-2022-planning-commission-pre-application-briefing.pdf)''
   dropped: no figures'
+- Recorded 2 external fiscal estimate(s) for comparison from 10 document(s).
 documents:
 - source_name: City project directory record
   url: https://www.fairfaxva.gov/Property-Business/Development/Projects/Davies-Property
@@ -297,7 +298,7 @@ documents:
   notes: null
 assumption_overrides: {}
 external_estimates:
-- source: June 23, 2025 Planning Commission Public Hearing (PDF, 29MB)
+- source: June 23, 2025 Planning Commission Public Hearing Staff Report
   kind: staff_report
   net_annual_low: -308000.0
   net_annual_high: 321000.0
@@ -308,4 +309,16 @@ external_estimates:
   fy: null
   quote: The estimated net fiscal balance is calculated as a range between -$308,000
     and +$321,000 annually.
-  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/june-23-2025-planning-commission-public-hearing.pdf
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/jun.23.2025.pcdaviesstaffreport.pdf
+- source: December 5, 2023 City Council Post-Submission Work Session Staff Report
+  kind: staff_report
+  net_annual_low: -344000.0
+  net_annual_high: 405000.0
+  revenue_total: null
+  expenditure_total: null
+  assessed_value: null
+  construction_cost: null
+  fy: null
+  quote: The estimated net fiscal balance is calculated as a range between -$344,000
+    and +$405,000 annually (avg. = +$61,000).
+  url: https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/davies-property/december-5-2023-city-council-post-submission-work-session.pdf

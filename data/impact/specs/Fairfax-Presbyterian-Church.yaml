@@ -145,10 +145,10 @@ extraction_quotes:
   proposed.tenure: eight for sale units that would be owner-occupied and two rental
     units
 extraction_notes:
-- 'external_estimates: staff estimate transcribed by hand at the confirm gate
-  (2026-08-22). The October 24, 2022 PC Public Hearing staff report states it at char
-  ~144k of the extracted text, beyond the extraction pass''s 60,000-char per-document
-  budget, so the LLM never saw the sentence; the quote is verbatim from the document.'
+- 'external_estimates: staff estimate transcribed by hand at the confirm gate (2026-08-22).
+  The October 24, 2022 PC Public Hearing staff report states it at char ~144k of the
+  extracted text, beyond the extraction pass''s 60,000-char per-document budget, so
+  the LLM never saw the sentence; the quote is verbatim from the document.'
 - 'Proposed parking spaces: April 19, 2022 Narrative (Doc 22) and October 27, 2021
   Narrative (Doc 27) and March 2, 2021 Statement of Justification (Doc 30) state 38
   parking spaces in the southwest corner; July 26, 2022 Narrative (Doc 16) and all
@@ -173,6 +173,7 @@ extraction_notes:
 - 'WARNING: resolved parcel area 5.09 ac differs from stated 8.25 ac by 38%'
 - 'parcels re-resolved after the PIN-normalization fix via document_pins: 2 parcel(s),
   7.62 ac (was 1 parcel(s))'
+- Recorded 1 external fiscal estimate(s) for comparison from 2 document(s).
 documents:
 - source_name: City project directory record
   url: https://www.fairfaxva.gov/Property-Business/Development/Projects/Fairfax-Presbyterian-Church
@@ -368,7 +369,8 @@ documents:
   notes: null
 assumption_overrides: {}
 external_estimates:
-- source: October 24, 2022 Planning Commission Public Hearing (PDF, 6MB)
+- source: October 24, 2022 Planning Commission Public Hearing – Attachment 1 (Analysis),
+    Z-21-00099
   kind: staff_report
   net_annual_low: -85000.0
   net_annual_high: -52000.0
