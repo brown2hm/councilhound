@@ -344,6 +344,73 @@ EXTERNAL_DOC_PATTERN = re.compile(
     r"fiscal impact|fiscal analysis|staff report|staff memo|net fiscal|"
     r"public hearing", re.I)
 
+EXTERNAL_WINDOW_CHARS = 5_000  # verbatim context kept on each side of a match
+
+_OMIT = "[... {n} chars omitted ...]"  # marker between windows; never document text
+
+
+def _merge_spans(spans: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    merged: list[list[int]] = []
+    for start, end in sorted(spans):
+        if merged and start <= merged[-1][1]:
+            merged[-1][1] = max(merged[-1][1], end)
+        else:
+            merged.append([start, end])
+    return [(s, e) for s, e in merged]
+
+
+def _pattern_windows(text: str, pattern: re.Pattern,
+                     window: int = EXTERNAL_WINDOW_CHARS,
+                     cap: int = MAX_DOC_CHARS) -> str:
+    """Excerpt `text` as verbatim windows around each `pattern` match, merged
+    when overlapping and capped at ~`cap` chars total.
+
+    Replaces head-truncation (`text[:cap]`) for the external-estimates prompt:
+    staff fiscal estimates routinely sit deep in 200k-char hearing packets
+    (Davies-Property's at char ~108k, Fairfax-Presbyterian-Church's at ~144k),
+    where a head slice silently drops them and the figures have to be
+    hand-transcribed at the confirm gate. Window text is copied verbatim, so a
+    quote drawn from a window still passes the firewall's full-corpus check;
+    the omission markers are not document text, so a quote spanning one fails
+    that check — which is correct, the model never saw the real bridge text.
+    The head is always included as an anchor for project identity.
+    """
+    if len(text) <= cap:
+        return text
+    matches = [(m.start(), m.end()) for m in pattern.finditer(text)]
+    if not matches:  # selected by label alone — no anchor, keep the old head slice
+        return text[:cap] + "\n" + _OMIT.format(n=len(text) - cap)
+
+    # shrink the window if wide ones blow the per-document budget; if even the
+    # narrowest do (60+ scattered matches), keep windows in document order
+    # until the budget runs out
+    for w in (window, window // 2, window // 5, window // 10):
+        spans = _merge_spans([(0, w)] + [(max(0, s - w), min(len(text), e + w))
+                                         for s, e in matches])
+        if sum(e - s for s, e in spans) <= cap:
+            break
+    else:
+        kept, used = [], 0
+        for s, e in spans:
+            if used + (e - s) > cap:
+                log.warning("window budget reached; dropped %d of %d excerpt(s)",
+                            len(spans) - len(kept), len(spans))
+                break
+            kept.append((s, e))
+            used += e - s
+        spans = kept
+
+    parts: list[str] = []
+    prev_end = 0
+    for s, e in spans:
+        if s > prev_end:
+            parts.append(_OMIT.format(n=s - prev_end))
+        parts.append(text[s:e])
+        prev_end = e
+    if prev_end < len(text):
+        parts.append(_OMIT.format(n=len(text) - prev_end))
+    return "\n".join(parts)
+
 EXTERNAL_NUMERIC_FIELDS = ("net_annual_low", "net_annual_high", "revenue_total",
                            "expenditure_total", "assessed_value",
                            "construction_cost")
@@ -446,6 +513,9 @@ def extract_external_estimates(docs: list[ProjectDocument],
         return [], ["No applicant fiscal impact analysis or staff report found in "
                     "the document corpus — no external estimate to compare against."]
 
+    # the verbatim-check corpus is deliberately the FULL text, not the windowed
+    # prompt: windows are verbatim substrings, so every honest quote verifies,
+    # and a quote spanning an omission marker (text the model never saw) fails
     corpus = "\n".join(d.text for d in relevant)
     corpus_norm = _normalize(corpus)
     subject = (f'Extract the fiscal estimates these documents state for the '
@@ -456,7 +526,7 @@ def extract_external_estimates(docs: list[ProjectDocument],
     parts = [subject]
     for i, doc in enumerate(relevant, 1):
         parts.append(f"=== DOCUMENT {i}: {doc.label} ({doc.url}) ===\n"
-                     f"{doc.text[:MAX_DOC_CHARS]}\n")
+                     f"{_pattern_windows(doc.text, EXTERNAL_DOC_PATTERN)}\n")
     raw = _call_external("\n".join(parts))
 
     by_url = {d.label: d.url for d in relevant}
