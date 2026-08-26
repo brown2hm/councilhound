@@ -357,11 +357,18 @@ def enrich(session: Session, slug: str, external: bool = False,
     docs = gather_documents(project, session=session)
     lines = [f"{slug}: {len(docs)} document(s) in corpus"]
 
+    changed = False
+
     if external:
         estimates, notes = extract_external_estimates(docs, project_name=project.name)
-        spec.external_estimates = [ExternalEstimate.model_validate(e) for e in estimates]
-        spec.extraction_notes.extend(notes)
-        for e in spec.external_estimates:
+        new_estimates = [ExternalEstimate.model_validate(e) for e in estimates]
+        if new_estimates != spec.external_estimates:
+            changed = True
+            spec.external_estimates = new_estimates
+            spec.extraction_notes.extend(notes)
+        else:
+            lines.append("  external estimates unchanged")
+        for e in new_estimates:
             span = ""
             if e.net_annual_low is not None or e.net_annual_high is not None:
                 span = (f" net ${(e.net_annual_low or 0):,.0f}"
@@ -376,16 +383,33 @@ def enrich(session: Session, slug: str, external: bool = False,
         raw = _call_claude(_build_prompt(docs))
         entry, notes = enforce_enum_firewall(
             raw.get("proposed_tenure"), corpus, "proposed.tenure", TENURE_EVIDENCE)
+        before = (spec.proposed.tenure,
+                  spec.extraction_confidence.get("proposed.tenure"),
+                  spec.extraction_quotes.get("proposed.tenure"))
         spec.proposed.tenure = entry["value"]
         if entry["value"]:
             spec.extraction_confidence["proposed.tenure"] = entry["confidence"]
             if entry["source_quote"]:
                 spec.extraction_quotes["proposed.tenure"] = entry["source_quote"]
-        spec.extraction_notes.extend(notes)
+        after = (spec.proposed.tenure,
+                 spec.extraction_confidence.get("proposed.tenure"),
+                 spec.extraction_quotes.get("proposed.tenure"))
+        if after != before:
+            changed = True
+            spec.extraction_notes.extend(notes)
+        else:
+            lines.append("  tenure unchanged")
         lines.append(f"  tenure: {entry['value']} [{entry['confidence']}]"
                      + (f'  "{entry["source_quote"]}"' if entry["source_quote"] else ""))
         for note in notes:
             lines.append(f"  ! {note}")
+
+    # a pass that changed nothing must change nothing: don't rewrite the row,
+    # re-append notes, or demote synthesized->confirmed (which would force a
+    # needless re-confirm + re-evaluate of an identical spec)
+    if not changed:
+        lines.append(f"no changes — spec, YAML, and status ({evaluation.status}) left as-is")
+        return "\n".join(lines)
 
     evaluation.spec = spec.model_dump(mode="json")
     if evaluation.status in ("computed", "synthesized"):
