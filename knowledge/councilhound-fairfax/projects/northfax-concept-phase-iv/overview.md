@@ -5,12 +5,14 @@ description: The proposal would be the final phase of a PD-M District approved i
 resource: https://councilhound.net/development/Northfax-Concept-Phase-IV
 tags:
 - private-development
+- pre-application
 timestamp: '2026-08-04'
 source: official
 address: 3570 Chain Bridge Road, Fairfax, VA 22030
 city_detail_url: https://www.fairfaxva.gov/Property-Business/Development/Projects/Northfax-Concept-Phase-IV
 lat: 38.859187
 lng: -77.3079005
+status: pre_application
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
