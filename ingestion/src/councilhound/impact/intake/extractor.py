@@ -494,6 +494,39 @@ def _call_external(prompt: str) -> dict:
     raise ValueError("no tool_use block in response")
 
 
+_SOURCE_URL_PATTERN = re.compile(r"https?://[^\s)\]>\"']+")
+
+
+def _resolve_source_url(source: str, docs: list[ProjectDocument]) -> str | None:
+    """Map the model's source label back to a document URL.
+
+    The model routinely decorates labels — "Document 2: <label> – Attachment 1
+    Analysis", or the label with its URL appended in parens — so an exact
+    lookup misses and the url lands null. Try, in order: exact label, a URL
+    embedded in the source string (validated against the documents'), then
+    normalized containment in either direction, taking the largest overlap.
+    """
+    for d in docs:
+        if d.label == source:
+            return d.url
+    for match in _SOURCE_URL_PATTERN.finditer(source):
+        url = match.group().rstrip(".,;:")
+        for d in docs:
+            if d.url == url:
+                return d.url
+    source_norm = _normalize(source)
+    if not source_norm:
+        return None
+    best_url, best_overlap = None, 0
+    for d in docs:
+        label_norm = _normalize(d.label or "")
+        if label_norm and (label_norm in source_norm or source_norm in label_norm):
+            overlap = min(len(label_norm), len(source_norm))
+            if overlap > best_overlap:
+                best_url, best_overlap = d.url, overlap
+    return best_url
+
+
 def extract_external_estimates(docs: list[ProjectDocument],
                                project_name: str | None = None,
                                ) -> tuple[list[dict], list[str]]:
@@ -529,7 +562,6 @@ def extract_external_estimates(docs: list[ProjectDocument],
                      f"{_pattern_windows(doc.text, EXTERNAL_DOC_PATTERN)}\n")
     raw = _call_external("\n".join(parts))
 
-    by_url = {d.label: d.url for d in relevant}
     out: list[dict] = []
     notes: list[str] = []
     for entry in raw.get("estimates") or []:
@@ -552,7 +584,7 @@ def extract_external_estimates(docs: list[ProjectDocument],
                  "kind": entry.get("kind") if entry.get("kind") in
                  ("applicant_fia", "staff_report", "other") else "other",
                  "quote": quote, "fy": entry.get("fy"),
-                 "url": by_url.get(source)}
+                 "url": _resolve_source_url(source, relevant)}
         kept_any = False
         for field in EXTERNAL_NUMERIC_FIELDS:
             value = entry.get(field)
