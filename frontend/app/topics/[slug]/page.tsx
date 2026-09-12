@@ -1,45 +1,39 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { cache } from "react";
 import BodyTag from "@/components/BodyTag";
 import DiscussionSparkline from "@/components/DiscussionSparkline";
 import FollowTopic from "@/components/FollowTopic";
+import Jargon from "@/components/Jargon";
 import StatusBadge from "@/components/StatusBadge";
 import StatusStepper from "@/components/StatusStepper";
 import VoteBlock from "@/components/VotePills";
 import { api, formatDate } from "@/lib/api";
+import { requireRecord } from "@/lib/not-found";
+
+export const revalidate = 300;
 
 const getEntity = cache((slug: string) => api.entity(slug));
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
-  try {
-    const entity = await getEntity(params.slug);
-    const summary = entity.profile?.summary;
-    return {
-      title: entity.name,
-      description: summary
-        ? `${summary.slice(0, 180)}…`
-        : `Every action, vote, and update on ${entity.name} in City of Fairfax council and commission meetings.`,
-    };
-  } catch {
-    return {};
-  }
+  const entity = await requireRecord(getEntity(params.slug));
+  const summary = entity.profile?.summary;
+  return {
+    title: entity.name,
+    description: summary
+      ? `${summary.slice(0, 180)}…`
+      : `Every action, vote, and update on ${entity.name} in City of Fairfax council and commission meetings.`,
+  };
 }
 
 export default async function TopicDetail({ params }: { params: { slug: string } }) {
-  let entity;
-  try {
-    entity = await getEntity(params.slug);
-  } catch {
-    notFound();
-  }
+  const entity = await requireRecord(getEntity(params.slug));
 
   const profile = entity.profile;
 
   return (
     <div className="mx-auto max-w-[860px] px-4 pb-16 pt-8 sm:px-8">
       <Link href="/topics" className="text-sm font-semibold text-muted hover:text-ink">
-        ← Topic tracker
+        ← Projects &amp; topics
       </Link>
       <div className="mb-1 mt-4 text-xs font-semibold uppercase tracking-[1.5px] text-muted">
         {entity.entity_type.replace("_", " ")}
@@ -87,8 +81,21 @@ export default async function TopicDetail({ params }: { params: { slug: string }
         </p>
       )}
 
-      <div className="mb-6">
+      <div className="mb-6 flex flex-wrap items-center gap-4">
         <FollowTopic entitySlug={entity.slug} />
+        {entity.location && (
+          <span className="flex gap-3 text-sm font-semibold text-muted">
+            <Link href={`/map?focus=${entity.slug}`} className="underline underline-offset-2 hover:text-ink">
+              📍 On the map
+            </Link>
+            <Link
+              href={`/nearby?lat=${entity.location.lat}&lng=${entity.location.lng}&r=800&q=${encodeURIComponent(entity.name)}`}
+              className="underline underline-offset-2 hover:text-ink"
+            >
+              What else is nearby
+            </Link>
+          </span>
+        )}
       </div>
 
       <StatusStepper timeline={entity.timeline} currentStatus={entity.current_status} />
@@ -127,7 +134,7 @@ export default async function TopicDetail({ params }: { params: { slug: string }
         <section className="mb-8">
           <h2 className="mb-2 text-lg font-semibold">Summary</h2>
           <p className="rounded-2xl border border-hairline bg-canvas p-[18px] px-5 text-sm leading-[1.6] text-body">
-            {profile.summary}
+            <Jargon>{profile.summary}</Jargon>
           </p>
         </section>
       )}
@@ -203,7 +210,7 @@ export default async function TopicDetail({ params }: { params: { slug: string }
                 key={i}
                 className="rounded-2xl border border-ochre bg-callout p-3.5 px-[18px] text-sm leading-[1.6] text-tint-ochre-text"
               >
-                {q}
+                <Jargon>{q}</Jargon>
               </li>
             ))}
           </ul>

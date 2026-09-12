@@ -1,36 +1,32 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import Markdown from "@/components/Markdown";
 import { formatDate, type ImpactMetric, type ProjectWiki } from "@/lib/api";
+import { requireRecord } from "@/lib/not-found";
 import { metricsByKey, resolveBody, stripSection, WIKI_PAGE_LABELS } from "@/lib/wiki";
 import { getEvaluation, getProject, getWiki } from "./project";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
-  try {
-    const project = await getProject(params.slug);
-    let description = project.description ?? undefined;
-    if (project.has_wiki) {
-      try {
-        const wiki = await getWiki(params.slug);
-        description =
-          wiki.pages.find((p) => p.page === "overview")?.description ?? description;
-      } catch {
-        // fall back to the city description
-      }
+  const project = await requireRecord(getProject(params.slug));
+  let description = project.description ?? undefined;
+  if (project.has_wiki) {
+    try {
+      const wiki = await getWiki(params.slug);
+      description =
+        wiki.pages.find((p) => p.page === "overview")?.description ?? description;
+    } catch {
+      // fall back to the city description
     }
-    return {
-      title: project.has_wiki
-        ? `${project.name} — project wiki`
-        : `${project.name} — development project`,
-      description: description && description.length > 300
-        ? `${description.slice(0, 297)}...`
-        : description,
-    };
-  } catch {
-    return {};
   }
+  return {
+    title: project.has_wiki
+      ? `${project.name} — project wiki`
+      : `${project.name} — development project`,
+    description: description && description.length > 300
+      ? `${description.slice(0, 297)}...`
+      : description,
+  };
 }
 
 export default async function DevelopmentWikiPage({
@@ -38,12 +34,7 @@ export default async function DevelopmentWikiPage({
 }: {
   params: { slug: string };
 }) {
-  let project;
-  try {
-    project = await getProject(params.slug);
-  } catch {
-    notFound();
-  }
+  const project = await requireRecord(getProject(params.slug));
 
   // the wiki carries the narrative; the evaluation is fetched only so
   // {{metric:...}} markers resolve to live figures

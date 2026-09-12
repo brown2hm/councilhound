@@ -4,9 +4,9 @@ import Link from "next/link";
 export const metadata = { title: "Not found" };
 
 const ELSEWHERE = [
-  { href: "/topics", label: "Topic tracker" },
+  { href: "/topics", label: "Projects & topics" },
   { href: "/meetings", label: "Meetings" },
-  { href: "/development", label: "Development" },
+  { href: "/nearby", label: "Near me" },
   { href: "/ask", label: "Ask the hound" },
 ];
 

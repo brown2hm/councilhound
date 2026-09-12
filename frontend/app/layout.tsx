@@ -7,6 +7,7 @@ import "katex/dist/katex.min.css";
 import "./globals.css";
 import NavLinks from "@/components/NavLinks";
 import RecordFreshness from "@/components/RecordFreshness";
+import { PUBLIC_API_URL } from "@/lib/api";
 
 const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
 
@@ -22,6 +23,12 @@ export const metadata: Metadata = {
     siteName: "CouncilHound",
     type: "website",
     images: ["/brand/hound.png"],
+  },
+  alternates: {
+    types: {
+      "application/atom+xml": `${PUBLIC_API_URL}/entities/changes.atom`,
+      "text/calendar": `${PUBLIC_API_URL}/meetings/upcoming.ics`,
+    },
   },
 };
 
@@ -64,6 +71,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Suspense fallback={null}>
                 <RecordFreshness />
               </Suspense>
+              <p className="text-[12px] text-muted">
+                <Link href="/glossary" className="font-semibold underline underline-offset-2 hover:text-ink">
+                  Glossary
+                </Link>
+                {" · "}
+                <a
+                  href={`${PUBLIC_API_URL}/entities/changes.atom`}
+                  className="font-semibold underline underline-offset-2 hover:text-ink"
+                >
+                  Atom feed of changes
+                </a>
+                {" · "}
+                <a
+                  href={`${PUBLIC_API_URL}/meetings/upcoming.ics`}
+                  className="font-semibold underline underline-offset-2 hover:text-ink"
+                >
+                  Meeting calendar
+                </a>
+              </p>
             </div>
             <Image
               src="/brand/fox.png"

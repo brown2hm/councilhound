@@ -5,5 +5,9 @@ psycopg[binary]>=3.1
 pgvector>=0.2
 anthropic>=0.40
 python-dotenv>=1.0
+# the /entities/geocode proxy reuses the pipeline's retrying HTTP client
+# (councilhound.http) for the Census geocoder
+requests>=2.32
+tenacity>=8.2
 # query-time embedding (councilhound.embeddings, local bge model)
 sentence-transformers>=3.0

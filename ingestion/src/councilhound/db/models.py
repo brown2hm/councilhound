@@ -287,21 +287,40 @@ class EntityMention(Base):
 
 
 class TopicSubscription(Base):
-    """Follow-a-topic email subscription. Created unconfirmed by the API;
-    a tokened confirm link activates it, and every notification carries the
-    matching unsubscribe link. last_update_id is the notification watermark:
-    the nightly notifier only mails entity_updates with a larger id, so
-    subscribers hear about what landed after they signed up."""
+    """A follow: email subscription to one thread of the record. Created
+    unconfirmed by the API; a tokened confirm link activates it, and every
+    notification carries the matching unsubscribe link.
+
+    kind decides what the row watches:
+      topic     entity_id = a tracked non-person entity (the original follow)
+      member    entity_id = a council member / commissioner; digests their votes
+      body      body = city_council | planning_commission; digests every
+                meeting of that body
+      area      lat/lng/radius_m = a circle; digests topics geocoded inside it
+      briefing  the weekly site briefing: decisions + status changes
+
+    Watermarks: last_update_id is the entity_updates high-water mark (topic,
+    body, area), last_vote_id the votes one (member), last_sent_at the weekly
+    cadence (briefing). The nightly notifier only advances a watermark after
+    a successful send. Duplicate follows are rejected in the API — a DB
+    unique constraint can't express the per-kind key across nullable columns."""
     __tablename__ = "topic_subscriptions"
-    __table_args__ = (UniqueConstraint("email", "entity_id"),)
 
     id = Column(Integer, primary_key=True)
     email = Column(Text, nullable=False)
+    kind = Column(String, nullable=False, default="topic", server_default="topic")
     entity_id = Column(Integer, ForeignKey("entities.id", ondelete="CASCADE"),
-                       nullable=False, index=True)
+                       nullable=True, index=True)
+    body = Column(String)
+    lat = Column(Numeric)
+    lng = Column(Numeric)
+    radius_m = Column(Integer)
+    label = Column(Text)  # human description of an area follow ("near 123 Main St")
     token = Column(String, unique=True, nullable=False)
     confirmed = Column(Boolean, nullable=False, default=False)
     last_update_id = Column(Integer, nullable=False, default=0)
+    last_vote_id = Column(Integer, nullable=False, default=0, server_default="0")
+    last_sent_at = Column(DateTime(timezone=True))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 

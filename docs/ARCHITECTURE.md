@@ -188,7 +188,11 @@ alias lookup on slug miss).
 | Topic page | `/entities/{slug}` | status stepper + provenance, profile (LLM cache), vote pills, discussion sparkline, related-by-co-mention, upcoming-agenda flags, full timeline with watch links |
 | Members | `/members` | roster = people with title aliases; current vs former parsed from each body's latest agenda header; votes matched by the breakdown's last-name keys |
 | Ask | `/ask` | embed question (bge, query prefix) → pgvector cosine top-K over chunks+items → Claude answers from numbered sources only → markdown with [n] citations linking to sources |
-| Search | `/search` | hybrid: trigram keyword match + pgvector semantic match over chunks and items, merged with source labels |
+| Search | `/search` | leads with tracked topics matching by name/alias, then hybrid: trigram keyword match + pgvector semantic match over chunks and items, merged with source labels; `/entities/suggest` is the nav typeahead (topics + roster members) |
+| Directory | `/entities/` | one faceted list behind the Projects & topics page: type, status, body (EXISTS over updates), recency, `min_updates`, official vs. meeting-derived, alias search, sort; rows carry coordinates, wiki/evaluation flags, and the city record's card fields |
+| Changes | `/entities/changes`, `.atom` | status transitions and first appearances in a window, measured against the last status actually set (`councilhound.changes`, shared with the weekly briefing email) |
+| Near me | `/entities/near`, `/entities/geocode` | haversine over city project coordinates + our geocodes, nearest first; the geocode proxy is the Census geocoder behind a per-IP window |
+| Meeting page | `/meetings/{id}` | agenda items carry the topics they touch (tracked updates, then bare mentions) and their documents, so the meeting → topic direction exists alongside topic → meeting |
 
 `/ask` is the only LLM-per-request endpoint and is defended by a per-IP
 sliding window plus a global daily budget (in-memory — the API runs as a

@@ -6,6 +6,7 @@ import ImpactMapClient from "@/components/ImpactMapClient";
 import Markdown from "@/components/Markdown";
 import { type ImpactProvenance } from "@/lib/api";
 import { plainLanguageImpact } from "@/lib/format";
+import { requireRecord } from "@/lib/not-found";
 import { getEvaluation, getProject } from "../project";
 
 export const dynamic = "force-dynamic";
@@ -23,6 +24,8 @@ function splitReport(markdown: string): { summary: string; rest: string | null }
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
+  const project = await requireRecord(getProject(params.slug));
+  if (!project.has_evaluation) return {};
   try {
     const evaluation = await getEvaluation(params.slug);
     return {
@@ -39,9 +42,9 @@ export default async function DevelopmentAnalysisPage({
 }: {
   params: { slug: string };
 }) {
+  const project = await requireRecord(getProject(params.slug));
   let evaluation;
   try {
-    const project = await getProject(params.slug);
     if (!project.has_evaluation) throw new Error("no analysis");
     evaluation = await getEvaluation(params.slug);
   } catch {

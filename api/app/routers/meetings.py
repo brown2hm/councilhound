@@ -7,8 +7,8 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from councilhound.db.models import (
-    AgendaItem, CityProject, Document, Entity, EntityAlias, EntityUpdate,
-    Meeting, ProjectEvaluation, TranscriptChunk, UpcomingMeeting, Vote,
+    AgendaItem, CityProject, Document, Entity, EntityAlias, EntityMention,
+    EntityUpdate, Meeting, ProjectEvaluation, TranscriptChunk, UpcomingMeeting, Vote,
 )
 from councilhound.hot_topics import MIN_VARIANT_LEN
 
@@ -286,6 +286,55 @@ def get_meeting(meeting_id: int, session: Session = Depends(db_session)):
     documents = session.scalars(
         select(Document).where(Document.meeting_id == meeting.id).order_by(Document.id)
     ).all()
+    docs_by_item: dict[int | None, list] = {}
+    for d in documents:
+        docs_by_item.setdefault(d.agenda_item_id, []).append({
+            "doc_type": d.doc_type,
+            "title": d.title,
+            "source_url": d.source_url,
+            "agenda_item_id": d.agenda_item_id,
+        })
+
+    # the topics each agenda item touches: tracked updates first, then bare
+    # mentions, so a reader can jump from the meeting to a project's history
+    # (the topic -> meeting link has always existed; this is the reverse)
+    entities_by_item: dict[int | None, list] = {}
+    seen_pairs: set[tuple[int | None, int]] = set()
+    for item_id, entity, status_after in session.execute(
+        select(EntityUpdate.agenda_item_id, Entity, EntityUpdate.status_after)
+        .join(Entity, EntityUpdate.entity_id == Entity.id)
+        .where(EntityUpdate.meeting_id == meeting.id,
+               Entity.entity_type != "person")
+        .order_by(EntityUpdate.id)
+    ):
+        if (item_id, entity.id) in seen_pairs:
+            continue
+        seen_pairs.add((item_id, entity.id))
+        entities_by_item.setdefault(item_id, []).append({
+            "slug": entity.canonical_slug,
+            "name": entity.name,
+            "entity_type": entity.entity_type,
+            "current_status": entity.current_status,
+            "status_after": status_after,
+        })
+    for item_id, entity in session.execute(
+        select(EntityMention.agenda_item_id, Entity)
+        .join(Entity, EntityMention.entity_id == Entity.id)
+        .where(EntityMention.meeting_id == meeting.id,
+               EntityMention.agenda_item_id.isnot(None),
+               Entity.entity_type != "person")
+        .order_by(EntityMention.id)
+    ):
+        if (item_id, entity.id) in seen_pairs:
+            continue
+        seen_pairs.add((item_id, entity.id))
+        entities_by_item.setdefault(item_id, []).append({
+            "slug": entity.canonical_slug,
+            "name": entity.name,
+            "entity_type": entity.entity_type,
+            "current_status": entity.current_status,
+            "status_after": None,
+        })
 
     return {
         "id": meeting.id,
@@ -309,13 +358,12 @@ def get_meeting(meeting_id: int, session: Session = Depends(db_session)):
                 "watch_url": clip_link(meeting.granicus_view_id, meeting.granicus_clip_id,
                                        it.start_seconds) if it.start_seconds is not None else None,
                 "votes": votes_by_item.get(it.id, []),
+                "entities": entities_by_item.get(it.id, []),
+                "documents": docs_by_item.get(it.id, []),
             }
             for it in items
         ],
-        "documents": [
-            {"doc_type": d.doc_type, "title": d.title, "source_url": d.source_url}
-            for d in documents
-        ],
+        "documents": [d for docs in docs_by_item.values() for d in docs],
     }
 
 

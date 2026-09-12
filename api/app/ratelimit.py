@@ -68,3 +68,23 @@ def check_subscribe_rate(request: Request) -> None:
         if len(window) >= SUBSCRIBE_PER_HOUR:
             raise HTTPException(429, "Too many signups from this address — try again later.")
         window.append(now)
+
+
+GEOCODE_PER_HOUR = int(os.environ.get("GEOCODE_RATE_PER_HOUR", "30"))
+
+_geo_lock = threading.Lock()
+_geo_by_ip: dict[str, deque] = defaultdict(deque)
+
+
+def check_geocode_rate(request: Request) -> None:
+    """Address lookups proxy to the Census geocoder, so they get a per-IP
+    window too — generous enough for someone trying a few addresses."""
+    ip = client_ip(request)
+    now = time.time()
+    with _geo_lock:
+        window = _geo_by_ip[ip]
+        while window and window[0] < now - 3600:
+            window.popleft()
+        if len(window) >= GEOCODE_PER_HOUR:
+            raise HTTPException(429, "Too many address lookups — try again later.")
+        window.append(now)
