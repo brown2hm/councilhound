@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import BodyTag from "@/components/BodyTag";
+import FollowButton from "@/components/FollowButton";
 import StatusBadge from "@/components/StatusBadge";
 import { api, formatDate } from "@/lib/api";
 
@@ -66,6 +67,15 @@ export default async function UpcomingMeetingPage({
           </>
         )}
       </p>
+      {event.body && (
+        <div className="mb-6">
+          <FollowButton
+            target={{ kind: "body", body: event.body }}
+            label={`Follow ${event.body === "planning_commission" ? "Planning Commission" : "City Council"} meetings`}
+            size="sm"
+          />
+        </div>
+      )}
 
       {event.topics.length > 0 ? (
         <>

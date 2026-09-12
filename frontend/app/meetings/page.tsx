@@ -1,5 +1,6 @@
 import Link from "next/link";
 import BodyTag, { BODY_DOTS } from "@/components/BodyTag";
+import FollowButton from "@/components/FollowButton";
 import Pagination from "@/components/Pagination";
 import { api, formatDate } from "@/lib/api";
 
@@ -49,7 +50,7 @@ export default async function MeetingsPage({
         Every archived meeting, newest first, with what was decided.
       </p>
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
         {BODIES.map((b) => (
           <Link
             key={b.key}
@@ -66,6 +67,16 @@ export default async function MeetingsPage({
             {b.label}
           </Link>
         ))}
+        <span className="flex flex-wrap gap-2 sm:ml-auto">
+          {BODIES.filter((b) => b.key && (!body || b.key === body)).map((b) => (
+            <FollowButton
+              key={b.key}
+              target={{ kind: "body", body: b.key }}
+              label={`Follow ${b.label} meetings`}
+              size="sm"
+            />
+          ))}
+        </span>
       </div>
 
       <ul className="divide-y divide-hairline-soft rounded-2xl border border-hairline bg-canvas">

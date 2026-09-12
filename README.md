@@ -41,20 +41,32 @@ model, and ops notes.
   bounds — and an interactive assumptions panel on each project page that
   recomputes the estimates live as you adjust them. See
   [Impact analysis](#impact-analysis-local-run-stage) below.
-- **Development directory & civic topics** — official city project records,
-  meeting-derived development projects (deduplicated and classified), and a
-  separate civic-topics page for the plans, contracts, studies, and programs
-  surfaced from transcripts.
+- **Projects & topics directory** — one faceted directory (`/topics`) of
+  official city project records and every topic surfaced from meetings:
+  filter by type, official vs. meeting-derived, status, body, recency, and
+  "recurring only"; sort; flip to a map of the filtered set; cards carry the
+  city's project images. Meeting pages link each agenda item to the topics
+  it touches and to the staff reports behind it.
+- **What changed** — a "Changed this week" panel on the briefing and an
+  Atom feed (`/entities/changes.atom`) of status transitions and
+  first appearances.
+- **Near me** — `/nearby` lists projects and named places within ½, 1, or 2
+  miles of an address (Census-geocoded) or your browser location, nearest
+  first; the map filters by kind and status and takes `?focus=slug`.
+- **Site-wide search** — typeahead over tracked topics and members in the
+  nav, with the full-text search of transcripts and agenda items behind it
+  (filterable by body); `/glossary` explains the agenda vocabulary and terms
+  carry hover definitions across the site.
 - **Project wikis** — a per-project knowledge base in the
   [Open Knowledge Format](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf):
   durable markdown pages (overview, meeting history, positions, impact)
   maintained by incremental curator edits instead of regeneration, with
   impact figures resolved live via metric markers so prose never carries
   stale numbers. See [Project wikis](#project-wikis-okf-knowledge-bundle).
-- **Follow a topic** — email signup on any topic page (tokened
-  confirmation, digest per subscriber from the nightly job, one-click
-  unsubscribe), plus an iCalendar feed of upcoming meetings
-  (`/meetings/upcoming.ics`).
+- **Follow by email** — a topic, a member's votes, a body's meetings, an
+  area of the city, or the weekly briefing (tokened confirmation, one digest
+  per subscriber from the nightly job, one-click unsubscribe), plus an
+  iCalendar feed of upcoming meetings (`/meetings/upcoming.ics`).
 - **Pre-meeting briefs** — every upcoming meeting gets an annotated
   agenda: the tracked topics it names, each with current status, what
   happened last time, and links to full history and impact analysis.

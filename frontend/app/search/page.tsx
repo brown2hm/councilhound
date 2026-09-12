@@ -1,6 +1,13 @@
 import Link from "next/link";
-import BodyTag from "@/components/BodyTag";
+import BodyTag, { BODY_DOTS } from "@/components/BodyTag";
+import StatusBadge from "@/components/StatusBadge";
 import { api, formatDate, type SearchResult } from "@/lib/api";
+
+const BODIES = [
+  { key: "", label: "Both bodies" },
+  { key: "city_council", label: "City Council" },
+  { key: "planning_commission", label: "Planning Commission" },
+];
 
 export const metadata = {
   title: "Search the record",
@@ -91,7 +98,14 @@ export default async function SearchPage({
   searchParams: { q?: string; body?: string };
 }) {
   const q = (searchParams.q ?? "").trim();
-  const data = q.length >= 2 ? await api.search(q, searchParams.body) : null;
+  const body = searchParams.body ?? "";
+  const data = q.length >= 2 ? await api.search(q, body || undefined) : null;
+  const bodyHref = (key: string) => {
+    const sp = new URLSearchParams();
+    if (q) sp.set("q", q);
+    if (key) sp.set("body", key);
+    return `/search?${sp.toString()}`;
+  };
 
   return (
     <div className="mx-auto max-w-[820px] px-4 pb-16 pt-12 sm:px-8">
@@ -100,10 +114,12 @@ export default async function SearchPage({
         Every transcribed word and agenda item, with links to the moment on video.
       </p>
 
-      <form method="get" className="mb-7 flex items-center gap-2 rounded-2xl border border-hairline bg-canvas p-2 pl-5">
+      <form method="get" className="mb-3 flex items-center gap-2 rounded-2xl border border-hairline bg-canvas p-2 pl-5">
+        {body && <input type="hidden" name="body" value={body} />}
         <input
           name="q"
           defaultValue={q}
+          autoFocus={!q}
           placeholder="e.g. bike lanes, tax rate, Chapter 86…"
           className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-muted-soft"
         />
@@ -111,17 +127,56 @@ export default async function SearchPage({
           Search
         </button>
       </form>
+      <div className="mb-7 flex flex-wrap gap-2">
+        {BODIES.map((b) => (
+          <Link
+            key={b.key}
+            href={bodyHref(b.key)}
+            className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium ${
+              b.key === body ? "bg-ink text-canvas" : "border border-hairline bg-canvas text-muted hover:text-ink"
+            }`}
+          >
+            {b.key && <span aria-hidden className={`inline-block h-2 w-2 rounded-full ${BODY_DOTS[b.key]}`} />}
+            {b.label}
+          </Link>
+        ))}
+      </div>
+
+      {data && data.entities.length > 0 && (
+        <section className="mb-7">
+          <h2 className="mb-2 text-xs font-semibold uppercase tracking-[1.5px] text-muted">
+            Tracked topics
+          </h2>
+          <ul className="flex flex-wrap gap-2">
+            {data.entities.map((e) => (
+              <li key={e.slug}>
+                <Link
+                  href={`/topics/${e.slug}`}
+                  className="inline-flex items-center gap-2 rounded-full border border-hairline bg-canvas px-4 py-2 text-sm font-semibold hover:border-ink"
+                >
+                  {e.name}
+                  <StatusBadge status={e.current_status} />
+                  <span className="text-[12px] font-medium text-muted">
+                    {e.update_count} update{e.update_count === 1 ? "" : "s"}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {data && (
         <>
           <p className="mb-3 text-[13px] text-muted">
-            {data.results.length} result{data.results.length === 1 ? "" : "s"} for “{data.query}”
+            {data.results.length} passage{data.results.length === 1 ? "" : "s"} for “{data.query}”
+            {body ? ` in ${body === "city_council" ? "City Council" : "Planning Commission"} meetings` : ""}
           </p>
           <ul className="space-y-3">
             {data.results.map((r, i) => (
               <Result key={i} r={r} query={q} />
             ))}
-            {data.results.length === 0 && (
+            {data.results.length === 0 && data.entities.length === 0 && (
               <li className="text-sm text-muted">
                 Nothing matched. Try fewer or different words — or{" "}
                 <Link href={`/ask?q=${encodeURIComponent(q)}`} className="font-semibold underline underline-offset-2">

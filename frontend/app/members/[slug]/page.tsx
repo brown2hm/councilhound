@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import BodyTag from "@/components/BodyTag";
+import FollowButton from "@/components/FollowButton";
 import StatusBadge from "@/components/StatusBadge";
 import { api, formatDate } from "@/lib/api";
 
@@ -48,6 +49,12 @@ export default async function MemberPage({ params }: { params: { slug: string } 
         {member.roles.join(" · ") || "Member"}
       </div>
       <h1 className="mb-4 text-[32px] font-medium tracking-[-0.5px]">{member.name}</h1>
+      <div className="mb-5">
+        <FollowButton
+          target={{ kind: "member", entitySlug: member.slug }}
+          label={`Follow ${member.name.split(" ")[0]}'s votes`}
+        />
+      </div>
       <div className="mb-9 flex flex-wrap gap-2">
         {statOrder.filter((k) => stats[k]).map((k) => (
           <span key={k} className={`rounded-full px-3 py-1.5 text-sm font-semibold ${VOTE_TINTS[k]}`}>

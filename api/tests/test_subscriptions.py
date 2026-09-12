@@ -61,3 +61,45 @@ def test_upcoming_ics_feed(db, client):
     assert "DTSTART;TZID=America/New_York:20260728T190000" in text
     assert "SUMMARY:City Council Meeting\\; special" in text  # escaped
     assert "BEGIN:VTIMEZONE" in text
+
+
+def test_follow_member_body_area_and_briefing(db, client, monkeypatch):
+    from councilhound.db.models import EntityAlias
+    # the per-IP signup window is process-wide; this test alone needs a dozen
+    monkeypatch.setattr("app.ratelimit.SUBSCRIBE_PER_HOUR", 100)
+    mayor = Entity(entity_type="person", name="Catherine Read", canonical_slug="catherine-read")
+    db.add(mayor)
+    db.flush()
+    db.add(EntityAlias(entity_id=mayor.id, alias="Mayor Read"))
+    db.commit()
+
+    def post(payload):
+        return client.post("/subscriptions/", json={"email": "r@example.com", **payload})
+
+    assert post({"kind": "member", "entity_slug": "catherine-read"}).status_code == 200
+    # a person can't be followed as a topic, and vice versa
+    assert post({"kind": "topic", "entity_slug": "catherine-read"}).status_code == 422
+    assert post({"kind": "body", "body": "school_board"}).status_code == 422
+    assert post({"kind": "body", "body": "planning_commission"}).status_code == 200
+    assert post({"kind": "area", "lat": 38.8462, "lng": -77.3064}).status_code == 422
+    assert post({"kind": "area", "lat": 38.8462, "lng": -77.3064, "radius_m": 20,
+                 "label": "near Old Town"}).status_code == 200
+    assert post({"kind": "briefing"}).status_code == 200
+    assert post({"kind": "weather"}).status_code == 422
+
+    subs = {s.kind: s for s in db.query(TopicSubscription).all()}
+    assert set(subs) == {"member", "body", "area", "briefing"}
+    assert subs["member"].entity_id == mayor.id
+    assert subs["area"].radius_m == 100  # clamped to the minimum
+    assert subs["area"].label == "near Old Town"
+
+    # confirm/unsubscribe pages describe the thing followed
+    resp = client.get(f"/subscriptions/confirm?token={subs['area'].token}")
+    assert "near Old Town" in resp.text
+    db.refresh(subs["area"])
+    assert subs["area"].confirmed
+    # confirming again reports already-following rather than a duplicate row
+    dup = post({"kind": "area", "lat": 38.8462, "lng": -77.3064, "radius_m": 100})
+    assert dup.json()["status"] == "already-following"
+    resp = client.get(f"/subscriptions/unsubscribe?token={subs['body'].token}")
+    assert "Planning Commission meetings" in resp.text

@@ -1,9 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import BodyTag from "@/components/BodyTag";
+import FollowButton from "@/components/FollowButton";
+import StatusBadge from "@/components/StatusBadge";
 import {
   api,
   formatDate,
+  PUBLIC_API_URL,
+  type ChangesResponse,
   type HotTopicsResponse,
   type MeetingDetail,
   type MeetingStats,
@@ -171,7 +175,7 @@ function HotPanel({
       </div>
       <div className="mt-5">
         <Link
-          href="/topics?type=hot"
+          href="/topics?view=hot"
           className={`inline-block rounded-xl px-5 py-3 text-sm font-semibold leading-none ${
             teal ? "bg-canvas text-ink" : "bg-ink text-white"
           }`}
@@ -299,7 +303,68 @@ function NextUp({ events }: { events: UpcomingEvent[] }) {
   );
 }
 
+function ChangedRecently({ changes }: { changes: ChangesResponse }) {
+  const shown = changes.changes.slice(0, 8);
+  return (
+    <section className="mt-8">
+      <div className="mb-1 flex flex-wrap items-baseline justify-between gap-3">
+        <h2 className="text-lg font-semibold">Changed this week</h2>
+        <span className="flex gap-3 text-[12px] font-semibold text-muted">
+          <Link href="/topics?days=30" className="underline underline-offset-2 hover:text-ink">
+            all recent activity
+          </Link>
+          <a
+            href={`${PUBLIC_API_URL}/entities/changes.atom`}
+            className="underline underline-offset-2 hover:text-ink"
+          >
+            feed
+          </a>
+        </span>
+      </div>
+      <p className="mb-3 text-[13px] text-muted">
+        Topics whose status moved, and topics on the record for the first time, in the last{" "}
+        {changes.days} days.
+      </p>
+      {shown.length === 0 ? (
+        <p className="rounded-2xl border border-dashed border-hairline p-5 text-sm text-muted">
+          No status changes in the window yet.
+        </p>
+      ) : (
+        <ul className="divide-y divide-hairline-soft rounded-2xl border border-hairline bg-canvas">
+          {shown.map((c) => (
+            <li key={c.id}>
+              <Link
+                href={`/topics/${c.slug}#m-${c.meeting_id}`}
+                className="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 py-3 text-sm hover:bg-soft"
+              >
+                <span className="min-w-0 flex-1 truncate font-semibold">{c.name}</span>
+                <span className="flex items-center gap-1.5 text-[13px]">
+                  {c.kind === "new" ? (
+                    <span className="rounded-full bg-tint-lavender px-2.5 py-[3px] text-xs font-semibold text-tint-lavender-text">
+                      NEW
+                    </span>
+                  ) : (
+                    <>
+                      <StatusBadge status={c.from_status} />
+                      <span aria-hidden className="text-muted-soft">→</span>
+                    </>
+                  )}
+                  <StatusBadge status={c.to_status} />
+                </span>
+                <span className="w-full text-[13px] text-muted sm:w-auto">
+                  <BodyTag body={c.body} /> · {formatDate(c.date)}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 const NO_HOT: HotTopicsResponse = { meetings: [], topics: [] };
+const NO_CHANGES: ChangesResponse = { days: 7, since: "", changes: [] };
 const NO_STATS: MeetingStats = {
   days: 30,
   meetings_held: 0,
@@ -313,12 +378,13 @@ export default async function Briefing() {
   // The briefing is a dashboard of independent panels: one failing endpoint
   // should blank its own panel, not the page. Only the meetings list is
   // load-bearing enough to fall through to the error boundary.
-  const [meetings, hotCouncil, hotPC, stats, upcoming] = await Promise.all([
+  const [meetings, hotCouncil, hotPC, stats, upcoming, changes] = await Promise.all([
     api.meetings(new URLSearchParams({ limit: "6" })),
     api.hotTopics("city_council").catch(() => NO_HOT),
     api.hotTopics("planning_commission").catch(() => NO_HOT),
     api.stats(30).catch(() => NO_STATS),
     api.upcoming().catch(() => []),
+    api.changes(7, 12).catch(() => NO_CHANGES),
   ]);
   const withItems = meetings.filter((m) => m.agenda_item_count > 0).slice(0, 4);
   const details = (
@@ -329,8 +395,11 @@ export default async function Briefing() {
 
   return (
     <div className="mx-auto max-w-[1280px] px-4 pb-16 pt-8 sm:px-8">
-      <div className="mb-2 text-xs font-semibold uppercase tracking-[1.5px] text-muted">
-        The briefing · Week of {latest} · City of Fairfax, VA
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+        <div className="text-xs font-semibold uppercase tracking-[1.5px] text-muted">
+          The briefing · Week of {latest} · City of Fairfax, VA
+        </div>
+        <FollowButton target={{ kind: "briefing" }} label="Get this weekly by email" size="sm" />
       </div>
       <AskHound />
       <StatTiles stats={stats} />
@@ -361,6 +430,7 @@ export default async function Briefing() {
               <p className="text-sm text-muted">No recent decisions extracted yet.</p>
             )}
           </div>
+          <ChangedRecently changes={changes} />
         </div>
 
         <div className="flex flex-col gap-5">

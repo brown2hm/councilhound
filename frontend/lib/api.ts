@@ -2,6 +2,8 @@
 // (API_URL, in-cluster/localhost); the Ask page fetches from the browser
 // (NEXT_PUBLIC_API_URL).
 
+import { unstable_cache } from "next/cache";
+
 export const API_URL = process.env.API_URL ?? "http://localhost:8000";
 export const PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -22,6 +24,22 @@ export interface VoteInfo {
   vote_breakdown: Record<string, string>;
 }
 
+export interface MeetingDocument {
+  doc_type: string; // 'agenda' | 'minutes' | 'actions_report' | 'agenda_item_pdf' | 'other'
+  title: string | null;
+  source_url: string;
+  agenda_item_id: number | null;
+}
+
+/** A tracked topic an agenda item touches — the meeting -> topic link. */
+export interface AgendaItemEntity {
+  slug: string;
+  name: string;
+  entity_type: string;
+  current_status: string | null;
+  status_after: string | null;
+}
+
 export interface AgendaItemInfo {
   id: number;
   label: string;
@@ -31,6 +49,8 @@ export interface AgendaItemInfo {
   start_seconds: number | null;
   watch_url: string | null;
   votes: VoteInfo[];
+  entities: AgendaItemEntity[];
+  documents: MeetingDocument[];
 }
 
 export interface MeetingDetail extends Omit<MeetingSummary, "agenda_item_count" | "status"> {
@@ -39,7 +59,18 @@ export interface MeetingDetail extends Omit<MeetingSummary, "agenda_item_count" 
   agenda_url: string | null;
   minutes_url: string | null;
   agenda_items: AgendaItemInfo[];
-  documents: { doc_type: string; title: string | null; source_url: string }[];
+  documents: MeetingDocument[];
+}
+
+/** The light official-record fields the directory needs for a project card. */
+export interface EntityOfficialCard {
+  slug: string;
+  official_status: string | null;
+  project_type: string | null;
+  address: string | null;
+  image_url: string | null;
+  description: string | null;
+  has_evaluation: boolean;
 }
 
 export interface EntitySummary {
@@ -49,6 +80,81 @@ export interface EntitySummary {
   current_status: string | null;
   update_count: number;
   last_seen: string | null;
+  first_seen: string | null;
+  bodies: string[];
+  lat: number | null;
+  lng: number | null;
+  has_wiki: boolean;
+  official: EntityOfficialCard | null;
+}
+
+export interface EntitySuggestion {
+  kind: "topic" | "member";
+  slug: string;
+  name: string;
+  entity_type: string;
+  current_status: string | null;
+  update_count: number;
+  last_seen: string | null;
+  href: string;
+}
+
+export interface EntityChange {
+  id: number;
+  kind: "status_change" | "new";
+  slug: string;
+  name: string;
+  entity_type: string;
+  from_status: string | null;
+  to_status: string | null;
+  current_status: string | null;
+  date: string;
+  meeting_id: number;
+  meeting_title: string;
+  body: string;
+  agenda_item_label: string | null;
+  update_text: string;
+  watch_url: string | null;
+}
+
+export interface ChangesResponse {
+  days: number;
+  since: string;
+  changes: EntityChange[];
+}
+
+export interface NearbyResult {
+  slug: string | null;
+  name: string;
+  entity_type: string;
+  current_status: string | null;
+  distance_m: number;
+  lat: number;
+  lng: number;
+  address: string | null;
+  summary: string | null;
+  update_count: number;
+  last_seen: string | null;
+  official: {
+    slug: string;
+    official_status: string | null;
+    project_type: string | null;
+    image_url: string | null;
+    has_evaluation: boolean;
+  } | null;
+}
+
+export interface NearbyResponse {
+  lat: number;
+  lng: number;
+  radius_m: number;
+  results: NearbyResult[];
+}
+
+export interface GeocodeHit {
+  lat: number;
+  lng: number;
+  matched_address: string | null;
 }
 
 export interface TimelineEntry {
@@ -137,6 +243,7 @@ export interface EntityDetail {
   profile: EntityProfileInfo | null;
   has_wiki: boolean;
   official: CityProjectOfficial | null;
+  location: { lat: number; lng: number; source: "city" | "geocode" } | null;
   related: RelatedEntity[];
   discussion: DiscussionPoint[];
   upcoming: UpcomingEvent[];
@@ -381,8 +488,18 @@ export interface SearchResult {
   watch_url: string | null;
 }
 
+export interface SearchEntityHit {
+  slug: string;
+  name: string;
+  entity_type: string;
+  current_status: string | null;
+  update_count: number;
+  last_seen: string | null;
+}
+
 export interface SearchResponse {
   query: string;
+  entities: SearchEntityHit[];
   results: SearchResult[];
 }
 
@@ -461,10 +578,27 @@ export interface RecordStatus {
   counts: { meetings: number; meetings_transcribed: number; topics: number };
 }
 
-async function get<T>(path: string): Promise<T> {
+/** How long a fetched API payload is reused across requests. The record
+ * changes once a night (plus an hourly catch-up), so five minutes of staleness
+ * is invisible to readers and turns the briefing's nine API calls per view
+ * into nine per five minutes. Pages stay dynamically rendered; only the data
+ * layer is shared, via unstable_cache so it applies on force-dynamic routes
+ * too. Errors are never cached — a blip retries on the next request. */
+export const REVALIDATE_SECONDS = 300;
+
+async function fetchJson<T>(path: string): Promise<T> {
   const resp = await fetch(`${API_URL}${path}`, { cache: "no-store" });
   if (!resp.ok) throw new Error(`API ${path} -> ${resp.status}`);
   return resp.json();
+}
+
+const cachedFetchJson = unstable_cache(fetchJson, ["councilhound-api"], {
+  revalidate: REVALIDATE_SECONDS,
+});
+
+async function get<T>(path: string, opts: { fresh?: boolean } = {}): Promise<T> {
+  // free-text queries would only bloat the cache with one-off keys
+  return opts.fresh ? fetchJson<T>(path) : (cachedFetchJson(path) as Promise<T>);
 }
 
 export const api = {
@@ -481,6 +615,12 @@ export const api = {
   upcomingDetail: (eventId: string) =>
     get<UpcomingDetail>(`/meetings/upcoming/${encodeURIComponent(eventId)}`),
   mapLocations: () => get<MapLocation[]>("/entities/map"),
+  changes: (days = 7, limit = 30) =>
+    get<ChangesResponse>(`/entities/changes?days=${days}&limit=${limit}`),
+  near: (lat: number, lng: number, radiusM: number) =>
+    get<NearbyResponse>(`/entities/near?lat=${lat}&lng=${lng}&radius_m=${radiusM}`),
+  geocode: (q: string) =>
+    get<GeocodeHit>(`/entities/geocode?q=${encodeURIComponent(q)}`, { fresh: true }),
   developmentProjects: (params: URLSearchParams) =>
     get<CityProjectSummary[]>(`/development/?${params}`),
   developmentProject: (slug: string) =>
@@ -491,7 +631,9 @@ export const api = {
     get<ProjectWiki>(`/development/${encodeURIComponent(slug)}/wiki`),
   entityWiki: (slug: string) => get<ProjectWiki>(`/entities/${encodeURIComponent(slug)}/wiki`),
   search: (q: string, body?: string) =>
-    get<SearchResponse>(`/search/?q=${encodeURIComponent(q)}${body ? `&body=${body}` : ""}`),
+    get<SearchResponse>(`/search/?q=${encodeURIComponent(q)}${body ? `&body=${body}` : ""}`, {
+      fresh: true,
+    }),
   member: (slug: string) => get<MemberDetail>(`/members/${encodeURIComponent(slug)}`),
   status: () => get<RecordStatus>("/status/"),
 };

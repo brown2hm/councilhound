@@ -12,6 +12,7 @@ from councilhound.db.models import (
     AgendaItem, Document, Entity, EntityAlias, EntityProfile, Meeting, Vote,
 )
 from councilhound.entities import resolve_entity
+from councilhound.people import last_name
 from councilhound.seed import parse_council_header, parse_pc_header
 
 from app.db import db_session
@@ -32,7 +33,6 @@ _TITLE_ROLES = [
     ("commissioner ", "Commissioner"),
 ]
 _ROLE_ORDER = {"Mayor": 0, "Councilmember": 1, "Chair": 2, "Vice-Chair": 3, "Commissioner": 4}
-_SUFFIXES = {"jr", "sr", "ii", "iii", "iv"}
 
 
 def _roster(session: Session) -> dict[int, dict]:
@@ -82,12 +82,6 @@ def _current_slugs(session: Session) -> set[str]:
     return current
 
 
-def _last_name(name: str) -> str:
-    tokens = [t for t in name.replace(",", " ").split()
-              if t.lower().rstrip(".") not in _SUFFIXES]
-    return tokens[-1] if tokens else ""
-
-
 def _vote_rows(session: Session) -> list[tuple]:
     return session.execute(
         select(Vote, Meeting, AgendaItem)
@@ -115,7 +109,7 @@ def list_members(session: Session = Depends(db_session)):
     out = []
     for m in members.values():
         e, roles = m["entity"], _sorted_roles(m["roles"])
-        key = _last_name(e.name).lower()
+        key = last_name(e.name).lower()
         out.append({
             "slug": e.canonical_slug,
             "name": e.name,
@@ -138,7 +132,7 @@ def get_member(slug: str, session: Session = Depends(db_session)):
         raise HTTPException(404, "member not found")
     members = _roster(session)
     roles = _sorted_roles(members.get(entity.id, {}).get("roles", set()))
-    last = _last_name(entity.name)
+    last = last_name(entity.name)
 
     votes, stats = [], defaultdict(int)
     for vote, meeting, item in _vote_rows(session):

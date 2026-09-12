@@ -1,5 +1,70 @@
 # Changelog
 
+## Unreleased — discovery and tracking: one directory, a change feed, near me, broader follows (September 2026)
+
+An audit of the front end against two readers — a resident trying to find
+out what's being decided near them, and a council member trying to keep up
+with everything — found the pieces were all there but not connected: meeting
+pages didn't link to topics, three list pages sliced one entity table three
+ways, nothing answered "what changed this week", search skipped topic names,
+and every page re-fetched the API on every view. This round wires them
+together.
+
+- **Meeting pages link to the topics they touch.** `GET /meetings/{id}` now
+  carries `entities` per agenda item (tracked updates first, then bare
+  mentions, people excluded) and `documents` per item, and the meeting page
+  renders topic chips with the status each item set plus the staff-report
+  PDFs the ingest had been fetching but never showing. Meeting-level
+  documents (actions report, packets) get their own section.
+- **One directory.** `/topics` is now "Projects & topics": official city
+  records and meeting-derived topics in one list, faceted by type, official
+  vs. from-meetings, status, body, recency, and "recurring only" (hides the
+  one-mention tail the July audit measured at 84%), sortable, with a map
+  view of the filtered set and the city's own project images on cards.
+  `GET /entities/` grew `body`, `days`, `min_updates`, `official`, `sort`,
+  alias search, and per-row card fields (`bodies`, `lat/lng`, `has_wiki`,
+  `official{...}`). `/development` and `/civic` redirect into the facets;
+  the nav drops from nine items to six plus a search box.
+- **A change feed.** `GET /entities/changes?days=` reports status
+  transitions and first appearances, measured against the last status
+  actually set (not the previous row); the briefing shows "Changed this
+  week", and `GET /entities/changes.atom` is a feed-reader counterpart to
+  the meeting calendar. Change detection lives in `councilhound.changes`
+  so the weekly email and the API agree.
+- **Search is global.** `GET /search/` leads with matching tracked topics
+  (name or alias, body-filterable); `GET /entities/suggest` backs a
+  site-wide typeahead in the nav covering topics and members; the search
+  page gets body pills.
+- **Near me.** `GET /entities/near?lat&lng&radius_m` lists projects and
+  named places within a radius, nearest first, from city coordinates or our
+  geocodes; `GET /entities/geocode?q=` proxies the Census geocoder
+  (rate-limited per IP). `/nearby` takes an address or browser location
+  with ½/1/2-mile radii, a compact map, and an area follow. The map page
+  gained kind/status filters and `?focus=slug`; topic and project pages
+  link to their pin and to "what else is nearby". Entity detail carries
+  `location`.
+- **Follows beyond topics.** `topic_subscriptions` gained `kind` (topic,
+  member, body, area, briefing) with `body`, `lat/lng/radius_m`, `label`,
+  `last_vote_id`, and `last_sent_at`; the migration drops the
+  (email, entity_id) unique constraint, which can't express the per-kind
+  key — the API dedups instead. The notifier composes one email per
+  address from per-kind sections: a member's votes, a body's meetings
+  (every update, capped at 40 lines with a link to the rest), updates
+  inside an area, and a weekly briefing (decisions, status changes,
+  upcoming meetings) that sends at most every seven days and skips quiet
+  weeks. Follow buttons sit on member pages, the meetings list, pre-meeting
+  briefs, `/nearby`, and the briefing header.
+- **Glossary.** `/glossary` defines the agenda vocabulary (special use
+  permit, proffer, first reading, work session…); agenda item titles and
+  descriptions, topic summaries, and open questions get dotted-underline
+  hover definitions via a server-rendered `Jargon` component.
+- **The data layer is cached.** `lib/api.ts` wraps fetches in
+  `unstable_cache` with a five-minute revalidate (search and geocode stay
+  fresh), so the briefing's nine API calls happen nine times per five
+  minutes instead of per view; pages stay dynamically rendered and errors
+  are never cached. Topic and meeting pages carry an explicit
+  `revalidate` so an on-demand render can't be kept forever.
+
 ## Unreleased — calibrating the fiscal model against the city's own estimates (August 2026)
 
 The pipeline's net-fiscal estimates ran systematically below the city's:

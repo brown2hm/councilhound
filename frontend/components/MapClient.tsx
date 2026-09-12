@@ -13,6 +13,19 @@ const MapView = dynamic(() => import("@/components/MapView"), {
   ),
 });
 
-export default function MapClient({ locations }: { locations: MapLocation[] }) {
-  return <MapView locations={locations} />;
+export default function MapClient({
+  locations,
+  focus,
+  compact = false,
+  center,
+}: {
+  locations: MapLocation[];
+  /** slug to open and center on when the map loads (e.g. ?focus= links) */
+  focus?: string;
+  /** a smaller, pane-less map for sidebars: clicking a pin navigates */
+  compact?: boolean;
+  /** override the auto-center (the searched point on /nearby) */
+  center?: [number, number];
+}) {
+  return <MapView locations={locations} focus={focus} compact={compact} center={center} />;
 }

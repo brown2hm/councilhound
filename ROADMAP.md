@@ -117,6 +117,15 @@ State of the data (local snapshot, 129 meetings, Jul 2024–Jul 2026):
    review page. Distinct-but-related pairs become explicit
    `related_entities` edges instead.
 
+## Shipped since (September 2026)
+
+Beyond the tiers below: one faceted projects-and-topics directory with a
+map view (replacing the tracker/development/civic split), a change feed
+(panel + Atom), meeting → topic links and staff reports on meeting pages,
+site-wide typeahead search, near-me discovery with a geocode proxy, a
+glossary with hover definitions, follows for members/bodies/areas/the
+weekly briefing, and a cached data layer. See CHANGELOG.
+
 ## Tiers
 
 **Tier 1 — days each, data already in hand**
