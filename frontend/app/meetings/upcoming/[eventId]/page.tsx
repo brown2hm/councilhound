@@ -1,24 +1,20 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { cache } from "react";
 import BodyTag from "@/components/BodyTag";
 import StatusBadge from "@/components/StatusBadge";
 import { api, formatDate } from "@/lib/api";
+import { requireRecord } from "@/lib/not-found";
 
 export const dynamic = "force-dynamic";
 
 const getUpcoming = cache((eventId: string) => api.upcomingDetail(eventId));
 
 export async function generateMetadata({ params }: { params: { eventId: string } }) {
-  try {
-    const event = await getUpcoming(params.eventId);
-    return {
-      title: `${event.title} — pre-meeting brief`,
-      description: `What's on the agenda for the upcoming ${event.title}, with the history of every tracked topic it touches.`,
-    };
-  } catch {
-    return {};
-  }
+  const event = await requireRecord(getUpcoming(params.eventId));
+  return {
+    title: `${event.title} — pre-meeting brief`,
+    description: `What's on the agenda for the upcoming ${event.title}, with the history of every tracked topic it touches.`,
+  };
 }
 
 function fmtWhen(iso: string): string {
@@ -32,12 +28,7 @@ export default async function UpcomingMeetingPage({
 }: {
   params: { eventId: string };
 }) {
-  let event;
-  try {
-    event = await getUpcoming(params.eventId);
-  } catch {
-    notFound();
-  }
+  const event = await requireRecord(getUpcoming(params.eventId));
 
   return (
     <div className="mx-auto max-w-[860px] px-4 pb-16 pt-8 sm:px-8">

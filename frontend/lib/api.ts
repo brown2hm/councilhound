@@ -461,9 +461,27 @@ export interface RecordStatus {
   counts: { meetings: number; meetings_transcribed: number; topics: number };
 }
 
+/** A non-2xx response from the API, with the status kept so a route can
+ * treat a 404 as "no such record" without swallowing outages the same way. */
+export class ApiError extends Error {
+  readonly status: number;
+  constructor(path: string, status: number) {
+    super(`API ${path} -> ${status}`);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
+/** FastAPI answers 404 for an unknown record and 422 for a path parameter it
+ * can't parse (a non-numeric meeting id) — for a lookup, both mean "nothing
+ * lives at this address". */
+export function isMissingRecordStatus(status: number): boolean {
+  return status === 404 || status === 422;
+}
+
 async function get<T>(path: string): Promise<T> {
   const resp = await fetch(`${API_URL}${path}`, { cache: "no-store" });
-  if (!resp.ok) throw new Error(`API ${path} -> ${resp.status}`);
+  if (!resp.ok) throw new ApiError(path, resp.status);
   return resp.json();
 }
 

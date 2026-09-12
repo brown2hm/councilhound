@@ -1,22 +1,18 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { cache } from "react";
 import BodyTag from "@/components/BodyTag";
 import TranscriptReader from "@/components/TranscriptReader";
 import { api, formatDate } from "@/lib/api";
+import { requireRecord } from "@/lib/not-found";
 
 const getTranscript = cache((id: string) => api.transcript(id));
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
-  try {
-    const t = await getTranscript(params.id);
-    return {
-      title: `Transcript · ${t.title}`,
-      description: `The full timestamped transcript of the ${formatDate(t.date)} ${t.title}, with every moment linked to the city's video.`,
-    };
-  } catch {
-    return {};
-  }
+  const t = await requireRecord(getTranscript(params.id));
+  return {
+    title: `Transcript · ${t.title}`,
+    description: `The full timestamped transcript of the ${formatDate(t.date)} ${t.title}, with every moment linked to the city's video.`,
+  };
 }
 
 export default async function TranscriptPage({
@@ -26,12 +22,7 @@ export default async function TranscriptPage({
   params: { id: string };
   searchParams: { q?: string };
 }) {
-  let transcript;
-  try {
-    transcript = await getTranscript(params.id);
-  } catch {
-    notFound();
-  }
+  const transcript = await requireRecord(getTranscript(params.id));
 
   return (
     <div className="mx-auto max-w-[860px] px-4 pb-16 pt-8 sm:px-8">

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { cache } from "react";
 import BodyTag from "@/components/BodyTag";
 import DiscussionSparkline from "@/components/DiscussionSparkline";
@@ -8,31 +7,23 @@ import StatusBadge from "@/components/StatusBadge";
 import StatusStepper from "@/components/StatusStepper";
 import VoteBlock from "@/components/VotePills";
 import { api, formatDate } from "@/lib/api";
+import { requireRecord } from "@/lib/not-found";
 
 const getEntity = cache((slug: string) => api.entity(slug));
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
-  try {
-    const entity = await getEntity(params.slug);
-    const summary = entity.profile?.summary;
-    return {
-      title: entity.name,
-      description: summary
-        ? `${summary.slice(0, 180)}…`
-        : `Every action, vote, and update on ${entity.name} in City of Fairfax council and commission meetings.`,
-    };
-  } catch {
-    return {};
-  }
+  const entity = await requireRecord(getEntity(params.slug));
+  const summary = entity.profile?.summary;
+  return {
+    title: entity.name,
+    description: summary
+      ? `${summary.slice(0, 180)}…`
+      : `Every action, vote, and update on ${entity.name} in City of Fairfax council and commission meetings.`,
+  };
 }
 
 export default async function TopicDetail({ params }: { params: { slug: string } }) {
-  let entity;
-  try {
-    entity = await getEntity(params.slug);
-  } catch {
-    notFound();
-  }
+  const entity = await requireRecord(getEntity(params.slug));
 
   const profile = entity.profile;
 

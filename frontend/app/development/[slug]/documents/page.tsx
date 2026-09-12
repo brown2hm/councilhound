@@ -1,18 +1,15 @@
 import { redirect } from "next/navigation";
+import { requireRecord } from "@/lib/not-found";
 import { getProject } from "../project";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
-  try {
-    const project = await getProject(params.slug);
-    return {
-      title: `${project.name} — documents (${project.documents.length})`,
-      description: `Documents the City of Fairfax lists in the official project record for ${project.name}.`,
-    };
-  } catch {
-    return {};
-  }
+  const project = await requireRecord(getProject(params.slug));
+  return {
+    title: `${project.name} — documents (${project.documents.length})`,
+    description: `Documents the City of Fairfax lists in the official project record for ${project.name}.`,
+  };
 }
 
 export default async function ProjectDocumentsPage({
@@ -20,12 +17,7 @@ export default async function ProjectDocumentsPage({
 }: {
   params: { slug: string };
 }) {
-  let project;
-  try {
-    project = await getProject(params.slug);
-  } catch {
-    redirect(`/development/${params.slug}`);
-  }
+  const project = await requireRecord(getProject(params.slug));
   if (project.documents.length === 0) {
     redirect(`/development/${params.slug}`);
   }

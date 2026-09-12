@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { cache } from "react";
 import Markdown from "@/components/Markdown";
-import { api, formatDate, type ProjectWiki } from "@/lib/api";
+import { api, formatDate } from "@/lib/api";
+import { requireRecord } from "@/lib/not-found";
 import { resolveBody, WIKI_PAGE_LABELS } from "@/lib/wiki";
 
 export const dynamic = "force-dynamic";
@@ -14,15 +14,11 @@ export const dynamic = "force-dynamic";
 const getWiki = cache((slug: string) => api.entityWiki(slug));
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
-  try {
-    const wiki = await getWiki(params.slug);
-    return {
-      title: `${wiki.name} — wiki`,
-      description: `A maintained knowledge base on ${wiki.name}: overview, meeting history, and member positions, built from City of Fairfax meeting records.`,
-    };
-  } catch {
-    return {};
-  }
+  const wiki = await requireRecord(getWiki(params.slug));
+  return {
+    title: `${wiki.name} — wiki`,
+    description: `A maintained knowledge base on ${wiki.name}: overview, meeting history, and member positions, built from City of Fairfax meeting records.`,
+  };
 }
 
 export default async function TopicWikiPage({
@@ -30,12 +26,7 @@ export default async function TopicWikiPage({
 }: {
   params: { slug: string };
 }) {
-  let wiki: ProjectWiki;
-  try {
-    wiki = await getWiki(params.slug);
-  } catch {
-    notFound();
-  }
+  const wiki = await requireRecord(getWiki(params.slug));
 
   return (
     <div className="mx-auto max-w-[880px] px-4 pb-16 pt-8 sm:px-8">
