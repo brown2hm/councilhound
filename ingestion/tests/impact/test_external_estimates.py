@@ -100,6 +100,73 @@ def test_fiscal_sentence_past_cap_is_extracted(monkeypatch):
     assert any("Recorded 1 external" in n for n in notes)
 
 
+# --- _resolve_source_url ----------------------------------------------------
+#
+# Regression for the null-url miss (2026-08-26 enrich sweep): the model
+# decorates source labels — appends the URL in parens, prefixes "Document 2:",
+# suffixes "– Attachment 1 Analysis" — so the old exact-label dict lookup
+# returned None and Davies-Property's urls had to be restored by hand.
+
+def _docs(*labels_urls):
+    return [ProjectDocument(label=label, url=url, text="",
+                            provenance=prov(label, "u", "2025-06-23"))
+            for label, url in labels_urls]
+
+PACKET = ("June 23, 2025 Planning Commission Public Hearing Staff Report",
+          "https://example.gov/staff-report.pdf")
+
+
+def test_source_url_exact_label_still_resolves():
+    assert extractor._resolve_source_url(PACKET[0], _docs(PACKET)) == PACKET[1]
+
+
+def test_source_url_from_embedded_url():
+    source = f"{PACKET[0]} ({PACKET[1]})"
+    assert extractor._resolve_source_url(source, _docs(PACKET)) == PACKET[1]
+
+
+def test_source_url_from_embedded_url_with_garbled_label():
+    source = f"Staff fiscal analysis ({PACKET[1]})"
+    assert extractor._resolve_source_url(source, _docs(PACKET)) == PACKET[1]
+
+
+def test_source_url_from_decorated_label():
+    source = f"Document 2: {PACKET[0]} – Attachment 1 Analysis"
+    assert extractor._resolve_source_url(source, _docs(PACKET)) == PACKET[1]
+
+
+def test_source_url_from_truncated_label():
+    source = "Planning Commission Public Hearing Staff Report"
+    assert extractor._resolve_source_url(source, _docs(PACKET)) == PACKET[1]
+
+
+def test_source_url_prefers_largest_overlap():
+    other = ("Staff Report", "https://example.gov/other.pdf")
+    source = f"Document 1: {PACKET[0]}"
+    assert extractor._resolve_source_url(source, _docs(other, PACKET)) == PACKET[1]
+
+
+def test_source_url_unmatched_returns_none():
+    assert extractor._resolve_source_url(
+        "Applicant Fiscal Impact Analysis", _docs(PACKET)) is None
+    assert extractor._resolve_source_url("", _docs(PACKET)) is None
+
+
+def test_decorated_source_gets_url_end_to_end(monkeypatch):
+    quote = "Staff estimates a net annual fiscal impact of approximately $310,000"
+
+    def decorating_model(prompt):
+        return {"estimates": [{
+            "source": ("Document 1: June 23 2025 Planning Commission Public "
+                       "Hearing Packet (https://example.gov/packet.pdf)"),
+            "kind": "staff_report", "net_annual_low": 310000, "quote": quote}]}
+
+    monkeypatch.setattr(extractor, "_call_external", decorating_model)
+    out, _ = extractor.extract_external_estimates([_hearing_doc(_deep_doc_text())])
+    assert len(out) == 1
+    assert out[0]["url"] == "https://example.gov/packet.pdf"
+
+
 def test_hallucinated_quote_still_dropped(monkeypatch):
     def liar(prompt):
         return {"estimates": [{"source": "PC Hearing Packet", "kind": "staff_report",
