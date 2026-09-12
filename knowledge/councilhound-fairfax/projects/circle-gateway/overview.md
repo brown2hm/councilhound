@@ -7,7 +7,7 @@ resource: https://councilhound.net/development/Circle-Gateway
 tags:
 - private-development
 - proposed
-timestamp: '2026-07-13'
+timestamp: '2026-09-01'
 status: proposed
 source: official
 address: 3250 Blenheim Boulevard, Fairfax, VA 22030
@@ -54,6 +54,8 @@ The applicant is proposing to replace two existing commercial buildings (formerl
 - **Address:** 3250 Blenheim Boulevard, Fairfax, VA 22030
 - **Applicant:** Woodbridge Commons, LLC  Don Earl Stedham Woodbridge Commons, LLC Chief Operating Officer
 - [City record](https://www.fairfaxva.gov/Property-Business/Development/Projects/Circle-Gateway)
+
+A pre-application briefing on the potential redevelopment was held at the City Council Work Session on 2026-09-01. The applicant was identified at that session as Aksoylu Properties LLC, proposing an upper-story residential mixed-use building with ground-floor commercial space and up to 261 multifamily dwelling units at 3226–3250 Blenheim Boulevard. City Planner Albert Frederick presented the briefing; no formal vote was recorded.
 
 <!-- curator:off -->
 

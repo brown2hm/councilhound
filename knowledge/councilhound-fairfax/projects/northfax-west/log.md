@@ -17,3 +17,8 @@
 ## 2026-08-22
 
 - Pipeline refresh.
+
+## 2026-09-12
+
+- Meeting history updated through 2026-09-01.
+- Added Phase IV pre-application briefing (2026-09-01 City Council Work Session) to official record and opened questions on Phase IV unit count/timeline. (curator: claude-sonnet-4-6, through 2026-09-01)

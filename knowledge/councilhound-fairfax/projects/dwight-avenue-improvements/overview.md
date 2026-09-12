@@ -4,8 +4,9 @@ title: Dwight Avenue Improvements
 description: The Dwight Avenue Improvements project involves intersection realignment at Sager/Roberts/Dwight
   and installation of new sidewalk, curb, and gutter on the north side of Dwight Avenue between
   Roberts Road and Orchard Drive.
-resource: https://councilhound.net/topics/dwight-avenue-improvements
+resource: https://councilhound.net/development/Dwight-Avenue-Improvements
 tags:
+- city-project
 - in-progress
 timestamp: '2025-09-09'
 status: in_progress
@@ -22,5 +23,6 @@ The Dwight Avenue Improvements project involves intersection realignment at Sage
 
 - [Meeting history](/projects/dwight-avenue-improvements/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/dwight-avenue-improvements/positions.md)
+- [Documents](/projects/dwight-avenue-improvements/documents.md) — the city's published record for this project
 
 <!-- /curator:off -->
