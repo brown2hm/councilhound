@@ -1,20 +1,16 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import ProjectTabs from "@/components/ProjectTabs";
+import { requireRecord } from "@/lib/not-found";
 import { getProject } from "./project";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
-  try {
-    const project = await getProject(params.slug);
-    return {
-      title: `${project.name} — City of Fairfax development project`,
-      description: project.description ?? undefined,
-    };
-  } catch {
-    return {};
-  }
+  const project = await requireRecord(getProject(params.slug));
+  return {
+    title: `${project.name} — City of Fairfax development project`,
+    description: project.description ?? undefined,
+  };
 }
 
 export default async function DevelopmentProjectLayout({
@@ -24,12 +20,7 @@ export default async function DevelopmentProjectLayout({
   children: React.ReactNode;
   params: { slug: string };
 }) {
-  let project;
-  try {
-    project = await getProject(params.slug);
-  } catch {
-    notFound();
-  }
+  const project = await requireRecord(getProject(params.slug));
 
   const meta = [project.project_type, project.division, project.address]
     .filter(Boolean)

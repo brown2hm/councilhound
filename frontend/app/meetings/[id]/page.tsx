@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { cache } from "react";
 import BodyTag from "@/components/BodyTag";
 import ChapterBar from "@/components/ChapterBar";
@@ -7,21 +6,18 @@ import Jargon from "@/components/Jargon";
 import StatusBadge from "@/components/StatusBadge";
 import VoteBlock from "@/components/VotePills";
 import { api, formatDate, type MeetingDocument } from "@/lib/api";
+import { requireRecord } from "@/lib/not-found";
 
 export const revalidate = 300;
 
 const getMeeting = cache((id: string) => api.meeting(id));
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
-  try {
-    const meeting = await getMeeting(params.id);
-    return {
-      title: `${meeting.title} · ${formatDate(meeting.date)}`,
-      description: `Agenda items, outcomes, and votes from the ${formatDate(meeting.date)} ${meeting.title}, with links to the moment in the meeting video.`,
-    };
-  } catch {
-    return {};
-  }
+  const meeting = await requireRecord(getMeeting(params.id));
+  return {
+    title: `${meeting.title} · ${formatDate(meeting.date)}`,
+    description: `Agenda items, outcomes, and votes from the ${formatDate(meeting.date)} ${meeting.title}, with links to the moment in the meeting video.`,
+  };
 }
 
 const DOC_LABELS: Record<string, string> = {
@@ -56,12 +52,7 @@ function DocLinks({ docs }: { docs: MeetingDocument[] }) {
 }
 
 export default async function MeetingPage({ params }: { params: { id: string } }) {
-  let meeting;
-  try {
-    meeting = await getMeeting(params.id);
-  } catch {
-    notFound();
-  }
+  const meeting = await requireRecord(getMeeting(params.id));
 
   // agenda + minutes already have buttons above; the rest of the meeting-level
   // record (actions report, packets) gets its own section
