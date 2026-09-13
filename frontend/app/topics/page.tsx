@@ -4,7 +4,14 @@ import DirectoryFilters from "@/components/DirectoryFilters";
 import MapClient from "@/components/MapClient";
 import Pagination from "@/components/Pagination";
 import StatusBadge from "@/components/StatusBadge";
-import { api, formatDate, type EntitySummary, type HotTopicsResponse, type MapLocation } from "@/lib/api";
+import {
+  api,
+  formatDate,
+  type EntityCounts,
+  type EntitySummary,
+  type HotTopicsResponse,
+  type MapLocation,
+} from "@/lib/api";
 
 const NO_HOT: HotTopicsResponse = { meetings: [], topics: [] };
 
@@ -16,16 +23,18 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-const TYPES = [
-  { key: "project", label: "Projects" },
-  { key: "topic", label: "Plans & programs" },
-  { key: "ordinance", label: "Ordinances" },
-  { key: "resolution", label: "Resolutions" },
-  { key: "case_number", label: "Cases" },
-  { key: "location", label: "Places" },
-];
+const KIND_LABELS: Record<string, string> = {
+  project: "Project",
+  topic: "Plan or program",
+  ordinance: "Ordinance",
+  resolution: "Resolution",
+  case_number: "Case",
+  location: "Place",
+  person: "Person",
+};
 
 const PAGE_SIZE = 40;
+const OFFICIAL_CARDS = 8;
 
 interface Query {
   view?: string;
@@ -48,17 +57,28 @@ function href(base: Query, patch: Partial<Query>): string {
   return qs ? `/topics?${qs}` : "/topics";
 }
 
-function Pill({ active, to, children }: { active: boolean; to: string; children: React.ReactNode }) {
-  return (
-    <Link
-      href={to}
-      className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium ${
-        active ? "bg-ink text-canvas" : "border border-hairline bg-canvas text-muted hover:text-ink"
-      }`}
-    >
-      {children}
-    </Link>
-  );
+/** Any facet beyond the defaults. The unfiltered directory has a showcase
+ * shape (official cards, then the meeting-derived table, then a people
+ * row); a filtered one is a single table of matches. */
+function isFiltered(q: Query): boolean {
+  return Boolean(q.type || q.official || q.status || q.body || q.days || q.q);
+}
+
+/** The list query for the API. People are hidden unless asked for, and the
+ * one-mention tail is hidden unless the switch is off (`active=0`). */
+function listParams(q: Query, extra: Record<string, string>): URLSearchParams {
+  const params = new URLSearchParams();
+  if (q.type) params.set("entity_type", q.type);
+  else params.set("exclude_type", "person");
+  if (q.status) params.set("status", q.status);
+  if (q.body) params.set("body", q.body);
+  if (q.days) params.set("days", q.days);
+  if (q.official === "true" || q.official === "false") params.set("official", q.official);
+  if (q.active !== "0") params.set("min_updates", "2");
+  params.set("sort", q.sort || "active");
+  if (q.q) params.set("q", q.q);
+  for (const [k, v] of Object.entries(extra)) params.set(k, v);
+  return params;
 }
 
 function HotSection({ hot, title, dot, barColor }: { hot: HotTopicsResponse; title: string; dot: string; barColor: string }) {
@@ -126,69 +146,87 @@ function BodyDots({ bodies }: { bodies: string[] }) {
   );
 }
 
-function Card({ e }: { e: EntitySummary }) {
-  const official = e.official;
-  const primary = official ? `/development/${official.slug}` : `/topics/${e.slug}`;
-  const blurb = official?.description ?? null;
+function primaryHref(e: EntitySummary): string {
+  return e.official ? `/development/${e.official.slug}` : `/topics/${e.slug}`;
+}
+
+/** An official city project: the only records with a photo, an address, and
+ * the city's own status, so they get the card treatment. */
+function OfficialCard({ e }: { e: EntitySummary }) {
+  const o = e.official!;
   return (
-    <li className="flex gap-4 px-5 py-4">
-      {official?.image_url && (
+    <Link href={primaryHref(e)} className="group flex flex-col gap-2">
+      {o.image_url ? (
         // the city's own project image; plain <img> since the host is external
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={official.image_url}
+          src={o.image_url}
           alt=""
           loading="lazy"
-          className="hidden h-[72px] w-[104px] shrink-0 rounded-xl border border-hairline object-cover sm:block"
+          className="h-32 w-full rounded-xl border border-hairline object-cover"
         />
+      ) : (
+        <div className="flex h-32 w-full items-center justify-center rounded-xl bg-card text-[11px] font-semibold uppercase tracking-[1px] text-muted-soft">
+          {o.project_type ?? "City project"}
+        </div>
       )}
-      <div className="min-w-0 flex-1">
-        <div className="mb-1 flex flex-wrap items-center gap-2">
-          <Link href={primary} className="text-[15px] font-semibold text-ink underline-offset-2 hover:underline">
-            {e.name}
-          </Link>
-          <StatusBadge status={e.current_status} />
-          {official?.official_status && (
-            <span className="rounded-full bg-strong px-2.5 py-[3px] text-xs font-semibold text-body">
-              {official.official_status}
-            </span>
-          )}
-        </div>
-        <div className="mb-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[13px] text-muted">
-          <BodyDots bodies={e.bodies} />
-          <span>{official ? "official city record" : e.entity_type.replace("_", " ")}</span>
-          {official?.project_type && <span>· {official.project_type}</span>}
-          {official?.address && <span>· {official.address}</span>}
-          <span>
-            · {e.update_count} update{e.update_count === 1 ? "" : "s"}
-            {e.last_seen ? ` · last ${formatDate(e.last_seen)}` : ""}
-          </span>
-        </div>
-        {blurb && <p className="max-w-[760px] text-sm leading-[1.55] text-body">{blurb.length > 220 ? `${blurb.slice(0, 217)}…` : blurb}</p>}
-        <div className="mt-2 flex flex-wrap gap-3 text-[13px] font-semibold">
-          {official && (
-            <Link href={`/topics/${e.slug}`} className="text-muted underline underline-offset-2 hover:text-ink">
-              meeting history
-            </Link>
-          )}
-          {e.has_wiki && (
-            <Link href={official ? `/development/${official.slug}` : `/topics/${e.slug}/wiki`} className="text-muted underline underline-offset-2 hover:text-ink">
-              wiki
-            </Link>
-          )}
-          {official?.has_evaluation && (
-            <Link href={`/development/${official.slug}/analysis`} className="text-muted underline underline-offset-2 hover:text-ink">
-              impact analysis
-            </Link>
-          )}
-          {e.lat !== null && e.lng !== null && (
-            <Link href={`/map?focus=${e.slug}`} className="text-muted underline underline-offset-2 hover:text-ink">
-              on the map
-            </Link>
-          )}
-        </div>
+      <div className="min-h-[39px] text-[15px] font-semibold leading-[1.3] group-hover:underline group-hover:underline-offset-2">
+        {e.name}
       </div>
-    </li>
+      <div className="-mt-1 text-[12px] text-muted">
+        {o.project_type}
+        {o.official_status && (
+          <>
+            {" · "}
+            <span className="text-tint-ochre-text">{o.official_status}</span>
+          </>
+        )}
+        {o.address && (
+          <>
+            <br />
+            {o.address}
+          </>
+        )}
+      </div>
+      <div className="text-[12px] tabular-nums text-muted">
+        {e.update_count} update{e.update_count === 1 ? "" : "s"}
+        {e.last_seen ? ` · last ${formatDate(e.last_seen)}` : ""}
+      </div>
+    </Link>
+  );
+}
+
+function Row({ e }: { e: EntitySummary }) {
+  return (
+    <tr className="border-b border-hairline hover:bg-soft">
+      <td className="py-2.5 pr-3">
+        <Link href={primaryHref(e)} className="text-[15px] font-semibold underline-offset-2 hover:underline">
+          {e.name}
+        </Link>
+        {e.official && (
+          <span className="ml-2 rounded-full bg-strong px-2 py-[2px] text-[11px] font-semibold text-body">official record</span>
+        )}
+      </td>
+      <td className="hidden px-3 py-2.5 text-[13px] text-muted md:table-cell">{KIND_LABELS[e.entity_type] ?? e.entity_type}</td>
+      <td className="px-3 py-2.5">
+        {e.current_status ? <StatusBadge status={e.current_status} /> : <span className="text-muted-soft">—</span>}
+      </td>
+      <td className="hidden px-3 py-2.5 md:table-cell">
+        <BodyDots bodies={e.bodies} />
+      </td>
+      <td className="px-3 py-2.5 text-right tabular-nums">{e.update_count}</td>
+      <td className="whitespace-nowrap py-2.5 pl-3 text-right text-[13px] tabular-nums text-muted">
+        {e.last_seen ? formatDate(e.last_seen) : ""}
+      </td>
+    </tr>
+  );
+}
+
+function Th({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <th className={`whitespace-nowrap border-b border-ink pb-2 text-left text-[11px] font-semibold uppercase tracking-[1px] text-muted ${className}`}>
+      {children}
+    </th>
   );
 }
 
@@ -215,27 +253,41 @@ export default async function TopicsPage({ searchParams }: { searchParams: Query
   const page = Math.max(1, Number(searchParams.page) || 1);
   const isMap = view === "map";
   const isHot = view === "hot";
+  const filtered = isFiltered(searchParams);
+  // the showcase shape: official cards up top, people demoted to a row
+  const showcase = !isHot && !isMap && !filtered;
 
-  const params = new URLSearchParams();
-  if (searchParams.type) params.set("entity_type", searchParams.type);
-  if (searchParams.status) params.set("status", searchParams.status);
-  if (searchParams.body) params.set("body", searchParams.body);
-  if (searchParams.days) params.set("days", searchParams.days);
-  if (searchParams.official === "true" || searchParams.official === "false") params.set("official", searchParams.official);
-  if (searchParams.active === "1") params.set("min_updates", "2");
-  if (searchParams.sort) params.set("sort", searchParams.sort);
-  if (searchParams.q) params.set("q", searchParams.q);
-  // the map wants every pin at once; the list pages
-  params.set("limit", String(isMap ? 200 : PAGE_SIZE + 1));
-  params.set("offset", String(isMap ? 0 : (page - 1) * PAGE_SIZE));
+  const params = listParams(searchParams, {
+    limit: String(isMap ? 200 : PAGE_SIZE + 1),
+    offset: String(isMap ? 0 : (page - 1) * PAGE_SIZE),
+  });
+  // in the showcase the table is "from meetings": the official records have
+  // their own section, and "All N" links to the official-only facet
+  if (showcase) params.set("official", "false");
 
-  const fetched = isHot ? [] : await api.entities(params);
+  const [fetched, officialRows, counts] = await Promise.all([
+    isHot ? Promise.resolve([] as EntitySummary[]) : api.entities(params),
+    showcase && page === 1
+      ? api
+          .entities(new URLSearchParams({ official: "true", sort: "active", limit: String(OFFICIAL_CARDS) }))
+          .catch(() => [] as EntitySummary[])
+      : Promise.resolve([] as EntitySummary[]),
+    showcase ? api.entityCounts().catch(() => null as EntityCounts | null) : Promise.resolve(null as EntityCounts | null),
+  ]);
   const hasMore = !isMap && fetched.length > PAGE_SIZE;
   const entities = isMap ? fetched : fetched.slice(0, PAGE_SIZE);
   const pins = entities.filter((e) => e.lat !== null && e.lng !== null).map(toMapLocation);
 
   const base: Query = { ...searchParams, view: isHot ? "hot" : searchParams.view };
-  const noPrimary = !searchParams.type && !searchParams.official;
+  const fromMeetings = counts ? counts.records - counts.official : null;
+
+  const tableTitle = showcase
+    ? "Plans, ordinances and places from meetings"
+    : searchParams.type === "person"
+      ? "People named in the record"
+      : searchParams.official === "true"
+        ? "Official city projects"
+        : "Matching records";
 
   return (
     <div className="mx-auto max-w-[1280px] px-4 pb-16 pt-8 sm:px-8">
@@ -257,34 +309,18 @@ export default async function TopicsPage({ searchParams }: { searchParams: Query
           ))}
         </div>
       </div>
-      <p className="mb-5 text-sm text-muted">
-        Everything the council and planning commission have touched: the city&apos;s official
-        project records and every topic surfaced from meetings, with current status and full history.
+      <p className="mb-5 max-w-[860px] text-sm text-muted">
+        {counts ? `${counts.records.toLocaleString("en-US")} projects` : "Projects"}, plans, ordinances and places the
+        council and commission have touched, with status and history. People named in the record are listed
+        separately.
       </p>
 
       {!isHot && (
-        <>
-          <div className="mb-3 flex flex-wrap items-center gap-2">
-            <Pill active={noPrimary} to={href(base, { type: undefined, official: undefined })}>All</Pill>
-            <Pill active={searchParams.official === "true"} to={href(base, { official: searchParams.official === "true" ? undefined : "true", type: undefined })}>
-              Official city projects
-            </Pill>
-            <Pill active={searchParams.official === "false"} to={href(base, { official: searchParams.official === "false" ? undefined : "false", type: undefined })}>
-              From meetings only
-            </Pill>
-            <span className="mx-1 hidden h-5 w-px bg-hairline sm:block" />
-            {TYPES.map((t) => (
-              <Pill key={t.key} active={searchParams.type === t.key} to={href(base, { type: searchParams.type === t.key ? undefined : t.key, official: undefined })}>
-                {t.label}
-              </Pill>
-            ))}
-          </div>
-          <div className="mb-5">
-            <Suspense fallback={null}>
-              <DirectoryFilters />
-            </Suspense>
-          </div>
-        </>
+        <div className="mb-8">
+          <Suspense fallback={null}>
+            <DirectoryFilters />
+          </Suspense>
+        </div>
       )}
 
       {isHot ? (
@@ -304,35 +340,111 @@ export default async function TopicsPage({ searchParams }: { searchParams: Query
         </>
       ) : (
         <>
-          <ul className="divide-y divide-hairline-soft rounded-2xl border border-hairline bg-canvas">
-            {entities.map((e) => (
-              <Card key={e.slug} e={e} />
-            ))}
-            {entities.length === 0 && (
-              <li className="px-5 py-6 text-sm text-muted">
-                Nothing matches those filters.{" "}
-                <Link href="/topics" className="font-semibold underline underline-offset-2">
-                  Clear them
+          {officialRows.length > 0 && (
+            <section className="mb-11">
+              <div className="mb-3.5 flex flex-wrap items-baseline justify-between gap-3">
+                <div>
+                  <h2 className="text-[22px] font-semibold tracking-[-0.3px]">Official city projects</h2>
+                  <p className="text-[13px] text-muted">
+                    {counts ? `${counts.official} records` : "Records"} from the city&apos;s own project pages, with
+                    their photos, addresses and staff status.
+                  </p>
+                </div>
+                <Link
+                  href="/topics?official=true"
+                  className="text-[13px] font-semibold text-muted underline underline-offset-2 hover:text-ink"
+                >
+                  All {counts?.official ?? ""}
                 </Link>
-                .
-              </li>
-            )}
-          </ul>
-          <Pagination
-            page={page}
-            hasMore={hasMore}
-            basePath="/topics"
-            params={{
-              type: searchParams.type,
-              official: searchParams.official,
-              status: searchParams.status,
-              body: searchParams.body,
-              days: searchParams.days,
-              active: searchParams.active,
-              sort: searchParams.sort,
-              q: searchParams.q,
-            }}
-          />
+              </div>
+              <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                {officialRows.map((e) => (
+                  <OfficialCard key={e.slug} e={e} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          <section className="mb-9">
+            <div className="mb-2.5">
+              <h2 className="text-[22px] font-semibold tracking-[-0.3px]">{tableTitle}</h2>
+              {showcase && (
+                <p className="text-[13px] text-muted">
+                  {fromMeetings ? `${fromMeetings.toLocaleString("en-US")} topics` : "Topics"} the record has named,
+                  most active first. Names, votes and status are set by what was said in a meeting.
+                </p>
+              )}
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-sm">
+                <thead>
+                  <tr>
+                    <Th className="w-[44%]">Name</Th>
+                    <Th className="hidden px-3 md:table-cell">Kind</Th>
+                    <Th className="px-3">Status</Th>
+                    <Th className="hidden px-3 md:table-cell">
+                      Body{" "}
+                      <span className="font-medium normal-case tracking-normal">
+                        (<span aria-hidden className="inline-block h-2 w-2 rounded-full bg-teal" /> council ·{" "}
+                        <span aria-hidden className="inline-block h-2 w-2 rounded-full bg-ochre" /> commission)
+                      </span>
+                    </Th>
+                    <Th className="px-3 text-right">Updates</Th>
+                    <Th className="pl-3 text-right">Last seen</Th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {entities.map((e) => (
+                    <Row key={e.slug} e={e} />
+                  ))}
+                  {entities.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="px-1 py-6 text-sm text-muted">
+                        Nothing matches those filters.{" "}
+                        <Link href="/topics" className="font-semibold underline underline-offset-2">
+                          Clear them
+                        </Link>
+                        .
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <Pagination
+              page={page}
+              hasMore={hasMore}
+              basePath="/topics"
+              params={{
+                type: searchParams.type,
+                official: searchParams.official,
+                status: searchParams.status,
+                body: searchParams.body,
+                days: searchParams.days,
+                active: searchParams.active,
+                sort: searchParams.sort,
+                q: searchParams.q,
+              }}
+            />
+          </section>
+
+          {showcase && (
+            <section className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-hairline px-5 py-4">
+              <div>
+                <div className="text-[15px] font-semibold">People named in the record</div>
+                <div className="text-[13px] text-muted">
+                  {counts ? `${counts.people} applicants` : "Applicants"}, staff and speakers. Kept out of the list
+                  above so they don&apos;t crowd the topics.
+                </div>
+              </div>
+              <Link
+                href="/topics?type=person"
+                className="whitespace-nowrap text-[13px] font-semibold text-muted underline underline-offset-2 hover:text-ink"
+              >
+                Show people
+              </Link>
+            </section>
+          )}
         </>
       )}
     </div>

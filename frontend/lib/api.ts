@@ -88,6 +88,17 @@ export interface EntitySummary {
   official: EntityOfficialCard | null;
 }
 
+/** GET /entities/counts — the directory's size by kind, for the section
+ * headers on /topics. */
+export interface EntityCounts {
+  total: number;
+  people: number;
+  records: number;
+  official: number;
+  recurring: number;
+  by_type: Record<string, number>;
+}
+
 export interface EntitySuggestion {
   kind: "topic" | "member";
   slug: string;
@@ -625,6 +636,7 @@ export const api = {
   transcript: (id: string) => get<MeetingTranscript>(`/meetings/${id}/transcript`),
   entities: (params: URLSearchParams) => get<EntitySummary[]>(`/entities/?${params}`),
   entity: (slug: string) => get<EntityDetail>(`/entities/${encodeURIComponent(slug)}`),
+  entityCounts: () => get<EntityCounts>("/entities/counts"),
   hotTopics: (body?: string, days = 60) =>
     get<HotTopicsResponse>(`/entities/hot?days=${days}${body ? `&body=${body}` : ""}`),
   stats: (days = 30) => get<MeetingStats>(`/meetings/stats?days=${days}`),

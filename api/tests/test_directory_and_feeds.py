@@ -3,6 +3,8 @@ entity hits in search, near-me, geocode proxying, and the meeting page's
 per-item topic/document links."""
 import datetime
 
+from sqlalchemy import select
+
 from councilhound.db.models import (
     AgendaItem, CityProject, Document, Entity, EntityAlias, EntityGeocode, EntityMention,
     EntityUpdate, Meeting,
@@ -104,6 +106,25 @@ def test_directory_filters_and_card_fields(client, db):
         "george-snyder-trail"]
     # sort=active puts the busiest first
     assert client.get("/entities/", params={"sort": "active"}).json()[0]["update_count"] == 2
+
+
+def test_directory_can_hide_people_and_reports_counts(client, db):
+    seeded = _seed(db)
+    mayor = db.scalar(select(Entity).where(Entity.canonical_slug == "catherine-read"))
+    db.add(EntityUpdate(entity_id=mayor.id, meeting_id=seeded["recent"].id,
+                        update_text="Presided.", status_after=None))
+    db.commit()
+
+    everyone = {r["slug"] for r in client.get("/entities/").json()}
+    assert "catherine-read" in everyone
+    no_people = {r["slug"] for r in client.get("/entities/", params={"exclude_type": "person"}).json()}
+    assert no_people == everyone - {"catherine-read"}
+
+    counts = client.get("/entities/counts").json()
+    assert counts["by_type"] == {"project": 2, "topic": 1, "person": 1}
+    assert counts["total"] == 4 and counts["people"] == 1 and counts["records"] == 3
+    assert counts["official"] == 1
+    assert counts["recurring"] == 2  # trail and parking study; the mayor's single update never counts
 
 
 def test_changes_feed_reports_transitions_and_new_topics(client, db):

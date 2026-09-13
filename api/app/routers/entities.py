@@ -119,6 +119,7 @@ def list_entities(
     days: int | None = Query(None, ge=1, le=730, description="only topics updated within the last N days"),
     min_updates: int = Query(1, ge=1, description="hide topics with fewer tracked updates (the one-mention tail)"),
     official: bool | None = Query(None, description="true: only official city project records; false: only meeting-derived"),
+    exclude_type: str | None = Query(None, description="drop one entity_type from the list (the directory hides people by default)"),
     q: str | None = Query(None, description="substring match on name or alias"),
     sort: str = Query("recent", description="recent | active | name"),
     limit: int = Query(50, le=200),
@@ -148,6 +149,8 @@ def list_entities(
         query = query.order_by(uc.c.last_date.desc(), uc.c.n.desc(), Entity.name)
     if entity_type:
         query = query.where(Entity.entity_type == entity_type)
+    if exclude_type:
+        query = query.where(Entity.entity_type != exclude_type)
     if status:
         query = query.where(Entity.current_status == status)
     if body:
@@ -200,6 +203,32 @@ def list_entities(
         for e, n, last, first, bodies, cp, lat, lng in rows
     ]
 
+
+
+@router.get("/counts")
+def entity_counts(session: Session = Depends(db_session)):
+    """How big the directory is, by kind — the numbers the /topics page
+    shows beside its sections (official projects, people) so a reader can
+    see the shape of the record without paging through it."""
+    uc = _update_counts()
+    tracked = select(Entity.id, Entity.entity_type, uc.c.n).join(uc, Entity.id == uc.c.entity_id).subquery()
+    by_type = {
+        t: n for t, n in session.execute(
+            select(tracked.c.entity_type, func.count()).group_by(tracked.c.entity_type))
+    }
+    official = session.scalar(
+        select(func.count()).select_from(tracked).join(CityProject, CityProject.entity_id == tracked.c.id)) or 0
+    recurring = session.scalar(
+        select(func.count()).select_from(tracked).where(tracked.c.entity_type != "person", tracked.c.n >= 2)) or 0
+    people = by_type.get("person", 0)
+    return {
+        "total": sum(by_type.values()),
+        "people": people,
+        "records": sum(by_type.values()) - people,
+        "official": official,
+        "recurring": recurring,
+        "by_type": by_type,
+    }
 
 @router.get("/suggest")
 def suggest_entities(

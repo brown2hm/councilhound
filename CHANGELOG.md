@@ -25,6 +25,19 @@ together.
   alias search, and per-row card fields (`bodies`, `lat/lng`, `has_wiki`,
   `official{...}`). `/development` and `/civic` redirect into the facets;
   the nav drops from nine items to six plus a search box.
+- **Projects & topics is a directory again.** The page had become a
+  changelog of names: 239 of its 972 records are people, every row was a
+  full-width strip with one meta line, and the filters ran three rows
+  deep. Now the unfiltered view leads with the official city projects as
+  a card grid (the only records with photos, addresses and a staff
+  status), follows with one dense table of everything the meetings named
+  (name, kind, status, body, updates, last seen), and demotes people to a
+  single row with a "Show people" link. Filters collapse to one labelled
+  row with a Kind select covering both the official facet and the entity
+  types; "Recurring only" is on by default (`active=0` turns it off) and
+  the default sort is most activity. `GET /entities/` grew
+  `exclude_type` (the page hides people with it) and `GET /entities/counts`
+  reports the directory's size by kind for the section headers.
 - **The briefing leads with what changed.** The front page drops the
   stat tiles (meetings held, hours in session, votes taken, passed vs.
   failed: small numbers with no story, and the last one disagreed with the
