@@ -2,6 +2,7 @@ data/
 .venv/
 .git/
 .github/
+.claude/
 .playwright-mcp/
 frontend/node_modules/
 frontend/.next/
