@@ -5,12 +5,12 @@ import FollowButton from "@/components/FollowButton";
 import StatusBadge from "@/components/StatusBadge";
 import {
   api,
+  BODY_LABELS,
   formatDate,
   PUBLIC_API_URL,
   type ChangesResponse,
   type HotTopicsResponse,
   type MeetingDetail,
-  type MeetingStats,
   type UpcomingEvent,
 } from "@/lib/api";
 
@@ -83,13 +83,15 @@ function deriveDecisions(details: MeetingDetail[]): Decision[] {
       }
     }
   }
-  return decisions.slice(0, 6);
+  return decisions;
 }
+
+const isConsent = (d: Decision) => /^consent agenda/i.test(d.title);
 
 const WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
 const word = (n: number) => WORDS[n] ?? String(n);
 
-function headline(decisions: Decision[]): string {
+function headline(decisions: Decision[], changed: number): string {
   const passed = decisions.filter((d) => d.badge.startsWith("PASSED")).length;
   const failed = decisions.filter((d) => d.badge.startsWith("FAILED")).length;
   const other = decisions.length - passed - failed;
@@ -97,11 +99,30 @@ function headline(decisions: Decision[]): string {
   if (passed) parts.push(`${word(passed)} measure${passed === 1 ? "" : "s"} passed`);
   if (failed) parts.push(`${word(failed)} failed`);
   if (other) parts.push(`${word(other)} still in motion`);
-  if (parts.length === 0) return "The latest from city hall.";
-  const sentence =
+  const votes =
     parts.length > 1 ? parts.slice(0, -1).join(", ") + ", and " + parts.at(-1) : parts[0];
-  return sentence.charAt(0).toUpperCase() + sentence.slice(1) + ".";
+  const sentences: string[] = [];
+  if (votes) sentences.push(votes.charAt(0).toUpperCase() + votes.slice(1) + ".");
+  if (changed) {
+    const t = `${word(changed)} topic${changed === 1 ? "" : "s"} changed status.`;
+    sentences.push(t.charAt(0).toUpperCase() + t.slice(1));
+  }
+  return sentences.length ? sentences.join(" ") : "The latest from city hall.";
 }
+
+// "From the City Council meeting on Sep 8." — which meetings the headline counts
+function provenance(details: MeetingDetail[], stale: boolean, days: number): string {
+  if (details.length === 0) return "";
+  const named = details
+    .map((m) => `the ${BODY_LABELS[m.body] ?? m.body} meeting on ${formatDate(m.date)}`)
+    .join(" and ");
+  if (stale) {
+    return `No meetings in the last ${days} days. The votes below are from the last one, ${named}.`;
+  }
+  return `From ${named}.`;
+}
+
+const clip = (text: string, n: number) => (text.length > n ? text.slice(0, n).trimEnd() + "…" : text);
 
 function HotPanel({
   hot,
@@ -187,44 +208,25 @@ function HotPanel({
   );
 }
 
-function StatTiles({ stats }: { stats: MeetingStats }) {
-  const tiles = [
-    { value: stats.meetings_held, label: "meetings held" },
-    { value: stats.hours_of_meetings, label: "hours in session" },
-    { value: stats.votes_taken, label: "votes taken" },
-    {
-      value: `${stats.motions_passed}–${stats.motions_failed}`,
-      label: "passed vs. failed",
-    },
-  ];
-  return (
-    <div className="mb-7 grid grid-cols-2 gap-3 sm:grid-cols-4">
-      {tiles.map((t) => (
-        <div key={t.label} className="rounded-2xl border border-hairline bg-canvas p-4 px-5">
-          <div className="text-[26px] font-medium leading-none tracking-[-0.5px]">{t.value}</div>
-          <div className="mt-1.5 text-[13px] text-muted">
-            {t.label} <span className="text-muted-soft">· {stats.days} days</span>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function AskHound() {
   return (
-    <section className="mb-7 rounded-3xl bg-card p-6">
-      <div className="mb-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1">
-        <Image src="/brand/hound.png" alt="" width={34} height={30} className="h-[30px] w-auto" />
-        <span className="font-semibold">Ask the hound</span>
-        <span className="text-[13px] text-muted">
+    <section
+      aria-label="Ask the hound"
+      className="mb-6 grid items-center gap-3 rounded-3xl bg-card p-3 pl-5 sm:grid-cols-[auto_1fr] sm:gap-5"
+    >
+      <div className="min-w-0">
+        <div className="flex items-center gap-2 font-semibold">
+          <Image src="/brand/hound.png" alt="" width={34} height={30} className="h-6 w-auto" />
+          Ask the hound
+        </div>
+        <div className="text-[12px] text-muted">
           Answers drawn from the meeting record, with citations you can verify.
-        </span>
+        </div>
       </div>
       <form
         action="/ask"
         method="get"
-        className="flex items-center justify-between gap-2 rounded-xl border border-hairline bg-canvas p-1.5 pl-4"
+        className="flex items-center justify-between gap-2 rounded-xl border border-hairline bg-canvas p-1 pl-4"
       >
         <input
           name="q"
@@ -265,7 +267,10 @@ function NextUp({ events }: { events: UpcomingEvent[] }) {
       </div>
       <ul className="space-y-3">
         {shown.map((e) => (
-          <li key={e.event_id} className="flex items-baseline justify-between gap-3 text-sm">
+          <li
+            key={e.event_id}
+            className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-sm sm:flex-nowrap"
+          >
             <span className="flex min-w-0 items-baseline gap-2">
               {e.body && (
                 <span
@@ -306,9 +311,9 @@ function NextUp({ events }: { events: UpcomingEvent[] }) {
 function ChangedRecently({ changes }: { changes: ChangesResponse }) {
   const shown = changes.changes.slice(0, 8);
   return (
-    <section className="mt-8">
+    <section>
       <div className="mb-1 flex flex-wrap items-baseline justify-between gap-3">
-        <h2 className="text-lg font-semibold">Changed this week</h2>
+        <h2 className="text-xl font-semibold">Changed this week</h2>
         <span className="flex gap-3 text-[12px] font-semibold text-muted">
           <Link href="/topics?days=30" className="underline underline-offset-2 hover:text-ink">
             all recent activity
@@ -335,9 +340,9 @@ function ChangedRecently({ changes }: { changes: ChangesResponse }) {
             <li key={c.id}>
               <Link
                 href={`/topics/${c.slug}#m-${c.meeting_id}`}
-                className="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 py-3 text-sm hover:bg-soft"
+                className="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 py-3.5 text-[15px] hover:bg-soft"
               >
-                <span className="min-w-0 flex-1 truncate font-semibold">{c.name}</span>
+                <span className="min-w-0 flex-1 basis-56 font-semibold">{c.name}</span>
                 <span className="flex items-center gap-1.5 text-[13px]">
                   {c.kind === "new" ? (
                     <span className="rounded-full bg-tint-lavender px-2.5 py-[3px] text-xs font-semibold text-tint-lavender-text">
@@ -365,33 +370,35 @@ function ChangedRecently({ changes }: { changes: ChangesResponse }) {
 
 const NO_HOT: HotTopicsResponse = { meetings: [], topics: [] };
 const NO_CHANGES: ChangesResponse = { days: 7, since: "", changes: [] };
-const NO_STATS: MeetingStats = {
-  days: 30,
-  meetings_held: 0,
-  hours_of_meetings: 0,
-  votes_taken: 0,
-  motions_passed: 0,
-  motions_failed: 0,
-};
-
 export default async function Briefing() {
   // The briefing is a dashboard of independent panels: one failing endpoint
   // should blank its own panel, not the page. Only the meetings list is
   // load-bearing enough to fall through to the error boundary.
-  const [meetings, hotCouncil, hotPC, stats, upcoming, changes] = await Promise.all([
-    api.meetings(new URLSearchParams({ limit: "6" })),
+  const [meetings, hotCouncil, hotPC, upcoming, changes] = await Promise.all([
+    api.meetings(new URLSearchParams({ limit: "8" })),
     api.hotTopics("city_council").catch(() => NO_HOT),
     api.hotTopics("planning_commission").catch(() => NO_HOT),
-    api.stats(30).catch(() => NO_STATS),
     api.upcoming().catch(() => []),
-    api.changes(7, 12).catch(() => NO_CHANGES),
+    api.changes(7, 30).catch(() => NO_CHANGES),
   ]);
-  const withItems = meetings.filter((m) => m.agenda_item_count > 0).slice(0, 4);
+  // The headline counts the same window the change feed uses, so its two
+  // halves describe the same week. When nothing met in that window, fall
+  // back to the last meeting and say so, rather than showing an empty page.
+  const withItems = meetings.filter((m) => m.agenda_item_count > 0);
+  const inWindow = changes.since ? withItems.filter((m) => m.date >= changes.since) : [];
+  const stale = inWindow.length === 0;
+  const chosen = (stale ? withItems.slice(0, 1) : inWindow).slice(0, 4);
   const details = (
-    await Promise.all(withItems.map((m) => api.meeting(String(m.id)).catch(() => null)))
+    await Promise.all(chosen.map((m) => api.meeting(String(m.id)).catch(() => null)))
   ).filter((m): m is MeetingDetail => m !== null);
   const decisions = deriveDecisions(details);
+  // substantive votes first; consent agendas are real votes but read as housekeeping
+  const shownDecisions = [
+    ...decisions.filter((d) => !isConsent(d)),
+    ...decisions.filter(isConsent),
+  ].slice(0, 8);
   const latest = meetings[0] ? formatDate(meetings[0].date) : "";
+  const sub = provenance(details, stale, changes.days);
 
   return (
     <div className="mx-auto max-w-[1280px] px-4 pb-16 pt-8 sm:px-8">
@@ -402,38 +409,81 @@ export default async function Briefing() {
         <FollowButton target={{ kind: "briefing" }} label="Get this weekly by email" size="sm" />
       </div>
       <AskHound />
-      <StatTiles stats={stats} />
+      <div className="mb-6 max-w-[900px]">
+        <h1 className="text-[32px] font-medium leading-[1.15] tracking-[-0.5px] [text-wrap:balance]">
+          {headline(decisions, changes.changes.length)}
+        </h1>
+        {sub && <p className="mt-2 text-sm text-muted">{sub}</p>}
+      </div>
+      {/* min-w-0: on phones both columns share one track, and a no-wrap row
+          inside would otherwise widen the whole page */}
       <div className="grid gap-8 md:grid-cols-[1.5fr_1fr]">
-        <div>
-          <h1 className="mb-5 text-[32px] font-medium leading-[1.15] tracking-[-0.5px]">
-            {headline(decisions)}
-          </h1>
-          <div className="flex flex-col gap-3">
-            {decisions.map((d, i) => (
-              <Link
-                key={i}
-                href={`/meetings/${d.meetingId}`}
-                className="rounded-2xl border border-hairline bg-canvas p-4 px-5 hover:border-ink"
-              >
-                <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                  <span className={`rounded-full px-2.5 py-[3px] text-xs font-semibold ${d.tint}`}>
-                    {d.badge}
-                  </span>
-                  <BodyTag body={d.body} className="text-[13px] text-muted" />
-                  <span className="text-[13px] text-muted">{d.meta}</span>
-                </div>
-                <div className="mb-1 font-semibold">{d.title}</div>
-                <p className="text-sm leading-[1.55] text-body">{d.text.slice(0, 220)}</p>
-              </Link>
-            ))}
-            {decisions.length === 0 && (
-              <p className="text-sm text-muted">No recent decisions extracted yet.</p>
-            )}
-          </div>
+        <div className="flex min-w-0 flex-col gap-8">
           <ChangedRecently changes={changes} />
+
+          <section>
+            <div className="mb-1 flex flex-wrap items-baseline justify-between gap-3">
+              <h2 className="text-xl font-semibold">Measures passed</h2>
+              {details.length === 1 && (
+                <Link
+                  href={`/meetings/${details[0].id}`}
+                  className="text-[12px] font-semibold text-muted underline underline-offset-2 hover:text-ink"
+                >
+                  full {formatDate(details[0].date)} meeting
+                </Link>
+              )}
+            </div>
+            <p className="mb-3 text-[13px] text-muted">
+              Every vote taken, with the outcome in a line. Consent agendas last.
+            </p>
+            <div className="flex flex-col gap-3">
+              {shownDecisions.map((d, i) =>
+                isConsent(d) ? (
+                  <Link
+                    key={i}
+                    href={`/meetings/${d.meetingId}`}
+                    className="rounded-2xl border border-hairline bg-canvas px-5 py-3 hover:border-ink"
+                  >
+                    <div className="mb-1 flex flex-wrap items-center gap-2">
+                      <span className={`rounded-full px-2.5 py-[3px] text-xs font-semibold ${d.tint}`}>
+                        {d.badge}
+                      </span>
+                      <BodyTag body={d.body} className="text-[13px] text-muted" />
+                      <span className="text-[13px] text-muted">{d.meta}</span>
+                    </div>
+                    <div className="text-sm">
+                      <span className="font-medium">{d.title}.</span>{" "}
+                      <span className="text-muted">{clip(d.text, 140)}</span>
+                    </div>
+                  </Link>
+                ) : (
+                  <Link
+                    key={i}
+                    href={`/meetings/${d.meetingId}`}
+                    className="rounded-2xl border border-hairline bg-canvas p-4 px-5 hover:border-ink"
+                  >
+                    <div className="mb-1.5 flex flex-wrap items-center gap-2">
+                      <span className={`rounded-full px-2.5 py-[3px] text-xs font-semibold ${d.tint}`}>
+                        {d.badge}
+                      </span>
+                      <BodyTag body={d.body} className="text-[13px] text-muted" />
+                      <span className="text-[13px] text-muted">{d.meta}</span>
+                    </div>
+                    <div className="mb-1 font-semibold">{d.title}</div>
+                    <p className="text-sm leading-[1.55] text-body">{clip(d.text, 220)}</p>
+                  </Link>
+                ),
+              )}
+              {shownDecisions.length === 0 && (
+                <p className="rounded-2xl border border-dashed border-hairline p-5 text-sm text-muted">
+                  No recent decisions extracted yet.
+                </p>
+              )}
+            </div>
+          </section>
         </div>
 
-        <div className="flex flex-col gap-5">
+        <div className="flex min-w-0 flex-col gap-5">
           <NextUp events={upcoming} />
           <HotPanel
             hot={hotCouncil}

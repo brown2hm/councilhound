@@ -25,6 +25,18 @@ together.
   alias search, and per-row card fields (`bodies`, `lat/lng`, `has_wiki`,
   `official{...}`). `/development` and `/civic` redirect into the facets;
   the nav drops from nine items to six plus a search box.
+- **The briefing leads with what changed.** The front page drops the
+  stat tiles (meetings held, hours in session, votes taken, passed vs.
+  failed: small numbers with no story, and the last one disagreed with the
+  headline). The headline now reads "Five measures passed. Five topics
+  changed status." and both halves count the same seven-day window the
+  change feed uses, instead of "the last four meetings, capped at six";
+  when nothing met in the window it falls back to the last meeting and
+  says so. "Changed this week" moves above the decision cards, consent
+  agendas drop to one-line rows at the end, and Ask the hound tightens to
+  a single row so the headline shares the first screen with it. Also
+  fixes a pre-existing phone-width overflow: the Next Up rows never
+  wrapped, and on one-column layouts that widened the whole page.
 - **A change feed.** `GET /entities/changes?days=` reports status
   transitions and first appearances, measured against the last status
   actually set (not the previous row); the briefing shows "Changed this
