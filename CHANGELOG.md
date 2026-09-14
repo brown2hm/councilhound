@@ -25,6 +25,20 @@ together.
   alias search, and per-row card fields (`bodies`, `lat/lng`, `has_wiki`,
   `official{...}`). `/development` and `/civic` redirect into the facets;
   the nav drops from nine items to six plus a search box.
+- **Meeting pages lead with what was decided.** The agenda list of
+  equal-weight cards becomes "What was decided": one row per vote with a
+  check, the item label, the title, the outcome stated once (the
+  "Outcome:" prefix and the duplicate vote line are gone), "Passed,
+  unanimous" or the tally, the topics it touched, and a watch-from
+  timestamp where the recording is chaptered; proclamations and other
+  unvoted items follow as "Presented" (or "Discussed" for a work
+  session). Everything about the recording moves to a sticky rail: Watch
+  from the start with the chapters as timestamps, then the documents by
+  kind with counts (7 staff reports, 7 motions, 4 draft minutes… instead
+  of 22 rows all tagged "Staff report"), and every topic the meeting
+  touched, once, with the status it set. The header keeps Watch, Agenda,
+  Transcript and the chapter bar and adds a fact line: duration, items,
+  votes and whether all were unanimous, tracked topics.
 - **Topic pages read as briefs, and a place touched by several projects
   gets each on its own terms.** `GET /entities/{slug}` grew `threads`: the
   record's history grouped by the project entities on the same agenda
