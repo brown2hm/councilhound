@@ -220,6 +220,10 @@ def test_ask_with_mocked_llm(client, db, monkeypatch):
     cite = data["citations"][0]
     assert cite["index"] == 1
     assert cite["link"]  # every citation must link back to a source
+    # the answer is about the topic on the cited item
+    assert [t["slug"] for t in data["topics"]] == ["george-snyder-trail"]
+    assert data["topics"][0]["current_status"] == "completed"
+    assert data["topics"][0]["update_count"] == 2
 
 
 def test_upcoming_endpoint_and_topic_flag(client, db):

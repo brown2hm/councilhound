@@ -25,6 +25,18 @@ together.
   alias search, and per-row card fields (`bodies`, `lat/lng`, `has_wiki`,
   `official{...}`). `/development` and `/civic` redirect into the facets;
   the nav drops from nine items to six plus a search box.
+- **Ask the hound puts the answer beside its evidence.** The answer's
+  first line becomes the page's statement; the rest follows at reading
+  size with citation markers as small chips that jump to the source. The
+  sources sit in a sticky rail beside the answer, in date order (marker,
+  date, meeting and item, first line, one action), instead of ten cards
+  below it. Markers the model cited but retrieval did not return stay
+  unlinked, and the rail says how many. Under the answer, "About this
+  topic" names the record the answer is about, with its status, a Follow
+  button and a link to its full history, so an answer is no longer a dead
+  end. `POST /ask/` grew `topics`: the tracked records on the cited
+  agenda items (or, failing that, updated at the cited meetings), ranked
+  by how many cited sources touch them.
 - **Meeting pages lead with what was decided.** The agenda list of
   equal-weight cards becomes "What was decided": one row per vote with a
   check, the item label, the title, the outcome stated once (the

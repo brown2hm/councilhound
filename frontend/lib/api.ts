@@ -586,9 +586,21 @@ export interface Citation {
   excerpt: string;
 }
 
+/** A tracked record the answer is about: the topics on the cited agenda
+ * items, most-cited first. */
+export interface AskTopic {
+  slug: string;
+  name: string;
+  entity_type: string;
+  current_status: string | null;
+  update_count: number;
+  official_slug: string | null;
+}
+
 export interface AskResponse {
   answer: string;
   citations: Citation[];
+  topics?: AskTopic[];
 }
 
 export interface TranscriptSegment {

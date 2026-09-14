@@ -16,11 +16,13 @@ import re
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from councilhound.config import ANTHROPIC_API_KEY
-from councilhound.db.models import AgendaItem, Meeting, TranscriptChunk
+from councilhound.db.models import (
+    AgendaItem, CityProject, Entity, EntityMention, EntityUpdate, Meeting, TranscriptChunk,
+)
 from councilhound.embeddings.embed import embed_query
 
 from app.db import db_session
@@ -90,6 +92,7 @@ def _retrieve(session: Session, vec: list[float]) -> list[dict]:
             "meeting_title": meeting.title,
             "date": meeting.meeting_date.isoformat(),
             "agenda_item_label": item.label,
+            "agenda_item_id": item.id,
             "text": text,
             "link": meeting.minutes_url or meeting.agenda_url,
         })
@@ -145,4 +148,48 @@ def ask(req: AskRequest, session: Session = Depends(db_session)):
         for i, s in enumerate(sources, 1)
         if i in cited_indexes
     ]
-    return {"answer": answer, "citations": citations}
+    cited = [s for i, s in enumerate(sources, 1) if i in cited_indexes]
+    return {"answer": answer, "citations": citations, "topics": _topics(session, cited)}
+
+
+def _topics(session: Session, cited: list[dict], limit: int = 3) -> list[dict]:
+    """The tracked records an answer is about: entities on the cited agenda
+    items, and failing that, entities updated at the cited meetings —
+    ranked by how many cited sources touch them. Lets the page link an
+    answer to the topic's history and Follow button."""
+    item_ids = {s["agenda_item_id"] for s in cited if s.get("agenda_item_id")}
+    meeting_ids = {s["meeting_id"] for s in cited}
+    if not meeting_ids:
+        return []
+    scores: dict[int, int] = {}
+    if item_ids:
+        for model in (EntityUpdate, EntityMention):
+            for eid, n in session.execute(
+                select(model.entity_id, func.count()).where(model.agenda_item_id.in_(item_ids))
+                .group_by(model.entity_id)):
+                scores[eid] = scores.get(eid, 0) + n
+    if not scores:
+        for eid, n in session.execute(
+            select(EntityUpdate.entity_id, func.count()).where(EntityUpdate.meeting_id.in_(meeting_ids))
+            .group_by(EntityUpdate.entity_id)):
+            scores[eid] = n
+    if not scores:
+        return []
+    top = sorted(scores, key=lambda e: -scores[e])
+    ents = {e.id: e for e in session.scalars(select(Entity).where(Entity.id.in_(top[:limit * 3])))}
+    counts = dict(session.execute(
+        select(EntityUpdate.entity_id, func.count()).where(EntityUpdate.entity_id.in_(list(ents)))
+        .group_by(EntityUpdate.entity_id)).all())
+    official = {cp.entity_id: cp.external_slug for cp in session.scalars(
+        select(CityProject).where(CityProject.entity_id.in_(list(ents))))}
+    out = []
+    for eid in top:
+        e = ents.get(eid)
+        if e is None or e.entity_type == "person":
+            continue
+        out.append({"slug": e.canonical_slug, "name": e.name, "entity_type": e.entity_type,
+                    "current_status": e.current_status, "update_count": counts.get(eid, 0),
+                    "official_slug": official.get(eid)})
+        if len(out) == limit:
+            break
+    return out
