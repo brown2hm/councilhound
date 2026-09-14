@@ -124,20 +124,11 @@ function formulaForMetric(name: string): string | null {
   if (name === "Estimated K-12 students") {
     return String.raw`S_{\mathrm{K12}} = U \times s_{\mathrm{unit}}`;
   }
-  if (name === "Annual service cost — naive per-capita method" || name === "Annual service cost - naive per-capita method") {
-    return String.raw`C_{\mathrm{naive}} = R \times c_{\mathrm{non\text{-}school}} + S_{\mathrm{K12}} \times c_{\mathrm{pupil}}`;
-  }
   if (name === "Annual service cost — marginal framing" || name === "Annual service cost - marginal framing") {
     return String.raw`C_{\mathrm{marginal}} = R \times c_{\mathrm{non\text{-}school}} \times k_{\mathrm{marginal}} + S_{\mathrm{K12}} \times c_{\mathrm{pupil}}`;
   }
-  if (name === "Net annual fiscal impact — naive per-capita method" || name === "Net annual fiscal impact - naive per-capita method") {
-    return String.raw`N_{\mathrm{naive}} = \sum_r T_r - C_{\mathrm{naive}}`;
-  }
   if (name === "Net annual fiscal impact — marginal framing" || name === "Net annual fiscal impact - marginal framing") {
     return String.raw`N_{\mathrm{marginal}} = \sum_r T_r - C_{\mathrm{marginal}}`;
-  }
-  if (name === "Net annual fiscal impact (range across both cost methods)" || name === "Net annual fiscal impact range") {
-    return String.raw`N \in \left[\sum_r T_r-C_{\mathrm{naive}},\;\sum_r T_r-C_{\mathrm{marginal}}\right]`;
   }
   if (name === "New annual spending arriving by bike") {
     return String.raw`S_{\mathrm{bike}} = \sum_c \sum_j S_c\,P_{\mathrm{bike}}(j \mid c)`;

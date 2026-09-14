@@ -3,7 +3,7 @@
 Every rate comes from the jurisdiction YAML with provenance (pinned by
 impact-setup-jurisdiction); an unpinned rate degrades its metrics to
 "not computed — reason" instead of guessing. Costs are always a range with
-both methods labeled (naive per-capita vs. marginal framing) — never a
+the marginal framing (the per-capita average-cost method was retired) — never a
 point estimate. The meals/sales-tax lines consume the economic module's
 in-city capture shares (the intentional cross-module link).
 """
@@ -709,10 +709,6 @@ def run(spec, ctx, prior=None):
             resident_terms = terms_scale(
                 _terms_of(residents_m, "Service cost — non-school"), nonschool_percap)
             naive_terms = resident_terms + school_terms
-            naive_method = ("residents x non-school GF per capita + estimated "
-                            "students x per-pupil tuition (school costs follow "
-                            "the project's own student estimate, not the "
-                            "citywide average)")
             # schools scale with actual students in BOTH framings; the
             # marginal factor discounts only the non-school share
             marginal = resident_cost * Interval.from_assumption(a["marginal_cost_factor"]) + school_cost
@@ -724,7 +720,7 @@ def run(spec, ctx, prior=None):
                                "with actual students; fixed services don't)")
             notes.append(
                 "School costs use the split model: {:.0f} students ({:.0f}-{:.0f}) "
-                "x ${:,.0f} {} per pupil ≈ ${:,.0f}/yr in both cost framings — a "
+                "x ${:,.0f} {} per pupil ≈ ${:,.0f}/yr in the service-cost estimate — a "
                 "development generating fewer students carries proportionally "
                 "lower costs instead of the school-heavy citywide average.".format(
                     students.value, students.low, students.high, per_pupil,
@@ -735,8 +731,8 @@ def run(spec, ctx, prior=None):
             metrics.append(metric(
                 "Annual school cost within the service-cost estimates",
                 school_cost, "$/yr", [budget_prov], [a["students_per_unit"]],
-                "estimated students x net local cost per pupil; included "
-                "identically in both cost framings",
+                "estimated students x net local cost per pupil; included in "
+                "the service-cost estimate",
                 adjust=list(school_terms)))
         else:
             per_capita = gf.value / pop.value
@@ -746,9 +742,6 @@ def run(spec, ctx, prior=None):
                                f"${per_capita:,.0f} per capita")
             naive_terms = terms_scale(
                 _terms_of(residents_m, "Service cost — per capita"), per_capita)
-            naive_method = ("new residents x GF expenditure per capita "
-                            "(upper-bound framing; includes fixed costs that "
-                            "don't scale)")
             marginal = naive * Interval.from_assumption(a["marginal_cost_factor"])
             marginal_terms = terms_pow_extend(
                 terms_scale(naive_terms, a["marginal_cost_factor"].value),
@@ -765,10 +758,10 @@ def run(spec, ctx, prior=None):
                     a["students_per_unit"].low, a["students_per_unit"].high,
                     students.value, students.low, students.high))
 
-        metrics.append(metric(
-            "Annual service cost — naive per-capita method", naive, "$/yr",
-            [budget_prov], [a["students_per_unit"]] if school_split else [],
-            naive_method, adjust=naive_terms))
+        # the per-capita average-cost figure (naive) is computed only as the
+        # basis for the marginal estimate: it allocates fixed citywide costs
+        # to new residents and consistently overstated costs for infill, so
+        # it is no longer published (retired 2026-09-14)
         metrics.append(metric(
             "Annual service cost — marginal framing", marginal, "$/yr",
             [budget_prov],
@@ -781,10 +774,10 @@ def run(spec, ctx, prior=None):
                   "https://cupr.rutgers.edu", "2006")],
             [a["students_per_unit"]],
             ("units x students per unit; drives the school-cost component of "
-             "both cost framings" if school_split else
-             "units x students per unit; reported alongside the cost range but "
-             "not entering either cost method (per-capita costing already "
-             "embeds average school costs)"),
+             "the service-cost estimate" if school_split else
+             "units x students per unit; reported alongside the service-cost "
+             "estimate but not entering it (per-capita costing already embeds "
+             "average school costs)"),
             adjust=[term(students.value, "Estimated students", students_per_unit=1.0)]))
 
         # net fiscal impact: INCREMENTAL revenue minus the cost range, summed
@@ -798,42 +791,25 @@ def run(spec, ctx, prior=None):
             revenue = interval if revenue is None else revenue + interval
             revenue_terms += _terms_of(m)
         if revenue is not None:
-            # per-method nets published explicitly so the narrative can cite
-            # either framing without deriving arithmetic of its own
-            for method_name, cost, cost_terms, note in (
-                ("naive per-capita method", naive, naive_terms,
-                 "upper-bound cost framing; allocates fixed citywide costs"),
-                ("marginal framing", marginal, marginal_terms,
-                 "only services that scale with new residents"),
-            ):
-                net = revenue - cost
-                net_assumptions = [a["marginal_cost_factor"]]
-                if school_split:
-                    net_assumptions.append(a["students_per_unit"])
-                metrics.append(metric(
-                    f"Net annual fiscal impact — {method_name}", net, "$/yr",
-                    [budget_prov], net_assumptions,
-                    f"incremental new recurring revenue minus service cost ({note})",
-                    headline=True,
-                    adjust=revenue_terms + terms_scale(cost_terms, -1.0)))
-            net_low = revenue.low - naive.high      # most conservative
-            net_high = revenue.high - marginal.low  # most favorable
-            net_mid = revenue.value - (naive.value + marginal.value) / 2
-            mid_terms = (revenue_terms + terms_scale(naive_terms, -0.5)
-                         + terms_scale(marginal_terms, -0.5))
-            metrics.append(MetricValue(
-                name="Net annual fiscal impact (range across both cost methods)",
-                value=round(net_mid), unit="$/yr", low=round(net_low), high=round(net_high),
-                provenance=[budget_prov],
-                assumptions=["marginal_cost_factor"],
-                method="incremental new recurring revenue minus service-cost range "
-                       "(naive per-capita upper, marginal lower)",
-                adjust=mid_terms))
-            notes.append("The net fiscal range spans both cost framings on purpose: "
-                         "the naive per-capita method overstates costs for infill "
-                         "(it allocates fixed citywide costs to new residents); the "
-                         "marginal framing understates them if service capacity "
-                         "expansions are triggered.")
+            # one net, on the marginal cost framing. The per-capita
+            # average-cost net was retired: it always landed low because it
+            # bills every new resident for fixed citywide costs.
+            net = revenue - marginal
+            net_assumptions = [a["marginal_cost_factor"]]
+            if school_split:
+                net_assumptions.append(a["students_per_unit"])
+            metrics.append(metric(
+                "Net annual fiscal impact — marginal framing", net, "$/yr",
+                [budget_prov], net_assumptions,
+                "incremental new recurring revenue minus service cost (only "
+                "services that scale with new residents)",
+                headline=True,
+                adjust=revenue_terms + terms_scale(marginal_terms, -1.0)))
+            notes.append("Service costs use the marginal framing: only services "
+                         "that scale with new residents, plus the project's own "
+                         "students at the net local cost per pupil. It understates "
+                         "costs if a service-capacity expansion is triggered; the "
+                         "marginal cost factor's range carries that uncertainty.")
             notes.append("The revenue side includes the rough-estimate personal "
                          "property and BPOL lines: leaving them at zero would "
                          "understate revenue for taxes the city does levy, but "
@@ -865,7 +841,7 @@ def _external_estimates(spec, metrics, notes, projected_av):
         return
 
     net_ours = next((m for m in metrics if m.name
-                     == "Net annual fiscal impact (range across both cost methods)"), None)
+                     == "Net annual fiscal impact — marginal framing"), None)
     published: set[tuple] = set()
     used_names: set[str] = set()
     for est in estimates:

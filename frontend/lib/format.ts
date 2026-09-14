@@ -14,7 +14,6 @@ export function fmtScalar(value: number, unit: string, mDecimals = 1): string {
   return `${sign}${x.toLocaleString(undefined, { maximumFractionDigits: 1 })}`;
 }
 
-const NAIVE = "Net annual fiscal impact — naive per-capita method";
 const MARGINAL = "Net annual fiscal impact — marginal framing";
 
 function money(v: number): string {
@@ -29,9 +28,8 @@ function describeNet(v: number): string {
 /** A deterministic, jargon-free reading of the fiscal headline numbers.
  * Computed from the same metrics the tiles show — no LLM, no drift. */
 export function plainLanguageImpact(metrics: ImpactMetric[]): string | null {
-  const naive = metrics.find((m) => m.name === NAIVE);
-  const marginal = metrics.find((m) => m.name === MARGINAL);
-  if (!naive || !marginal) return null;
+  const net = metrics.find((m) => m.name === MARGINAL);
+  if (!net) return null;
 
   const residents = metrics.find((m) => m.name === "New residents");
   const tax = metrics.find((m) => m.name === "Real estate tax increase");
@@ -46,28 +44,21 @@ export function plainLanguageImpact(metrics: ImpactMetric[]): string | null {
     parts.push("In plain terms: the project brings the city new tax revenue, but serving its residents costs money too.");
   }
 
-  // the two framings bracket the honest answer; lead with that
-  const lo = Math.min(naive.value, marginal.value);
-  const hi = Math.max(naive.value, marginal.value);
-  if (Math.sign(lo) === Math.sign(hi) && Math.abs(lo) >= 25_000 && Math.abs(hi) >= 25_000) {
-    // same sign: state it as one cost (or gain) range, smaller figure first
-    const range = hi < 0
-      ? `a net cost of between ${money(hi)} and ${money(lo)} a year`
-      : `a net gain of between ${money(lo)} and ${money(hi)} a year`;
-    parts.push(
-      `Depending on how you count the cost of city services for new residents, ` +
-      `that nets out to ${range}.`,
-    );
+  // the assumption ranges bracket the figure; lead with the central estimate
+  const lo = Math.min(net.low ?? net.value, net.high ?? net.value);
+  const hi = Math.max(net.low ?? net.value, net.high ?? net.value);
+  const sameSign = Math.sign(lo) === Math.sign(hi) && Math.abs(lo) >= 25_000 && Math.abs(hi) >= 25_000;
+  if (sameSign) {
+    const range = hi < 0 ? `between ${money(hi)} and ${money(lo)}` : `between ${money(lo)} and ${money(hi)}`;
+    parts.push(`Counting the city services that actually grow with new residents, that nets out to ${describeNet(net.value)}, ${range} across the assumption ranges.`);
   } else {
     parts.push(
-      `Depending on how you count the cost of city services for new residents, ` +
-      `that nets out anywhere between ${describeNet(lo)} and ${describeNet(hi)}.`,
+      `Counting the city services that actually grow with new residents, that nets out to ${describeNet(net.value)}, ` +
+      `anywhere between ${describeNet(lo)} and ${describeNet(hi)} across the assumption ranges.`,
     );
   }
   parts.push(
-    "The strict accounting (every resident carries a full share of today's citywide costs) " +
-    "gives the costlier figure; counting only costs that actually grow with new residents " +
-    "gives the friendlier one. The likely answer sits in between.",
+    "Fixed citywide costs are not charged to new residents; school costs follow the project's own student estimate.",
   );
   return parts.join(" ");
 }

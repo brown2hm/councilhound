@@ -25,6 +25,18 @@ together.
   alias search, and per-row card fields (`bodies`, `lat/lng`, `has_wiki`,
   `official{...}`). `/development` and `/civic` redirect into the facets;
   the nav drops from nine items to six plus a search box.
+- **The naive per-capita fiscal method is retired.** It billed every new
+  resident for a full share of fixed citywide costs and so always landed
+  the net low for infill. The fiscal module no longer publishes "Annual
+  service cost — naive per-capita method", "Net annual fiscal impact —
+  naive per-capita method" or the range that spanned both methods; the
+  marginal framing is the one net, with the marginal cost factor's range
+  carrying the uncertainty. `GET /development/{slug}/evaluation` drops
+  those rows from evaluations stored before the retirement, the wiki
+  resolver drops a bullet that cites them, the wiki bundle's impact pages
+  lose the line, and the methods list, formulas and plain-language summary
+  follow. Stored report narratives that quoted the old figure are
+  regenerated on the next enrichment run.
 - **Ask the hound puts the answer beside its evidence.** The answer's
   first line becomes the page's statement; the rest follows at reading
   size with citation markers as small chips that jump to the source. The

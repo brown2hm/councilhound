@@ -21,7 +21,6 @@ Screening-level estimates of the economic and fiscal effects of Fairfax Square. 
 - {{metric:annual-capture-project-s-own-ground-floor-retail}} — Huff model over individual retail POIs: joint destination+mode choice, P(j,m) ~ A_j * w_m * exp(-b_m t_mj), CES category spend; clusters are a reporting rollup; own retail competes as a destination
 - {{metric:new-annual-spending-arriving-on-foot}} — walk-mode share of the joint destination+mode Huff choice, summed over businesses; walking loses to driving with walk time, so the remainder of the mode-split budget arrives by car
 - {{metric:real-estate-tax-increase}} — projected minus current RE tax
-- {{metric:net-annual-fiscal-impact-naive-per-capita-method}} — incremental new recurring revenue minus service cost (upper-bound cost framing; allocates fixed citywide costs)
 - {{metric:net-annual-fiscal-impact-marginal-framing}} — incremental new recurring revenue minus service cost (only services that scale with new residents)
 
 <!-- curator:off -->

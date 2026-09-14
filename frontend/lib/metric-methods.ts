@@ -187,34 +187,16 @@ export const METRIC_METHODS: MetricMethod[] = [
     assumptions: ["Proposed housing units", "Students per unit"],
   },
   {
-    name: "Annual service cost - naive per-capita method",
-    description: "Conservative estimate that assigns each new resident the city's average non-school service cost, plus per-pupil tuition for the students the project actually generates.",
-    method: "New residents multiplied by non-school general-fund cost per resident, plus estimated students multiplied by the net local cost per pupil (tuition contract minus state education aid)",
-    assumptions: ["New residents", "Non-school expenditure per resident", "Students per unit", "Net local cost per pupil"],
-  },
-  {
     name: "Annual service cost - marginal framing",
-    description: "Estimates the added public-service costs most likely to grow because of the development. School costs follow the student estimate in both framings.",
+    description: "Estimates the added public-service costs most likely to grow because of the development. School costs follow the project's own student estimate.",
     method: "Non-school per-capita cost scaled by the marginal factor, plus estimated students multiplied by the net local cost per pupil (tuition contract minus state education aid)",
     assumptions: ["Non-school per-capita service cost", "Marginal cost factor", "Students per unit", "Net local cost per pupil"],
-  },
-  {
-    name: "Net annual fiscal impact - naive per-capita method",
-    description: "Tests whether new recurring revenue covers costs under the more conservative per-resident approach. Revenue includes the rough-estimate personal property and BPOL lines.",
-    method: "New recurring revenue (including rough-estimate personal property and BPOL lines) less the per-capita service-cost estimate",
-    assumptions: ["New recurring revenue", "Naive per-capita service cost"],
   },
   {
     name: "Net annual fiscal impact - marginal framing",
     description: "Tests whether new recurring revenue covers the public costs most likely to increase in practice. Revenue includes the rough-estimate personal property and BPOL lines.",
     method: "New recurring revenue (including rough-estimate personal property and BPOL lines) less the marginal service-cost estimate",
     assumptions: ["New recurring revenue", "Marginal service cost"],
-  },
-  {
-    name: "Net annual fiscal impact range",
-    description: "Presents a practical range of possible yearly gains or losses rather than relying on one cost estimate. Revenue includes the rough-estimate personal property and BPOL lines.",
-    method: "Range bounded by the naive per-capita and marginal service-cost estimates",
-    assumptions: ["New recurring revenue", "Naive per-capita service cost", "Marginal service cost"],
   },
   {
     name: "External estimate — net annual fiscal impact",

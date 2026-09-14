@@ -22,6 +22,17 @@ from app.wiki import entity_has_wiki, wiki_payload
 
 router = APIRouter()
 
+# The naive per-capita cost method billed every new resident for fixed
+# citywide costs and always landed the net low; retired 2026-09-14 along
+# with the range that leaned on it. Older stored evaluations still carry
+# these rows.
+_RETIRED_NOTE = re.compile(r"naive per-capita|both cost framings")
+RETIRED_METRICS = {
+    "Annual service cost — naive per-capita method",
+    "Net annual fiscal impact — naive per-capita method",
+    "Net annual fiscal impact (range across both cost methods)",
+}
+
 # words too generic to distinguish one project name from another
 _GENERIC_TOKENS = {
     "project", "projects", "improvement", "improvements", "development",
@@ -246,14 +257,19 @@ def get_evaluation(slug: str, session: Session = Depends(db_session)):
     if evaluation.status != "synthesized" or not evaluation.report_markdown:
         raise HTTPException(status_code=404, detail="evaluation not yet synthesized")
 
-    # flatten module results into one metric list tagged by module
+    # flatten module results into one metric list tagged by module; metrics
+    # retired from the pipeline are dropped from evaluations stored before
+    # the retirement so the site never shows them again
     metrics = []
     for module_result in evaluation.module_results or []:
         for m in module_result.get("metrics", []):
+            if m.get("name") in RETIRED_METRICS:
+                continue
             metrics.append({**m, "module": module_result.get("module")})
     narrative_notes = [
         note for module_result in evaluation.module_results or []
         for note in module_result.get("narrative_notes", [])
+        if not _RETIRED_NOTE.search(note)
     ]
     entity = (session.get(Entity, project.entity_id) if project.entity_id else None)
     has_wiki = entity_has_wiki(session, project.entity_id)

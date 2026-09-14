@@ -65,6 +65,30 @@ def test_evaluation_shape(client, db):
     assert body["spec"]["proposed"]["units"] == 261
 
 
+def test_retired_metrics_are_dropped_from_stored_evaluations(client, db):
+    """Evaluations synthesized before the per-capita method was retired still
+    carry its rows; the API hides them so the site never shows them again."""
+    project = _project(db)
+    evaluation = _synthesized(db, project)
+    evaluation.module_results = evaluation.module_results + [{
+        "module": "fiscal",
+        "metrics": [
+            {"name": "Net annual fiscal impact — naive per-capita method", "value": -1.0, "unit": "$/yr"},
+            {"name": "Annual service cost — naive per-capita method", "value": 2.0, "unit": "$/yr"},
+            {"name": "Net annual fiscal impact (range across both cost methods)", "value": 3.0, "unit": "$/yr"},
+            {"name": "Net annual fiscal impact — marginal framing", "value": 4.0, "unit": "$/yr"},
+        ],
+        "narrative_notes": ["The net fiscal range spans both cost framings on purpose.",
+                            "The revenue side includes the rough-estimate lines."],
+    }]
+    db.commit()
+    body = client.get("/development/circle-gateway/evaluation").json()
+    names = [m["name"] for m in body["metrics"]]
+    assert "Net annual fiscal impact — marginal framing" in names
+    assert not any("naive" in n or "range across" in n for n in names)
+    assert body["narrative_notes"] == ["screening estimate", "The revenue side includes the rough-estimate lines."]
+
+
 def test_list_has_evaluation_flag(client, db):
     with_eval = _project(db, "with-eval")
     _synthesized(db, with_eval)

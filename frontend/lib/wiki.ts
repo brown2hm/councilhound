@@ -43,6 +43,8 @@ export function resolveBody(
 ): string {
   return body
     .replace(/<!--[\s\S]*?-->/g, "") // ownership notes are for editors, not readers
+    // a bullet citing a metric the pipeline retired goes, not just its number
+    .replace(/^.*\{\{metric:(?:net-annual-fiscal-impact-naive-per-capita-method|annual-service-cost-naive-per-capita-method|net-annual-fiscal-impact-range-across-both-cost-methods)\}\}.*\n?/gm, "")
     .replace(/\{\{metric:([a-z0-9-]+)\}\}/g, (_all, key: string) => {
       const m = metrics.get(key);
       return m ? fmtMetric(m) : `_metric ${key} unavailable_`;

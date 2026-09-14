@@ -216,15 +216,14 @@ def test_every_revenue_line_reaches_the_net(monkeypatch):
     result, _ = _run(_spec(), comps=_comps(360_000, 400_000, 460_000),
                      monkeypatch=monkeypatch)
     by_name = _by_name(result)
-    naive = by_name["Net annual fiscal impact — naive per-capita method"]
-    cost = by_name["Annual service cost — naive per-capita method"]
+    net = by_name["Net annual fiscal impact — marginal framing"]
+    cost = by_name["Annual service cost — marginal framing"]
 
     excluded = {
         "Current real estate tax (site)", "Current value per acre",
         "Projected assessed value", "Projected real estate tax",
         "Projected value per acre",
         "Annual school cost within the service-cost estimates",
-        "Annual service cost — naive per-capita method",
         "Annual service cost — marginal framing",
         "Estimated K-12 students",
     }
@@ -232,8 +231,21 @@ def test_every_revenue_line_reaches_the_net(monkeypatch):
                        if m.unit == "$/yr" and name not in excluded
                        and not name.startswith("Net annual fiscal impact")
                        and not name.startswith("External estimate")]
-    assert naive.value == pytest.approx(sum(m.value for m in revenue_metrics) - cost.value,
-                                        rel=1e-9)
+    assert net.value == pytest.approx(sum(m.value for m in revenue_metrics) - cost.value,
+                                      rel=1e-9)
+
+
+def test_per_capita_method_is_retired(monkeypatch):
+    """The naive per-capita net always landed low (it bills every resident for
+    fixed citywide costs), so neither it, its service cost, nor the range
+    that leaned on it is published any more."""
+    result, _ = _run(_spec(), comps=_comps(360_000, 400_000, 460_000),
+                     monkeypatch=monkeypatch)
+    names = list(_by_name(result))
+    assert not any("naive" in n or "range across both" in n for n in names)
+    assert "Net annual fiscal impact — marginal framing" in names
+    assert not any("both cost framings" in n or "both framings" in n
+                   for n in result.narrative_notes)
 
 
 def test_onsite_commercial_taxes_are_displacement_adjusted(monkeypatch):
