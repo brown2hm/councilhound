@@ -7,6 +7,12 @@ import { unstable_cache } from "next/cache";
 export const API_URL = process.env.API_URL ?? "http://localhost:8000";
 export const PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
+export interface MeetingDecision {
+  label: string | null;
+  title: string;
+  result: string | null; // passed | failed | deferred
+}
+
 export interface MeetingSummary {
   id: number;
   date: string;
@@ -16,6 +22,11 @@ export interface MeetingSummary {
   status: string;
   duration_seconds: number | null;
   agenda_item_count: number;
+  // present when the list was asked for include_decisions=true
+  decisions?: MeetingDecision[];
+  discussed?: string[];
+  votes_passed?: number;
+  votes_failed?: number;
 }
 
 export interface VoteInfo {

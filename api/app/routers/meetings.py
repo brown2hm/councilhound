@@ -1,6 +1,7 @@
 """Meetings: list/filter for the timeline view, detail (agenda items, votes,
 documents) for the meeting page."""
 import datetime
+import re
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
@@ -25,6 +26,7 @@ def list_meetings(
     date_to: datetime.date | None = None,
     limit: int = Query(50, le=200),
     offset: int = 0,
+    include_decisions: bool = Query(False, description="attach each meeting's votes and discussed items (the /meetings list page)"),
     session: Session = Depends(db_session),
 ):
     q = select(Meeting).order_by(Meeting.meeting_date.desc())
@@ -39,6 +41,7 @@ def list_meetings(
     item_counts = dict(session.execute(
         select(AgendaItem.meeting_id, func.count()).group_by(AgendaItem.meeting_id)
     ).all())
+    decisions = _decisions([m.id for m in meetings], session) if include_decisions else {}
     return [
         {
             "id": m.id,
@@ -49,9 +52,65 @@ def list_meetings(
             "status": m.status,
             "duration_seconds": m.duration_seconds,
             "agenda_item_count": item_counts.get(m.id, 0),
+            **decisions.get(m.id, _NO_DECISIONS if include_decisions else {}),
         }
         for m in meetings
     ]
+
+
+# housekeeping items never make the list page: minutes, the agenda itself,
+# remote-participation approvals, roll calls, adjournment
+_PROCEDURAL = re.compile(
+    r"\b(minutes|remote participation|adoption of (the )?agenda|adjourn|roll call)\b|call .*to order",
+    re.I)
+_NO_DECISIONS = {"decisions": [], "discussed": [], "votes_passed": 0, "votes_failed": 0}
+
+
+def _decisions(meeting_ids: list[int], session: Session) -> dict[int, dict]:
+    """Per meeting: every substantive vote (label, title, result) in agenda
+    order, the items discussed without a vote, and the pass/fail tally."""
+    if not meeting_ids:
+        return {}
+    items = session.execute(
+        select(AgendaItem.id, AgendaItem.meeting_id, AgendaItem.label, AgendaItem.title)
+        .where(AgendaItem.meeting_id.in_(meeting_ids))
+        .order_by(AgendaItem.meeting_id, AgendaItem.id)).all()
+    votes = session.execute(
+        select(Vote.meeting_id, Vote.agenda_item_id, Vote.motion_result, Vote.description)
+        .where(Vote.meeting_id.in_(meeting_ids))
+        .order_by(Vote.id)).all()
+    first_vote: dict[int, tuple] = {}
+    loose: dict[int, list] = {}
+    for mid, item_id, result, desc in votes:
+        if item_id is not None:
+            first_vote.setdefault(item_id, (result, desc))
+        else:
+            loose.setdefault(mid, []).append((result, desc))
+    out: dict[int, dict] = {}
+    for item_id, mid, label, title in items:
+        d = out.setdefault(mid, {"decisions": [], "discussed": [], "votes_passed": 0, "votes_failed": 0})
+        if _PROCEDURAL.search(title or ""):
+            continue
+        if item_id in first_vote:
+            result, desc = first_vote[item_id]
+            d["decisions"].append({"label": label, "title": title or desc or "", "result": result})
+            if result == "passed":
+                d["votes_passed"] += 1
+            elif result == "failed":
+                d["votes_failed"] += 1
+        elif title:
+            d["discussed"].append(title)
+    for mid, rows in loose.items():
+        d = out.setdefault(mid, {"decisions": [], "discussed": [], "votes_passed": 0, "votes_failed": 0})
+        for result, desc in rows:
+            if not desc or _PROCEDURAL.search(desc):
+                continue
+            d["decisions"].append({"label": None, "title": desc, "result": result})
+            if result == "passed":
+                d["votes_passed"] += 1
+            elif result == "failed":
+                d["votes_failed"] += 1
+    return out
 
 
 @router.get("/upcoming")

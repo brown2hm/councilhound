@@ -25,6 +25,17 @@ together.
   alias search, and per-row card fields (`bodies`, `lat/lng`, `has_wiki`,
   `official{...}`). `/development` and `/civic` redirect into the facets;
   the nav drops from nine items to six plus a search box.
+- **Meetings shows what each meeting decided.** The list promised "with
+  what was decided" and showed dates, item counts and minutes. Now it is
+  a month ledger: a month rail, the day as the big number, and under each
+  meeting its votes one per line (a check, the item label, the title with
+  its procedural opener stripped), with "+N more votes" after the first
+  three and consent agendas last. Work sessions list what they discussed;
+  a meeting with no recording says so; cancelled meetings collapse to a
+  grey one-liner. "Next up" leads the page so it no longer starts in the
+  past, and the two Follow buttons shrink to a line of links. `GET
+  /meetings/` grew `include_decisions=true`, which attaches each meeting's
+  substantive votes, discussed items and pass/fail tally.
 - **Projects & topics is a directory again.** The page had become a
   changelog of names: 239 of its 972 records are people, every row was a
   full-width strip with one meta line, and the filters ran three rows

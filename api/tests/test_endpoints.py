@@ -54,6 +54,22 @@ def test_meetings_list_and_filters(client, db):
     assert council_only[0]["agenda_item_count"] == 1
 
 
+def test_meetings_list_can_include_decisions(client, db):
+    m1, m2 = _seed(db)
+    db.add_all([
+        AgendaItem(meeting_id=m1.id, label="4", title="Approval of minutes", outcome="Approved"),
+        AgendaItem(meeting_id=m1.id, label="8", title="Work session on parking"),
+    ])
+    db.commit()
+    plain = client.get("/meetings/").json()
+    assert "decisions" not in plain[0]
+    rows = {m["id"]: m for m in client.get("/meetings/", params={"include_decisions": "true"}).json()}
+    assert rows[m1.id]["decisions"] == [{"label": "7a", "title": "Trail design contract", "result": "passed"}]
+    assert rows[m1.id]["discussed"] == ["Work session on parking"]  # the minutes are housekeeping
+    assert rows[m1.id]["votes_passed"] == 1 and rows[m1.id]["votes_failed"] == 0
+    assert rows[m2.id]["decisions"] == [] and rows[m2.id]["discussed"] == []
+
+
 def test_meeting_detail(client, db):
     m1, _ = _seed(db)
     detail = client.get(f"/meetings/{m1.id}").json()
