@@ -25,6 +25,22 @@ together.
   alias search, and per-row card fields (`bodies`, `lat/lng`, `has_wiki`,
   `official{...}`). `/development` and `/civic` redirect into the facets;
   the nav drops from nine items to six plus a search box.
+- **Topic pages read as briefs, and a place touched by several projects
+  gets each on its own terms.** `GET /entities/{slug}` grew `threads`: the
+  record's history grouped by the project entities on the same agenda
+  items, each with that project's own status, city status and summary
+  lead. When a record has threads the page shows the summary's first
+  sentence as a lede, then one section per matter (status pill, lead,
+  its history rows), then any unthreaded rows as "Other mentions", with
+  the topic-level status, Follow, open questions, member remarks, the
+  discussion chart and related topics in a sticky rail; the rest of the
+  summary follows as "In full". Records with no threads get the same
+  content as a one-column brief. Either way the proposal stepper is gone
+  (a street is not a proposal), the summary is a lede plus paragraphs
+  rather than a box, open questions are a plain list, member remarks are
+  rows, the discussion chart carries years on its axis, and history rows
+  mark actions with filled dots and mentions with open dots, so a vote
+  on another matter no longer reads as a vote on this one.
 - **The map's side panel is a list, not a prompt.** At rest it lists
   every pin, open decisions first, with its shape, status and address;
   a row click centers the map on the pin and opens the record, and the

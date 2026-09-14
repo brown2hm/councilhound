@@ -270,6 +270,20 @@ export interface EntityDetail {
   discussion: DiscussionPoint[];
   upcoming: UpcomingEvent[];
   timeline: TimelineEntry[];
+  /** the history grouped by the project each row belongs to (see the API) */
+  threads: EntityThread[];
+}
+
+export interface EntityThread {
+  slug: string;
+  name: string;
+  current_status: string | null;
+  official_status: string | null;
+  project_type: string | null;
+  official_slug: string | null;
+  lead: string | null;
+  rows: number[]; // indices into timeline
+  last_date: string;
 }
 
 export interface CityProjectOfficial {

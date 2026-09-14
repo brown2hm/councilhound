@@ -1,6 +1,7 @@
 """Entity/topic tracker: list trackable entities with their current status,
 and per-entity timeline — the 'progress over time' view."""
 import datetime
+import re
 import math
 from xml.sax.saxutils import escape as xml_escape
 
@@ -592,6 +593,7 @@ def get_entity(slug: str, session: Session = Depends(db_session)):
     # provenance: the most recent timeline entry that set a status
     status_source = next(
         (t for t in reversed(timeline_out) if t["status_after"]), None)
+    threads = _threads(session, entity, timeline, timeline_out)
 
     return {
         "slug": entity.canonical_slug,
@@ -620,4 +622,62 @@ def get_entity(slug: str, session: Session = Depends(db_session)):
                        if entity.entity_type != "person" else []),
         "upcoming": _on_upcoming_agendas(session, entity),
         "timeline": timeline_out,
+        "threads": threads,
     }
+
+
+_SENTENCE_END = re.compile(r"(?<=[.!?])\s+(?=[A-Z\d])")
+
+
+def _lead(text: str | None, n: int = 2) -> str | None:
+    """The first n sentences of a profile summary."""
+    if not text:
+        return None
+    return " ".join(_SENTENCE_END.split(text.strip())[:n])
+
+
+def _threads(session: Session, entity, timeline, timeline_out) -> list[dict]:
+    """A place or topic's history, grouped by the project each row belongs
+    to: other project entities on the same agenda item. Rows on no project's
+    item stay unthreaded (index list under "other"). Threads carry the
+    project's own status and summary lead so the page can present each
+    matter on its own terms."""
+    item_ids = {item.id: i for i, (_, _, item) in enumerate(timeline) if item is not None}
+    if not item_ids:
+        return []
+    def rows(model):
+        return session.execute(
+            select(model.agenda_item_id, Entity)
+            .join(Entity, model.entity_id == Entity.id)
+            .where(model.agenda_item_id.in_(item_ids.keys()),
+                   Entity.id != entity.id, Entity.entity_type == "project")
+            .order_by(model.id)).all()
+    by_project: dict[int, dict] = {}
+    for item_id, proj in rows(EntityUpdate) + rows(EntityMention):
+        t = by_project.setdefault(proj.id, {"entity": proj, "rows": []})
+        i = item_ids[item_id]
+        if i not in t["rows"]:
+            t["rows"].append(i)
+    if not by_project:
+        return []
+    ids = list(by_project)
+    leads = {pr.entity_id: _lead(pr.summary) for pr in session.scalars(
+        select(EntityProfile).where(EntityProfile.entity_id.in_(ids)))}
+    official = {cp.entity_id: cp for cp in session.scalars(
+        select(CityProject).where(CityProject.entity_id.in_(ids)))}
+    out = []
+    for pid, t in by_project.items():
+        e, cp = t["entity"], official.get(pid)
+        out.append({
+            "slug": e.canonical_slug,
+            "name": e.name,
+            "current_status": e.current_status,
+            "official_status": cp.official_status if cp else None,
+            "project_type": cp.project_type if cp else None,
+            "official_slug": cp.external_slug if cp else None,
+            "lead": leads.get(pid),
+            "rows": sorted(t["rows"]),
+            "last_date": max(timeline_out[i]["date"] for i in t["rows"]),
+        })
+    out.sort(key=lambda t: t["last_date"], reverse=True)
+    return out

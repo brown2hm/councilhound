@@ -6,6 +6,7 @@ import datetime
 from sqlalchemy import select
 
 from councilhound.db.models import (
+    EntityProfile,
     AgendaItem, CityProject, Document, Entity, EntityAlias, EntityGeocode, EntityMention,
     EntityUpdate, Meeting,
 )
@@ -125,6 +126,30 @@ def test_directory_can_hide_people_and_reports_counts(client, db):
     assert counts["total"] == 4 and counts["people"] == 1 and counts["records"] == 3
     assert counts["official"] == 1
     assert counts["recurring"] == 2  # trail and parking study; the mayor's single update never counts
+
+
+def test_entity_threads_group_history_by_project(client, db):
+    seeded = _seed(db)
+    loc = db.scalar(select(Entity).where(Entity.canonical_slug == "10300-willard-way"))
+    homes = db.scalar(select(Entity).where(Entity.canonical_slug == "willard-way-townhomes"))
+    # the street is named on the townhomes' item (a thread) and in an update
+    # with no agenda item (unthreaded)
+    db.add(EntityUpdate(entity_id=loc.id, meeting_id=seeded["recent"].id,
+                        agenda_item_id=seeded["item"].id, update_text="Site of the rezoning."))
+    db.add(EntityUpdate(entity_id=loc.id, meeting_id=seeded["old"].id, update_text="Mentioned in passing."))
+    db.add(EntityProfile(entity_id=homes.id, summary="Twelve townhomes on Willard Way. Rezoned in 2026. Construction follows."))
+    db.commit()
+
+    detail = client.get("/entities/10300-willard-way").json()
+    assert [t["date"] for t in detail["timeline"]] == [detail["timeline"][0]["date"], detail["timeline"][1]["date"]]
+    assert len(detail["threads"]) == 1
+    thread = detail["threads"][0]
+    assert thread["slug"] == "willard-way-townhomes" and thread["current_status"] == "approved"
+    assert thread["official_status"] == "Under Review" and thread["official_slug"] == "willard-way"
+    assert thread["lead"] == "Twelve townhomes on Willard Way. Rezoned in 2026."
+    assert thread["rows"] == [1]  # the recent, item-bearing row; the old one stays unthreaded
+    # a project with no shared items has no threads at all
+    assert client.get("/entities/george-snyder-trail").json()["threads"] == []
 
 
 def test_changes_feed_reports_transitions_and_new_topics(client, db):
