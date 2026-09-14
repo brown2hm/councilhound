@@ -60,6 +60,13 @@ def test_member_list_roster_only(client, db):
     # the latest agenda header names Read but not Amos
     assert members[0]["is_current"] is True
     assert members[1]["is_current"] is False
+    # the record behind the roster table: split, share with the outcome, last no
+    read, amos = members
+    assert read["vote_stats"] == {"yes": 1} and read["with_outcome_pct"] == 100
+    assert read["last_no"] is None
+    assert amos["vote_stats"] == {"no": 1} and amos["with_outcome_pct"] == 0
+    assert amos["last_no"]["date"] == "2026-06-01"
+    assert amos["last_no"]["subject"] == "Approve" and amos["last_no"]["item_label"] == "7a"
 
 
 def test_member_detail_votes_and_commentary(client, db):

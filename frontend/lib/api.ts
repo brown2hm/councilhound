@@ -442,6 +442,14 @@ export interface ProjectWiki {
   pushed_at: string | null;
 }
 
+export interface MemberLastNo {
+  date: string;
+  meeting_id: number;
+  item_label: string | null;
+  subject: string | null;
+  motion_result: string | null;
+}
+
 export interface MemberSummary {
   slug: string;
   name: string;
@@ -449,6 +457,9 @@ export interface MemberSummary {
   is_current: boolean;
   votes_cast: number;
   last_vote: string | null;
+  vote_stats: Record<string, number>; // yes | no | abstain | absent
+  with_outcome_pct: number | null; // share of yes/no votes cast on the winning side
+  last_no: MemberLastNo | null;
 }
 
 export interface MemberVote {

@@ -97,13 +97,35 @@ def _sorted_roles(roles: set) -> list[str]:
 
 @router.get("/")
 def list_members(session: Session = Depends(db_session)):
+    """The roster with each member's record: how many votes, the yes/no/
+    absent split, the share cast on the winning side, and the last no vote
+    — enough for the /members table to show how a member votes, not just
+    how often."""
     members = _roster(session)
     counts: dict[str, int] = defaultdict(int)
+    stats: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+    decided: dict[str, int] = defaultdict(int)
+    with_outcome: dict[str, int] = defaultdict(int)
     last_vote: dict[str, str] = {}
-    for vote, meeting, _item in _vote_rows(session):
-        for member_name in (vote.vote_breakdown or {}):
-            counts[member_name.lower()] += 1
-            last_vote.setdefault(member_name.lower(), meeting.meeting_date.isoformat())
+    last_no: dict[str, dict] = {}
+    for vote, meeting, item in _vote_rows(session):  # newest first
+        for member_name, cast in (vote.vote_breakdown or {}).items():
+            key = member_name.lower()
+            counts[key] += 1
+            stats[key][cast] += 1
+            last_vote.setdefault(key, meeting.meeting_date.isoformat())
+            if cast in ("yes", "no") and vote.motion_result in ("passed", "failed"):
+                decided[key] += 1
+                if (cast == "yes") == (vote.motion_result == "passed"):
+                    with_outcome[key] += 1
+            if cast == "no" and key not in last_no:
+                last_no[key] = {
+                    "date": meeting.meeting_date.isoformat(),
+                    "meeting_id": meeting.id,
+                    "item_label": item.label if item else None,
+                    "subject": vote.description or (item.title if item else None),
+                    "motion_result": vote.motion_result,
+                }
 
     current = _current_slugs(session)
     out = []
@@ -117,6 +139,10 @@ def list_members(session: Session = Depends(db_session)):
             "is_current": e.canonical_slug in current,
             "votes_cast": counts.get(key, 0),
             "last_vote": last_vote.get(key),
+            "vote_stats": dict(stats.get(key, {})),
+            "with_outcome_pct": (round(100 * with_outcome[key] / decided[key])
+                                 if decided.get(key) else None),
+            "last_no": last_no.get(key),
         })
     out.sort(key=lambda r: (not r["is_current"],
                             _ROLE_ORDER.get(r["roles"][0], 9) if r["roles"] else 9,

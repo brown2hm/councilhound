@@ -25,6 +25,14 @@ together.
   alias search, and per-row card fields (`bodies`, `lat/lng`, `has_wiki`,
   `official{...}`). `/development` and `/civic` redirect into the facets;
   the nav drops from nine items to six plus a search box.
+- **Members shows how each member votes, not just how often.** The
+  roster cards (name, role, "279 recorded votes") become one record table
+  per body: votes cast, a yes/no/absent split bar, the share of yes and no
+  votes cast with the outcome, the last no vote with its date and subject
+  (linked to the meeting), and the last vote date. The mayor's row says
+  the mayor votes only to break a tie, so 34 votes no longer reads as
+  absence. Former members drop to a compact list. `GET /members/` grew
+  `vote_stats`, `with_outcome_pct` and `last_no` per member.
 - **Meetings shows what each meeting decided.** The list promised "with
   what was decided" and showed dates, item counts and minutes. Now it is
   a month ledger: a month rail, the day as the big number, and under each
