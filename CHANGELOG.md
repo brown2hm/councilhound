@@ -25,6 +25,17 @@ together.
   alias search, and per-row card fields (`bodies`, `lat/lng`, `has_wiki`,
   `official{...}`). `/development` and `/civic` redirect into the facets;
   the nav drops from nine items to six plus a search box.
+- **The map's side panel is a list, not a prompt.** At rest it lists
+  every pin, open decisions first, with its shape, status and address;
+  a row click centers the map on the pin and opens the record, and the
+  record's close button goes back to the list. The legend is a real
+  legend (three shapes, seven colors) instead of the filter chips
+  doubling as one, and the palette is rebalanced so in progress and
+  proposed are the loud pins, approved is quiet, and "no status yet" has
+  its own grey. Kind chips carry counts, status is a select rather than a
+  wrapping chip row, colored pins draw above grey ones at the same spot,
+  and "What's near an address?" is the header's input rather than a
+  corner chip (it submits to the existing /nearby page).
 - **Members shows how each member votes, not just how often.** The
   roster cards (name, role, "279 recorded votes") become one record table
   per body: votes cast, a yes/no/absent split bar, the share of yes and no
