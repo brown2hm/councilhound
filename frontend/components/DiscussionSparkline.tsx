@@ -1,3 +1,4 @@
+import { bodyDot } from "@/components/BodyTag";
 import type { DiscussionPoint } from "@/lib/api";
 
 /** Compact bar-per-meeting trend of named discussion time (see
@@ -46,7 +47,7 @@ export default function DiscussionSparkline({ points, compact = false }: { point
             className="group flex h-full min-w-0 flex-1 flex-col justify-end"
           >
             <div
-              className={`w-full rounded-t ${p.body === "planning_commission" ? "bg-ochre" : "bg-teal"} opacity-80 group-hover:opacity-100`}
+              className={`w-full rounded-t ${bodyDot(p.body)} opacity-80 group-hover:opacity-100`}
               style={{ height: `${Math.max(6, (p.seconds / max) * 100)}%` }}
             />
             <div className={`mt-1 h-3 whitespace-nowrap text-[10px] leading-tight text-muted-soft ${i === shown.length - 1 ? "text-right" : ""}`}>

@@ -1,5 +1,6 @@
-"""Council members & commissioners: roster derived from title aliases
-("Mayor Read", "Commissioner Cunningham"), voting records matched by the
+"""Council members, commissioners & school board members: roster derived
+from title aliases ("Mayor Read", "Commissioner Cunningham", "School Board
+Chair Pitches"), voting records matched by the
 last-name keys the minutes use in vote breakdowns, and per-topic commentary
 pulled back out of the entity profiles."""
 from collections import defaultdict
@@ -13,7 +14,7 @@ from councilhound.db.models import (
 )
 from councilhound.entities import resolve_entity
 from councilhound.people import last_name
-from councilhound.seed import parse_council_header, parse_pc_header
+from councilhound.seed import parse_council_header, parse_pc_header, parse_school_board_header
 
 from app.db import db_session
 from app.links import clip_link
@@ -21,6 +22,10 @@ from app.links import clip_link
 router = APIRouter()
 
 _TITLE_ROLES = [
+    # longer, body-qualified prefixes first so "school board chair x" is not
+    # claimed by the bare "chair " rule
+    ("school board chair ", "School Board Chair"),
+    ("school board member ", "School Board Member"),
     ("mayor ", "Mayor"),
     ("councilmember ", "Councilmember"),
     ("council member ", "Councilmember"),
@@ -32,7 +37,8 @@ _TITLE_ROLES = [
     ("chair ", "Chair"),
     ("commissioner ", "Commissioner"),
 ]
-_ROLE_ORDER = {"Mayor": 0, "Councilmember": 1, "Chair": 2, "Vice-Chair": 3, "Commissioner": 4}
+_ROLE_ORDER = {"Mayor": 0, "Councilmember": 1, "Chair": 2, "Vice-Chair": 3, "Commissioner": 4,
+               "School Board Chair": 5, "School Board Member": 6}
 
 
 def _roster(session: Session) -> dict[int, dict]:
@@ -59,7 +65,8 @@ def _current_slugs(session: Session) -> set[str]:
     council turnover, so membership can't be assumed from aliases alone)."""
     current: set[str] = set()
     for body, parse in (("city_council", parse_council_header),
-                        ("planning_commission", parse_pc_header)):
+                        ("planning_commission", parse_pc_header),
+                        ("school_board", parse_school_board_header)):
         docs = session.execute(
             select(Document.raw_text)
             .join(Meeting, Document.meeting_id == Meeting.id)

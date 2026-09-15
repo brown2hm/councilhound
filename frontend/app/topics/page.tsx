@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { bodyDot } from "@/components/BodyTag";
 import DirectoryFilters from "@/components/DirectoryFilters";
 import MapClient from "@/components/MapClient";
 import Pagination from "@/components/Pagination";
@@ -11,6 +12,7 @@ import {
   type EntitySummary,
   type HotTopicsResponse,
   type MapLocation,
+  bodyLabel,
 } from "@/lib/api";
 
 const NO_HOT: HotTopicsResponse = { meetings: [], topics: [] };
@@ -138,9 +140,9 @@ async function HotList() {
 
 function BodyDots({ bodies }: { bodies: string[] }) {
   return (
-    <span className="inline-flex items-center gap-1" title={bodies.map((b) => (b === "city_council" ? "City Council" : "Planning Commission")).join(" · ")}>
+    <span className="inline-flex items-center gap-1" title={bodies.map(bodyLabel).join(" · ")}>
       {bodies.map((b) => (
-        <span key={b} aria-hidden className={`inline-block h-2 w-2 rounded-full ${b === "planning_commission" ? "bg-ochre" : "bg-teal"}`} />
+        <span key={b} aria-hidden className={`inline-block h-2 w-2 rounded-full ${bodyDot(b)}`} />
       ))}
     </span>
   );

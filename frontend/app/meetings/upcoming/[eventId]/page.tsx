@@ -3,7 +3,7 @@ import { cache } from "react";
 import BodyTag from "@/components/BodyTag";
 import FollowButton from "@/components/FollowButton";
 import StatusBadge from "@/components/StatusBadge";
-import { api, formatDate } from "@/lib/api";
+import { api, bodyLabel, formatDate } from "@/lib/api";
 import { requireRecord } from "@/lib/not-found";
 
 export const dynamic = "force-dynamic";
@@ -62,7 +62,7 @@ export default async function UpcomingMeetingPage({
         <div className="mb-6">
           <FollowButton
             target={{ kind: "body", body: event.body }}
-            label={`Follow ${event.body === "planning_commission" ? "Planning Commission" : "City Council"} meetings`}
+            label={`Follow ${bodyLabel(event.body)} meetings`}
             size="sm"
           />
         </div>

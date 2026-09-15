@@ -4,7 +4,7 @@ import { GLOSSARY } from "@/lib/glossary";
 export const metadata = {
   title: "Glossary",
   description:
-    "Plain-language definitions of the terms that show up in City of Fairfax council and planning commission agendas.",
+    "Plain-language definitions of the terms that show up in City of Fairfax council, commission, and board agendas.",
 };
 
 export default function GlossaryPage() {

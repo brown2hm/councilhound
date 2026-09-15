@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { BODIES } from "@/lib/api";
 
 const STATUSES = ["proposed", "in_progress", "approved", "denied", "deferred", "completed", "withdrawn"];
 
@@ -124,11 +125,7 @@ export default function DirectoryFilters() {
         label="Body"
         value={params.get("body") ?? ""}
         onChange={set}
-        options={[
-          { value: "", label: "Either" },
-          { value: "city_council", label: "City Council" },
-          { value: "planning_commission", label: "Planning Commission" },
-        ]}
+        options={[{ value: "", label: "Any" }, ...BODIES.map((b) => ({ value: b.key, label: b.label }))]}
       />
       <Select name="days" label="Seen" value={params.get("days") ?? ""} onChange={set} options={RECENCY} />
       <Select name="sort" label="Sort" value={params.get("sort") ?? ""} onChange={set} options={SORTS} />

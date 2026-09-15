@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from councilhound.bodies import BODY_KEYS
 from councilhound.db.models import Entity, EntityAlias, EntityUpdate, TopicSubscription, Vote
 from councilhound.mail import send_email
 from councilhound.notify import API_BASE_URL, SITE_BASE_URL, describe
@@ -29,7 +30,7 @@ class SubscribeRequest(BaseModel):
     # what to follow — see TopicSubscription.kind
     kind: str = "topic"
     entity_slug: str | None = None   # topic (non-person) or member (person)
-    body: str | None = None          # body: city_council | planning_commission
+    body: str | None = None          # body: a councilhound.bodies key
     lat: float | None = None         # area
     lng: float | None = None
     radius_m: int | None = None
@@ -37,7 +38,7 @@ class SubscribeRequest(BaseModel):
 
 
 KINDS = {"topic", "member", "body", "area", "briefing"}
-BODIES = {"city_council", "planning_commission"}
+BODIES = set(BODY_KEYS)
 MIN_RADIUS_M, MAX_RADIUS_M = 100, 10000
 
 
@@ -75,7 +76,7 @@ def _validate(req: SubscribeRequest, session: Session) -> dict:
         return {"entity_id": entity.id}
     if req.kind == "body":
         if req.body not in BODIES:
-            raise HTTPException(422, "body must be city_council or planning_commission")
+            raise HTTPException(422, "body must be one of: " + ", ".join(BODY_KEYS))
         return {"body": req.body}
     if req.kind == "area":
         if req.lat is None or req.lng is None or req.radius_m is None:

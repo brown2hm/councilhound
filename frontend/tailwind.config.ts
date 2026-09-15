@@ -22,6 +22,10 @@ const config: Config = {
         mint: "#a4d4c5",
         ochre: "#e8b94a",
         hound: "#c65a32", // burnt orange from the hound mark, darkened for legibility
+        // body identity dots for the boards added Sep 2026 (see BodyTag)
+        plum: "#6b4fa0",
+        moss: "#4f7f3f",
+        sky: "#3f7fa6",
         // status tints (derived from the brand palette)
         "tint-ochre": "#f7e5b8",
         "tint-ochre-text": "#5c4708",

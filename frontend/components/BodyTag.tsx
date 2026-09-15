@@ -1,11 +1,18 @@
 import { BODY_LABELS } from "@/lib/api";
 
 // Body identity colors: City Council = deep teal, Planning Commission =
-// ochre. Dots (not filled badges) so they never read as status badges.
+// ochre, School Board = plum, Parks board = moss, Housing board = sky.
+// Dots (not filled badges) so they never read as status badges.
 export const BODY_DOTS: Record<string, string> = {
   city_council: "bg-teal",
   planning_commission: "bg-ochre",
+  school_board: "bg-plum",
+  prab: "bg-moss",
+  hhcab: "bg-sky",
 };
+
+/** Dot class for a body, grey for anything untracked. */
+export const bodyDot = (body: string | null | undefined): string => (body && BODY_DOTS[body]) || "bg-muted-soft";
 
 export default function BodyTag({
   body,

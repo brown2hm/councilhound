@@ -1,13 +1,9 @@
 import Link from "next/link";
 import BodyTag, { BODY_DOTS } from "@/components/BodyTag";
 import StatusBadge from "@/components/StatusBadge";
-import { api, formatDate, type SearchResult } from "@/lib/api";
+import { api, BODIES as TRACKED_BODIES, bodyLabel, formatDate, type SearchResult } from "@/lib/api";
 
-const BODIES = [
-  { key: "", label: "Both bodies" },
-  { key: "city_council", label: "City Council" },
-  { key: "planning_commission", label: "Planning Commission" },
-];
+const BODIES = [{ key: "", label: "All bodies" }, ...TRACKED_BODIES.map((b) => ({ key: b.key, label: b.label }))];
 
 export const metadata = {
   title: "Search the record",
@@ -170,7 +166,7 @@ export default async function SearchPage({
         <>
           <p className="mb-3 text-[13px] text-muted">
             {data.results.length} passage{data.results.length === 1 ? "" : "s"} for “{data.query}”
-            {body ? ` in ${body === "city_council" ? "City Council" : "Planning Commission"} meetings` : ""}
+            {body ? ` in ${bodyLabel(body)} meetings` : ""}
           </p>
           <ul className="space-y-3">
             {data.results.map((r, i) => (

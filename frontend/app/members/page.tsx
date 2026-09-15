@@ -4,12 +4,13 @@ import { api, formatDate, type MemberSummary } from "@/lib/api";
 export const metadata = {
   title: "Members",
   description:
-    "City of Fairfax council members and commissioners: how each one votes, how often, and where they last said no, parsed from meeting minutes and rosters.",
+    "City of Fairfax council members, commissioners, and school board members: how each one votes, how often, and where they last said no, parsed from meeting minutes and rosters.",
 };
 
 export const dynamic = "force-dynamic";
 
 const isCouncil = (m: MemberSummary) => m.roles.some((r) => r === "Mayor" || r === "Councilmember");
+const isSchoolBoard = (m: MemberSummary) => m.roles.some((r) => r.startsWith("School Board"));
 const isMayor = (m: MemberSummary) => m.roles.includes("Mayor");
 
 /** Motion descriptions arrive as filed ("Motion to approve…"). Drop the
@@ -147,7 +148,8 @@ export default async function MembersPage() {
   const members = await api.members();
   const current = members.filter((m) => m.is_current);
   const council = current.filter(isCouncil);
-  const commission = current.filter((m) => !isCouncil(m));
+  const schoolBoard = current.filter((m) => !isCouncil(m) && isSchoolBoard(m));
+  const commission = current.filter((m) => !isCouncil(m) && !isSchoolBoard(m));
   const former = members.filter((m) => !m.is_current);
 
   return (
@@ -174,6 +176,15 @@ export default async function MembersPage() {
         </h2>
         <RecordTable list={commission} dot="bg-ochre" />
       </section>
+
+      {schoolBoard.length > 0 && (
+        <section className="mb-10">
+          <h2 className="mb-2.5 flex items-center gap-2 text-[22px] font-semibold tracking-[-0.3px]">
+            <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-plum" /> School Board
+          </h2>
+          <RecordTable list={schoolBoard} dot="bg-plum" />
+        </section>
+      )}
 
       {former.length > 0 && (
         <section>

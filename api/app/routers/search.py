@@ -58,7 +58,7 @@ def _item_result(item: AgendaItem, meeting: Meeting, match: str) -> dict:
 @router.get("/")
 def search(
     q: str = Query(min_length=2, max_length=200),
-    body: str | None = Query(None, description="city_council | planning_commission"),
+    body: str | None = Query(None, description="body key: city_council, planning_commission, school_board, prab, hhcab"),
     session: Session = Depends(db_session),
 ):
     needle = q.strip().lower()

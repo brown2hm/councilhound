@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import BodyTag from "@/components/BodyTag";
+import BodyTag, { bodyDot } from "@/components/BodyTag";
 import FollowButton from "@/components/FollowButton";
 import StatusBadge from "@/components/StatusBadge";
 import {
@@ -274,7 +274,7 @@ function NextUp({ events }: { events: UpcomingEvent[] }) {
             <span className="flex min-w-0 items-baseline gap-2">
               {e.body && (
                 <span
-                  className={`h-2 w-2 shrink-0 self-center rounded-full ${e.body === "planning_commission" ? "bg-ochre" : "bg-teal"}`}
+                  className={`h-2 w-2 shrink-0 self-center rounded-full ${bodyDot(e.body)}`}
                 />
               )}
               <Link

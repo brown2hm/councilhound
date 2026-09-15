@@ -21,7 +21,7 @@ router = APIRouter()
 
 @router.get("/")
 def list_meetings(
-    body: str | None = Query(None, description="city_council | planning_commission"),
+    body: str | None = Query(None, description="body key: city_council, planning_commission, school_board, prab, hhcab"),
     date_from: datetime.date | None = None,
     date_to: datetime.date | None = None,
     limit: int = Query(50, le=200),

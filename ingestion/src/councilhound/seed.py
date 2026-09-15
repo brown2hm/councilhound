@@ -7,6 +7,12 @@ turnover, so rosters are parsed from every agenda's header block:
   City Council agendas:   "Mayor" line, then the name; "City Council" line,
                           then one member name per line.
   Planning Commission:    "Chair: X / Vice-Chair: Y / Commissioners: A, B, C"
+  School Board:           "Chair" (or "Chairman") line, then the name; "Board
+                          Members" line, then TWO names per line (the header
+                          lays them out in columns; html_to_text collapses the
+                          nbsp gap, so a four-token line is split in half).
+  PRAB / HHCAB agendas are uploaded PDFs with no roster block, so those
+  boards' members are not seeded; the LLM pass still resolves names it meets.
 
 Seeded people get aliases ("Catherine S. Read", "Catherine Read", "Read",
 "Mayor Read", "Councilmember Read", ...) so the LLM pass and vote-breakdown
@@ -30,7 +36,8 @@ _NAME_RE = re.compile(r"^[A-Z][\w.'-]*(?: [A-Z][\w.'-]*){1,4},?(?: Jr\.?| Sr\.?|
 def _looks_like_name(line: str) -> bool:
     line = line.strip()
     return bool(line) and len(line) < 50 and bool(_NAME_RE.match(line)) \
-        and not line.lower().startswith(("city council", "planning commission", "council chamber"))
+        and not line.lower().startswith(("city council", "planning commission", "council chamber",
+                                         "school board", "board members", "city hall"))
 
 
 def parse_council_header(raw_text: str) -> dict:
@@ -82,6 +89,48 @@ def parse_pc_header(raw_text: str) -> dict:
     }
 
 
+def _split_glued_names(line: str) -> list[str]:
+    """A School Board header line holds two side-by-side names whose gap
+    (nbsp run) html_to_text collapsed to one space. Four capitalised tokens
+    split into two names; anything else is taken as one name if it looks
+    like one. Board members have all had two-token names (2021-2026)."""
+    tokens = line.split()
+    if len(tokens) == 4 and all(_looks_like_name(" ".join(pair))
+                                for pair in (tokens[:2], tokens[2:])):
+        return [" ".join(tokens[:2]), " ".join(tokens[2:])]
+    return [line] if _looks_like_name(line) else []
+
+
+def parse_school_board_header(raw_text: str) -> dict:
+    """Return {'chair': name|None, 'members': [names]} from a School Board
+    agenda header, or empties when the block is absent."""
+    lines = [l.strip() for l in raw_text.split("\n")[:60]]
+    chair, members = None, []
+    i = 0
+    while i < len(lines):
+        if lines[i] in ("Chair", "Chairman", "Chairwoman"):
+            for j in range(i + 1, min(i + 4, len(lines))):
+                if _looks_like_name(lines[j]):
+                    chair = lines[j]
+                    break
+        elif lines[i] == "Board Members":
+            for j in range(i + 1, len(lines)):
+                if not lines[j]:
+                    continue
+                # the block ends at the meeting title ("Regular School Board
+                # Meeting"), which is four capitalised words and would
+                # otherwise split into two plausible "names"
+                if re.search(r"meeting|session|retreat", lines[j], re.IGNORECASE):
+                    break
+                names = _split_glued_names(lines[j])
+                if not names:
+                    break
+                members.extend(names)
+            break
+        i += 1
+    return {"chair": chair, "members": members}
+
+
 def _seed_person(session: Session, name: str, title_aliases: list[str], meeting_id: int) -> None:
     if not name or not _looks_like_name(name):
         return
@@ -125,6 +174,16 @@ def seed_people(session: Session) -> dict:
             for c in header["commissioners"]:
                 _seed_person(session, c, ["Commissioner"], meeting.id)
                 seen_names.add(c)
+        elif meeting.body == "school_board":
+            # Titles are body-qualified so the members roster can tell a
+            # School Board chair from a Planning Commission chair by alias.
+            header = parse_school_board_header(doc.raw_text)
+            if header["chair"]:
+                _seed_person(session, header["chair"], ["School Board Chair"], meeting.id)
+                seen_names.add(header["chair"])
+            for member in header["members"]:
+                _seed_person(session, member, ["School Board Member"], meeting.id)
+                seen_names.add(member)
     session.commit()
 
     from councilhound.db.models import Entity, EntityAlias

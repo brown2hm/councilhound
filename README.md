@@ -21,7 +21,10 @@ model, and ops notes.
 ## What it does
 
 - **Briefing** — the latest decisions and votes across City Council and
-  Planning Commission, filtered of procedural noise.
+  Planning Commission, filtered of procedural noise. The School Board, Parks
+  and Recreation Advisory Board, and Housing and Healthy Communities Advisory
+  Board are tracked too (meetings, search, follows); the two advisory boards
+  publish no recordings, so they have documents but no transcripts.
 - **Topic tracker** — every project, ordinance, and development gets a
   profile: LLM-synthesized summary, current status, recent updates, open
   questions, and per-member commentary, rebuilt as new meetings land.
