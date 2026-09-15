@@ -37,13 +37,18 @@ def discover(
     since: date | None = None,
     until: date | None = None,
     limit: int | None = None,
+    bodies: tuple[str, ...] | None = None,
 ) -> dict:
-    """Scrape the archive page and upsert in-scope meetings. Returns counts."""
+    """Scrape the archive page and upsert in-scope meetings. Returns counts.
+    `bodies` narrows to those body keys — for backfilling one newly tracked
+    body without re-walking every other body's history."""
     discovered = granicus.list_meetings(view_id)
     if since:
         discovered = [m for m in discovered if m.meeting_date >= since]
     if until:
         discovered = [m for m in discovered if m.meeting_date <= until]
+    if bodies:
+        discovered = [m for m in discovered if m.body in bodies]
     if limit:
         discovered = discovered[:limit]
 
@@ -360,6 +365,7 @@ def run_ingest(
     until: date | None = None,
     limit: int | None = None,
     skip_media: bool = False,
+    bodies: tuple[str, ...] | None = None,
 ) -> IngestRun:
     """Full Phase 1 pass: discover, then fetch documents (+ media) for every
     meeting not yet fully fetched. Per-meeting errors are recorded, not fatal."""
@@ -367,13 +373,15 @@ def run_ingest(
     session.add(run)
     session.commit()
 
-    discover(session, view_id, since=since, until=until, limit=limit)
+    discover(session, view_id, since=since, until=until, limit=limit, bodies=bodies)
 
     q = select(Meeting).where(Meeting.granicus_view_id == view_id)
     if since:
         q = q.where(Meeting.meeting_date >= since)
     if until:
         q = q.where(Meeting.meeting_date <= until)
+    if bodies:
+        q = q.where(Meeting.body.in_(bodies))
     meetings = session.scalars(q.order_by(Meeting.meeting_date.desc())).all()
     if limit:
         meetings = meetings[:limit]

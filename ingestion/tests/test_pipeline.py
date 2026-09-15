@@ -159,3 +159,26 @@ def test_sync_projects_partial_preserves_seeded_detail(db_session, monkeypatch):
     assert float(row.lat) == 38.85                    # coords updated
     assert row.planner_email == "p@fairfaxva.gov"     # HTML detail preserved
     assert row.documents == [{"label": "MDP", "url": "https://x/mdp"}]
+
+
+def test_discover_body_filter(db_session, monkeypatch):
+    """`bodies` narrows a discovery to the named bodies so a newly tracked
+    board can be backfilled without re-walking every other body's history."""
+    import datetime
+
+    from councilhound import pipeline
+    from councilhound.db.models import Meeting
+    from councilhound.scraper.granicus import DiscoveredMeeting
+
+    def fake_list(view_id):
+        return [
+            DiscoveredMeeting("1", view_id, "city_council", "council_regular",
+                              datetime.date(2026, 3, 3), "City Council Regular Meeting"),
+            DiscoveredMeeting("2", view_id, "prab", "prab_meeting",
+                              datetime.date(2026, 3, 5), "PRAB Regular Meeting"),
+        ]
+    monkeypatch.setattr(pipeline.granicus, "list_meetings", fake_list)
+
+    result = pipeline.discover(db_session, "13", bodies=("prab",))
+    assert result == {"created": 1, "updated": 0, "total_in_scope": 1}
+    assert [m.body for m in db_session.query(Meeting).all()] == ["prab"]
