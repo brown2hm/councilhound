@@ -69,7 +69,10 @@ function NoVotesByMatter({ member }: { member: MemberDetail }) {
   type Motion = { v: MemberVote; count: number };
   const groups = new Map<string, { href: string | null; motions: Map<string, Motion> }>();
   for (const v of nos) {
-    const topic = v.topics.find((t) => !INSTRUMENTS.has(t.entity_type));
+    // a project or topic names the matter better than the parcel it sits on
+    const topic =
+      v.topics.find((t) => t.entity_type === "project" || t.entity_type === "topic") ??
+      v.topics.find((t) => !INSTRUMENTS.has(t.entity_type));
     const name = topic?.name ?? subjectOf(v.item_title ?? v.description, 60);
     const g = groups.get(name) ?? { href: topic ? `/topics/${topic.slug}` : null, motions: new Map() };
     const k = `${v.meeting_id}|${v.item_label}`;
