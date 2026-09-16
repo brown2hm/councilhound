@@ -423,6 +423,9 @@ def get_meeting(meeting_id: int, session: Session = Depends(db_session)):
             for it in items
         ],
         "documents": [d for docs in docs_by_item.values() for d in docs],
+        # matters raised outside any numbered item (member comments, staff
+        # reports, public comment) — on the meeting, not on an item
+        "other_discussion": entities_by_item.get(None, []),
     }
 
 

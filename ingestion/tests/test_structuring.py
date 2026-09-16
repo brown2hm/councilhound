@@ -167,3 +167,64 @@ def test_prompt_includes_known_entities(db_session):
     assert prompt.index("ALREADY-TRACKED") < prompt.index("=== AGENDA ===")
 
     assert "ALREADY-TRACKED" not in _build_prompt(m, texts, [])
+
+
+EXTRACTION_WITH_COMMENTS = {
+    "summary": "Budget adopted; vape shops raised in comments.",
+    "agenda_items": [
+        {
+            "label": "3e",
+            "title": "Consideration and appropriation of the FY 2026 Budget",
+            "outcome": "Adopted 4-3.",
+            "votes": [{"description": "Adopt the budget", "motion_result": "passed",
+                       "vote_breakdown": {"Read": "yes", "Hall": "no"}}],
+            "entities": [
+                {"entity_type": "topic", "name": "FY 2026 Budget", "role": "subject",
+                 "update_text": "Budget adopted.", "status_after": "approved"},
+                # a remark an older extraction filed under the last item
+                {"entity_type": "topic", "name": "Vape Shop Proximity Restrictions", "role": "subject",
+                 "update_text": "During council comments, Councilmember McQuillen raised vape shops near schools."},
+            ],
+        },
+        {
+            "label": "11",
+            "title": "Council Comments and Committee reports out",
+            "outcome": "Comments heard.",
+            "votes": [],
+            "entities": [{"entity_type": "topic", "name": "GIS Day", "role": "subject",
+                          "update_text": "During council comments, Rice reported on GIS Day."}],
+        },
+    ],
+    "other_discussion": [
+        {"entity_type": "project", "name": "Old Town Splash Pad", "period": "reports",
+         "update_text": "The City Manager reported the splash pad opens in June."},
+    ],
+}
+
+
+def test_comment_period_remarks_do_not_join_an_item(db_session):
+    """A remark from a comments or reports period lands on the meeting, not
+    on an item: from the other_discussion bucket, or unfiled from the last
+    item on re-apply of an older extraction. A remark under the agenda's own
+    comments item stays there."""
+    s = db_session
+    meeting = _make_meeting(s, "4191", datetime.date(2025, 5, 6))
+    apply_extraction(s, meeting, EXTRACTION_WITH_COMMENTS)
+    s.commit()
+
+    def update_for(slug):
+        e = s.scalar(select(Entity).where(Entity.canonical_slug == slug))
+        return s.scalar(select(EntityUpdate).where(EntityUpdate.entity_id == e.id))
+
+    budget_item = s.scalar(select(AgendaItem).where(AgendaItem.label == "3e"))
+    comments_item = s.scalar(select(AgendaItem).where(AgendaItem.label == "11"))
+    assert update_for("fy-2026-budget").agenda_item_id == budget_item.id
+    vape = update_for("vape-shop-proximity-restrictions")
+    assert vape.agenda_item_id is None and vape.update_text.startswith("[comments] ")
+    splash = update_for("old-town-splash-pad")
+    assert splash.agenda_item_id is None and splash.update_text.startswith("[reports] ")
+    assert update_for("gis-day").agenda_item_id == comments_item.id
+    # the schema advertises the bucket and the prompt says how to use it
+    from councilhound.extraction.llm_structure import EXTRACTION_TOOL, SYSTEM_PROMPT
+    assert "other_discussion" in EXTRACTION_TOOL["input_schema"]["properties"]
+    assert "other_discussion" in SYSTEM_PROMPT

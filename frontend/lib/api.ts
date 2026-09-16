@@ -71,6 +71,7 @@ export interface MeetingDetail extends Omit<MeetingSummary, "agenda_item_count" 
   minutes_url: string | null;
   agenda_items: AgendaItemInfo[];
   documents: MeetingDocument[];
+  other_discussion: AgendaItemEntity[]; // raised outside any numbered item (comments, reports, public comment)
 }
 
 /** The light official-record fields the directory needs for a project card. */

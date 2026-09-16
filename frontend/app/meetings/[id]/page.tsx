@@ -172,7 +172,7 @@ export default async function MeetingPage({ params }: { params: { id: string } }
 
   // every topic the meeting touched, once, with the status it set if any
   const topics = new Map<string, { name: string; status: string | null }>();
-  for (const it of items)
+  for (const it of [...items, { entities: meeting.other_discussion }])
     for (const e of it.entities) {
       const prev = topics.get(e.slug);
       if (!prev) topics.set(e.slug, { name: e.name, status: e.status_after ?? e.current_status });
@@ -252,6 +252,26 @@ export default async function MeetingPage({ params }: { params: { id: string } }
             <p className="rounded-2xl border border-dashed border-hairline p-5 text-sm text-muted">
               Not yet processed. Agenda items appear after the extraction pass.
             </p>
+          )}
+          {meeting.other_discussion.length > 0 && (
+            <section className="mt-7">
+              <h2 className="mb-0.5 text-[20px] font-semibold tracking-[-0.3px]">Also raised</h2>
+              <p className="mb-2 text-[13px] text-muted">
+                Brought up outside the numbered agenda, in member comments, reports or public comment. Each topic&apos;s page has what was said.
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {meeting.other_discussion.map((e) => (
+                  <Link
+                    key={e.slug}
+                    href={`/topics/${e.slug}`}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-[12px] font-semibold text-body hover:bg-strong"
+                  >
+                    {e.name}
+                    <StatusBadge status={e.status_after ?? e.current_status} />
+                  </Link>
+                ))}
+              </div>
+            </section>
           )}
         </div>
 
