@@ -2,13 +2,14 @@
 The July 2026 audit found phrasing drift splitting topic threads
 (courthouse-plaza x5, acronym twins like ...-prab); these pin the fixes."""
 import pytest
+from sqlalchemy import select
 
 from councilhound.db.models import (
-    Entity, EntityAlias, EntityMention, EntityUpdate, Meeting,
+    AgendaItem, Entity, EntityAlias, EntityMention, EntityUpdate, Meeting,
 )
 from councilhound.dedupe import (
-    dedupe_pass, find_normalized_base, merge_batch, merge_entities,
-    normalize_slug,
+    dedupe_pass, detach_entity, find_normalized_base, merge_batch,
+    merge_entities, normalize_slug,
 )
 from councilhound.entities import resolve_entity
 
@@ -248,3 +249,51 @@ def test_merge_batch_is_idempotent_and_skips_missing(db_session):
     second = merge_batch(s, entries, apply=True)  # re-run must be a no-op
     assert second[0]["result"] == "already-merged"
     assert s.query(Entity).filter_by(canonical_slug="davies-property").one().id == target.id
+
+
+def test_detach_entity_unfiles_from_the_item_but_keeps_the_meeting(db_session):
+    """A council-comments remark filed under the budget item: after
+    detaching, the topic's rows stay on the meeting with no item, other
+    entities on the item and the same entity elsewhere are untouched."""
+    import datetime
+
+    m = Meeting(granicus_clip_id="4191", granicus_view_id="13", body="city_council",
+                meeting_type="council_special", meeting_date=datetime.date(2025, 5, 6),
+                title="City Council Special Meeting", status="extracted")
+    other = Meeting(granicus_clip_id="4200", granicus_view_id="13", body="city_council",
+                    meeting_type="council_regular", meeting_date=datetime.date(2025, 5, 13),
+                    title="City Council Meeting", status="extracted")
+    db_session.add_all([m, other])
+    db_session.flush()
+    budget = AgendaItem(meeting_id=m.id, label="3e", title="FY 2026 Budget")
+    db_session.add(budget)
+    db_session.flush()
+    vape = Entity(entity_type="topic", name="Vape Shop Proximity Restrictions",
+                  canonical_slug="vape-shop-proximity-restrictions")
+    fy26 = Entity(entity_type="topic", name="FY 2026 Budget", canonical_slug="fy-2026-budget")
+    db_session.add_all([vape, fy26])
+    db_session.flush()
+    db_session.add_all([
+        EntityUpdate(entity_id=vape.id, meeting_id=m.id, agenda_item_id=budget.id,
+                     update_text="[3e] During council comments, McQuillen raised vape shops."),
+        EntityMention(entity_id=vape.id, meeting_id=m.id, agenda_item_id=budget.id, role="subject"),
+        EntityUpdate(entity_id=fy26.id, meeting_id=m.id, agenda_item_id=budget.id,
+                     update_text="[3e] Budget adopted.", status_after="approved"),
+        EntityUpdate(entity_id=vape.id, meeting_id=other.id, agenda_item_id=None,
+                     update_text="Discussed again."),
+    ])
+    db_session.commit()
+
+    with pytest.raises(ValueError):
+        detach_entity(db_session, "vape-shop-proximity-restrictions", m.id, item_label="9z")
+
+    moved = detach_entity(db_session, "vape-shop-proximity-restrictions", m.id, item_label="3e")
+    db_session.commit()
+    assert moved == {"updates": 1, "mentions": 1}
+    vape_rows = db_session.scalars(select(EntityUpdate).where(EntityUpdate.entity_id == vape.id)).all()
+    assert {(r.meeting_id, r.agenda_item_id) for r in vape_rows} == {(m.id, None), (other.id, None)}
+    assert db_session.scalar(select(EntityMention).where(EntityMention.entity_id == vape.id)).agenda_item_id is None
+    # the budget's own topic keeps its item
+    assert db_session.scalar(select(EntityUpdate).where(EntityUpdate.entity_id == fy26.id)).agenda_item_id == budget.id
+    # idempotent
+    assert detach_entity(db_session, "vape-shop-proximity-restrictions", m.id) == {"updates": 0, "mentions": 0}

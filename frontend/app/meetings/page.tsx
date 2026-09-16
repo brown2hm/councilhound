@@ -2,19 +2,29 @@ import Link from "next/link";
 import { BODY_DOTS } from "@/components/BodyTag";
 import FollowButton from "@/components/FollowButton";
 import Pagination from "@/components/Pagination";
-import { api, PUBLIC_API_URL, type MeetingDecision, type MeetingSummary, type UpcomingEvent } from "@/lib/api";
+import { api, BODIES as TRACKED_BODIES, PUBLIC_API_URL, type MeetingDecision, type MeetingSummary, type UpcomingEvent } from "@/lib/api";
 
 export const metadata = {
   title: "Meetings",
   description:
-    "Every archived City of Fairfax council and commission meeting, newest first, with what each one decided and links to the agenda, recording, and transcript.",
+    "Every archived City of Fairfax City Council, Planning Commission, School Board, and advisory board meeting, newest first, with what each one decided and links to the agenda, recording, and transcript.",
 };
 
+/** Filter chips: a name too long for a chip gets its short noun instead
+ * ("Parks Board" for the Parks and Recreation Advisory Board). */
+const CHIP_MAX = 24;
 const BODIES = [
-  { key: "", label: "All bodies" },
-  { key: "city_council", label: "City Council" },
-  { key: "planning_commission", label: "Planning Commission" },
+  { key: "", label: "All bodies", short: "" },
+  ...TRACKED_BODIES.map((b) => ({
+    key: b.key,
+    label: b.label.length > CHIP_MAX ? titleCase(b.short) : b.label,
+    short: b.short,
+  })),
 ];
+
+function titleCase(s: string): string {
+  return s.replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 const PAGE_SIZE = 40;
 const SHOWN_PER_MEETING = 3;
@@ -259,7 +269,7 @@ export default async function MeetingsPage({
               <FollowButton
                 key={b.key}
                 target={{ kind: "body", body: b.key }}
-                label={b.key === "city_council" ? "council" : "commission"}
+                label={b.short}
                 size="sm"
               />
             ))}

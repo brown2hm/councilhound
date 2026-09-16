@@ -79,8 +79,8 @@ def test_follow_member_body_area_and_briefing(db, client, monkeypatch):
     assert post({"kind": "member", "entity_slug": "catherine-read"}).status_code == 200
     # a person can't be followed as a topic, and vice versa
     assert post({"kind": "topic", "entity_slug": "catherine-read"}).status_code == 422
-    assert post({"kind": "body", "body": "school_board"}).status_code == 422
     assert post({"kind": "body", "body": "planning_commission"}).status_code == 200
+    assert post({"kind": "body", "body": "electoral_board"}).status_code == 422  # not a tracked body
     assert post({"kind": "area", "lat": 38.8462, "lng": -77.3064}).status_code == 422
     assert post({"kind": "area", "lat": 38.8462, "lng": -77.3064, "radius_m": 20,
                  "label": "near Old Town"}).status_code == 200
@@ -103,3 +103,14 @@ def test_follow_member_body_area_and_briefing(db, client, monkeypatch):
     assert dup.json()["status"] == "already-following"
     resp = client.get(f"/subscriptions/unsubscribe?token={subs['body'].token}")
     assert "Planning Commission meetings" in resp.text
+
+
+def test_follow_every_registered_body(db, client, monkeypatch):
+    """Body follows accept exactly the registry (councilhound.bodies), so a
+    newly tracked board is followable without touching the API."""
+    from councilhound.bodies import BODY_KEYS
+    monkeypatch.setattr("app.ratelimit.SUBSCRIBE_PER_HOUR", 100)
+    for key in BODY_KEYS:
+        resp = client.post("/subscriptions/", json={"email": f"{key}@example.com", "kind": "body", "body": key})
+        assert resp.status_code == 200, key
+    assert {s.body for s in db.query(TopicSubscription).all()} == set(BODY_KEYS)

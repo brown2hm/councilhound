@@ -19,6 +19,7 @@ entity_update with a status_after.
 """
 import logging
 import os
+import re
 from datetime import datetime, timezone
 
 from sqlalchemy import delete, select, update
@@ -46,6 +47,34 @@ MAX_DOC_CHARS = 60_000  # defensive truncation; largest observed doc is ~44KB
 
 ENTITY_TYPES = ["person", "project", "ordinance", "resolution", "case_number", "location", "topic"]
 STATUSES = ["proposed", "in_progress", "approved", "denied", "deferred", "completed", "withdrawn"]
+# Unitemized parts of a meeting a remark can come from. Each becomes the
+# one-word marker on its update text ("[comments] ..."), the way an item's
+# label does ("[7a] ..."); the frontend strips \[\w+\] markers.
+PERIODS = ["comments", "reports", "public", "announcements", "other"]
+PERIOD_LABELS = {"comments": "member comments", "reports": "staff and committee reports",
+                 "public": "public comment", "announcements": "announcements", "other": "other business"}
+
+ENTITY_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "entity_type": {"type": "string", "enum": ENTITY_TYPES},
+        "name": {
+            "type": "string",
+            "description": "Proper name as the documents use it, e.g. 'George Snyder Trail', 'Ordinance 2026-04'.",
+        },
+        "role": {"type": "string", "description": "e.g. 'subject', 'applicant', 'sponsor', 'location'."},
+        "update_text": {
+            "type": "string",
+            "description": "One or two sentences: what happened to THIS entity at THIS meeting.",
+        },
+        "status_after": {
+            "type": "string",
+            "enum": STATUSES,
+            "description": "Only for project/ordinance/resolution/case entities where the meeting changed or confirmed a status. Omit otherwise.",
+        },
+    },
+    "required": ["entity_type", "name", "update_text"],
+}
 
 EXTRACTION_TOOL = {
     "name": "record_meeting_extraction",
@@ -78,7 +107,7 @@ EXTRACTION_TOOL = {
                                     "motion_result": {"type": "string", "enum": ["passed", "failed", "deferred"]},
                                     "vote_breakdown": {
                                         "type": "object",
-                                        "description": "Member last name -> yes|no|abstain|absent. Empty if unanimous voice vote with no breakdown recorded.",
+                                        "description": "Member last name -> yes|no|abstain|absent. Copy a recorded roll call as is. When the minutes say the motion passed (or failed) unanimously and record who was present, list every member recorded present as yes (no if it failed unanimously) and every member recorded absent as absent; a unanimous result plus recorded attendance is a complete breakdown. Empty only when neither a roll call nor attendance is recorded.",
                                         "additionalProperties": {"type": "string", "enum": ["yes", "no", "abstain", "absent"]},
                                     },
                                 },
@@ -87,31 +116,24 @@ EXTRACTION_TOOL = {
                         },
                         "entities": {
                             "type": "array",
-                            "description": "Projects, ordinances, locations, people (other than routine member attendance), and topics this item concerns.",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "entity_type": {"type": "string", "enum": ENTITY_TYPES},
-                                    "name": {
-                                        "type": "string",
-                                        "description": "Proper name as the documents use it, e.g. 'George Snyder Trail', 'Ordinance 2026-04'.",
-                                    },
-                                    "role": {"type": "string", "description": "e.g. 'subject', 'applicant', 'sponsor', 'location'."},
-                                    "update_text": {
-                                        "type": "string",
-                                        "description": "One or two sentences: what happened to THIS entity at THIS meeting.",
-                                    },
-                                    "status_after": {
-                                        "type": "string",
-                                        "enum": STATUSES,
-                                        "description": "Only for project/ordinance/resolution/case entities where the meeting changed or confirmed a status. Omit otherwise.",
-                                    },
-                                },
-                                "required": ["entity_type", "name", "update_text"],
-                            },
+                            "description": "Projects, ordinances, locations, people (other than routine member attendance), and topics THIS ITEM ITSELF concerned. Remarks made during a comments period, a staff report or public comment go in other_discussion (or under the agenda's own comments item), never under the nearest numbered item.",
+                            "items": ENTITY_SCHEMA,
                         },
                     },
                     "required": ["label", "title", "outcome"],
+                },
+            },
+            "other_discussion": {
+                "type": "array",
+                "description": "Matters raised OUTSIDE any numbered agenda item, when the agenda has no item for that period: member/council/commission comments, committee reports, staff or city manager reports, public comment, announcements. Each carries the period it came up in. If the agenda does list such a period as an item ('Council Comments and Committee reports out', 'Commission Comments'), file the remark under that item instead and leave this empty.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        **ENTITY_SCHEMA["properties"],
+                        "period": {"type": "string", "enum": PERIODS,
+                                   "description": "Which unitemized part of the meeting the remark came from."},
+                    },
+                    "required": ["entity_type", "name", "update_text", "period"],
                 },
             },
         },
@@ -124,16 +146,30 @@ You extract structured facts from municipal meeting records (agenda, minutes, \
 and an official actions report when available). Rules:
 - The minutes and actions report are the source of truth for outcomes and \
 votes; the agenda alone only tells you what was scheduled.
-- Record only what the documents state. Never infer vote breakdowns, \
+- Record only what the documents state. Never invent vote breakdowns, \
 outcomes, or statuses that are not written down. If a meeting has no minutes \
 or actions report yet, outcomes should say the item was scheduled/discussed \
 per the agenda, and there are no votes.
+- One derivation is allowed because it follows from the record: when the \
+minutes say a motion passed or failed "unanimously" and elsewhere record who \
+was present (roll call, attendance, "Members present"), fill vote_breakdown \
+with every present member (yes for passed, no for failed) and mark members \
+recorded absent as absent. Use the attendance as of that item if the minutes \
+note someone arriving or leaving. Bodies such as the School Board record \
+votes this way rather than by roll call.
 - Entity names: use the documents' own naming. Ordinances/resolutions keep \
 their numbers ('Ordinance 2026-04'). Projects keep their proper names. Do \
 not create entities for routine procedure (roll call, adoption of agenda, \
 approval of prior minutes) or for council members merely being present.
 - status_after is for trackable matters (projects, ordinances, resolutions, \
-zoning cases): what state is it in after this meeting?"""
+zoning cases): what state is it in after this meeting?
+- An agenda item's entities are only what that item itself concerned. A \
+matter raised during member or council comments, committee or staff reports, \
+public comment or announcements is NOT part of the item the minutes happen to \
+print it after. If the agenda lists that period as its own item ('Council \
+Comments and Committee reports out', 'Commission Comments'), file the remark \
+under that item; if it does not, put it in other_discussion with its period. \
+Never file such a remark under the last numbered item of the night."""
 
 
 def _needs_retry(exc: BaseException) -> bool:
@@ -278,6 +314,24 @@ def structure_meeting(session: Session, meeting: Meeting, force: bool = False,
     return extraction
 
 
+_COMMENTS_ITEM = re.compile(r"\b(comments?|reports? out|announcements)\b", re.I)
+_COMMENT_PERIOD = re.compile(
+    r"\b(during|in|under|at|as part of) (the )?"
+    r"(council(member| member)?|commission(er)?|member|board( member)?|mayor'?s?|closing|final|general)s? "
+    r"(comments?|remarks|reports?)\b", re.I)
+
+
+def _is_comments_item(title: str | None) -> bool:
+    """Is this agenda item itself the comments/reports period?"""
+    return bool(title) and bool(_COMMENTS_ITEM.search(title))
+
+
+def _from_comment_period(update_text: str | None) -> bool:
+    """Does the extractor's own sentence say the remark came from a comments
+    or reports period ("During council comments, ...")?"""
+    return bool(update_text) and bool(_COMMENT_PERIOD.search(update_text))
+
+
 def apply_extraction(session: Session, meeting: Meeting, data: dict) -> None:
     """Deterministically (re)build this meeting's structured rows from an
     extraction dict. Delete + recreate, so re-runs converge."""
@@ -329,24 +383,52 @@ def apply_extraction(session: Session, meeting: Meeting, data: dict) -> None:
                 vote_breakdown=vote.get("vote_breakdown") or {},
             ))
 
+        comments_item = _is_comments_item(item.get("title"))
         for ent in item.get("entities", []):
             entity = resolve_entity(session, ent.get("entity_type", "topic"), ent.get("name", ""),
                                     first_seen_meeting_id=meeting.id)
             if entity is None:
                 continue
+            # extractions made before the other_discussion bucket existed
+            # filed comment-period remarks under whatever item came last;
+            # unfile those on re-apply so they stop joining that item's votes
+            stray = not comments_item and _from_comment_period(ent.get("update_text"))
+            item_id = None if stray else row.id
+            marker = "comments" if stray else label
             session.add(EntityMention(
                 entity_id=entity.id,
                 meeting_id=meeting.id,
-                agenda_item_id=row.id,
+                agenda_item_id=item_id,
                 document_id=cite_doc_id,
                 context_text=ent.get("update_text"),
                 role=ent.get("role"),
             ))
-            u = updates.setdefault(entity.id, {"texts": [], "status": None, "item_id": row.id})
+            u = updates.setdefault(entity.id, {"texts": [], "status": None, "item_id": item_id})
             if ent.get("update_text"):
-                u["texts"].append(f"[{label}] {ent['update_text']}")
+                u["texts"].append(f"[{marker}] {ent['update_text']}")
             if ent.get("status_after"):
                 u["status"] = ent["status_after"]
+
+    # remarks from a period the agenda had no item for: on the meeting, no item
+    for ent in data.get("other_discussion", []) or []:
+        period = ent.get("period") if ent.get("period") in PERIODS else "other"
+        entity = resolve_entity(session, ent.get("entity_type", "topic"), ent.get("name", ""),
+                                first_seen_meeting_id=meeting.id)
+        if entity is None:
+            continue
+        session.add(EntityMention(
+            entity_id=entity.id,
+            meeting_id=meeting.id,
+            agenda_item_id=None,
+            document_id=cite_doc_id,
+            context_text=ent.get("update_text"),
+            role=ent.get("role") or PERIOD_LABELS[period],
+        ))
+        u = updates.setdefault(entity.id, {"texts": [], "status": None, "item_id": None})
+        if ent.get("update_text"):
+            u["texts"].append(f"[{period}] {ent['update_text']}")
+        if ent.get("status_after"):
+            u["status"] = ent["status_after"]
 
     for entity_id, u in updates.items():
         if not u["texts"]:

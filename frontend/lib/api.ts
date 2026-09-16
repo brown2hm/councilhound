@@ -71,6 +71,7 @@ export interface MeetingDetail extends Omit<MeetingSummary, "agenda_item_count" 
   minutes_url: string | null;
   agenda_items: AgendaItemInfo[];
   documents: MeetingDocument[];
+  other_discussion: AgendaItemEntity[]; // raised outside any numbered item (comments, reports, public comment)
 }
 
 /** The light official-record fields the directory needs for a project card. */
@@ -476,6 +477,13 @@ export interface MemberSummary {
   last_no: MemberLastNo | null;
 }
 
+export interface MemberVoteTopic {
+  slug: string;
+  name: string;
+  entity_type: string;
+  current_status: string | null;
+}
+
 export interface MemberVote {
   date: string;
   meeting_id: number;
@@ -486,6 +494,12 @@ export interface MemberVote {
   description: string | null;
   motion_result: string | null;
   vote: string;
+  tally: Record<string, number>; // the whole body's yes | no | abstain | absent on this motion
+  contested: boolean; // someone voted no
+  in_minority: boolean; // no on a motion that passed, or yes on one that failed
+  breakdown: Record<string, string>; // last name -> cast, as the minutes record it
+  category: string; // consent | hearing | closed | minutes | appointment | budget | ordinance | resolution | contract | other
+  topics: MemberVoteTopic[];
   watch_url: string | null;
 }
 
@@ -496,14 +510,76 @@ export interface MemberCommentaryEntry {
   summary: string;
 }
 
+export interface MemberRecord {
+  votes: number;
+  meetings: number;
+  first_vote: string | null;
+  last_vote: string | null;
+  with_outcome_pct: number | null;
+  contested: number;
+  minority: { total: number; no_on_passed: number; yes_on_failed: number };
+  close_votes: { total: number; lost: number }; // decided by one vote; lost = on the losing side
+  lone_no: number;
+  absent_meetings: { meeting_id: number; date: string }[];
+  comparisons: boolean; // enough contested votes for alignment, splits and categories to mean something
+}
+
+export interface MemberMeeting {
+  meeting_id: number;
+  date: string;
+  title: string;
+  body: string;
+  votes: number;
+  no: number;
+  contested: number;
+  absent: number;
+}
+
+export interface MemberCategory {
+  key: string;
+  label: string;
+  votes: number;
+  no: number;
+  absent: number;
+}
+
+export interface MemberMatter extends MemberVoteTopic {
+  n: number;
+  votes: Record<string, number>;
+}
+
+export interface MemberColleague {
+  slug: string;
+  name: string;
+  roles: string[];
+  votes_cast: number;
+  no_votes: number;
+  agree_pct: number | null; // share of this member's contested votes where the colleague voted the same way
+  agree_n: number;
+}
+
+export interface MemberSplit {
+  no: string[]; // slugs, in split_order, who voted no
+  count: number;
+}
+
 export interface MemberDetail {
   slug: string;
   name: string;
   roles: string[];
+  body: string | null;
   is_current: boolean;
   vote_stats: Record<string, number>;
+  record: MemberRecord;
   votes: MemberVote[];
+  by_meeting: MemberMeeting[]; // oldest first
+  categories: MemberCategory[];
+  matters: MemberMatter[];
+  colleagues: MemberColleague[]; // current members of the same body, most aligned first
+  split_order: string[]; // this member, then colleagues who vote regularly, by alignment
+  splits: MemberSplit[];
   commentary: MemberCommentaryEntry[];
+  upcoming: UpcomingEvent[];
 }
 
 export interface MapLocation {
@@ -716,10 +792,22 @@ export const api = {
   status: () => get<RecordStatus>("/status/"),
 };
 
-export const BODY_LABELS: Record<string, string> = {
-  city_council: "City Council",
-  planning_commission: "Planning Commission",
-};
+/** The bodies the tracker follows, in display order. Mirrors
+ * ingestion/src/councilhound/bodies.py: `key` is the API/URL value, `label`
+ * the name, `short` the noun for "Follow ... meetings". */
+export const BODIES: { key: string; label: string; short: string }[] = [
+  { key: "city_council", label: "City Council", short: "council" },
+  { key: "planning_commission", label: "Planning Commission", short: "commission" },
+  { key: "school_board", label: "School Board", short: "school board" },
+  { key: "prab", label: "Parks and Recreation Advisory Board", short: "parks board" },
+  { key: "hhcab", label: "Housing and Healthy Communities Advisory Board", short: "housing board" },
+];
+
+export const BODY_LABELS: Record<string, string> = Object.fromEntries(BODIES.map((b) => [b.key, b.label]));
+export const BODY_SHORT: Record<string, string> = Object.fromEntries(BODIES.map((b) => [b.key, b.short]));
+
+/** Label for a body key; unknown or missing keys read as the key itself. */
+export const bodyLabel = (key: string | null | undefined): string => (key ? BODY_LABELS[key] ?? key : "");
 
 export function formatDate(iso: string): string {
   return new Date(iso + "T00:00:00").toLocaleDateString("en-US", {

@@ -1,5 +1,43 @@
 # Changelog
 
+## Unreleased — three more bodies: School Board, Parks and Recreation Advisory Board, Housing and Healthy Communities Advisory Board (September 2026)
+
+All three already publish to the same Granicus archive page the scraper
+reads; they were sitting in `<h3>` sections the parser skipped by name.
+
+- **One body registry.** `councilhound.bodies` lists every tracked body
+  (key, label, archive section) and every layer that had hardcoded
+  "city_council | planning_commission" reads from it: scraper scope,
+  subscription validation, email labels, and the front end's chips, dots,
+  filters, and follow buttons (`BODIES` in `lib/api.ts` mirrors it).
+- **Scraper.** `School Board Meetings` (recorded; regular, work session,
+  closed, retreat, special, joint), `Park and Recreation Advisory Board
+  Meetings` and `Housing and Healthy Communities Advisory Board Meetings`
+  (agenda + minutes only, no MP3) are in scope. Upcoming-events rows for
+  these bodies now get a body instead of NULL, so they appear on the
+  calendar feed and event pages with a follow button. Advisory-board agendas
+  are uploaded PDFs, not Granicus HTML: the document fetcher already handled
+  that by content type, and `fetch_agenda_text` (upcoming agenda matching)
+  now does too.
+- **School Board roster.** Agenda headers carry the chair and four members
+  two-to-a-line; `parse_school_board_header` seeds them with body-qualified
+  titles ("School Board Chair", "School Board Member") so `/members` shows a
+  School Board section without confusing its chair with the Planning
+  Commission's. The advisory boards' agendas have no roster block, so their
+  members are not seeded.
+- **Unanimous votes get a breakdown.** School Board minutes record
+  outcomes as "passed unanimously" over an attendance list rather than a
+  roll call, which left every board member with zero recorded votes. The
+  extractor now derives the breakdown in exactly that case: every member
+  recorded present is yes (no for a unanimous failure), members recorded
+  absent are absent, and it still records nothing when neither a roll call
+  nor attendance is written down. Council minutes with the same phrasing
+  benefit on their next re-extraction.
+- **Not yet:** the home page and `/topics` hot-topics panels still show
+  only City Council and Planning Commission, and nothing has been
+  backfilled — a historical ingest (School Board audio must be fetched from
+  a residential IP) is a separate step.
+
 ## Unreleased — discovery and tracking: one directory, a change feed, near me, broader follows (September 2026)
 
 An audit of the front end against two readers — a resident trying to find

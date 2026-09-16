@@ -39,7 +39,7 @@ def transcribed_meetings_in_window(
     max_meetings: int = 12,
 ) -> list[Meeting]:
     """Transcribed meetings within the look-back window, optionally for one
-    body (city_council / planning_commission)."""
+    body (a councilhound.bodies key)."""
     import datetime
 
     cutoff = datetime.date.today() - datetime.timedelta(days=days)

@@ -43,7 +43,7 @@ def _resolve_entity(session: Session, slug: str) -> Entity | None:
 @router.get("/hot")
 def get_hot_topics(
     days: int = Query(60, ge=7, le=730),
-    body: str | None = Query(None, description="city_council | planning_commission"),
+    body: str | None = Query(None, description="body key: city_council, planning_commission, school_board, prab, hhcab"),
     top: int = Query(30, le=100),
     session: Session = Depends(db_session),
 ):
@@ -116,7 +116,7 @@ def _wiki_entity_ids(session: Session) -> set[int]:
 def list_entities(
     entity_type: str | None = Query(None, description="project | ordinance | resolution | case_number | topic | location | person"),
     status: str | None = None,
-    body: str | None = Query(None, description="only topics this body has acted on: city_council | planning_commission"),
+    body: str | None = Query(None, description="only topics this body has acted on (body key: city_council, planning_commission, school_board, prab, hhcab)"),
     days: int | None = Query(None, ge=1, le=730, description="only topics updated within the last N days"),
     min_updates: int = Query(1, ge=1, description="hide topics with fewer tracked updates (the one-mention tail)"),
     official: bool | None = Query(None, description="true: only official city project records; false: only meeting-derived"),

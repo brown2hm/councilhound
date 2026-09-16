@@ -22,6 +22,11 @@ Meetings", "Community Development and Planning Meetings", ...) followed by a
 Rows without a clip_id (upcoming events, canceled meetings) are skipped.
 There are NO caption tracks (/videos/<clip>/captions.vtt is an empty stub) —
 transcripts come from the MP3 via Whisper in Phase 2.
+
+Which <h3> sections are in scope comes from councilhound.bodies. City Council,
+Planning Commission and School Board rows carry MP3/MP4 links; the advisory
+boards (PRAB, HHCAB) are agenda + minutes only, and their agendas are
+uploaded PDFs rather than Granicus-generated HTML (verified 2026-09-15).
 """
 import logging
 import re
@@ -31,19 +36,21 @@ from datetime import date, datetime
 from bs4 import BeautifulSoup
 
 from councilhound import http
+from councilhound.bodies import BODIES, BODY_KEYS
 from councilhound.config import GRANICUS_BASE_URL
 
 log = logging.getLogger(__name__)
 
-# Archive <h3> section header -> body key. Planning Commission meetings live
-# in the "Community Development and Planning" section mixed with BAR/BZA rows,
-# so that section additionally filters on the row title.
+# Archive <h3> section header -> body key (from the registry). Planning
+# Commission meetings live in the "Community Development and Planning" section
+# mixed with BAR/BZA rows, so that section maps to a pseudo-key and
+# classify() additionally filters on the row title.
 SECTION_BODIES = {
-    "City Council Meetings": "city_council",
-    "Community Development and Planning Meetings": "community_development",
+    b.archive_section: ("community_development" if k == "planning_commission" else k)
+    for k, b in BODIES.items()
 }
 
-IN_SCOPE_BODIES = ("city_council", "planning_commission")
+IN_SCOPE_BODIES = BODY_KEYS
 
 
 @dataclass
@@ -107,7 +114,7 @@ def _parse_duration(text: str) -> int | None:
 
 def classify(section_body: str, title: str) -> tuple[str, str] | None:
     """Map (archive section, row title) -> (body, meeting_type), or None if
-    out of scope (School Board, committees, BAR/BZA, etc.)."""
+    out of scope (Commission on the Arts, Electoral Board, BAR/BZA, etc.)."""
     t = title.lower()
     if section_body == "city_council":
         if "retreat" in t:
@@ -121,6 +128,31 @@ def classify(section_body: str, title: str) -> tuple[str, str] | None:
         return "city_council", "council_meeting"
     if section_body == "community_development" and "planning commission" in t:
         return "planning_commission", "planning_commission"
+    if section_body == "school_board":
+        # Closed meetings are archived as a title card with no substance;
+        # keep them listed (they are part of the record) but typed so the
+        # front end can treat them as such.
+        if "closed" in t:
+            return "school_board", "school_board_closed"
+        if "joint" in t or "swearing" in t:
+            return "school_board", "school_board_meeting"
+        if "retreat" in t:
+            return "school_board", "school_board_retreat"
+        if "special" in t:
+            return "school_board", "school_board_special"
+        if "work session" in t:
+            return "school_board", "school_board_work_session"
+        if "regular" in t:
+            return "school_board", "school_board_regular"
+        return "school_board", "school_board_meeting"
+    if section_body == "prab":
+        return "prab", "prab_meeting"
+    if section_body == "hhcab":
+        # Standing committees (Housing Trust Fund, Home Sharing, ...) meet
+        # under the same board and are archived in its section.
+        if "committee" in t:
+            return "hhcab", "hhcab_committee"
+        return "hhcab", "hhcab_meeting"
     return None
 
 
@@ -220,11 +252,20 @@ def list_meetings(view_id: str) -> list[DiscoveredMeeting]:
 
 
 def classify_upcoming_title(title: str) -> str | None:
+    """Body key for an upcoming-events row, from its title alone (the
+    upcoming table has no per-body sections). None = a body we don't track,
+    still listed. Joint sessions go to the body named first."""
     t = title.lower()
     if t.startswith("city council"):
         return "city_council"
     if t.startswith("planning commission"):
         return "planning_commission"
+    if "school board" in t:
+        return "school_board"
+    if "prab" in t or "park and recreation" in t or "parks and recreation" in t:
+        return "prab"
+    if "hhcab" in t or "housing and healthy communities" in t:
+        return "hhcab"
     return None
 
 
@@ -292,9 +333,16 @@ def list_upcoming(view_id: str) -> list[UpcomingEvent]:
 
 
 def fetch_agenda_text(agenda_url: str) -> str:
-    """Plain text of an AgendaViewer page, for matching tracked entities
-    against upcoming agendas."""
+    """Plain text of an AgendaViewer target, for matching tracked entities
+    against upcoming agendas. Council and Planning Commission agendas are
+    Granicus-generated HTML; the advisory boards (PRAB, HHCAB) upload a PDF
+    that AgendaViewer redirects to."""
     resp = http.get(agenda_url)
+    if "pdf" in resp.headers.get("Content-Type", "").lower() or resp.content[:5] == b"%PDF-":
+        import fitz  # pymupdf
+
+        with fitz.open(stream=resp.content, filetype="pdf") as doc:
+            return re.sub(r"\s+", " ", " ".join(page.get_text("text") for page in doc)).strip()
     return BeautifulSoup(resp.text, "lxml").get_text(" ", strip=True)
 
 

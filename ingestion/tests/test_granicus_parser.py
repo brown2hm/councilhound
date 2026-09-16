@@ -55,6 +55,39 @@ ARCHIVE_SNIPPET = """
   </td>
   <td class="listItem" headers="Date">Jul  1, 2026</td>
   <td class="listItem" headers="Duration">01h 12m</td>
+  <td class="listItem"><a href="https://archive-video.granicus.com/fairfax/fairfax_uuid2.mp3">MP3</a></td>
+</tr>
+</table>
+<h3>Park and Recreation Advisory Board Meetings</h3>
+<table class="listingTable">
+<tr>
+  <td class="listItem" headers="Name">
+    <a onClick="window.open('//fairfax.granicus.com/MediaPlayer.php?view_id=13&clip_id=4642','p')">play</a>&nbsp;PRAB Regular Meeting
+  </td>
+  <td class="listItem" headers="Date">Sep 10, 2026</td>
+  <td class="listItem" headers="Duration"></td>
+  <td class="listItem"><a href="//fairfax.granicus.com/AgendaViewer.php?view_id=13&clip_id=4642">Agenda</a></td>
+  <td class="listItem"><a href="//fairfax.granicus.com/MinutesViewer.php?view_id=13&clip_id=4642&doc_id=ccc">Minutes</a></td>
+</tr>
+</table>
+<h3>Housing and Healthy Communities Advisory Board Meetings</h3>
+<table class="listingTable">
+<tr>
+  <td class="listItem" headers="Name">
+    <a onClick="window.open('//fairfax.granicus.com/MediaPlayer.php?view_id=13&clip_id=4640','p')">play</a>&nbsp;HHCAB Committee Meeting (Housing Trust Fund)
+  </td>
+  <td class="listItem" headers="Date">Sep  2, 2026</td>
+  <td class="listItem" headers="Duration"></td>
+</tr>
+</table>
+<h3>Commission for Women Meetings</h3>
+<table class="listingTable">
+<tr>
+  <td class="listItem" headers="Name">
+    <a onClick="window.open('//fairfax.granicus.com/MediaPlayer.php?view_id=13&clip_id=4600','p')">play</a>&nbsp;Commission for Women Regular Meeting
+  </td>
+  <td class="listItem" headers="Date">Sep  3, 2026</td>
+  <td class="listItem" headers="Duration"></td>
 </tr>
 </table>
 </body></html>
@@ -63,7 +96,8 @@ ARCHIVE_SNIPPET = """
 
 def test_parse_archive_scope_and_fields():
     meetings = parse_archive(ARCHIVE_SNIPPET, view_id="13")
-    assert [m.clip_id for m in meetings] == ["4609", "4500"]  # BAR + School Board excluded
+    # BAR and Commission for Women excluded; the three added bodies are in
+    assert [m.clip_id for m in meetings] == ["4609", "4500", "4502", "4642", "4640"]
 
     council = meetings[0]
     assert council.body == "city_council"
@@ -81,6 +115,14 @@ def test_parse_archive_scope_and_fields():
     assert pc.body == "planning_commission"
     assert pc.meeting_type == "planning_commission"
 
+    sb, prab, hhcab = meetings[2:]
+    assert (sb.body, sb.meeting_type) == ("school_board", "school_board_regular")
+    assert sb.audio_url.endswith("fairfax_uuid2.mp3")
+    assert (prab.body, prab.meeting_type) == ("prab", "prab_meeting")
+    assert prab.audio_url is None and prab.duration_seconds is None  # no recording
+    assert prab.agenda_url.endswith("clip_id=4642") and prab.minutes_url.endswith("doc_id=ccc")
+    assert (hhcab.body, hhcab.meeting_type) == ("hhcab", "hhcab_committee")
+
 
 def test_classify():
     assert classify("city_council", "City Council Regular Meeting") == ("city_council", "council_regular")
@@ -90,6 +132,28 @@ def test_classify():
     assert classify("community_development", "Planning Commission Work Session") == (
         "planning_commission", "planning_commission",
     )
+    assert classify("school_board", "School Board Work Session") == ("school_board", "school_board_work_session")
+    assert classify("school_board", "School Board Closed Meeting") == ("school_board", "school_board_closed")
+    assert classify("school_board", "Joint School Board and City Council Work Session") == (
+        "school_board", "school_board_meeting",
+    )
+    assert classify("prab", "PRAB and School Board Joint Meeting") == ("prab", "prab_meeting")
+    assert classify("hhcab", "HHCAB Regular Meeting") == ("hhcab", "hhcab_meeting")
+    assert classify("hhcab", "HHCAB Committee Meeting (Home Sharing)") == ("hhcab", "hhcab_committee")
+    assert classify("electoral_board", "Electoral Board Regular Meeting") is None
+
+
+def test_classify_upcoming_title():
+    from councilhound.scraper.granicus import classify_upcoming_title
+
+    assert classify_upcoming_title("City Council Work Session") == "city_council"
+    assert classify_upcoming_title("Planning Commission Regular Meeting/Work Session") == "planning_commission"
+    assert classify_upcoming_title("School Board Retreat") == "school_board"
+    assert classify_upcoming_title("Joint School Board/City Council Work Session") == "school_board"
+    assert classify_upcoming_title("PRAB Regular Meeting") == "prab"
+    assert classify_upcoming_title("HHCAB Committee Meeting (Homelessness)") == "hhcab"
+    assert classify_upcoming_title("BAR Regular Meeting") is None
+    assert classify_upcoming_title("Commission for Women Regular meeting") is None
 
 
 def test_extract_agenda_item_links():

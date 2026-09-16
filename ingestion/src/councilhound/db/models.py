@@ -29,8 +29,8 @@ class Meeting(Base):
     id = Column(Integer, primary_key=True)
     granicus_clip_id = Column(String, nullable=False)
     granicus_view_id = Column(String, nullable=False)
-    body = Column(String, nullable=False)  # 'city_council' | 'planning_commission'
-    meeting_type = Column(String, nullable=False)  # 'council_regular','council_work_session',...
+    body = Column(String, nullable=False)  # a councilhound.bodies key: 'city_council', 'school_board', ...
+    meeting_type = Column(String, nullable=False)  # 'council_regular','school_board_work_session',...
     meeting_date = Column(Date, nullable=False, index=True)
     title = Column(Text, nullable=False)
     duration_seconds = Column(Integer)
@@ -294,7 +294,7 @@ class TopicSubscription(Base):
     kind decides what the row watches:
       topic     entity_id = a tracked non-person entity (the original follow)
       member    entity_id = a council member / commissioner; digests their votes
-      body      body = city_council | planning_commission; digests every
+      body      body = a councilhound.bodies key; digests every
                 meeting of that body
       area      lat/lng/radius_m = a circle; digests topics geocoded inside it
       briefing  the weekly site briefing: decisions + status changes

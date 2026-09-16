@@ -12,6 +12,7 @@ from datetime import datetime
 
 import click
 
+from councilhound.bodies import BODY_KEYS
 from councilhound.config import GRANICUS_VIEW_IDS
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -25,6 +26,9 @@ def _parse_date(_ctx, _param, value):
 
 
 view_id_option = click.option("--view-id", default=GRANICUS_VIEW_IDS[0], show_default=True)
+body_option = click.option(
+    "--body", "bodies", multiple=True, type=click.Choice(BODY_KEYS),
+    help="only these bodies (repeatable); default all tracked bodies")
 since_option = click.option("--since", callback=_parse_date, default=None, help="YYYY-MM-DD")
 until_option = click.option("--until", callback=_parse_date, default=None, help="YYYY-MM-DD")
 limit_option = click.option("--limit", type=int, default=None, help="max meetings to process")
@@ -53,13 +57,15 @@ def init_db():
 @since_option
 @until_option
 @limit_option
-def discover(view_id, since, until, limit):
+@body_option
+def discover(view_id, since, until, limit, bodies):
     """Phase 1: discover in-scope meetings and upsert meetings rows."""
     from councilhound import pipeline
     from councilhound.db.session import get_session
 
     with get_session() as session:
-        result = pipeline.discover(session, view_id, since=since, until=until, limit=limit)
+        result = pipeline.discover(session, view_id, since=since, until=until, limit=limit,
+                                   bodies=bodies or None)
     click.echo(result)
 
 
@@ -69,14 +75,16 @@ def discover(view_id, since, until, limit):
 @until_option
 @limit_option
 @click.option("--skip-media", is_flag=True, help="skip MP3 downloads (documents only)")
-def ingest(view_id, since, until, limit, skip_media):
+@body_option
+def ingest(view_id, since, until, limit, skip_media, bodies):
     """Phase 1: discover + fetch documents and audio for in-scope meetings."""
     from councilhound import pipeline
     from councilhound.db.session import get_session
 
     with get_session() as session:
         run = pipeline.run_ingest(
-            session, view_id, since=since, until=until, limit=limit, skip_media=skip_media
+            session, view_id, since=since, until=until, limit=limit, skip_media=skip_media,
+            bodies=bodies or None,
         )
         click.echo(
             f"run {run.id}: {run.meetings_processed} meetings processed, "
@@ -160,6 +168,30 @@ def merge_entity(source_slug, target_slug, force_cross_type):
                                force_cross_type=force_cross_type)
         session.commit()
         click.echo(f"merged {source_slug} -> {target_slug}: {moved}")
+
+
+@cli.command("detach-entity")
+@click.argument("slug")
+@click.option("--clip-id", required=True, help="the meeting, by Granicus clip_id")
+@click.option("--item", default=None, help="only unfile from this agenda item label (default: every item)")
+def detach_entity_cmd(slug, clip_id, item):
+    """Unfile SLUG from the agenda item(s) it was attached to at one meeting,
+    keeping it on the meeting timeline. For remarks the extractor filed under
+    the wrong item (council comments landing on the last item of the night)."""
+    from sqlalchemy import select
+
+    from councilhound.db.models import Meeting
+    from councilhound.db.session import get_session
+    from councilhound.dedupe import detach_entity
+
+    with get_session() as session:
+        meeting = session.scalar(select(Meeting).where(Meeting.granicus_clip_id == str(clip_id)))
+        if meeting is None:
+            raise click.ClickException(f"no meeting with clip_id {clip_id}")
+        moved = detach_entity(session, slug, meeting.id, item_label=item)
+        session.commit()
+        click.echo(f"detached {slug} from {meeting.title} {meeting.meeting_date}"
+                   f"{' item ' + item if item else ''}: {moved}")
 
 
 @cli.command("merge-entities-batch")

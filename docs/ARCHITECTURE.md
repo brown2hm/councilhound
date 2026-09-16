@@ -121,7 +121,7 @@ erDiagram
 
     MEETINGS {
         string granicus_clip_id UK "with view_id"
-        string body "city_council | planning_commission"
+        string body "councilhound.bodies key: city_council | planning_commission | school_board | prab | hhcab"
         date meeting_date
         int duration_seconds
         string status "discovered → fetched → extracted"

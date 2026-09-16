@@ -19,6 +19,7 @@ from councilhound.db.models import (
     AgendaItem, CityProject, Entity, EntityGeocode, EntityUpdate, Meeting, TopicSubscription,
     UpcomingMeeting, Vote,
 )
+from councilhound.bodies import BODY_LABELS
 from councilhound.mail import send_email
 from councilhound.people import vote_cast_by
 
@@ -27,7 +28,6 @@ log = logging.getLogger(__name__)
 SITE_BASE_URL = os.environ.get("SITE_BASE_URL", "https://councilhound.net")
 API_BASE_URL = os.environ.get("API_BASE_URL", "https://api.councilhound.net")
 
-BODY_LABELS = {"city_council": "City Council", "planning_commission": "Planning Commission"}
 BRIEFING_EVERY = datetime.timedelta(days=7)
 MAX_LINES_PER_SECTION = 40
 
