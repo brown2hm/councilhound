@@ -366,6 +366,34 @@ def detach_entity(session: Session, slug: str, meeting_id: int,
     return moved
 
 
+def purge_entity(session: Session, slug: str, apply: bool = False) -> dict:
+    """Remove an entity that should never have existed (the city itself, one
+    of its own bodies) together with everything hanging off it. Dependent
+    rows cascade in the database; transcript speaker links are cleared.
+    Dry-run by default: returns the counts that would go."""
+    entity = _entity_by_slug_or_alias(session, slug)
+    if entity is None:
+        raise ValueError(f"unknown slug: {slug}")
+    counts = {
+        "entity": entity.name,
+        "updates": session.scalar(select(func.count(EntityUpdate.id))
+                                  .where(EntityUpdate.entity_id == entity.id)),
+        "mentions": session.scalar(select(func.count(EntityMention.id))
+                                   .where(EntityMention.entity_id == entity.id)),
+        "aliases": session.scalar(select(func.count(EntityAlias.id))
+                                  .where(EntityAlias.entity_id == entity.id)),
+        "speaker_links": session.scalar(select(func.count(TranscriptChunk.id))
+                                        .where(TranscriptChunk.speaker_entity_id == entity.id)),
+    }
+    if apply:
+        session.execute(update(TranscriptChunk)
+                        .where(TranscriptChunk.speaker_entity_id == entity.id)
+                        .values(speaker_entity_id=None))
+        session.delete(entity)
+        session.flush()
+    return counts
+
+
 def _entity_by_slug_or_alias(session: Session, slug: str) -> Entity | None:
     entity = session.scalar(select(Entity).where(Entity.canonical_slug == slug))
     if entity is not None:

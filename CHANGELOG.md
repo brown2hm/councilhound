@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased — extractor guards: no votes without a record, no bodies as topics (September 2026)
+
+Two things the two-year advisory-board backfill surfaced.
+
+- **Votes need minutes or an actions report.** Given only an agenda and its
+  packet, the model had filed the packet's sample motions and routine
+  procedure as passed votes (the July 27, 2026 Planning Commission meeting
+  carried four). `apply_extraction` now drops votes unless a minutes or
+  actions-report document with text exists; the late-document re-run
+  restores them when the record lands.
+- **The city and its own bodies are never entities.** PRAB agendas'
+  "Stakeholder Updates: Planning Commission – …; School Board – …" lines
+  became topics, and "City of Fairfax" topped the School Board hot-topics
+  ranking. `councilhound.bodies.is_self_reference` (registry labels plus
+  the jurisdiction and its untracked boards) is applied at apply time, the
+  prompt says so too, and a `purge-entity` command removes the rows made
+  before the guard existed.
+
 ## Unreleased — three more bodies: School Board, Parks and Recreation Advisory Board, Housing and Healthy Communities Advisory Board (September 2026)
 
 All three already publish to the same Granicus archive page the scraper

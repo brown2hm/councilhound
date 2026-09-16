@@ -228,3 +228,68 @@ def test_comment_period_remarks_do_not_join_an_item(db_session):
     from councilhound.extraction.llm_structure import EXTRACTION_TOOL, SYSTEM_PROMPT
     assert "other_discussion" in EXTRACTION_TOOL["input_schema"]["properties"]
     assert "other_discussion" in SYSTEM_PROMPT
+
+
+def test_votes_need_minutes_or_an_actions_report(db_session):
+    """With only an agenda (and packet) on file, the model has recorded the
+    packet's sample motions as passed votes. Votes are dropped unless a
+    minutes or actions-report document with text exists; the item and its
+    outcome text stay."""
+    meeting = Meeting(
+        granicus_clip_id="4646", granicus_view_id="13", body="planning_commission",
+        meeting_type="planning_commission", meeting_date=datetime.date(2026, 7, 27),
+        title="Planning Commission Regular Meeting/Work Session", status="fetched",
+    )
+    db_session.add(meeting)
+    db_session.flush()
+    db_session.add(Document(meeting_id=meeting.id, doc_type="agenda",
+                            source_url="https://x/agenda/4646", raw_text="agenda text"))
+    db_session.flush()
+
+    apply_extraction(db_session, meeting, EXTRACTION_1)
+    assert db_session.scalar(select(func.count(Vote.id))) == 0
+    assert db_session.scalar(select(func.count(AgendaItem.id))) == 1
+
+    # minutes arrive later: the re-apply keeps the votes
+    db_session.add(Document(meeting_id=meeting.id, doc_type="minutes",
+                            source_url="https://x/minutes/4646", raw_text="minutes text"))
+    db_session.flush()
+    apply_extraction(db_session, meeting, EXTRACTION_1)
+    assert db_session.scalar(select(func.count(Vote.id))) == 1
+
+
+def test_city_and_its_bodies_are_never_entities(db_session):
+    """PRAB agendas carry "Stakeholder Updates: Planning Commission – Matt
+    Rice; School Board – Amit Hickman", and the model turned the bodies and
+    the city into topics. Those names are skipped in items and in the
+    other_discussion bucket alike; real topics on the same item survive."""
+    meeting = _make_meeting(db_session, "4642", datetime.date(2026, 9, 10))
+    data = {
+        "summary": "Parks board stakeholder updates.",
+        "agenda_items": [{
+            "label": "6",
+            "title": "Stakeholder Updates",
+            "outcome": "Updates received.",
+            "votes": [],
+            "entities": [
+                {"entity_type": "topic", "name": "Planning Commission", "role": "subject",
+                 "update_text": "Matt Rice reported on the commission's work."},
+                {"entity_type": "topic", "name": "the City of Fairfax School Board", "role": "subject",
+                 "update_text": "Amit Hickman reported for the board."},
+                {"entity_type": "location", "name": "City of Fairfax", "role": "location",
+                 "update_text": "Citywide."},
+                {"entity_type": "project", "name": "Van Dyck Park Playground", "role": "subject",
+                 "update_text": "Playground replacement is out to bid.", "status_after": "in_progress"},
+            ],
+        }],
+        "other_discussion": [
+            {"entity_type": "topic", "name": "Fairfax City Council", "period": "member_comments",
+             "update_text": "Council adopted the budget."},
+            {"entity_type": "topic", "name": "Native Planting Program", "period": "member_comments",
+             "update_text": "A member proposed native plantings at the park."},
+        ],
+    }
+    apply_extraction(db_session, meeting, data)
+    names = sorted(db_session.scalars(select(Entity.name)))
+    assert names == ["Native Planting Program", "Van Dyck Park Playground"]
+    assert db_session.scalar(select(func.count(EntityUpdate.id))) == 2

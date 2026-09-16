@@ -47,3 +47,39 @@ def label(key: str | None) -> str:
         return ""
     body = BODIES.get(key)
     return body.label if body else key
+
+
+# The jurisdiction itself, and the bodies (tracked or not) that sit on its
+# Granicus archive. None of these is a topic: a meeting that "discusses the
+# City of Fairfax" or gets a "Planning Commission update" is talking about
+# the actors, and letting them through as entities put "City of Fairfax" at
+# the top of the School Board hot-topics ranking (2026-09-16).
+JURISDICTION_NAMES: tuple[str, ...] = (
+    "City of Fairfax", "Fairfax City", "Fairfax", "Fairfax, Virginia", "Fairfax County",
+)
+OTHER_BODY_NAMES: tuple[str, ...] = (
+    "PRAB", "HHCAB", "Board of Architectural Review", "BAR", "Board of Zoning Appeals", "BZA",
+    "Board of Equalization", "Commission for Women", "Commission on the Arts", "Electoral Board",
+    "Environmental Sustainability Committee", "Fairfax Village in the City Advisory Board",
+    "Human Services Committee", "Retirement Plan Administrative Committee",
+)
+_BODY_NAMES = frozenset(n.lower() for n in (*OTHER_BODY_NAMES, *(b.label for b in BODIES.values())))
+_JURISDICTION = frozenset(n.lower() for n in JURISDICTION_NAMES)
+_PREFIXES = ("city of fairfax ", "fairfax city ", "fairfax ")
+
+
+def is_self_reference(name: str | None) -> bool:
+    """Is this entity name the jurisdiction or one of its own bodies?
+    Case-insensitive; tolerates a leading article and a jurisdiction prefix
+    ("the City of Fairfax School Board", "Fairfax City Council")."""
+    if not name:
+        return False
+    n = " ".join(name.lower().split()).strip(" .,;:")
+    if n.startswith("the "):
+        n = n[4:]
+    if n in _JURISDICTION or n in _BODY_NAMES:
+        return True
+    for prefix in _PREFIXES:
+        if n.startswith(prefix) and n[len(prefix):] in _BODY_NAMES:
+            return True
+    return False

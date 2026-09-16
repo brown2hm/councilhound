@@ -37,6 +37,7 @@ from councilhound.db.models import (
     Meeting,
     Vote,
 )
+from councilhound.bodies import is_self_reference
 from councilhound.entities import resolve_entity
 
 log = logging.getLogger(__name__)
@@ -163,6 +164,10 @@ not create entities for routine procedure (roll call, adoption of agenda, \
 approval of prior minutes) or for council members merely being present.
 - status_after is for trackable matters (projects, ordinances, resolutions, \
 zoning cases): what state is it in after this meeting?
+- The city itself and its own bodies (City Council, Planning Commission, \
+School Board, advisory boards and committees) are the actors, never \
+entities. A "Planning Commission update" or "School Board liaison report" \
+item gets entities for what was reported on, not for the body.
 - An agenda item's entities are only what that item itself concerned. A \
 matter raised during member or council comments, committee or staff reports, \
 public comment or announcements is NOT part of the item the minutes happen to \
@@ -352,6 +357,12 @@ def apply_extraction(session: Session, meeting: Meeting, data: dict) -> None:
     # citation target preference: minutes > actions_report > agenda
     cite_doc = cite_docs.get("minutes") or cite_docs.get("actions_report") or cite_docs.get("agenda")
     cite_doc_id = cite_doc.id if cite_doc else None
+    # Votes exist only in the record of what happened. Given just an agenda
+    # (and packet), the model has filed the packet's sample motions and the
+    # routine procedure as passed votes; the prompt forbids it and this makes
+    # the rule hold whatever the model does.
+    has_record = bool(cite_docs.get("minutes") or cite_docs.get("actions_report"))
+    dropped_votes = skipped_self = 0
 
     # entity_id -> {"texts": [...], "status": ..., "item_id": ...}
     updates: dict[int, dict] = {}
@@ -375,6 +386,9 @@ def apply_extraction(session: Session, meeting: Meeting, data: dict) -> None:
         session.flush()
 
         for vote in item.get("votes", []):
+            if not has_record:
+                dropped_votes += 1
+                continue
             session.add(Vote(
                 meeting_id=meeting.id,
                 agenda_item_id=row.id,
@@ -385,6 +399,9 @@ def apply_extraction(session: Session, meeting: Meeting, data: dict) -> None:
 
         comments_item = _is_comments_item(item.get("title"))
         for ent in item.get("entities", []):
+            if is_self_reference(ent.get("name")):
+                skipped_self += 1
+                continue
             entity = resolve_entity(session, ent.get("entity_type", "topic"), ent.get("name", ""),
                                     first_seen_meeting_id=meeting.id)
             if entity is None:
@@ -412,6 +429,9 @@ def apply_extraction(session: Session, meeting: Meeting, data: dict) -> None:
     # remarks from a period the agenda had no item for: on the meeting, no item
     for ent in data.get("other_discussion", []) or []:
         period = ent.get("period") if ent.get("period") in PERIODS else "other"
+        if is_self_reference(ent.get("name")):
+            skipped_self += 1
+            continue
         entity = resolve_entity(session, ent.get("entity_type", "topic"), ent.get("name", ""),
                                 first_seen_meeting_id=meeting.id)
         if entity is None:
@@ -441,6 +461,10 @@ def apply_extraction(session: Session, meeting: Meeting, data: dict) -> None:
             status_after=u["status"],
         ))
     session.flush()
+    if dropped_votes or skipped_self:
+        log.info("meeting %s: dropped %d vote(s) recorded without minutes or an actions "
+                 "report, skipped %d self-reference entit%s",
+                 meeting.id, dropped_votes, skipped_self, "y" if skipped_self == 1 else "ies")
 
     _rollup_status(session, list(updates.keys()))
 
