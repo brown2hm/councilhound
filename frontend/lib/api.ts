@@ -647,6 +647,8 @@ export interface HotTopic {
 
 export interface HotTopicsResponse {
   meetings: { id: number; title: string; date: string }[];
+  // every timed transcript second across those meetings: the denominator for share of time
+  window_seconds: number;
   topics: HotTopic[];
 }
 

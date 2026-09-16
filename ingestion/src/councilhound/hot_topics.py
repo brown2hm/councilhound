@@ -104,7 +104,7 @@ def hot_topics(
     else:
         meetings = recent_transcribed_meetings(session, n_meetings or 3)
     if not meetings:
-        return {"meetings": [], "topics": []}
+        return {"meetings": [], "topics": [], "window_seconds": 0}
     meeting_ids = [m.id for m in meetings]
 
     chunks = session.execute(
@@ -128,9 +128,11 @@ def hot_topics(
     seconds: dict[int, float] = defaultdict(float)
     mentions: dict[int, int] = defaultdict(int)
     per_meeting: dict[int, dict[int, float]] = defaultdict(lambda: defaultdict(float))
+    window_seconds = 0.0  # all transcribed time in the window: the denominator for "share of time"
     for meeting_id, text, start, end in chunks:
         text_l = text.lower()
         duration = float(end - start) if (start is not None and end is not None) else 0.0
+        window_seconds += duration
         for entity_id, names in variants:
             if any(n in text_l for n in names):
                 seconds[entity_id] += duration
@@ -144,6 +146,7 @@ def hot_topics(
             {"id": m.id, "title": m.title, "date": m.meeting_date.isoformat()}
             for m in meetings
         ],
+        "window_seconds": round(window_seconds),
         "topics": [
             {
                 "slug": by_id[eid].canonical_slug,
