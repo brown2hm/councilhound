@@ -226,6 +226,26 @@ def detach_entity_cmd(slug, clip_id, item):
                    f"{' item ' + item if item else ''}: {moved}")
 
 
+@cli.command("purge-entity")
+@click.argument("slugs", nargs=-1, required=True)
+@click.option("--apply", "apply_", is_flag=True, help="delete (default: dry-run print of what would go)")
+def purge_entity_cmd(slugs, apply_):
+    """Delete entities that should never have existed — the city itself or
+    one of its own bodies extracted as a topic — with their updates,
+    mentions, aliases, profiles and wiki rows. The extractor now refuses
+    such names (councilhound.bodies.is_self_reference); this cleans up the
+    rows made before it did."""
+    from councilhound.db.session import get_session
+    from councilhound.dedupe import purge_entity
+
+    with get_session() as session:
+        for slug in slugs:
+            counts = purge_entity(session, slug, apply=apply_)
+            click.echo(f"{'purged' if apply_ else 'would purge'} {slug}: {counts}")
+        if apply_:
+            session.commit()
+
+
 @cli.command("merge-entities-batch")
 @click.argument("merge_file", type=click.Path(exists=True))
 @click.option("--apply", "apply_", is_flag=True, help="perform the merges (default: dry-run print)")

@@ -2,7 +2,7 @@
 The July 2026 audit found phrasing drift splitting topic threads
 (courthouse-plaza x5, acronym twins like ...-prab); these pin the fixes."""
 import pytest
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from councilhound.db.models import (
     AgendaItem, Entity, EntityAlias, EntityMention, EntityUpdate, Meeting,
@@ -297,3 +297,45 @@ def test_detach_entity_unfiles_from_the_item_but_keeps_the_meeting(db_session):
     assert db_session.scalar(select(EntityUpdate).where(EntityUpdate.entity_id == fy26.id)).agenda_item_id == budget.id
     # idempotent
     assert detach_entity(db_session, "vape-shop-proximity-restrictions", m.id) == {"updates": 0, "mentions": 0}
+
+
+def test_purge_entity_removes_it_with_its_rows_and_clears_speaker_links(db_session):
+    """"City of Fairfax" extracted as a location: purge takes its updates,
+    mentions and aliases with it, nulls transcript speaker links rather than
+    deleting speech, and leaves other entities and the meeting alone."""
+    import datetime
+
+    from councilhound.db.models import TranscriptChunk
+    from councilhound.dedupe import purge_entity
+
+    m = Meeting(granicus_clip_id="4642", granicus_view_id="13", body="prab",
+                meeting_type="prab_meeting", meeting_date=datetime.date(2026, 9, 10),
+                title="PRAB Regular Meeting", status="extracted")
+    db_session.add(m)
+    db_session.flush()
+    city = Entity(entity_type="location", name="City of Fairfax", canonical_slug="city-of-fairfax")
+    park = Entity(entity_type="project", name="Van Dyck Park", canonical_slug="van-dyck-park")
+    db_session.add_all([city, park])
+    db_session.flush()
+    db_session.add_all([
+        EntityAlias(entity_id=city.id, alias="Fairfax"),
+        EntityUpdate(entity_id=city.id, meeting_id=m.id, update_text="Citywide."),
+        EntityMention(entity_id=city.id, meeting_id=m.id, role="location"),
+        EntityUpdate(entity_id=park.id, meeting_id=m.id, update_text="Out to bid."),
+        TranscriptChunk(meeting_id=m.id, start_seconds=0, end_seconds=10, text="hello",
+                        speaker_entity_id=city.id),
+    ])
+    db_session.commit()
+
+    preview = purge_entity(db_session, "city-of-fairfax")
+    assert preview == {"entity": "City of Fairfax", "updates": 1, "mentions": 1,
+                       "aliases": 1, "speaker_links": 1}
+    assert db_session.get(Entity, city.id) is not None  # dry run
+
+    purge_entity(db_session, "fairfax", apply=True)  # alias resolves too
+    db_session.commit()
+    assert db_session.get(Entity, city.id) is None
+    assert db_session.scalar(select(func.count(EntityUpdate.id))) == 1
+    assert db_session.scalar(select(func.count(EntityMention.id))) == 0
+    assert db_session.scalar(select(TranscriptChunk.speaker_entity_id)) is None
+    assert db_session.get(Entity, park.id) is not None
