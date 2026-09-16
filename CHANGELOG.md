@@ -1,5 +1,29 @@
 # Changelog
 
+## Unreleased — one runner per stage (September 2026)
+
+The jobs app runs a nightly `daily` machine, an hourly `catchup` machine and
+the occasional one-off backfill machine against the same database. On
+2026-09-16 the hourly catchup started while a backfill was mid-way through
+structuring: both selected the same pending meetings (oldest first), both
+called Claude, and the loser died on the `(meeting_id, prompt_version)`
+unique constraint. The data was right; the LLM spend doubled and the logs
+filled with tracebacks.
+
+- **Advisory lock per stage.** `councilhound.db.session.stage_lock(stage)`
+  takes a session-level Postgres advisory lock keyed by stage (`ingest`,
+  `structure`, `transcribe`, `embed`, `profile`) on its own connection and
+  yields whether it got it. Non-blocking: a runner never waits on another.
+  Released on exit, and by Postgres itself when the connection drops, so a
+  machine that exits or is killed never leaves a stale lock behind.
+- **The CLI skips instead of duplicating.** `ingest`, `structure`,
+  `transcribe`, `embed` and `profile` log `another runner holds <stage>;
+  skipping` and exit 0 when the stage is taken. `daily` and `catchup` hold
+  the lock per stage, so a catchup that arrives during a backfill still
+  ingests, extracts text and embeds, and skips only the structuring pass.
+  The cheap idempotent housekeeping passes (text extraction, index points,
+  roster seeding, dedupe, geocoding, notifications) stay unguarded.
+
 ## Unreleased — three more bodies: School Board, Parks and Recreation Advisory Board, Housing and Healthy Communities Advisory Board (September 2026)
 
 All three already publish to the same Granicus archive page the scraper

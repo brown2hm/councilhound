@@ -7,8 +7,9 @@ local development.
 """
 import os
 import threading
+from contextlib import contextmanager
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
 from councilhound.config import DATA_DIR, DATABASE_URL
@@ -52,3 +53,67 @@ def get_session():
             if _SessionLocal is None:
                 _SessionLocal = sessionmaker(bind=get_engine())
     return _SessionLocal()
+
+
+# --- one runner per pipeline stage ----------------------------------------
+# The jobs app runs a nightly `daily` machine, an hourly `catchup` machine and
+# ad-hoc one-off machines against the same database. Every stage is
+# idempotent in its *result*, but two runners in the same stage at the same
+# time select the same pending rows (oldest first), both pay for the LLM /
+# transcription call, and the loser dies on the unique constraint (seen
+# 2026-09-16: catchup vs. a backfill both structuring meeting 242). A
+# session-level Postgres advisory lock per stage lets the second runner see
+# the first and skip. Session-level locks are released when the connection
+# drops, so a machine that exits — or is killed — never leaves one behind.
+#
+# Keys are (namespace, stage) int pairs so they cannot collide with any other
+# advisory-lock user of the same database.
+ADVISORY_NAMESPACE = 0x434F554E  # "COUN"
+STAGE_LOCK_KEYS = {
+    "ingest": 1,
+    "structure": 2,
+    "transcribe": 3,
+    "embed": 4,
+    "profile": 5,
+}
+
+
+@contextmanager
+def stage_lock(stage: str, engine=None):
+    """Try to take the advisory lock for ``stage``; yield whether we hold it.
+
+    Usage::
+
+        with stage_lock("structure") as held:
+            if not held:
+                log.warning("another runner holds structure; skipping")
+                return
+            structure_pending(session)
+
+    The lock lives on its own connection, checked out from the pool for the
+    whole block, because a session-level advisory lock belongs to the
+    Postgres backend that took it and an ORM session's connection goes back
+    to the pool on every commit. Non-blocking: ``pg_try_advisory_lock``
+    returns immediately, so a runner never waits on another. Released
+    explicitly on exit and implicitly if the process dies.
+    """
+    try:
+        key = STAGE_LOCK_KEYS[stage]
+    except KeyError:
+        raise ValueError(
+            f"unknown stage {stage!r}; expected one of {sorted(STAGE_LOCK_KEYS)}") from None
+    engine = engine if engine is not None else get_engine()
+    params = {"ns": ADVISORY_NAMESPACE, "key": key}
+    conn = engine.connect()
+    try:
+        held = bool(conn.execute(
+            text("SELECT pg_try_advisory_lock(:ns, :key)"), params).scalar())
+        conn.commit()  # end the autobegun transaction; the lock outlives it
+        try:
+            yield held
+        finally:
+            if held:
+                conn.execute(text("SELECT pg_advisory_unlock(:ns, :key)"), params)
+                conn.commit()
+    finally:
+        conn.close()

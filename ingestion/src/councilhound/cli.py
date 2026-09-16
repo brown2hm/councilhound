@@ -34,6 +34,29 @@ until_option = click.option("--until", callback=_parse_date, default=None, help=
 limit_option = click.option("--limit", type=int, default=None, help="max meetings to process")
 
 
+# The nightly `daily`, the hourly `catchup` and ad-hoc one-off machines all
+# share one database. Each stage takes a Postgres advisory lock
+# (councilhound.db.session.stage_lock) so a runner that finds another one in
+# the same stage skips it — exit 0, one log line — instead of paying for the
+# same LLM/transcription calls and dying on the unique constraint.
+def _skipped(stage, label=None):
+    msg = f"another runner holds {stage}; skipping"
+    logging.getLogger(__name__).warning(msg)
+    click.echo(f"{label:<14}{msg}" if label else msg)
+
+
+def _run_stage(stage, label, fn):
+    """Composite-run helper: echo ``fn()``'s result under the stage lock, or
+    the skip line when another runner holds the stage."""
+    from councilhound.db.session import stage_lock
+
+    with stage_lock(stage) as held:
+        if not held:
+            _skipped(stage, label)
+            return
+        click.echo(f"{label:<14}{fn()}")
+
+
 @click.group()
 def cli():
     pass
@@ -79,19 +102,23 @@ def discover(view_id, since, until, limit, bodies):
 def ingest(view_id, since, until, limit, skip_media, bodies):
     """Phase 1: discover + fetch documents and audio for in-scope meetings."""
     from councilhound import pipeline
-    from councilhound.db.session import get_session
+    from councilhound.db.session import get_session, stage_lock
 
-    with get_session() as session:
-        run = pipeline.run_ingest(
-            session, view_id, since=since, until=until, limit=limit, skip_media=skip_media,
-            bodies=bodies or None,
-        )
-        click.echo(
-            f"run {run.id}: {run.meetings_processed} meetings processed, "
-            f"{len(run.errors or [])} errors"
-        )
-        for err in run.errors or []:
-            click.echo(f"  clip {err['clip_id']}: {err['error']}")
+    with stage_lock("ingest") as held:
+        if not held:
+            _skipped("ingest")
+            return
+        with get_session() as session:
+            run = pipeline.run_ingest(
+                session, view_id, since=since, until=until, limit=limit,
+                skip_media=skip_media, bodies=bodies or None,
+            )
+            click.echo(
+                f"run {run.id}: {run.meetings_processed} meetings processed, "
+                f"{len(run.errors or [])} errors"
+            )
+            for err in run.errors or []:
+                click.echo(f"  clip {err['clip_id']}: {err['error']}")
 
 
 @cli.command("extract-text")
@@ -113,17 +140,22 @@ def transcribe(limit, clip_id):
     from sqlalchemy import select
 
     from councilhound.db.models import Meeting
-    from councilhound.db.session import get_session
+    from councilhound.db.session import get_session, stage_lock
     from councilhound.extraction.transcript import transcribe_meeting, transcribe_pending
 
-    with get_session() as session:
-        if clip_id:
-            meeting = session.scalar(select(Meeting).where(Meeting.granicus_clip_id == clip_id))
-            if not meeting:
-                raise click.ClickException(f"no meeting with clip_id={clip_id}")
-            click.echo(f"{transcribe_meeting(session, meeting)} chunks")
-        else:
-            click.echo(transcribe_pending(session, limit=limit))
+    with stage_lock("transcribe") as held:
+        if not held:
+            _skipped("transcribe")
+            return
+        with get_session() as session:
+            if clip_id:
+                meeting = session.scalar(
+                    select(Meeting).where(Meeting.granicus_clip_id == clip_id))
+                if not meeting:
+                    raise click.ClickException(f"no meeting with clip_id={clip_id}")
+                click.echo(f"{transcribe_meeting(session, meeting)} chunks")
+            else:
+                click.echo(transcribe_pending(session, limit=limit))
 
 
 @cli.command("seed-entities")
@@ -227,27 +259,33 @@ def structure(limit, clip_id, force, reapply):
     from sqlalchemy import select
 
     from councilhound.db.models import Meeting
-    from councilhound.db.session import get_session
+    from councilhound.db.session import get_session, stage_lock
     from councilhound.extraction.llm_structure import structure_meeting, structure_pending
 
-    with get_session() as session:
-        if clip_id:
-            meeting = session.scalar(select(Meeting).where(Meeting.granicus_clip_id == clip_id))
-            if not meeting:
-                raise click.ClickException(f"no meeting with clip_id={clip_id}")
-            structure_meeting(session, meeting, force=force, reapply_only=reapply)
-            click.echo(f"structured meeting {meeting.id} ({meeting.title} {meeting.meeting_date})")
-        elif reapply:
-            from councilhound.db.models import Extraction
-            from councilhound.extraction.llm_structure import apply_extraction
+    with stage_lock("structure") as held:
+        if not held:
+            _skipped("structure")
+            return
+        with get_session() as session:
+            if clip_id:
+                meeting = session.scalar(
+                    select(Meeting).where(Meeting.granicus_clip_id == clip_id))
+                if not meeting:
+                    raise click.ClickException(f"no meeting with clip_id={clip_id}")
+                structure_meeting(session, meeting, force=force, reapply_only=reapply)
+                click.echo(f"structured meeting {meeting.id} "
+                           f"({meeting.title} {meeting.meeting_date})")
+            elif reapply:
+                from councilhound.db.models import Extraction
+                from councilhound.extraction.llm_structure import apply_extraction
 
-            for ext in session.scalars(select(Extraction)).all():
-                meeting = session.get(Meeting, ext.meeting_id)
-                apply_extraction(session, meeting, ext.raw_json)
-            session.commit()
-            click.echo("re-applied all stored extractions")
-        else:
-            click.echo(structure_pending(session, limit=limit))
+                for ext in session.scalars(select(Extraction)).all():
+                    meeting = session.get(Meeting, ext.meeting_id)
+                    apply_extraction(session, meeting, ext.raw_json)
+                session.commit()
+                click.echo("re-applied all stored extractions")
+            else:
+                click.echo(structure_pending(session, limit=limit))
 
 
 @cli.command()
@@ -259,29 +297,38 @@ def profile(limit, slug, include_fresh):
     from sqlalchemy import select
 
     from councilhound.db.models import Entity
-    from councilhound.db.session import get_session
+    from councilhound.db.session import get_session, stage_lock
     from councilhound.extraction.entity_profile import profile_pending, synthesize_profile
 
-    with get_session() as session:
-        if slug:
-            entity = session.scalar(select(Entity).where(Entity.canonical_slug == slug))
-            if not entity:
-                raise click.ClickException(f"no entity with slug={slug}")
-            synthesize_profile(session, entity)
-            click.echo(f"profiled {slug}")
-        else:
-            click.echo(profile_pending(session, limit=limit, stale_only=not include_fresh))
+    with stage_lock("profile") as held:
+        if not held:
+            _skipped("profile")
+            return
+        with get_session() as session:
+            if slug:
+                entity = session.scalar(select(Entity).where(Entity.canonical_slug == slug))
+                if not entity:
+                    raise click.ClickException(f"no entity with slug={slug}")
+                synthesize_profile(session, entity)
+                click.echo(f"profiled {slug}")
+            else:
+                click.echo(profile_pending(session, limit=limit,
+                                           stale_only=not include_fresh))
 
 
 @cli.command()
 @limit_option
 def embed(limit):
     """Phase 4: embed transcript chunks + agenda items for RAG retrieval."""
-    from councilhound.db.session import get_session
+    from councilhound.db.session import get_session, stage_lock
     from councilhound.embeddings.embed import embed_pending
 
-    with get_session() as session:
-        click.echo(embed_pending(session, limit=limit))
+    with stage_lock("embed") as held:
+        if not held:
+            _skipped("embed")
+            return
+        with get_session() as session:
+            click.echo(embed_pending(session, limit=limit))
 
 
 @cli.command()
@@ -296,7 +343,7 @@ def daily(days):
 
     from councilhound import pipeline
     from councilhound.config import GRANICUS_VIEW_IDS
-    from councilhound.db.session import get_session
+    from councilhound.db.session import get_session, stage_lock
     from councilhound.embeddings.embed import embed_pending
     from councilhound.extraction.entity_profile import profile_pending
     from councilhound.extraction.llm_structure import structure_pending
@@ -306,15 +353,20 @@ def daily(days):
 
     since = datetime.date.today() - datetime.timedelta(days=days)
     with get_session() as session:
-        for view_id in GRANICUS_VIEW_IDS:
-            run = pipeline.run_ingest(session, view_id, since=since)
-            click.echo(f"ingest view {view_id}: {run.meetings_processed} meetings, "
-                       f"{len(run.errors or [])} errors")
-            click.echo(f"upcoming view {view_id}: {pipeline.sync_upcoming(session, view_id)}")
-        click.echo(f"projects:     {pipeline.sync_projects(session)}")
+        with stage_lock("ingest") as held:
+            if not held:
+                _skipped("ingest", "ingest:")
+            else:
+                for view_id in GRANICUS_VIEW_IDS:
+                    run = pipeline.run_ingest(session, view_id, since=since)
+                    click.echo(f"ingest view {view_id}: {run.meetings_processed} meetings, "
+                               f"{len(run.errors or [])} errors")
+                    click.echo(f"upcoming view {view_id}: "
+                               f"{pipeline.sync_upcoming(session, view_id)}")
+                click.echo(f"projects:     {pipeline.sync_projects(session)}")
         click.echo(f"extract-text: {extract_pending(session)}")
-        click.echo(f"transcribe:   {transcribe_pending(session)}")
-        click.echo(f"structure:    {structure_pending(session)}")
+        _run_stage("transcribe", "transcribe:", lambda: transcribe_pending(session))
+        _run_stage("structure", "structure:", lambda: structure_pending(session))
         click.echo(f"index-points: {pipeline.link_index_points_pending(session)}")
         click.echo(f"seed:         {seed_people(session)}")
         from councilhound.dedupe import dedupe_pass
@@ -328,8 +380,8 @@ def daily(days):
             click.echo("dedupe:       FAILED (see log)")
         from councilhound.geocode import geocode_pending
         click.echo(f"geocode:      {geocode_pending(session)}")
-        click.echo(f"profile:      {profile_pending(session)}")
-        click.echo(f"embed:        {embed_pending(session)}")
+        _run_stage("profile", "profile:", lambda: profile_pending(session))
+        _run_stage("embed", "embed:", lambda: embed_pending(session))
         from councilhound.notify import notify_subscribers
         click.echo(f"notify:       {notify_subscribers(session)}")
 
@@ -347,7 +399,7 @@ def catchup(days):
 
     from councilhound import pipeline
     from councilhound.config import GRANICUS_VIEW_IDS
-    from councilhound.db.session import get_session
+    from councilhound.db.session import get_session, stage_lock
     from councilhound.embeddings.embed import embed_pending
     from councilhound.extraction.llm_structure import structure_pending
     from councilhound.extraction.pdf_text import extract_pending
@@ -355,17 +407,22 @@ def catchup(days):
 
     since = datetime.date.today() - datetime.timedelta(days=days)
     with get_session() as session:
-        for view_id in GRANICUS_VIEW_IDS:
-            run = pipeline.run_ingest(session, view_id, since=since, skip_media=True)
-            click.echo(f"ingest view {view_id}: {run.meetings_processed} meetings, "
-                       f"{len(run.errors or [])} errors")
-            click.echo(f"upcoming view {view_id}: {pipeline.sync_upcoming(session, view_id)}")
-        click.echo(f"projects:     {pipeline.sync_projects(session)}")
+        with stage_lock("ingest") as held:
+            if not held:
+                _skipped("ingest", "ingest:")
+            else:
+                for view_id in GRANICUS_VIEW_IDS:
+                    run = pipeline.run_ingest(session, view_id, since=since, skip_media=True)
+                    click.echo(f"ingest view {view_id}: {run.meetings_processed} meetings, "
+                               f"{len(run.errors or [])} errors")
+                    click.echo(f"upcoming view {view_id}: "
+                               f"{pipeline.sync_upcoming(session, view_id)}")
+                click.echo(f"projects:     {pipeline.sync_projects(session)}")
         click.echo(f"extract-text: {extract_pending(session)}")
-        click.echo(f"structure:    {structure_pending(session)}")
+        _run_stage("structure", "structure:", lambda: structure_pending(session))
         click.echo(f"index-points: {pipeline.link_index_points_pending(session)}")
         click.echo(f"seed:         {seed_people(session)}")
-        click.echo(f"embed:        {embed_pending(session)}")
+        _run_stage("embed", "embed:", lambda: embed_pending(session))
 
 
 @cli.command()
