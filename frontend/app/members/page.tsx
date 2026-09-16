@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { api, formatDate, type MemberSummary } from "@/lib/api";
+import { subjectOf } from "@/lib/subject";
 
 export const metadata = {
   title: "Members",
@@ -12,23 +13,6 @@ export const dynamic = "force-dynamic";
 const isCouncil = (m: MemberSummary) => m.roles.some((r) => r === "Mayor" || r === "Councilmember");
 const isSchoolBoard = (m: MemberSummary) => m.roles.some((r) => r.startsWith("School Board"));
 const isMayor = (m: MemberSummary) => m.roles.includes("Mayor");
-
-/** Motion descriptions arrive as filed ("Motion to approve…"). Drop the
- * opener and clip at a word so the cell reads as a subject. */
-function subjectOf(text: string | null, max = 72): string {
-  if (!text) return "";
-  let t = text
-    .replace(/^(motion to |approval of |approve |consideration of |adopt(ion of)? )(an? |the )?/i, "")
-    .trim();
-  if (t) t = t.charAt(0).toUpperCase() + t.slice(1);
-  if (t.length <= max) return t;
-  let cut = t.slice(0, max).replace(/\s+\S*$/, "");
-  // never end inside a parenthetical, or on a joining word
-  const open = cut.lastIndexOf("(");
-  if (open > 0 && !cut.slice(open).includes(")")) cut = cut.slice(0, open);
-  cut = cut.replace(/\s+(and|or|of|the|to|for|a|an|in|on|at|by|with)$/i, "");
-  return cut.replace(/[\s,;:(–-]+$/, "") + "…";
-}
 
 function split(m: MemberSummary) {
   const s = m.vote_stats ?? {};

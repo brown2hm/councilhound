@@ -476,6 +476,13 @@ export interface MemberSummary {
   last_no: MemberLastNo | null;
 }
 
+export interface MemberVoteTopic {
+  slug: string;
+  name: string;
+  entity_type: string;
+  current_status: string | null;
+}
+
 export interface MemberVote {
   date: string;
   meeting_id: number;
@@ -486,6 +493,12 @@ export interface MemberVote {
   description: string | null;
   motion_result: string | null;
   vote: string;
+  tally: Record<string, number>; // the whole body's yes | no | abstain | absent on this motion
+  contested: boolean; // someone voted no
+  in_minority: boolean; // no on a motion that passed, or yes on one that failed
+  breakdown: Record<string, string>; // last name -> cast, as the minutes record it
+  category: string; // consent | hearing | closed | minutes | appointment | budget | ordinance | resolution | contract | other
+  topics: MemberVoteTopic[];
   watch_url: string | null;
 }
 
@@ -496,14 +509,76 @@ export interface MemberCommentaryEntry {
   summary: string;
 }
 
+export interface MemberRecord {
+  votes: number;
+  meetings: number;
+  first_vote: string | null;
+  last_vote: string | null;
+  with_outcome_pct: number | null;
+  contested: number;
+  minority: { total: number; no_on_passed: number; yes_on_failed: number };
+  close_votes: { total: number; lost: number }; // decided by one vote; lost = on the losing side
+  lone_no: number;
+  absent_meetings: { meeting_id: number; date: string }[];
+  comparisons: boolean; // enough contested votes for alignment, splits and categories to mean something
+}
+
+export interface MemberMeeting {
+  meeting_id: number;
+  date: string;
+  title: string;
+  body: string;
+  votes: number;
+  no: number;
+  contested: number;
+  absent: number;
+}
+
+export interface MemberCategory {
+  key: string;
+  label: string;
+  votes: number;
+  no: number;
+  absent: number;
+}
+
+export interface MemberMatter extends MemberVoteTopic {
+  n: number;
+  votes: Record<string, number>;
+}
+
+export interface MemberColleague {
+  slug: string;
+  name: string;
+  roles: string[];
+  votes_cast: number;
+  no_votes: number;
+  agree_pct: number | null; // share of this member's contested votes where the colleague voted the same way
+  agree_n: number;
+}
+
+export interface MemberSplit {
+  no: string[]; // slugs, in split_order, who voted no
+  count: number;
+}
+
 export interface MemberDetail {
   slug: string;
   name: string;
   roles: string[];
+  body: string | null;
   is_current: boolean;
   vote_stats: Record<string, number>;
+  record: MemberRecord;
   votes: MemberVote[];
+  by_meeting: MemberMeeting[]; // oldest first
+  categories: MemberCategory[];
+  matters: MemberMatter[];
+  colleagues: MemberColleague[]; // current members of the same body, most aligned first
+  split_order: string[]; // this member, then colleagues who vote regularly, by alignment
+  splits: MemberSplit[];
   commentary: MemberCommentaryEntry[];
+  upcoming: UpcomingEvent[];
 }
 
 export interface MapLocation {
