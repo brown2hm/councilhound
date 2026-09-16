@@ -161,6 +161,11 @@ def link_index_points(session: Session, meeting: Meeting) -> int:
     matching agenda_items (matched by normalized label). Returns matches."""
     from councilhound.db.models import AgendaItem
 
+    if not (meeting.video_url or meeting.audio_url):
+        # Advisory boards (PRAB, HHCAB) publish agenda + minutes with no
+        # recording; Granicus has no player page for such clips (404), and
+        # index points are timestamps into a recording anyway.
+        return 0
     items = session.scalars(
         select(AgendaItem).where(AgendaItem.meeting_id == meeting.id)
     ).all()
@@ -197,7 +202,10 @@ def link_index_points_pending(session: Session, limit: int | None = None) -> dic
     has_items = select(AgendaItem.meeting_id).distinct()
     q = (
         select(Meeting)
-        .where(Meeting.id.in_(has_items), Meeting.id.not_in(timestamped))
+        .where(Meeting.id.in_(has_items), Meeting.id.not_in(timestamped),
+               # unrecorded meetings have nothing to link and would be
+               # retried (and 404) on every run
+               (Meeting.video_url.isnot(None)) | (Meeting.audio_url.isnot(None)))
         .order_by(Meeting.meeting_date.desc())
     )
     if limit:
