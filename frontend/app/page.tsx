@@ -13,7 +13,7 @@ import {
   type MeetingDetail,
   type UpcomingEvent,
 } from "@/lib/api";
-import { figure, voteShape, type Figure } from "@/lib/briefing";
+import { voteShape } from "@/lib/briefing";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +27,6 @@ interface Decision {
   title: string;
   text: string;
   meetingId: number;
-  figure: Figure | null;
 }
 
 const TINTS: Record<string, string> = {
@@ -73,7 +72,6 @@ function deriveDecisions(details: MeetingDetail[]): Decision[] {
           title: item.title,
           text,
           meetingId: m.id,
-          figure: figure(text),
         });
       } else if (item.outcome && /recommend/i.test(item.outcome) && m.body === "planning_commission") {
         decisions.push({
@@ -86,7 +84,6 @@ function deriveDecisions(details: MeetingDetail[]): Decision[] {
           title: item.title,
           text: item.outcome,
           meetingId: m.id,
-          figure: figure(item.outcome),
         });
       }
     }
@@ -515,23 +512,14 @@ function DecisionCard({ d }: { d: Decision }) {
     );
   }
   return (
-    <Link href={`/meetings/${d.meetingId}`} className="flex gap-4 rounded-2xl border border-hairline bg-canvas p-4 px-5 hover:border-ink">
-      <div className="min-w-0 flex-1">
-        <div className="mb-1.5 flex flex-wrap items-center gap-2">
-          {badge}
-          <BodyTag body={d.body} className="text-[13px] text-muted" />
-          <span className="text-[13px] text-muted">{d.meta}</span>
-        </div>
-        <div className="mb-1 font-semibold">{d.title}</div>
-        <p className="text-sm leading-[1.55] text-body">{clip(d.text, 220)}</p>
+    <Link href={`/meetings/${d.meetingId}`} className="rounded-2xl border border-hairline bg-canvas p-4 px-5 hover:border-ink">
+      <div className="mb-1.5 flex flex-wrap items-center gap-2">
+        {badge}
+        <BodyTag body={d.body} className="text-[13px] text-muted" />
+        <span className="text-[13px] text-muted">{d.meta}</span>
       </div>
-      {d.figure && (
-        // the number is the chart: one figure per card, proportional digits, label under it
-        <div className="shrink-0 self-start pl-2 text-right">
-          <div className="text-[22px] font-semibold leading-none tracking-[-0.3px]">{d.figure.value}</div>
-          <div className="mt-1 text-[11px] uppercase tracking-[1px] text-muted">{d.figure.label}</div>
-        </div>
-      )}
+      <div className="mb-1 font-semibold">{d.title}</div>
+      <p className="text-sm leading-[1.55] text-body">{clip(d.text, 220)}</p>
     </Link>
   );
 }
