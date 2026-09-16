@@ -104,8 +104,8 @@ export function MattersList({ matters }: { matters: MemberMatter[] }) {
 }
 
 /** Share of contested votes where each colleague voted the same way. */
-export function AlignmentList({ colleagues }: { colleagues: MemberColleague[] }) {
-  const shown = colleagues.filter((c) => c.agree_pct !== null && c.agree_n >= 5);
+export function AlignmentList({ colleagues, minShared = 5 }: { colleagues: MemberColleague[]; minShared?: number }) {
+  const shown = colleagues.filter((c) => c.agree_pct !== null && c.agree_n >= minShared);
   if (shown.length === 0) return null;
   return (
     <div className="flex flex-col gap-2">

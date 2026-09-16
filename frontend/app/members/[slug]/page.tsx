@@ -21,6 +21,10 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 const INSTRUMENTS = new Set(["ordinance", "resolution", "case_number"]);
+// The commission's record is thin (about three contested votes a member);
+// alignment still shows from here, captioned as a sketch. The other
+// comparative panels wait for record.comparisons (ten contested votes).
+const MIN_CONTESTED_FOR_ALIGNMENT = 3;
 const monthYear = (iso: string) => new Date(iso + "T00:00:00").toLocaleDateString("en-US", { month: "short", year: "numeric" });
 const firstName = (name: string) => name.split(" ")[0];
 
@@ -297,11 +301,14 @@ export default async function MemberPage({ params }: { params: { slug: string } 
             </div>
           )}
 
-          {r.comparisons && (
+          {r.contested >= MIN_CONTESTED_FOR_ALIGNMENT && (
             <div>
               <div className="mb-1 text-xs font-semibold uppercase tracking-[1.5px] text-muted">Votes with</div>
-              <p className="mb-2.5 text-[12px] text-muted">Share of the {r.contested} contested votes (someone voted no) where each colleague voted the same way.</p>
-              <AlignmentList colleagues={member.colleagues} />
+              <p className="mb-2.5 text-[12px] text-muted">
+                Share of the {r.contested} contested votes (someone voted no) where each colleague voted the same way.
+                {!r.comparisons && " Few contested votes on record; read this as a sketch, not a pattern."}
+              </p>
+              <AlignmentList colleagues={member.colleagues} minShared={r.comparisons ? 5 : MIN_CONTESTED_FOR_ALIGNMENT} />
             </div>
           )}
 
