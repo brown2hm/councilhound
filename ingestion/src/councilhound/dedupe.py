@@ -21,7 +21,7 @@ from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from councilhound.db.models import (
-    CityProject, Entity, EntityAlias, EntityGeocode, EntityMention,
+    AgendaItem, CityProject, Entity, EntityAlias, EntityGeocode, EntityMention,
     EntityProfile, EntityUpdate, Meeting, TopicSubscription, TranscriptChunk,
     WikiPage,
 )
@@ -334,6 +334,36 @@ def dedupe_pass(session: Session, apply: bool = False) -> list[dict]:
     if apply:
         session.commit()
     return actions
+
+
+def detach_entity(session: Session, slug: str, meeting_id: int,
+                  item_label: str | None = None) -> dict:
+    """Unfile an entity from the agenda item(s) the extractor attached it to
+    at one meeting, keeping its rows on the meeting itself. For remarks made
+    during council comments that the structuring pass filed under the last
+    item on the agenda (the vape-shop remark on the May 6, 2025 budget item),
+    so the topic stops joining that item's votes. Returns what moved."""
+    entity = _entity_by_slug_or_alias(session, slug)
+    if entity is None:
+        raise ValueError(f"unknown slug: {slug}")
+    if session.get(Meeting, meeting_id) is None:
+        raise ValueError(f"unknown meeting id: {meeting_id}")
+    item_ids: set[int] | None = None
+    if item_label is not None:
+        item_ids = set(session.scalars(select(AgendaItem.id).where(
+            AgendaItem.meeting_id == meeting_id, AgendaItem.label == item_label)))
+        if not item_ids:
+            raise ValueError(f"meeting {meeting_id} has no item {item_label!r}")
+    moved = {"updates": 0, "mentions": 0}
+    for model, key in ((EntityUpdate, "updates"), (EntityMention, "mentions")):
+        stmt = (update(model)
+                .where(model.entity_id == entity.id, model.meeting_id == meeting_id,
+                       model.agenda_item_id.isnot(None))
+                .values(agenda_item_id=None))
+        if item_ids is not None:
+            stmt = stmt.where(model.agenda_item_id.in_(item_ids))
+        moved[key] = session.execute(stmt).rowcount
+    return moved
 
 
 def _entity_by_slug_or_alias(session: Session, slug: str) -> Entity | None:

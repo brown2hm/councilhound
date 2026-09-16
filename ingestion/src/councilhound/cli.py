@@ -170,6 +170,30 @@ def merge_entity(source_slug, target_slug, force_cross_type):
         click.echo(f"merged {source_slug} -> {target_slug}: {moved}")
 
 
+@cli.command("detach-entity")
+@click.argument("slug")
+@click.option("--clip-id", required=True, help="the meeting, by Granicus clip_id")
+@click.option("--item", default=None, help="only unfile from this agenda item label (default: every item)")
+def detach_entity_cmd(slug, clip_id, item):
+    """Unfile SLUG from the agenda item(s) it was attached to at one meeting,
+    keeping it on the meeting timeline. For remarks the extractor filed under
+    the wrong item (council comments landing on the last item of the night)."""
+    from sqlalchemy import select
+
+    from councilhound.db.models import Meeting
+    from councilhound.db.session import get_session
+    from councilhound.dedupe import detach_entity
+
+    with get_session() as session:
+        meeting = session.scalar(select(Meeting).where(Meeting.granicus_clip_id == str(clip_id)))
+        if meeting is None:
+            raise click.ClickException(f"no meeting with clip_id {clip_id}")
+        moved = detach_entity(session, slug, meeting.id, item_label=item)
+        session.commit()
+        click.echo(f"detached {slug} from {meeting.title} {meeting.meeting_date}"
+                   f"{' item ' + item if item else ''}: {moved}")
+
+
 @cli.command("merge-entities-batch")
 @click.argument("merge_file", type=click.Path(exists=True))
 @click.option("--apply", "apply_", is_flag=True, help="perform the merges (default: dry-run print)")
