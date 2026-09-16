@@ -25,6 +25,14 @@ reads; they were sitting in `<h3>` sections the parser skipped by name.
   School Board section without confusing its chair with the Planning
   Commission's. The advisory boards' agendas have no roster block, so their
   members are not seeded.
+- **Unanimous votes get a breakdown.** School Board minutes record
+  outcomes as "passed unanimously" over an attendance list rather than a
+  roll call, which left every board member with zero recorded votes. The
+  extractor now derives the breakdown in exactly that case: every member
+  recorded present is yes (no for a unanimous failure), members recorded
+  absent are absent, and it still records nothing when neither a roll call
+  nor attendance is written down. Council minutes with the same phrasing
+  benefit on their next re-extraction.
 - **Not yet:** the home page and `/topics` hot-topics panels still show
   only City Council and Planning Commission, and nothing has been
   backfilled — a historical ingest (School Board audio must be fetched from

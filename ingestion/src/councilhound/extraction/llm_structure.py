@@ -78,7 +78,7 @@ EXTRACTION_TOOL = {
                                     "motion_result": {"type": "string", "enum": ["passed", "failed", "deferred"]},
                                     "vote_breakdown": {
                                         "type": "object",
-                                        "description": "Member last name -> yes|no|abstain|absent. Empty if unanimous voice vote with no breakdown recorded.",
+                                        "description": "Member last name -> yes|no|abstain|absent. Copy a recorded roll call as is. When the minutes say the motion passed (or failed) unanimously and record who was present, list every member recorded present as yes (no if it failed unanimously) and every member recorded absent as absent; a unanimous result plus recorded attendance is a complete breakdown. Empty only when neither a roll call nor attendance is recorded.",
                                         "additionalProperties": {"type": "string", "enum": ["yes", "no", "abstain", "absent"]},
                                     },
                                 },
@@ -124,10 +124,17 @@ You extract structured facts from municipal meeting records (agenda, minutes, \
 and an official actions report when available). Rules:
 - The minutes and actions report are the source of truth for outcomes and \
 votes; the agenda alone only tells you what was scheduled.
-- Record only what the documents state. Never infer vote breakdowns, \
+- Record only what the documents state. Never invent vote breakdowns, \
 outcomes, or statuses that are not written down. If a meeting has no minutes \
 or actions report yet, outcomes should say the item was scheduled/discussed \
 per the agenda, and there are no votes.
+- One derivation is allowed because it follows from the record: when the \
+minutes say a motion passed or failed "unanimously" and elsewhere record who \
+was present (roll call, attendance, "Members present"), fill vote_breakdown \
+with every present member (yes for passed, no for failed) and mark members \
+recorded absent as absent. Use the attendance as of that item if the minutes \
+note someone arriving or leaving. Bodies such as the School Board record \
+votes this way rather than by roll call.
 - Entity names: use the documents' own naming. Ordinances/resolutions keep \
 their numbers ('Ordinance 2026-04'). Projects keep their proper names. Do \
 not create entities for routine procedure (roll call, adoption of agenda, \
