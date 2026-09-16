@@ -15,7 +15,7 @@ import {
   bodyLabel,
 } from "@/lib/api";
 
-const NO_HOT: HotTopicsResponse = { meetings: [], topics: [] };
+const NO_HOT: HotTopicsResponse = { meetings: [], topics: [], window_seconds: 0 };
 
 export const metadata = {
   title: "Projects & topics",

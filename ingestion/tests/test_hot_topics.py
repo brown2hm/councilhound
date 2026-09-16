@@ -52,6 +52,8 @@ def test_hot_topics_ranks_by_discussion_seconds(db_session):
     assert by_slug["george-snyder-trail"]["chunk_mentions"] == 2
     assert by_slug["courthouse-plaza"]["seconds"] == 60
     assert by_slug["george-snyder-trail"]["per_meeting"] == {str(m1.id): 100, str(m2.id): 50}
+    # denominator for "share of meeting time": every timed chunk in the window
+    assert result["window_seconds"] == 600  # 100 + 50 + 60 + 390, old meeting excluded
 
 
 def test_hot_topics_body_and_window(db_session):
