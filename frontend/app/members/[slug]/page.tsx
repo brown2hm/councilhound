@@ -40,7 +40,8 @@ function lede(m: MemberDetail): string {
       mt.total > 0
         ? `: ${mt.no_on_passed} no ${mt.no_on_passed === 1 ? "vote" : "votes"} on motions that passed${mt.yes_on_failed ? ` and ${mt.yes_on_failed} yes ${mt.yes_on_failed === 1 ? "vote" : "votes"} on motions that failed` : ""}.`
         : ".";
-    parts.push(`On the ${r.contested} where anyone voted no, ${first} was in the minority ${mt.total === 1 ? "once" : `${mt.total} times`}${detail}`);
+    const times = mt.total === 0 ? "never in the minority" : `in the minority ${mt.total === 1 ? "once" : `${mt.total} times`}`;
+    parts.push(`On the ${r.contested} where anyone voted no, ${first} was ${times}${detail}`);
   }
   const top = m.colleagues.find((c) => c.agree_pct !== null && c.agree_n >= 5);
   if (r.comparisons && top) parts.push(`Votes most often with ${top.name}, on ${top.agree_pct}% of contested votes.`);
