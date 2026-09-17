@@ -57,10 +57,12 @@ def test_upcoming_brief_matches_tracked_topics(db, client):
     assert "Public hearing on the Davies Property" in davies["agenda_context"]
     assert davies["latest_update"]["text"] == "GDP amendment approved."
     assert davies["evaluation_slug"] == "Davies-Property"
+    assert davies["hearing"] is True
 
     trail = by_slug["george-snyder-trail"]
     assert trail["evaluation_slug"] is None
     assert trail["update_count"] == 1
+    assert trail["hearing"] is False
 
 
 def test_upcoming_brief_without_agenda(db, client):
@@ -71,3 +73,18 @@ def test_upcoming_brief_without_agenda(db, client):
     assert data["has_agenda_text"] is False
     assert data["topics"] == []
     assert client.get("/meetings/upcoming/nope").status_code == 404
+
+
+def test_hearing_sections_follow_the_numbered_outline(db, client):
+    """A real agenda is one long line; the hearing flag comes from which
+    numbered item the name falls under, not from nearby words."""
+    from app.routers.meetings import _hearing_spans, _is_hearing
+    text = ("1. Call to order. 2. Pledge. 3. Presentations. 7. Consideration of "
+            "appointments. 8. Public hearings. a. Public hearing and Council "
+            "action on a rezoning of 9495 Silver King Court, 2.12 acres. "
+            "9. Second public comment period (3 minutes). 10. Adjournment.").lower()
+    spans = _hearing_spans(text)
+    assert len(spans) == 1
+    assert _is_hearing(text, text.find("silver king court"), spans)
+    assert not _is_hearing(text, text.find("appointments"), spans)
+    assert not _is_hearing(text, text.find("public comment"), spans)

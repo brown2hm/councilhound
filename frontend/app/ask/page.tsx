@@ -12,7 +12,7 @@ import { formatDate, type AskResponse, type Citation } from "@/lib/api";
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 const SUGGESTIONS = [
-  "What's the status of the George Snyder Trail project?",
+  "What has the council decided about affordable housing this year?",
   "What did the council decide about accessory dwelling units?",
   "What's happening with the Fairfax Circle Small Area Plan?",
 ];
@@ -133,7 +133,7 @@ function AskInner() {
         <input
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
-          placeholder="e.g. What's the status of the George Snyder Trail?"
+          placeholder="What has the council decided about affordable housing this year?"
           aria-label="Your question"
           className="min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted-soft"
         />

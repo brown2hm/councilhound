@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Newsreader } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -10,6 +10,14 @@ import RecordFreshness from "@/components/RecordFreshness";
 import { PUBLIC_API_URL } from "@/lib/api";
 
 const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
+// the briefing's display face: headlines and section heads read as a paper, not a dashboard
+const newsreader = Newsreader({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  style: ["normal", "italic"],
+  variable: "--font-display",
+  adjustFontFallback: false,
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://councilhound.net"),
@@ -35,7 +43,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="scroll-smooth">
-      <body className={`${inter.className} flex min-h-screen flex-col bg-canvas text-ink antialiased`}>
+      <body className={`${inter.className} ${newsreader.variable} flex min-h-screen flex-col bg-canvas text-ink antialiased`}>
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-ink focus:px-4 focus:py-3 focus:text-sm focus:font-semibold focus:text-white"

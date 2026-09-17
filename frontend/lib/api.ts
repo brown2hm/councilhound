@@ -240,6 +240,8 @@ export interface UpcomingAgendaTopic {
   update_count: number;
   last_seen: string | null;
   agenda_context: string | null;
+  // named inside a public-hearing section of the agenda (API ≥ Sep 2026)
+  hearing?: boolean;
   latest_update: { date: string; text: string } | null;
   evaluation_slug: string | null;
 }
