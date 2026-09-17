@@ -514,51 +514,44 @@ function Docket({
                   </Link>
                 </div>
               </div>
-              <div className="min-w-0 text-[14px] leading-relaxed">
+              <div className="min-w-0">
                 {shown.length > 0 ? (
-                  <>
-                    {shown.map((t, i) => (
-                      <span key={t.slug} className="inline">
-                        {i > 0 && <span className="text-muted-soft"> · </span>}
+                  // one item per line: the docket reads as a list, not a sentence
+                  <ul className="text-[13px] leading-snug">
+                    {shown.map((t) => (
+                      <li key={t.slug} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 py-[3px]">
                         <Link
                           href={`/topics/${t.slug}`}
                           className={`underline-offset-2 hover:underline ${t.hearing ? "font-semibold" : ""}`}
                         >
                           {t.name}
                         </Link>
-                        {t.hearing && <> {hearingPill}</>}
-                        {!t.hearing && t.current_status && (
-                          <>
-                            {" "}
-                            <StatusBadge status={t.current_status} variant="outline" />
-                          </>
-                        )}
-                      </span>
+                        {t.hearing ? hearingPill : <StatusBadge status={t.current_status} variant="outline" />}
+                      </li>
                     ))}
-                    {more > 0 && (
-                      <Link
-                        href={`/meetings/upcoming/${encodeURIComponent(e.event_id)}`}
-                        className="text-[13px] text-muted underline-offset-2 hover:underline"
-                      >
-                        {" "}
-                        and {more} more
-                      </Link>
-                    )}
-                  </>
+                  </ul>
                 ) : (
-                  <span className="text-muted">
+                  <span className="text-[13px] text-muted">
                     {e.title}
                     {detail && !detail.has_agenda_text ? " · agenda not posted yet" : " · nothing tracked on this agenda"}
                   </span>
                 )}
-                {e.agenda_url && (
-                  <a
-                    href={e.agenda_url}
-                    target="_blank"
-                    className="ml-2 whitespace-nowrap text-[12px] font-semibold text-muted underline underline-offset-2 hover:text-ink"
-                  >
-                    agenda
-                  </a>
+                {(more > 0 || e.agenda_url) && (
+                  <div className="mt-1 flex gap-3 text-[12px] font-semibold text-muted">
+                    {more > 0 && (
+                      <Link
+                        href={`/meetings/upcoming/${encodeURIComponent(e.event_id)}`}
+                        className="underline underline-offset-2 hover:text-ink"
+                      >
+                        and {more} more
+                      </Link>
+                    )}
+                    {e.agenda_url && (
+                      <a href={e.agenda_url} target="_blank" className="underline underline-offset-2 hover:text-ink">
+                        agenda
+                      </a>
+                    )}
+                  </div>
                 )}
               </div>
             </li>
