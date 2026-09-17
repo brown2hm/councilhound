@@ -216,6 +216,41 @@ def _agenda_context(agenda_text: str, variant: str) -> str | None:
     return None
 
 
+# top-level agenda items: "8. Public hearings." — numbered, in order
+_ITEM_RE = re.compile(r"(?<![\d$:.,/-])(\d{1,2})\.\s+(?=[A-Za-z(])")
+
+
+def _hearing_spans(text_low: str) -> list[tuple[int, int]]:
+    """Character ranges of the agenda's public-hearing sections: from a
+    top-level item whose heading names a public hearing to the next one.
+    Item numbers must climb so stray numbers in the body text ("3
+    minutes", "2.12 acres") don't open a section."""
+    starts: list[int] = []
+    last = 0
+    for m in _ITEM_RE.finditer(text_low):
+        if int(m.group(1)) > last:
+            starts.append(m.start())
+            last = int(m.group(1))
+    if len(starts) < 3:
+        return []
+    spans = []
+    for i, s in enumerate(starts):
+        e = starts[i + 1] if i + 1 < len(starts) else len(text_low)
+        if "public hearing" in text_low[s:min(e, s + 80)]:
+            spans.append((s, e))
+    return spans
+
+
+def _is_hearing(text_low: str, pos: int, spans: list[tuple[int, int]]) -> bool:
+    """Whether the name at `pos` sits inside a public-hearing section. Agendas
+    without a numbered outline fall back to the line: a hearing if the words
+    come earlier on the same line."""
+    if spans:
+        return any(s <= pos < e for s, e in spans)
+    line_start = text_low.rfind("\n", 0, pos) + 1
+    return "public hearing" in text_low[line_start:pos]
+
+
 @router.get("/upcoming/{event_id}")
 def upcoming_detail(event_id: str, session: Session = Depends(db_session)):
     """One upcoming meeting, annotated: every tracked topic named in its
@@ -229,6 +264,7 @@ def upcoming_detail(event_id: str, session: Session = Depends(db_session)):
     topics = []
     if u.agenda_text:
         text_low = u.agenda_text.lower()
+        hearing_spans = _hearing_spans(text_low)
 
         counts = (
             select(EntityUpdate.entity_id, func.count().label("n"),
@@ -275,6 +311,7 @@ def upcoming_detail(event_id: str, session: Session = Depends(db_session)):
                 "update_count": n,
                 "last_seen": last_date.isoformat() if last_date else None,
                 "agenda_context": _agenda_context(u.agenda_text, hit),
+                "hearing": _is_hearing(text_low, text_low.find(hit), hearing_spans),
                 "latest_update": {
                     "date": str(latest[1].meeting_date),
                     "text": latest[0].update_text,
