@@ -439,6 +439,19 @@ export interface ProjectEvaluation {
   synthesized_at: string | null;
 }
 
+/** The API's reading of a page's OKF v0.2 trust and lifecycle frontmatter
+ * (api/app/wiki.py trust_block). */
+export interface WikiTrust {
+  producer: string | null;
+  producer_kind: "pipeline" | "curator" | "human" | null;
+  tier: "unverified" | "machine-confirmed" | "human-reviewed";
+  verified_by: string | null;
+  verified_at: string | null;
+  edited_since_review: boolean;
+  stale_after: string | null;
+  stale: boolean;
+}
+
 export interface WikiPageInfo {
   page: string;
   path: string;
@@ -446,6 +459,7 @@ export interface WikiPageInfo {
   type: string | null;
   description: string | null;
   timestamp: string | null;
+  trust?: WikiTrust;
   frontmatter: Record<string, unknown>;
   body: string;
 }

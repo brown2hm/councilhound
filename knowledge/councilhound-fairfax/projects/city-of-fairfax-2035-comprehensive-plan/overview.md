@@ -10,6 +10,7 @@ generated:
   by: councilhound-curator/claude-sonnet-4-6
   at: '2026-07-27T00:00:00Z'
 timestamp: '2026-07-27'
+stale_after: '2026-09-22T23:00:00Z'
 project_status: in_progress
 source: meetings
 ---

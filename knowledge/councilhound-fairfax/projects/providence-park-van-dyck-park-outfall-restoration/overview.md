@@ -11,6 +11,7 @@ generated:
   by: process:councilhound-okf
   at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
+stale_after: '2026-09-22T23:00:00Z'
 project_status: approved
 source: official
 address: 10715 West Dr. and 3720 Blenheim Blvd., Fairfax, VA 22030

@@ -11,7 +11,8 @@ is a no-op."""
 import logging
 import os
 import re
-from datetime import date
+from datetime import date, datetime, timezone
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -26,8 +27,10 @@ from councilhound.db.models import (
     EntityUpdate,
     Meeting,
     ProjectEvaluation,
+    UpcomingMeeting,
     Vote,
 )
+from councilhound.hot_topics import MIN_VARIANT_LEN
 from councilhound.okf.bundle import (
     CURATOR_OFF_CLOSE,
     CURATOR_OFF_OPEN,
@@ -39,12 +42,20 @@ from councilhound.okf.bundle import (
     curator_actor,
     generated,
     generated_at,
+    is_actor,
+    iso_datetime,
     read_page,
     render_index,
     slugify,
+    verified_events,
     write_page,
     write_text,
 )
+
+# UpcomingMeeting.starts_at is city-local and naive (scraper/granicus.py)
+CITY_TZ = ZoneInfo("America/New_York")
+# the curator-owned prose a person can sign off on (v0.2 `verified`)
+VERIFIABLE_PAGES = ("overview", "positions", "impact")
 
 log = logging.getLogger(__name__)
 
@@ -59,7 +70,36 @@ CURATED_NOTE = ("<!-- Curator-owned page: updated incrementally as new "
 # city dropped George Snyder Trail from its directory, the daily project sync
 # removed the row, and the wiki went on pointing at a 404 because nothing
 # recomputed the URI.
-REFRESHED_KEYS = {"project_status", "tags", "evaluation_status", "resource"}
+REFRESHED_KEYS = {"project_status", "tags", "evaluation_status", "resource",
+                  "stale_after"}
+# refreshed keys that are removed when the data behind them is gone: a
+# `stale_after` left standing past its instant would flag the page forever
+CLEARED_KEYS = {"stale_after"}
+
+
+def _sync_keys(fm: dict, fresh: dict, keys: set[str]) -> None:
+    for key in keys:
+        if key in fresh:
+            if fm.get(key) != fresh[key]:
+                fm[key] = fresh[key]
+        elif key in CLEARED_KEYS and key in fm:
+            del fm[key]
+
+
+def _write_tracked(bundle_dir: str, rel: str, fm: dict, body: str) -> bool:
+    """Write the page, but report a change only when something other than
+    `stale_after` moved. The staleness horizon advances every time a meeting
+    passes; that alone earns neither a log line per project nor a place in
+    the refresh count, though the file is still written for the commit."""
+    existing = read_page(os.path.join(bundle_dir, rel))
+    wrote = write_page(bundle_dir, rel, fm, body)
+    if not wrote or existing is None or existing[0] is None:
+        return wrote
+
+    def material(d: dict) -> dict:
+        return {k: v for k, v in d.items() if k != "stale_after"}
+    return (existing[1].strip() != body.strip()
+            or material(existing[0]) != material(fm))
 # the curator's log line, from which a page written before `generated`
 # existed recovers who last produced it
 _CURATOR_LOG_RE = re.compile(r"\(curator: ([^,)]+),")
@@ -136,6 +176,33 @@ def wiki_candidates(session: Session, slugs: list[str] | None = None) -> list[En
     return list(session.scalars(q).unique())
 
 
+def _stale_after(session: Session, entity: Entity, timeline: list) -> str | None:
+    """OKF v0.2 §5.5: the instant after which a meeting-driven page may be
+    out of date — the next scheduled meeting of a body that has taken the
+    project up, or any upcoming meeting whose posted agenda names it. Until
+    the pipeline runs again after that meeting the page cannot vouch for
+    itself, and a consumer decides by comparing the instant with now. None
+    when nothing relevant is scheduled; the key is then cleared rather than
+    left to expire into a permanent warning."""
+    now_local = datetime.now(CITY_TZ).replace(tzinfo=None)
+    bodies = {meeting.body for _update, meeting, _item in timeline}
+    aliases = session.scalars(
+        select(EntityAlias.alias).where(EntityAlias.entity_id == entity.id))
+    variants = {v.lower() for v in [entity.name, *aliases]
+                if v and len(v) >= MIN_VARIANT_LEN}
+    upcoming = session.scalars(
+        select(UpcomingMeeting)
+        .where(UpcomingMeeting.starts_at.isnot(None),
+               UpcomingMeeting.starts_at > now_local)
+        .order_by(UpcomingMeeting.starts_at, UpcomingMeeting.id))
+    for event in upcoming:
+        named = bool(event.agenda_text) and any(
+            v in event.agenda_text.lower() for v in variants)
+        if named or (event.body and event.body in bodies):
+            return iso_datetime(event.starts_at.replace(tzinfo=CITY_TZ))
+    return None
+
+
 def _project_context(session: Session, entity: Entity) -> dict:
     city = session.scalar(select(CityProject).where(CityProject.entity_id == entity.id))
     evaluation = None
@@ -154,7 +221,8 @@ def _project_context(session: Session, entity: Entity) -> dict:
         .order_by(Meeting.meeting_date, Meeting.id)
     ).all()
     return {"city": city, "evaluation": evaluation, "profile": profile,
-            "timeline": timeline}
+            "timeline": timeline,
+            "stale_after": _stale_after(session, entity, timeline)}
 
 
 def _first_sentence(text: str | None) -> str:
@@ -189,6 +257,7 @@ def _overview_frontmatter(entity: Entity, ctx: dict, stamp: str) -> dict:
         "resource": _resource_url(entity, city),
         "tags": _tags(entity, city),
         **_stamp_fields(PIPELINE_ACTOR, stamp),
+        "stale_after": ctx.get("stale_after"),
         "project_status": entity.current_status or (city.official_status if city else None),
         "source": "official" if city else "meetings",
     }
@@ -433,6 +502,8 @@ def _history_page(entity: Entity, ctx: dict,
         "resource": _resource_url(entity, ctx["city"]),
         **_stamp_fields(PIPELINE_ACTOR, latest),
     }
+    if ctx.get("stale_after"):
+        fm["stale_after"] = ctx["stale_after"]
     parts = [PIPELINE_NOTE, ""]
     # one update per meeting (unique constraint), oldest first
     for update, meeting, item in timeline:
@@ -687,8 +758,39 @@ def _write_history(session: Session, bundle_dir: str, entity: Entity,
     if page is None:
         return False
     fm, body = page
-    return write_page(bundle_dir, f"projects/{entity.canonical_slug}/history.md",
-                      fm, body)
+    return _write_tracked(bundle_dir, f"projects/{entity.canonical_slug}/history.md",
+                          fm, body)
+
+
+def verify_pages(bundle_dir: str, slug: str, by: str,
+                 pages: list[str] | None = None,
+                 at: datetime | None = None) -> list[str]:
+    """Record a verification event (v0.2 §5.2) on a project's curator-owned
+    pages: someone confirmed the prose against the record. Events are
+    appended, never replaced — independent checks accumulate, and the
+    consumer reads the latest. A person signing off must use the `human:`
+    actor prefix; that prefix is what lifts the page to human-reviewed
+    (§5.3). Returns the pages marked."""
+    if not is_actor(by):
+        raise ValueError(f"{by!r} is not an OKF actor (human:<id>, "
+                         "process:<id>, or <producer>/<version>)")
+    stamp = iso_datetime(at or datetime.now(timezone.utc))
+    marked = []
+    for page in pages or VERIFIABLE_PAGES:
+        rel = f"projects/{slug}/{page}.md"
+        parsed = read_page(os.path.join(bundle_dir, rel))
+        if parsed is None or parsed[0] is None:
+            if pages:
+                raise FileNotFoundError(f"{rel} is not a concept page")
+            continue
+        fm, body = parsed
+        fm["verified"] = verified_events(fm) + [{"by": by, "at": stamp}]
+        write_page(bundle_dir, rel, fm, body)
+        marked.append(page)
+    if marked:
+        append_log(bundle_dir, f"projects/{slug}",
+                   [f"Verified {', '.join(marked)} ({by})."])
+    return marked
 
 
 def _refresh_overview(bundle_dir: str, entity: Entity, ctx: dict) -> bool:
@@ -707,9 +809,7 @@ def _refresh_overview(bundle_dir: str, entity: Entity, ctx: dict) -> bool:
     fm, body = page
     _migrate_frontmatter(fm, _legacy_actor(bundle_dir, slug))
     fresh = _overview_frontmatter(entity, ctx, stamp=generated_at(fm) or "")
-    for key in REFRESHED_KEYS:
-        if key in fresh and fm.get(key) != fresh[key]:
-            fm[key] = fresh[key]
+    _sync_keys(fm, fresh, REFRESHED_KEYS)
 
     present = {f.removesuffix(".md")
                for f in os.listdir(os.path.join(bundle_dir, "projects", slug))
@@ -719,7 +819,7 @@ def _refresh_overview(bundle_dir: str, entity: Entity, ctx: dict) -> bool:
         body = _replace_marked_section(body, FACTS_HEADING, facts,
                                        before="Official record")
     body = _replace_nav(body, _nav_block(slug, present))
-    return write_page(bundle_dir, rel, fm, body)
+    return _write_tracked(bundle_dir, rel, fm, body)
 
 
 def _canonical_member_slugs(session: Session) -> dict[str, str]:
@@ -768,25 +868,30 @@ def _refresh_sibling_resources(bundle_dir: str, entity: Entity,
                                ctx: dict) -> bool:
     """positions.md and impact.md carry the same derived `resource` URI as
     overview.md. Their bodies are the curator's, but that key is not — leave
-    it alone and it outlives the record it was derived from. The same pass
-    brings a v0.1 page's frontmatter up to v0.2 (impact.md is never touched
-    by the LLM curator, so its legacy producer is always the pipeline)."""
+    it alone and it outlives the record it was derived from. positions.md
+    is meeting-driven like overview.md, so it carries the same `stale_after`
+    horizon; impact.md follows the evaluation, not the calendar. The same
+    pass brings a v0.1 page's frontmatter up to v0.2 (impact.md is never
+    touched by the LLM curator, so its legacy producer is always the
+    pipeline)."""
     slug = entity.canonical_slug
-    fresh = _resource_url(entity, ctx["city"])
+    fresh = {"resource": _resource_url(entity, ctx["city"])}
+    if ctx.get("stale_after"):
+        fresh["stale_after"] = ctx["stale_after"]
     changed = False
-    for page, legacy_by in (("positions", _legacy_actor(bundle_dir, slug)),
-                            ("impact", PIPELINE_ACTOR)):
+    for page, legacy_by, keys in (
+            ("positions", _legacy_actor(bundle_dir, slug), {"resource", "stale_after"}),
+            ("impact", PIPELINE_ACTOR, {"resource"})):
         rel = f"projects/{slug}/{page}.md"
         parsed = read_page(os.path.join(bundle_dir, rel))
         if parsed is None or parsed[0] is None:
             continue
         fm, body = parsed
-        dirty = _migrate_frontmatter(fm, legacy_by)
-        if fm.get("resource") != fresh:
-            fm["resource"] = fresh
-            dirty = True
-        if dirty:
-            changed = write_page(bundle_dir, rel, fm, body) or changed
+        before = dict(fm)
+        _migrate_frontmatter(fm, legacy_by)
+        _sync_keys(fm, fresh, keys)
+        if fm != before:
+            changed = _write_tracked(bundle_dir, rel, fm, body) or changed
     return changed
 
 
@@ -878,6 +983,7 @@ def seed_bundle(session: Session, bundle_dir: str,
                            f"on {entity.name}.",
             "resource": _resource_url(entity, ctx["city"]),
             **_stamp_fields(PIPELINE_ACTOR, stamp),
+            **({"stale_after": ctx["stale_after"]} if ctx.get("stale_after") else {}),
         }, _positions_body(ctx))
         _write_impact(bundle_dir, entity, ctx, stamp)
         _write_documents(bundle_dir, entity, ctx)
@@ -913,7 +1019,8 @@ def refresh_bundle(session: Session, bundle_dir: str) -> dict:
             log.warning("wiki dir %s has no matching entity (merged/renamed?)", slug)
             continue
         ctx = _project_context(session, entity)
-        changed = _write_history(session, bundle_dir, entity, ctx)
+        history_changed = _write_history(session, bundle_dir, entity, ctx)
+        changed = history_changed
         # before _refresh_overview, which rebuilds the nav from what is on
         # disk — write the page first and it links itself
         seeded_impact = _write_impact(bundle_dir, entity, ctx,
@@ -933,8 +1040,8 @@ def refresh_bundle(session: Session, bundle_dir: str) -> dict:
             if seeded_impact:
                 notes.append("Added impact analysis from the synthesized "
                              "evaluation.")
-            notes.append(f"Meeting history updated through {latest}." if latest
-                         else "Pipeline refresh.")
+            notes.append(f"Meeting history updated through {latest}."
+                         if history_changed and latest else "Pipeline refresh.")
             append_log(bundle_dir, f"projects/{slug}", notes)
             refreshed += 1
         else:

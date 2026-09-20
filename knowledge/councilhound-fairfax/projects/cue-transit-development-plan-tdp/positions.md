@@ -8,6 +8,7 @@ generated:
   by: councilhound-curator/claude-sonnet-4-6
   at: '2026-06-02T00:00:00Z'
 timestamp: '2026-06-02'
+stale_after: '2026-09-22T23:00:00Z'
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->

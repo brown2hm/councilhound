@@ -1,6 +1,8 @@
 """Serialize a project's OKF wiki from wiki_pages (mirrored from the
 knowledge bundle by okf-push). Both the development router (official slug)
 and the entities router (canonical slug) serve the same payload."""
+from datetime import datetime, timezone
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -20,6 +22,72 @@ def generated_at(frontmatter: dict | None) -> str | None:
     gen = fm.get("generated")
     at = gen.get("at") if isinstance(gen, dict) else None
     return at or fm.get("timestamp") or None
+
+
+def _instant(value) -> datetime | None:
+    """An ISO 8601 string (or a date-only legacy stamp) as an aware UTC
+    datetime; None when it will not parse."""
+    if not value:
+        return None
+    text = str(value).replace("Z", "+00:00")
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed
+
+
+def trust_block(frontmatter: dict | None, now: datetime | None = None) -> dict:
+    """The consumer-side reading of the OKF v0.2 trust and lifecycle
+    families (§5.2–5.5), derived here once so both wiki routes and the
+    frontend agree on it:
+
+    - producer_kind from `generated.by` under the actor convention (§7):
+      `process:` is the deterministic pipeline, `human:` a person, anything
+      else (`<producer>/<version>`) the LLM curator;
+    - tier from `verified` (§5.3): unverified, machine-confirmed, or
+      human-reviewed — a bare mapping counts as a one-element list;
+    - edited_since_review when the content changed after the latest
+      confirmation (§5.2 keeps the two independent);
+    - stale when now >= `stale_after` (§5.5)."""
+    fm = frontmatter or {}
+    now = now or datetime.now(timezone.utc)
+    gen = fm.get("generated")
+    producer = gen.get("by") if isinstance(gen, dict) else None
+    if not producer:
+        kind = None
+    elif str(producer).startswith("process:"):
+        kind = "pipeline"
+    elif str(producer).startswith("human:"):
+        kind = "human"
+    else:
+        kind = "curator"
+
+    raw = fm.get("verified")
+    events = raw if isinstance(raw, list) else [raw] if isinstance(raw, dict) else []
+    events = [e for e in events if isinstance(e, dict) and _instant(e.get("at"))]
+    latest = max(events, key=lambda e: _instant(e["at"])) if events else None
+    if any(str(e.get("by", "")).startswith("human:") for e in events):
+        tier = "human-reviewed"
+    else:
+        tier = "machine-confirmed" if events else "unverified"
+
+    changed_at = _instant(generated_at(fm))
+    verified_at = _instant(latest["at"]) if latest else None
+    stale_after = _instant(fm.get("stale_after"))
+    return {
+        "producer": producer,
+        "producer_kind": kind,
+        "tier": tier,
+        "verified_by": latest.get("by") if latest else None,
+        "verified_at": latest["at"] if latest else None,
+        "edited_since_review": bool(
+            verified_at and changed_at and changed_at > verified_at),
+        "stale_after": fm.get("stale_after"),
+        "stale": bool(stale_after and now >= stale_after),
+    }
 
 
 def entity_has_wiki(session: Session, entity_id: int | None) -> bool:
@@ -57,6 +125,7 @@ def wiki_payload(session: Session, entity: Entity) -> dict | None:
                 # `timestamp` for pages pushed before the migration (§13.1)
                 "timestamp": generated_at(r.frontmatter),
                 "generated": (r.frontmatter or {}).get("generated"),
+                "trust": trust_block(r.frontmatter),
                 "frontmatter": r.frontmatter or {},
                 "body": r.body,
             }

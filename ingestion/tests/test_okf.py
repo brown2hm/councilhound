@@ -1123,3 +1123,109 @@ def test_refresh_migrates_a_history_page_whose_timeline_vanished(
                                "at": "2026-06-09T00:00:00Z"}
     assert kept == body
     assert refresh_bundle(db_session, str(tmp_path))["refreshed"] == 0
+
+
+# --- OKF v0.2 trust + lifecycle: verified, stale_after --------------------
+
+def _upcoming(db_session, title, body, starts_at, agenda_text=None, event_id=None):
+    from councilhound.db.models import UpcomingMeeting
+    row = UpcomingMeeting(granicus_event_id=event_id or f"ev-{title}-{starts_at.isoformat()}",
+                          granicus_view_id="13", title=title, body=body,
+                          starts_at=starts_at, agenda_text=agenda_text)
+    db_session.add(row)
+    db_session.commit()
+    return row
+
+
+def test_stale_after_is_the_next_relevant_meeting(db_session, project, tmp_path):
+    """§5.5: the horizon is the next scheduled meeting of a body that has
+    acted on the project, or one whose posted agenda names it — city-local
+    starts_at rendered as a UTC instant. Pages the calendar does not drive
+    (impact, documents) carry none."""
+    future = datetime.datetime.now() + datetime.timedelta(days=30)
+    # school board never touched Circle Gateway and its agenda is silent
+    _upcoming(db_session, "School Board", "school_board",
+              future.replace(hour=18, minute=30, second=0, microsecond=0))
+    council = future + datetime.timedelta(days=2)
+    council = council.replace(hour=19, minute=30, second=0, microsecond=0)
+    _upcoming(db_session, "City Council", "city_council", council)
+
+    seed_bundle(db_session, str(tmp_path))
+    expected = B.iso_datetime(council.replace(tzinfo=export.CITY_TZ))
+    assert expected.endswith("Z") and expected[:4] == str(council.year)
+    for page in ("overview", "positions", "history"):
+        fm, _ = _read(tmp_path, f"projects/circle-gateway/{page}.md")
+        assert fm["stale_after"] == expected, page
+    assert "stale_after" not in _read(tmp_path, "projects/circle-gateway/impact.md")[0]
+    assert lint_bundle(str(tmp_path), db_session) == []
+
+    # an unrelated body's agenda that names the project moves it up
+    board = future - datetime.timedelta(days=10)
+    _upcoming(db_session, "Board of Architectural Review", None,
+              board.replace(hour=19, minute=0, second=0, microsecond=0),
+              agenda_text="4. Circle Gateway — facade materials")
+    # the horizon moving is not a content change: written, but not logged
+    assert refresh_bundle(db_session, str(tmp_path)) == {
+        "refreshed": 0, "unchanged": 1, "orphaned": 0}
+    fm, _ = _read(tmp_path, "projects/circle-gateway/overview.md")
+    assert fm["stale_after"] < expected
+    assert fm["stale_after"] == _read(tmp_path, "projects/circle-gateway/history.md")[0]["stale_after"]
+    assert "Pipeline refresh." not in (
+        tmp_path / "projects/circle-gateway/log.md").read_text()
+
+    # nothing relevant scheduled -> the key is cleared, never left to expire
+    from councilhound.db.models import UpcomingMeeting
+    db_session.query(UpcomingMeeting).delete()
+    db_session.commit()
+    refresh_bundle(db_session, str(tmp_path))
+    for page in ("overview", "positions", "history"):
+        assert "stale_after" not in _read(tmp_path, f"projects/circle-gateway/{page}.md")[0]
+
+
+def test_verify_pages_records_a_human_review(db_session, project, tmp_path):
+    seed_bundle(db_session, str(tmp_path))
+    at = datetime.datetime(2026, 9, 20, 15, 0, tzinfo=datetime.timezone.utc)
+    marked = export.verify_pages(str(tmp_path), "circle-gateway", "human:hunter", at=at)
+    assert marked == ["overview", "positions", "impact"]
+    fm, body = _read(tmp_path, "projects/circle-gateway/overview.md")
+    assert fm["verified"] == [{"by": "human:hunter", "at": "2026-09-20T15:00:00Z"}]
+    assert B.trust_tier(fm) == "human-reviewed"
+    assert "Circle Gateway is a mixed-use redevelopment" in body
+    assert "Verified overview, positions, impact (human:hunter)." in (
+        tmp_path / "projects/circle-gateway/log.md").read_text()
+    assert lint_bundle(str(tmp_path), db_session) == []
+
+    # events accumulate; a nightly process does not lift the tier by itself
+    export.verify_pages(str(tmp_path), "circle-gateway", "process:nightly",
+                        pages=["positions"])
+    fm, _ = _read(tmp_path, "projects/circle-gateway/positions.md")
+    assert [e["by"] for e in fm["verified"]] == ["human:hunter", "process:nightly"]
+    assert B.trust_tier({"verified": fm["verified"][1:]}) == "machine-confirmed"
+    assert B.trust_tier({}) == "unverified"
+    # a bare mapping is a one-element list (§5.2)
+    assert B.trust_tier({"verified": {"by": "human:x", "at": "2026-01-01T00:00:00Z"}}) == "human-reviewed"
+
+    # refresh keeps the sign-off; the curator's later edit would too
+    assert refresh_bundle(db_session, str(tmp_path))["refreshed"] == 0
+    assert _read(tmp_path, "projects/circle-gateway/overview.md")[0]["verified"]
+
+    with pytest.raises(ValueError):
+        export.verify_pages(str(tmp_path), "circle-gateway", "hunter")
+    with pytest.raises(FileNotFoundError):
+        export.verify_pages(str(tmp_path), "circle-gateway", "human:hunter",
+                            pages=["notes"])
+
+
+def test_lint_checks_actor_convention_and_verified_shape(db_session, project,
+                                                         tmp_path):
+    seed_bundle(db_session, str(tmp_path))
+    page = tmp_path / "projects/circle-gateway/positions.md"
+    fm, body = _read(tmp_path, "projects/circle-gateway/positions.md")
+    bad = dict(fm, generated={"by": "hunter", "at": fm["generated"]["at"]},
+               verified=[{"by": "human:hunter"},
+                         {"by": "nobody", "at": "2026-09-20T15:00:00Z"}])
+    page.write_text(B.render_page(bad, body))
+    problems = lint_bundle(str(tmp_path), db_session)
+    assert any("generated.by" in p and "actor convention" in p for p in problems)
+    assert any("verified[0].at" in p for p in problems)
+    assert any("verified[1]` needs a `by` actor" in p for p in problems)
