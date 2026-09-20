@@ -4,6 +4,9 @@ title: Pickett Road Connector Trail — meeting history
 description: Dated record of every meeting action on Pickett Road Connector Trail, through
   2025-11-18.
 resource: https://councilhound.net/development/Pickett-Road-Connector-Trail
+generated:
+  by: process:councilhound-okf
+  at: '2025-11-18T00:00:00Z'
 timestamp: '2025-11-18'
 ---
 
@@ -48,6 +51,12 @@ timestamp: '2025-11-18'
 - Outcome: Discussed in work session. No formal vote taken.
 - [11a] Staff provided an update on the Pickett Trail project during the work session. Public comment included at least two residents expressing opposition to the project.
 - Status after: **in_progress**
+
+## 2025-07-10 — PRAB Regular Meeting
+
+**Agenda item 7b**: Summary of recent Council meeting actions pertaining to Parks and Recreation
+- Outcome: Presentations to City Council on the OTH renovation and the Pickett Road Connector Trail were summarized.
+- [7b] A presentation on the Pickett Road Connector Trail was given to City Council.
 
 ## 2025-07-14 — Planning Commission Regular Meeting/Work Session
 

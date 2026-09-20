@@ -3,6 +3,9 @@ type: project-impact
 title: Park Rd Townhomes — impact analysis
 description: Screening-level economic and fiscal estimates for Park Rd Townhomes.
 resource: https://councilhound.net/development/Park-Rd-Townhomes
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
 ---
 

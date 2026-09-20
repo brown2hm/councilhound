@@ -7,8 +7,11 @@ description: Gatewood Plaza is a proposed redevelopment of an existing office bu
 resource: https://councilhound.net/topics/gatewood-plaza
 tags:
 - proposed
+generated:
+  by: process:councilhound-okf
+  at: '2025-02-10T00:00:00Z'
 timestamp: '2025-02-10'
-status: proposed
+project_status: proposed
 source: meetings
 ---
 

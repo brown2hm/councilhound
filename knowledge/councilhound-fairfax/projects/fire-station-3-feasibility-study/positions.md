@@ -4,6 +4,9 @@ title: 'Fire Station #3 Feasibility Study — positions & open questions'
 description: 'Recorded member positions and unresolved questions on Fire Station #3 Feasibility
   Study.'
 resource: https://councilhound.net/topics/fire-station-3-feasibility-study
+generated:
+  by: process:councilhound-okf
+  at: '2025-05-12T00:00:00Z'
 timestamp: '2025-05-12'
 ---
 

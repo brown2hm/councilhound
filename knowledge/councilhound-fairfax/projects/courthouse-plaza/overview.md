@@ -8,8 +8,11 @@ resource: https://councilhound.net/development/Courthouse-Plaza
 tags:
 - private-development
 - in-progress
+generated:
+  by: process:councilhound-okf
+  at: '2026-06-22T00:00:00Z'
 timestamp: '2026-06-22'
-status: in_progress
+project_status: in_progress
 source: official
 address: 10300 Willard Way and 3922 Blenheim Boulevard, Fairfax, VA 22030
 applicant: Molly Novotny Curata Partners

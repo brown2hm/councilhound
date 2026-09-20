@@ -4,6 +4,9 @@ title: Fairfax HS Electrical Program Build-Out — meeting history
 description: Dated record of every meeting action on Fairfax HS Electrical Program Build-Out,
   through 2025-11-18.
 resource: https://councilhound.net/topics/fairfax-hs-electrical-program-build-out
+generated:
+  by: process:councilhound-okf
+  at: '2025-11-18T00:00:00Z'
 timestamp: '2025-11-18'
 ---
 

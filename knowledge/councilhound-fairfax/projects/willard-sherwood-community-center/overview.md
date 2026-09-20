@@ -7,8 +7,11 @@ resource: https://councilhound.net/development/Willard-Sherwood-Health-Community
 tags:
 - city-project
 - in-progress
+generated:
+  by: process:councilhound-okf
+  at: '2026-05-11T00:00:00Z'
 timestamp: '2026-05-11'
-status: in_progress
+project_status: in_progress
 source: meetings
 ---
 

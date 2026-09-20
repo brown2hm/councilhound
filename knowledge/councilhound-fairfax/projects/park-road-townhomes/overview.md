@@ -7,8 +7,11 @@ resource: https://councilhound.net/development/Park-Rd-Townhomes
 tags:
 - private-development
 - under-construction
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
-status: under_construction
+project_status: under_construction
 source: official
 address: 11006 Park Rd, Fairfax, VA 22030
 applicant: Caglayan Investment Group  Keith Martin The Law Office of Keith C. Martin PLLC

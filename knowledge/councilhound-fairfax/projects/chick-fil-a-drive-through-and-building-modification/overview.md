@@ -7,8 +7,11 @@ description: Chick-fil-A applied for a special use permit, special exceptions, a
 resource: https://councilhound.net/topics/chick-fil-a-drive-through-and-building-modification
 tags:
 - approved
+generated:
+  by: process:councilhound-okf
+  at: '2025-10-13T00:00:00Z'
 timestamp: '2025-10-13'
-status: approved
+project_status: approved
 source: meetings
 ---
 

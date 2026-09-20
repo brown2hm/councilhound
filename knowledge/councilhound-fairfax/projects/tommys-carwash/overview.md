@@ -6,8 +6,11 @@ resource: https://councilhound.net/development/Tommys-Carwash
 tags:
 - private-development
 - approved
+generated:
+  by: councilhound-curator/claude-sonnet-4-6
+  at: '2024-12-10T00:00:00Z'
 timestamp: '2024-12-10'
-status: approved
+project_status: approved
 source: official
 address: 9917 Fairfax Blvd, Fairfax, VA 22030
 applicant: Robert D. Brant Walsh, Colucci, Lubeley & Walsh, P.C.

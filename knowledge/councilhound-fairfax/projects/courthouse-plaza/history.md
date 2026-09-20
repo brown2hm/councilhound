@@ -1,9 +1,12 @@
 ---
 type: project-history
 title: Courthouse Plaza — meeting history
-description: Dated record of every meeting action on Courthouse Plaza, through 2026-06-22.
+description: Dated record of every meeting action on Courthouse Plaza, through 2026-07-28.
 resource: https://councilhound.net/development/Courthouse-Plaza
-timestamp: '2026-06-22'
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-28T00:00:00Z'
+timestamp: '2026-07-28'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
@@ -108,6 +111,12 @@ timestamp: '2026-06-22'
 - [8b] A pre-application briefing was presented to the Planning Commission for a potential redevelopment of the Courthouse Plaza Shopping Center; no formal action was taken.
 - Status after: **proposed**
 
+## 2026-02-12 — PRAB Regular Meeting
+
+**Agenda item 5d**: Stakeholder Update – Planning Commission
+- Outcome: Matt Rice reported on two recent Planning Commission meetings, CIP recommendations for Willard Sherwood and KJMS fields, two proposed developments at Courthouse Plaza, and the designation of five activity centers (Old Town, Northfax, Kamp Washington, Fairfax Circle, and Pickett Rd/Main St) for zoning review. Two vacancies on the Planning Commission were noted.
+- [5d] Two proposed developments at Courthouse Plaza were reviewed at the most recent Planning Commission meeting.
+
 ## 2026-02-24 — City Council Meeting
 
 **Agenda item 12d**: Work Session: Pre-Application Briefing – Redevelopment of Courthouse Plaza Shopping Center at 10300 Willard Way ([watch the moment](https://fairfax.granicus.com/MediaPlayer.php?view_id=13&clip_id=4474&starttime=13478&entrytime=13478))
@@ -120,6 +129,12 @@ timestamp: '2026-06-22'
 **Agenda item 4a**: Presentation from students at Katherine Johnson Middle School on ideas for development at Northfax and Courthouse Plaza ([watch the moment](https://fairfax.granicus.com/MediaPlayer.php?view_id=13&clip_id=4493&starttime=86&entrytime=86))
 - Outcome: Students from Katherine Johnson Middle School presented development ideas for the Northfax and Courthouse Plaza areas. The Northfax team focused on stormwater management, pedestrian safety, and local economy, proposing pervious surfaces, daylighting the existing stream, greenery, and solar panels. The Courthouse Plaza team presented two designs: Design A (shuttle bus stop, solar panels, community gardens, water fountains, diverse businesses, youth center, music venue) and Design B (walkable pedestrian/bike-focused center, underground parking, bio-retention pond, increased tree canopy, shaded seating). No action was taken.
 - [4a] Students presented two redesign concepts for Courthouse Plaza, addressing stormwater, pedestrian safety, local economy, and environmental concerns.
+
+## 2026-05-04 — School Board Regular Meeting
+
+**Agenda item 2.03**: KJMS Student City Redevelopment Presentation
+- Outcome: Students from Katherine Johnson Middle School presented their redevelopment ideas for the Northfax and Courthouse Plaza areas, including adding pervious surfaces, daylighting an underground stream, increasing greenery and solar panels, and suggesting businesses appealing to all ages.
+- [2.03] KJMS students presented redevelopment ideas for the Courthouse Plaza area as part of their City of Fairfax redevelopment presentation.
 
 ## 2026-05-11 — Planning Commission Regular Meeting/Work Session
 
@@ -139,4 +154,17 @@ timestamp: '2026-06-22'
 **Agenda item 7b**: Work session – Redevelopment of Courthouse Plaza at 10300 Willard Way and 3922 Blenheim Boulevard ([watch the moment](https://fairfax.granicus.com/MediaPlayer.php?view_id=13&clip_id=4595&starttime=5855&entrytime=5855))
 - Outcome: Work session scheduled per agenda. No minutes or actions report available; outcome not yet recorded.
 - [7b] A work session on the redevelopment of the Courthouse Plaza property was scheduled, with supporting materials including a Master Development Plan, Traffic Impact Analysis, Transportation Demand Management plan, and additional attachments.
+- Status after: **in_progress**
+
+## 2026-07-09 — PRAB Regular Meeting
+
+**Agenda item 4**: Stakeholder Updates
+- Outcome: Stakeholder updates delivered by liaisons. School Board and Student Representative were absent.
+- [4] The Courthouse Plaza redevelopment was discussed at the most recent Planning Commission meeting.
+
+## 2026-07-28 — City Council Meeting
+
+**Agenda item 11b**: Discussion of a request by Combined Courthouse LLC for the redevelopment of 10300 Willard Way and 3922 Blenheim Boulevard
+- Outcome: Post-submission work session held; no council action taken.
+- [11b] The Combined Courthouse LLC redevelopment at Courthouse Plaza was discussed in a post-submission work session; public comment during the initial comment period also referenced this proposal.
 - Status after: **in_progress**

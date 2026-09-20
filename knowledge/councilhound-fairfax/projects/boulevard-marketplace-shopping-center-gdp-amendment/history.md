@@ -4,6 +4,9 @@ title: Boulevard Marketplace Shopping Center GDP Amendment — meeting history
 description: Dated record of every meeting action on Boulevard Marketplace Shopping Center
   GDP Amendment, through 2024-12-10.
 resource: https://councilhound.net/topics/boulevard-marketplace-shopping-center-gdp-amendment
+generated:
+  by: process:councilhound-okf
+  at: '2024-12-10T00:00:00Z'
 timestamp: '2024-12-10'
 ---
 

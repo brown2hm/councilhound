@@ -8,8 +8,11 @@ resource: https://councilhound.net/development/The-Mosby-Building-10560-Main-Str
 tags:
 - private-development
 - pre-application
+generated:
+  by: process:councilhound-okf
+  at: '2026-08-04T00:00:00Z'
 timestamp: '2026-08-04'
-status: pre_application
+project_status: pre_application
 source: official
 address: 10560 Main Street, Fairfax, VA 22030
 applicant: Robert D. Brant Walsh, Colucci, Lubeley & Walsh, P.C.

@@ -6,8 +6,11 @@ description: The George Snyder Trail was a planned shared-use path project (VDOT
 resource: https://councilhound.net/topics/george-snyder-trail
 tags:
 - denied
+generated:
+  by: process:councilhound-okf
+  at: '2026-05-26T00:00:00Z'
 timestamp: '2026-05-26'
-status: denied
+project_status: denied
 source: meetings
 ---
 

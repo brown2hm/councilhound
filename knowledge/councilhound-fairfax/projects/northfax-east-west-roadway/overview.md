@@ -8,8 +8,11 @@ resource: https://councilhound.net/development/Northfax-East-West-Roadway
 tags:
 - city-project
 - in-progress
+generated:
+  by: process:councilhound-okf
+  at: '2025-09-09T00:00:00Z'
 timestamp: '2025-09-09'
-status: in_progress
+project_status: in_progress
 source: official
 address: Northfax Street and Chain Bridge Rd., Fairfax, VA 22030
 city_detail_url: https://www.fairfaxva.gov/Property-Business/Development/Projects/Northfax-East-West-Roadway

@@ -681,7 +681,7 @@ def impact_setup_jurisdiction(jurisdiction):
 
 # --- OKF knowledge bundle (councilhound.okf) ------------------------------
 # The wiki-style knowledge base: one directory of markdown concept files per
-# tracked project (Open Knowledge Format v0.1). Seed once, then the nightly
+# tracked project (Open Knowledge Format v0.2). Seed once, then the nightly
 # flow is refresh -> curate -> lint -> push.
 
 bundle_dir_option = click.option(

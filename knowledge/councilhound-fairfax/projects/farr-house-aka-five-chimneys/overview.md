@@ -8,8 +8,11 @@ resource: https://councilhound.net/development/Farr-House-aka-Five-Chimneys
 tags:
 - private-development
 - proposed
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
-status: proposed
+project_status: proposed
 source: official
 address: 10230 Main Street, Fairfax, VA 22030
 applicant: Ox Hill Companies

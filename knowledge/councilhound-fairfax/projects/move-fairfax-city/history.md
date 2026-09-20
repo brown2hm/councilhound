@@ -3,6 +3,9 @@ type: project-history
 title: Move Fairfax City — meeting history
 description: Dated record of every meeting action on Move Fairfax City, through 2026-01-13.
 resource: https://councilhound.net/topics/move-fairfax-city
+generated:
+  by: process:councilhound-okf
+  at: '2026-01-13T00:00:00Z'
 timestamp: '2026-01-13'
 ---
 

@@ -3,6 +3,9 @@ type: project-impact
 title: Jermantown Road Corridor Improvements — impact analysis
 description: Screening-level economic and fiscal estimates for Jermantown Road Corridor Improvements.
 resource: https://councilhound.net/development/Jermantown-Road-Corridor-Improvements
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-27T00:00:00Z'
 timestamp: '2026-07-27'
 ---
 

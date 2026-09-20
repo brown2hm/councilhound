@@ -4,6 +4,9 @@ title: Blenheim Boulevard Multimodal Improvements — impact analysis
 description: Screening-level economic and fiscal estimates for Blenheim Boulevard Multimodal
   Improvements.
 resource: https://councilhound.net/development/Blenheim-Blvd-Multimodal-Improvements
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-27T00:00:00Z'
 timestamp: '2026-07-27'
 ---
 

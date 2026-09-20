@@ -3,6 +3,9 @@ type: project-history
 title: Urban Forest Master Plan — meeting history
 description: Dated record of every meeting action on Urban Forest Master Plan, through 2026-07-14.
 resource: https://councilhound.net/topics/urban-forest-master-plan
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-14T00:00:00Z'
 timestamp: '2026-07-14'
 ---
 
@@ -27,11 +30,32 @@ timestamp: '2026-07-14'
 - Outcome: Discussed during work session. No action taken.
 - [12a] The Urban Forest Master Plan was discussed and overviewed during the work session; no formal action was taken.
 
+## 2024-10-10 — PRAB Regular Meeting
+
+**Agenda item 4b**: Urban Forest Master Plan – Presentation by Sophia Chapin
+- Outcome: Presentation given by Sophia Chapin on the status and engagement plan for the Urban Forest Master Plan. No vote taken.
+- [4b] Sophia Chapin presented the Urban Forest Master Plan's current status: two Steering Committee meetings completed, the first public meeting completed in July, public survey live, and a second public meeting planned in-person October 17 and virtually October 23. The Engage Fairfax website is being continually updated. [8b] The Environmental Sustainability Committee is actively working on the Urban Forestry Master Plan. [8d] The Planning Commission will review the Urban Forestry Master Plan at their Monday, October 14 meeting.
+- Status after: **in_progress**
+
 ## 2024-10-14 — Planning Commission Regular Meeting/Work Session
 
 **Agenda item 8a**: Urban Forest Master Plan project overview and discussion ([watch the moment](https://fairfax.granicus.com/MediaPlayer.php?view_id=13&clip_id=3330&starttime=130&entrytime=130))
 - Outcome: Dr. Garrett Wolf of Marstel-Day presented an overview of the Urban Forest Master Plan proposal to the commission during the Work Session. No formal action was taken.
 - [8a] Dr. Garrett Wolf of Marstel-Day presented an overview of the Urban Forest Master Plan proposal to the Planning Commission during the Work Session.
+- Status after: **in_progress**
+
+## 2025-04-10 — PRAB Regular Meeting
+
+**Agenda item 5**: Stakeholder Updates
+- Outcome: Stakeholder representatives provided updates on their respective bodies. Amit Hickman (School Board) was absent. No votes taken.
+- [5] The ESC will review the Urban Forest Master Plan at their next meeting; the plan expects a completed report by end of summer and ranks 25 sites of maintained parkland, non-managed woodlands, and trails.
+- Status after: **in_progress**
+
+## 2025-05-19 — PRAB/School Board Meeting
+
+**Agenda item 5**: Stakeholder Updates
+- Outcome: Stakeholder updates provided by ESC and NOVA Parks representatives; Commission on the Arts, Planning Commission, School Board, and Senior Center had no updates. Community member updates were provided.
+- [5] Development is continuing with a Steering Committee meeting scheduled for May 21 and a public meeting on June 11 from 6–8pm at the Stacy C. Sherwood Community Center.
 - Status after: **in_progress**
 
 ## 2025-05-27 — City Council Meeting
@@ -48,6 +72,13 @@ timestamp: '2026-07-14'
 - [8a] Staff Urban Forester Anna Safford and consultant Dr. Garrett Wolf presented an update on the Urban Forest Masterplan project to the Commission during the work session.
 - Status after: **in_progress**
 
+## 2025-09-11 — PRAB Regular Meeting
+
+**Agenda item 6**: Stakeholder Updates
+- Outcome: Stakeholder updates received from liaisons for Commission on the Arts, Environmental Sustainability Committee, NOVA Parks, Planning Commission, School Board, and Senior Center. Student representative had no update.
+- [6] Reported as in the home stretch; final presentations to stakeholders including PRAB in October are planned, and the final document should be ready for recommendation and adoption by the end of the year. [11] Scheduled to be presented to PRAB at the October meeting.
+- Status after: **in_progress**
+
 ## 2025-10-13 — Planning Commission Regular Meeting/Work Session
 
 **Agenda item 9**: Staff Report ([watch the moment](https://fairfax.granicus.com/MediaPlayer.php?view_id=13&clip_id=4343&starttime=5419&entrytime=5419))
@@ -59,6 +90,14 @@ timestamp: '2026-07-14'
 **Agenda item 11**: Commission Comments ([watch the moment](https://fairfax.granicus.com/MediaPlayer.php?view_id=13&clip_id=4368&starttime=2378&entrytime=2378))
 - Outcome: Commissioners provided updates on external meetings and events attended, including the Parks and Recreation Advisory Board, a budget open house, the Central Fairfax Chamber of Commerce Expo, and an Urban Forest Master Plan presentation.
 - [11] Chair Feather attended an Urban Forest Master Plan presentation meeting.
+
+## 2025-11-13 — PRAB Regular Meeting
+
+**Agenda item 6e**: Old Business – Urban Forest Master Plan
+- Outcome: PRAB voted to direct the Chair to draft a memo in support of the Urban Forest Master Plan to present to City Council.
+- Vote (passed): Motion to direct the Chair to draft a memo in support of the Urban Forest Master Plan to present to City Council. — Rice: yes, Paceley: yes, Ross: yes, Knowles: yes, Gibson: yes, Russell: yes, O'Brien: yes, Curtin: yes, Neway: yes, Kuiler: absent, Hickman: absent, Stewart: absent
+- [6e] PRAB voted to direct the Chair to draft a memo in support of the Urban Forest Master Plan to present to City Council.
+- Status after: **in_progress**
 
 ## 2025-11-24 — Planning Commission Regular Meeting/Work Session
 
@@ -78,6 +117,20 @@ timestamp: '2026-07-14'
 **Agenda item 8a**: Presentation and discussion of the draft Urban Forest Masterplan ([watch the moment](https://fairfax.granicus.com/MediaPlayer.php?view_id=13&clip_id=4419&starttime=274&entrytime=274))
 - Outcome: Urban Forester Anna Safford presented the draft Urban Forest Masterplan; the Commission discussed the presentation. Staff report incorporated into the record by reference.
 - [8a] The draft Urban Forest Masterplan was presented to the Planning Commission by Urban Forester Anna Safford and discussed during the work session.
+- Status after: **in_progress**
+
+## 2025-12-11 — PRAB Regular Meeting
+
+**Agenda item 5b**: Stakeholder Update – Environmental Sustainability Committee (Rusty Russell)
+- Outcome: Rusty Russell reported that the Urban Forest Master Plan was presented to the Planning Commission and will be presented to City Council for adoption on January 27th. A new ESC member was noted (entry cut off in minutes).
+- [5b] The Urban Forest Master Plan was presented to the Planning Commission and is scheduled for adoption by City Council on January 27th.
+- Status after: **in_progress**
+
+## 2026-01-08 — PRAB Regular Meeting
+
+**Agenda item 5**: Stakeholder Updates
+- Outcome: Representatives from Commission on the Arts, Environmental Sustainability Committee, NOVA Parks, Planning Commission, School Board, and Senior Center provided updates. Student representative and community members had no updates.
+- [5] Rusty Russell reported that the Urban Forest Master Plan is soon to be reviewed and approved by City Council by the end of the month.
 - Status after: **in_progress**
 
 ## 2026-01-12 — Planning Commission Regular Meeting/Work Session
@@ -101,6 +154,13 @@ timestamp: '2026-07-14'
 - Vote (failed): Substitute motion: adopt the Urban Forest Master Plan (December 2025 draft) with a provision requiring the Urban Forester to provide a report to City Council by July 2026 explaining the establishment of targets and timelines. — Amos: no, Bates: no, Hall: yes, Hardy-Chandler: no, McQuillen: no, Peterson: yes
 - Vote (passed): Main motion: adopt resolution R-26-07 approving and adopting the Urban Forest Master Plan in the draft dated December 2025. — Amos: yes, Bates: yes, Hall: yes, Hardy-Chandler: yes, McQuillen: yes, Peterson: yes
 - [7a] The Urban Forest Master Plan (December 2025 draft) was approved and adopted by the City Council following a public hearing; the plan has been in development since May 2024.
+- Status after: **approved**
+
+## 2026-02-12 — PRAB Regular Meeting
+
+**Agenda item 5b**: Stakeholder Update – Environmental Sustainability Committee
+- Outcome: Rusty Russell reported that the Urban Forest Master Plan was adopted by City Council.
+- [5b] The Urban Forest Master Plan was adopted by City Council; Rusty Russell expressed anticipation of its benefits to the city.
 - Status after: **approved**
 
 ## 2026-03-09 — Planning Commission Regular Meeting/Work Session

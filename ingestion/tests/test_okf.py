@@ -160,12 +160,16 @@ def test_seed_creates_conformant_wiki(db_session, project, tmp_path):
     assert fm["type"] == "development-project"
     assert fm["title"] == "Circle Gateway"
     assert fm["resource"].endswith("/development/circle-gateway-official")
-    assert fm["status"] == "under review"
+    # v0.2 reserves `status` for lifecycle; the city's status moved
+    assert fm["project_status"] == "under review" and "status" not in fm
+    assert fm["generated"] == {"by": "process:councilhound-okf",
+                               "at": "2026-06-09T00:00:00Z"}
+    assert fm["timestamp"] == "2026-06-09"  # legacy key kept in step
     assert "Official record" in body
 
     fm, body = _read(tmp_path, "projects/circle-gateway/history.md")
     assert fm["type"] == "project-history"
-    assert fm["timestamp"] == "2026-06-09"
+    assert fm["generated"]["at"] == "2026-06-09T00:00:00Z"
     assert "watch the moment" in body and "starttime=1200" in body
     assert "Vote (passed): Motion to approve — Bates: aye, Hall: nay" in body
 
@@ -238,9 +242,10 @@ def test_refresh_regenerates_pipeline_pages_only(db_session, project, tmp_path):
     result = refresh_bundle(db_session, str(tmp_path))
     assert result["refreshed"] == 1
     fm, body = _read(tmp_path, "projects/circle-gateway/history.md")
-    assert fm["timestamp"] == "2026-07-14" and "Site plan submitted." in body
+    assert fm["generated"]["at"] == "2026-07-14T00:00:00Z"
+    assert "Site plan submitted." in body
     fm, body = _read(tmp_path, "projects/circle-gateway/overview.md")
-    assert fm["status"] == "site plan review"
+    assert fm["project_status"] == "site plan review"
     assert "(human note)" in body
     assert "through 2026-07-14" in (
         tmp_path / "projects/circle-gateway/log.md").read_text()
@@ -459,6 +464,9 @@ def test_curator_applies_minimal_edit(db_session, project, tmp_path, monkeypatch
     assert "Public hearing scheduled." not in captured["prompt"]  # only NEW material
     fm, body = _read(tmp_path, "projects/circle-gateway/overview.md")
     assert "site plan was submitted" in body
+    # the curator becomes the producer of record, versioned by its model
+    assert fm["generated"] == {"by": f"councilhound-curator/{curate.DEFAULT_MODEL}",
+                               "at": "2026-07-14T00:00:00Z"}
     assert fm["timestamp"] == "2026-07-14"
     assert "Noted the approval." in (
         tmp_path / "projects/circle-gateway/log.md").read_text()
@@ -695,6 +703,8 @@ def test_refresh_backfills_impact_for_a_later_synthesis(db_session, project,
     assert result["refreshed"] == 1
     fm, body = _read(tmp_path, "projects/circle-gateway/impact.md")
     assert fm["type"] == "project-impact"
+    # the one page with a real instant behind it: synthesized_at, in UTC
+    assert fm["generated"]["at"] == "2026-07-20T12:00:00Z"
     assert fm["timestamp"] == "2026-07-20"
     assert "{{metric:new-households}}" in body and "248" not in body
     # the nav rebuild runs after the write, so the page links itself
@@ -985,3 +995,131 @@ def test_sync_reports_candidates_without_a_wiki(db_session, project, tmp_path,
     result = sync.sync_bundle(db_session, bundle, seed=True, push=False)
     assert result["seeded"]["seeded"] == 1
     assert os.path.exists(os.path.join(bundle, "projects/newcomer/overview.md"))
+
+
+# --- OKF v0.2 conformance ----------------------------------------------------
+
+def test_root_index_declares_okf_version(db_session, project, tmp_path):
+    """v0.2 §12: the bundle-root index.md is the one reserved file that may
+    carry frontmatter, and only to declare the spec version."""
+    seed_bundle(db_session, str(tmp_path))
+    fm, body = _read(tmp_path, "index.md")
+    assert fm == {"okf_version": "0.2"} and body.startswith("# CouncilHound")
+    assert _read(tmp_path, "projects/index.md")[0] is None
+    assert lint_bundle(str(tmp_path), db_session) == []
+
+    # the same frontmatter anywhere else is still a violation
+    sub = tmp_path / "projects/index.md"
+    sub.write_text("---\nokf_version: '0.2'\n---\n\n" + sub.read_text())
+    root = tmp_path / "index.md"
+    root.write_text(root.read_text().replace("okf_version: '0.2'",
+                                             "okf_version: '0.2'\ntitle: x"))
+    problems = lint_bundle(str(tmp_path), db_session)
+    assert any(p.startswith("projects/index.md: reserved file") for p in problems)
+    assert any(p.startswith("index.md: reserved file") for p in problems)
+
+
+def test_lint_checks_trust_and_lifecycle_shape(db_session, project, tmp_path):
+    seed_bundle(db_session, str(tmp_path))
+    page = tmp_path / "projects/circle-gateway/positions.md"
+    fm, body = _read(tmp_path, "projects/circle-gateway/positions.md")
+
+    # a bare date is not a v0.2 timestamp; project status may not squat on
+    # the lifecycle key; stale_after follows the same datetime rule
+    bad = dict(fm, generated={"by": "process:councilhound-okf", "at": "2026-06-09"},
+               status="approved", stale_after="2026-12-31")
+    page.write_text(B.render_page(bad, body))
+    problems = lint_bundle(str(tmp_path), db_session)
+    assert any("generated.at" in p for p in problems)
+    assert any("`status` 'approved'" in p for p in problems)
+    assert any("stale_after" in p for p in problems)
+
+    # a page still on v0.1 `timestamp` alone has not been migrated
+    legacy = {k: v for k, v in fm.items() if k != "generated"}
+    page.write_text(B.render_page(legacy, body))
+    assert any("missing `generated`" in p
+               for p in lint_bundle(str(tmp_path), db_session))
+
+    # the lifecycle vocabulary itself is fine, as is a tz-aware datetime
+    good = dict(fm, status="deprecated", stale_after="2026-12-31T00:00:00-05:00")
+    page.write_text(B.render_page(good, body))
+    assert lint_bundle(str(tmp_path), db_session) == []
+
+
+def test_refresh_migrates_v01_pages_in_place(db_session, project, tmp_path):
+    """Pages written under v0.1 carry `timestamp` and the city status under
+    `status`. refresh brings them to v0.2 without touching prose, crediting
+    the curator when the project log shows it last edited the page."""
+    seed_bundle(db_session, str(tmp_path))
+    project_dir = tmp_path / "projects/circle-gateway"
+    for name in ("overview", "positions", "impact"):
+        fm, body = _read(tmp_path, f"projects/circle-gateway/{name}.md")
+        legacy = {k: v for k, v in fm.items() if k != "generated"}
+        if name == "overview":
+            legacy["status"] = legacy.pop("project_status")
+        (project_dir / f"{name}.md").write_text(B.render_page(legacy, body))
+    (project_dir / "log.md").write_text(
+        (project_dir / "log.md").read_text()
+        + "\n## 2026-07-01\n\n- Noted the vote. (curator: claude-x, through 2026-06-09)\n")
+    assert any("missing `generated`" in p
+               for p in lint_bundle(str(tmp_path), db_session))
+
+    assert refresh_bundle(db_session, str(tmp_path))["refreshed"] == 1
+    fm, body = _read(tmp_path, "projects/circle-gateway/overview.md")
+    assert fm["generated"] == {"by": "councilhound-curator/claude-x",
+                               "at": "2026-06-09T00:00:00Z"}
+    assert fm["project_status"] == "under review" and "status" not in fm
+    assert "Circle Gateway is a mixed-use redevelopment" in body
+    fm, _ = _read(tmp_path, "projects/circle-gateway/positions.md")
+    assert fm["generated"]["by"] == "councilhound-curator/claude-x"
+    # the LLM curator never edits impact.md, so the pipeline produced it
+    fm, _ = _read(tmp_path, "projects/circle-gateway/impact.md")
+    assert fm["generated"] == {"by": "process:councilhound-okf",
+                               "at": "2026-07-01T00:00:00Z"}
+    assert lint_bundle(str(tmp_path), db_session) == []
+    # idempotent: the second pass is a no-op
+    assert refresh_bundle(db_session, str(tmp_path))["refreshed"] == 0
+
+
+def test_refresh_migrates_an_unchanged_documents_page(db_session, project,
+                                                      tmp_path):
+    """documents.md is only rewritten when the list changes, so its v0.1
+    frontmatter has to be migrated on the unchanged path too — dated by the
+    stamp it already carries, never by today."""
+    city = db_session.query(CityProject).one()
+    city.documents = [{"label": "Site plan", "url": "https://example.gov/sp.pdf"}]
+    db_session.commit()
+    seed_bundle(db_session, str(tmp_path))
+    page = tmp_path / "projects/circle-gateway/documents.md"
+    fm, body = _read(tmp_path, "projects/circle-gateway/documents.md")
+    legacy = dict({k: v for k, v in fm.items() if k != "generated"},
+                  timestamp="2026-01-02")
+    page.write_text(B.render_page(legacy, body))
+
+    assert refresh_bundle(db_session, str(tmp_path))["refreshed"] == 1
+    fm, _ = _read(tmp_path, "projects/circle-gateway/documents.md")
+    assert fm["generated"] == {"by": "process:councilhound-okf",
+                               "at": "2026-01-02T00:00:00Z"}
+    assert fm["timestamp"] == "2026-01-02"
+    assert refresh_bundle(db_session, str(tmp_path))["refreshed"] == 0
+
+
+def test_refresh_migrates_a_history_page_whose_timeline_vanished(
+        db_session, project, tmp_path):
+    """A pipeline page is regenerated from its source; once the source is
+    gone (the timeline detached, the document list withdrawn) nothing writes
+    it, so the migration has to reach it directly."""
+    seed_bundle(db_session, str(tmp_path))
+    page = tmp_path / "projects/circle-gateway/history.md"
+    fm, body = _read(tmp_path, "projects/circle-gateway/history.md")
+    page.write_text(B.render_page(
+        {k: v for k, v in fm.items() if k != "generated"}, body))
+    db_session.query(EntityUpdate).delete()
+    db_session.commit()
+
+    assert refresh_bundle(db_session, str(tmp_path))["refreshed"] == 1
+    fm, kept = _read(tmp_path, "projects/circle-gateway/history.md")
+    assert fm["generated"] == {"by": "process:councilhound-okf",
+                               "at": "2026-06-09T00:00:00Z"}
+    assert kept == body
+    assert refresh_bundle(db_session, str(tmp_path))["refreshed"] == 0

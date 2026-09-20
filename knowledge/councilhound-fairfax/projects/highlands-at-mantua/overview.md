@@ -9,8 +9,11 @@ resource: https://councilhound.net/development/The-Highlands-at-Mantua
 tags:
 - private-development
 - in-progress
+generated:
+  by: councilhound-curator/claude-sonnet-4-6
+  at: '2026-07-27T00:00:00Z'
 timestamp: '2026-07-27'
-status: in_progress
+project_status: in_progress
 source: official
 address: 9495 Silver King Court, Fairfax, VA 22030
 applicant: RJL Associates, Inc.  David S. Houston, Attorney Bean Kinney & Korman, PC 2311

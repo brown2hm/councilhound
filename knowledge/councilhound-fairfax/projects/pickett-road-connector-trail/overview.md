@@ -8,8 +8,11 @@ resource: https://councilhound.net/development/Pickett-Road-Connector-Trail
 tags:
 - city-project
 - in-progress
+generated:
+  by: councilhound-curator/claude-sonnet-4-6
+  at: '2025-11-18T00:00:00Z'
 timestamp: '2025-11-18'
-status: in_progress
+project_status: in_progress
 source: official
 address: Pickett Road, Fairfax, VA
 city_detail_url: https://www.fairfaxva.gov/Property-Business/Development/Projects/Pickett-Road-Connector-Trail

@@ -4,6 +4,9 @@ title: Stacy Sherwood Community Center — positions & open questions
 description: Recorded member positions and unresolved questions on Stacy Sherwood Community
   Center.
 resource: https://councilhound.net/topics/stacy-sherwood-community-center
+generated:
+  by: process:councilhound-okf
+  at: '2026-04-28T00:00:00Z'
 timestamp: '2026-04-28'
 ---
 

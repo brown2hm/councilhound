@@ -61,7 +61,7 @@ model, and ops notes.
   (filterable by body); `/glossary` explains the agenda vocabulary and terms
   carry hover definitions across the site.
 - **Project wikis** — a per-project knowledge base in the
-  [Open Knowledge Format](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf):
+  [Open Knowledge Format](https://github.com/GoogleCloudPlatform/open-knowledge-format):
   durable markdown pages (overview, meeting history, positions, impact)
   maintained by incremental curator edits instead of regeneration, with
   impact figures resolved live via metric markers so prose never carries
@@ -184,8 +184,19 @@ metrics refuse to run rather than guess.
 
 `councilhound.okf` maintains a wiki-style knowledge base — one directory of
 markdown concept files per tracked project, per the
-[Open Knowledge Format](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf)
-v0.1 spec (YAML frontmatter, reserved `index.md`/`log.md`). The bundle
+[Open Knowledge Format](https://github.com/GoogleCloudPlatform/open-knowledge-format)
+v0.2 spec (YAML frontmatter, reserved `index.md`/`log.md`; the root
+`index.md` declares `okf_version`). Every concept page carries the v0.2
+trust family: `generated: {by, at}` names the producer under the spec's
+actor convention (`process:councilhound-okf` for the deterministic pipeline,
+`councilhound-curator/<model>` for the LLM curator) and the ISO 8601 instant
+of the last meaningful change — the meeting date a page is current through,
+so re-running the pipeline on unchanged data stays a no-op. The v0.1
+`timestamp` is written alongside for one release while readers move to
+`generated.at`. Because v0.2 reserves `status` for lifecycle
+(draft/stable/deprecated), the city's project status lives under
+`project_status`. `okf-refresh` migrates pages written under v0.1 in place.
+The bundle
 (default `knowledge/councilhound-fairfax/`, override `$OKF_BUNDLE_DIR`) is
 canonical for narrative knowledge and designed for incremental maintenance
 instead of wholesale profile regeneration. It is **version-controlled** — it

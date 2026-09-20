@@ -9,8 +9,11 @@ resource: https://councilhound.net/development/Gallery-at-City-Center
 tags:
 - private-development
 - in-progress
+generated:
+  by: councilhound-curator/claude-sonnet-4-6
+  at: '2026-07-07T00:00:00Z'
 timestamp: '2026-07-07'
-status: in_progress
+project_status: in_progress
 source: official
 address: 4085, 4101, 4103 and 4117 Chain Bridge Road, Fairfax, VA 22030
 applicant: The Christopher Companies 10461 White Granite Drive, Suite 250 Oakton, VA 22124  Clark

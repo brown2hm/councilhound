@@ -8,8 +8,11 @@ resource: https://councilhound.net/development/Northfax-West
 tags:
 - private-development
 - proposed
+generated:
+  by: councilhound-curator/claude-sonnet-4-6
+  at: '2026-09-01T00:00:00Z'
 timestamp: '2026-09-01'
-status: proposed
+project_status: proposed
 source: official
 address: 3570 Chain Bridge Road, Fairfax, VA 22030
 applicant: Northfax JV, LLC

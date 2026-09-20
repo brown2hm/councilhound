@@ -3,6 +3,9 @@ type: project-documents
 title: Davies Property — documents
 description: 55 document(s) published in the City of Fairfax project record for Davies Property.
 resource: https://councilhound.net/development/Davies-Property
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-30T00:00:00Z'
 timestamp: '2026-07-30'
 ---
 

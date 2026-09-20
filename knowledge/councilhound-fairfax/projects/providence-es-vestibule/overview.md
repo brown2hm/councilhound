@@ -6,8 +6,11 @@ description: The Providence ES Vestibule is a Schools Capital Improvement Progra
 resource: https://councilhound.net/topics/providence-es-vestibule
 tags:
 - approved
+generated:
+  by: process:councilhound-okf
+  at: '2025-11-18T00:00:00Z'
 timestamp: '2025-11-18'
-status: approved
+project_status: approved
 source: meetings
 ---
 

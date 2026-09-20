@@ -4,6 +4,9 @@ title: Solid Waste Management Plan Update — positions & open questions
 description: Recorded member positions and unresolved questions on Solid Waste Management
   Plan Update.
 resource: https://councilhound.net/topics/solid-waste-management-plan-update
+generated:
+  by: process:councilhound-okf
+  at: '2026-05-12T00:00:00Z'
 timestamp: '2026-05-12'
 ---
 

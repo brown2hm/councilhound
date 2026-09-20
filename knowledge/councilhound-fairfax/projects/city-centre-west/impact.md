@@ -3,6 +3,9 @@ type: project-impact
 title: City Centre West — impact analysis
 description: Screening-level economic and fiscal estimates for City Centre West.
 resource: https://councilhound.net/development/City-Centre-West
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
 ---
 

@@ -3,6 +3,9 @@ type: project-positions
 title: Fairfax Old Town Hall Rehabilitation — positions & open questions
 description: Recorded member positions and unresolved questions on Fairfax Old Town Hall Rehabilitation.
 resource: https://councilhound.net/development/Fairfax-Old-Town-Hall-Rehabilitation
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
 ---
 

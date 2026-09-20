@@ -13,8 +13,11 @@ def _wiki_project(db, slug="circle-gateway", official_slug="circle-gateway-offic
     db.add(project)
     db.flush()
     pages = [
+        # a v0.2 page (generated.at) next to v0.1 pages (timestamp only)
         ("history", {"type": "project-history", "title": "Circle Gateway — meeting history",
-                     "timestamp": "2026-06-09"}, "## 2026-06-09 — City Council\n"),
+                     "generated": {"by": "process:councilhound-okf",
+                                   "at": "2026-07-14T00:00:00Z"},
+                     "timestamp": "2026-07-14"}, "## 2026-06-09 — City Council\n"),
         ("overview", {"type": "development-project", "title": "Circle Gateway",
                       "description": "A mixed-use redevelopment.",
                       "timestamp": "2026-06-09"}, "Circle Gateway is a project.\n"),
@@ -44,6 +47,12 @@ def test_development_wiki_payload(client, db):
     assert [p["page"] for p in body["pages"]] == ["overview", "history", "positions"]
     assert body["pages"][0]["title"] == "Circle Gateway"
     assert body["pages"][0]["description"] == "A mixed-use redevelopment."
+    # OKF v0.2 generated.at wins; a v0.1 page falls back to its timestamp
+    by_page = {p["page"]: p for p in body["pages"]}
+    assert by_page["history"]["timestamp"] == "2026-07-14T00:00:00Z"
+    assert by_page["history"]["generated"]["by"] == "process:councilhound-okf"
+    assert by_page["overview"]["timestamp"] == "2026-06-09"
+    assert by_page["overview"]["generated"] is None
     assert body["log"].startswith("# Log")
     assert body["pushed_at"] is not None
 

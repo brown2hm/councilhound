@@ -7,8 +7,11 @@ description: The Capital Improvement Program FY2026–FY2030 (CIP) is a multi-ye
 resource: https://councilhound.net/topics/capital-improvement-program-fy2026-to-fy2030
 tags:
 - approved
+generated:
+  by: process:councilhound-okf
+  at: '2025-05-06T00:00:00Z'
 timestamp: '2025-05-06'
-status: approved
+project_status: approved
 source: meetings
 ---
 

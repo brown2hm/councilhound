@@ -6,13 +6,16 @@ resource: https://councilhound.net/development/Northfax-Concept-Phase-IV
 tags:
 - private-development
 - pre-application
+generated:
+  by: process:councilhound-okf
+  at: '2026-08-04T00:00:00Z'
 timestamp: '2026-08-04'
+project_status: pre_application
 source: official
 address: 3570 Chain Bridge Road, Fairfax, VA 22030
 city_detail_url: https://www.fairfaxva.gov/Property-Business/Development/Projects/Northfax-Concept-Phase-IV
 lat: 38.859187
 lng: -77.3079005
-status: pre_application
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->

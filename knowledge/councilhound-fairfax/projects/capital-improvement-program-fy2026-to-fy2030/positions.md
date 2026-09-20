@@ -4,6 +4,9 @@ title: Capital Improvement Program FY2026 to FY2030 — positions & open questio
 description: Recorded member positions and unresolved questions on Capital Improvement Program
   FY2026 to FY2030.
 resource: https://councilhound.net/topics/capital-improvement-program-fy2026-to-fy2030
+generated:
+  by: process:councilhound-okf
+  at: '2025-05-06T00:00:00Z'
 timestamp: '2025-05-06'
 ---
 

@@ -3,6 +3,9 @@ type: project-positions
 title: George Snyder Trail — positions & open questions
 description: Recorded member positions and unresolved questions on George Snyder Trail.
 resource: https://councilhound.net/topics/george-snyder-trail
+generated:
+  by: process:councilhound-okf
+  at: '2026-05-26T00:00:00Z'
 timestamp: '2026-05-26'
 ---
 

@@ -4,10 +4,20 @@ title: Capital Improvement Program FY2026 to FY2030 — meeting history
 description: Dated record of every meeting action on Capital Improvement Program FY2026 to
   FY2030, through 2025-05-06.
 resource: https://councilhound.net/topics/capital-improvement-program-fy2026-to-fy2030
+generated:
+  by: process:councilhound-okf
+  at: '2025-05-06T00:00:00Z'
 timestamp: '2025-05-06'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
+
+## 2024-09-16 — School Board Work Session
+
+**Agenda item 1.02**: Review Draft FY2026-2030 Capital Improvement Program
+- Outcome: Superintendent Platenberg presented a draft Capital Improvement Program. Discussion was held on current and future needs. No vote taken; formal presentation scheduled for the October 4 regular school board meeting.
+- [1.02] A draft of the FY2026–2030 Capital Improvement Program was reviewed in work session; the formal presentation is planned for the October 4 regular school board meeting.
+- Status after: **in_progress**
 
 ## 2024-11-25 — Planning Commission Regular Meeting/Work Session
 

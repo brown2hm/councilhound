@@ -4,6 +4,9 @@ title: 2035 Comprehensive Plan Implementation Guide — positions & open questio
 description: Recorded member positions and unresolved questions on 2035 Comprehensive Plan
   Implementation Guide.
 resource: https://councilhound.net/topics/2035-comprehensive-plan-implementation-guide
+generated:
+  by: councilhound-curator/claude-sonnet-4-6
+  at: '2026-07-13T00:00:00Z'
 timestamp: '2026-07-13'
 ---
 

@@ -4,6 +4,9 @@ title: 2035 Comprehensive Plan Implementation Guide — meeting history
 description: Dated record of every meeting action on 2035 Comprehensive Plan Implementation
   Guide, through 2026-07-13.
 resource: https://councilhound.net/topics/2035-comprehensive-plan-implementation-guide
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-13T00:00:00Z'
 timestamp: '2026-07-13'
 ---
 
@@ -29,6 +32,12 @@ timestamp: '2026-07-13'
 - Outcome: Planner Amy Lynn Denny presented updates to the Implementation Guides, incorporated into the record by reference. No action taken; work session discussion only.
 - [8b] Planner II Amy Lynn Denny presented updates to the Implementation Guides related to the 2035 Comprehensive Plan and approved Small Area Plans during the work session.
 - Status after: **in_progress**
+
+## 2025-09-11 — PRAB Regular Meeting
+
+**Agenda item 6**: Stakeholder Updates
+- Outcome: Stakeholder updates received from liaisons for Commission on the Arts, Environmental Sustainability Committee, NOVA Parks, Planning Commission, School Board, and Senior Center. Student representative had no update.
+- [6] The Planning Commission reviewed the 2035 comp plan and implementation guides for the small area plans at a meeting in late July.
 
 ## 2026-03-09 — Planning Commission Regular Meeting/Work Session
 

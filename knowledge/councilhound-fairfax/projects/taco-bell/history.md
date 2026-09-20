@@ -3,6 +3,9 @@ type: project-history
 title: Taco Bell — meeting history
 description: Dated record of every meeting action on Taco Bell, through 2024-12-09.
 resource: https://councilhound.net/development/Taco-Bell
+generated:
+  by: process:councilhound-okf
+  at: '2024-12-09T00:00:00Z'
 timestamp: '2024-12-09'
 ---
 

@@ -3,6 +3,9 @@ type: project-history
 title: Northfax East-West Roadway — meeting history
 description: Dated record of every meeting action on Northfax East-West Roadway, through 2025-09-09.
 resource: https://councilhound.net/development/Northfax-East-West-Roadway
+generated:
+  by: process:councilhound-okf
+  at: '2025-09-09T00:00:00Z'
 timestamp: '2025-09-09'
 ---
 

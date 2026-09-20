@@ -7,13 +7,16 @@ resource: https://councilhound.net/development/Fairfax-Old-Town-Hall-Rehabilitat
 tags:
 - city-project
 - in-progress
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
+project_status: in_progress
 source: official
 address: 3999 University Dr., Fairfax, VA 22030
 city_detail_url: https://www.fairfaxva.gov/Property-Business/Development/Projects/Fairfax-Old-Town-Hall-Rehabilitation
 lat: 38.8460879
 lng: -77.3049734
-status: in_progress
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->

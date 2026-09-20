@@ -4,10 +4,19 @@ title: Stacy Sherwood Community Center — meeting history
 description: Dated record of every meeting action on Stacy Sherwood Community Center, through
   2026-04-28.
 resource: https://councilhound.net/topics/stacy-sherwood-community-center
+generated:
+  by: process:councilhound-okf
+  at: '2026-04-28T00:00:00Z'
 timestamp: '2026-04-28'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
+
+## 2025-10-06 — HHCAB Regular Meeting
+
+**Agenda item 3**: General Updates
+- Outcome: Chair provided updates on the 2025 Housing Symposium and highlighted several upcoming meetings and events relevant to HHCAB's work.
+- [3] The Stacy C. Sherwood Community Center is the venue for both the October 21 Budget Open House and the October 22 Community Engagement & Impact Expo.
 
 ## 2025-10-14 — City Council Meeting
 

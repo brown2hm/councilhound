@@ -7,14 +7,17 @@ resource: https://councilhound.net/development/Wilcoxon-Trail-Extension
 tags:
 - city-project
 - in-progress
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
+project_status: in_progress
 source: official
 address: Fairfax Blvd. and Draper Drive, 22030
 city_detail_url: https://www.fairfaxva.gov/Property-Business/Development/Projects/George-Snyder-Trail-Extension
 lat: 38.8639907
 lng: -77.2812858
 evaluation_status: synthesized
-status: in_progress
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->

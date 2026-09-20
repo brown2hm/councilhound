@@ -7,8 +7,11 @@ resource: https://councilhound.net/development/Circle-Gateway
 tags:
 - private-development
 - proposed
+generated:
+  by: councilhound-curator/claude-sonnet-4-6
+  at: '2026-09-01T00:00:00Z'
 timestamp: '2026-09-01'
-status: proposed
+project_status: proposed
 source: official
 address: 3250 Blenheim Boulevard, Fairfax, VA 22030
 applicant: Woodbridge Commons, LLC  Don Earl Stedham Woodbridge Commons, LLC Chief Operating

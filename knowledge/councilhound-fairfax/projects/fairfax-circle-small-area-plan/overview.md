@@ -6,9 +6,12 @@ description: The Fairfax Circle Small Area Plan is a land-use and transportation
   2023.
 resource: https://councilhound.net/topics/fairfax-circle-small-area-plan
 tags:
-- approved
+- completed
+generated:
+  by: process:councilhound-okf
+  at: '2026-06-08T00:00:00Z'
 timestamp: '2026-06-08'
-status: approved
+project_status: completed
 source: meetings
 ---
 

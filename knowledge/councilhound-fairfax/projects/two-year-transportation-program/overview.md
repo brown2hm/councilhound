@@ -7,8 +7,11 @@ description: The Two-Year Transportation Program is a City of Fairfax planning a
 resource: https://councilhound.net/topics/two-year-transportation-program
 tags:
 - proposed
+generated:
+  by: process:councilhound-okf
+  at: '2025-02-18T00:00:00Z'
 timestamp: '2025-02-18'
-status: proposed
+project_status: proposed
 source: meetings
 ---
 

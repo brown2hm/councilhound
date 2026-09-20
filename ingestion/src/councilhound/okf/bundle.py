@@ -1,18 +1,97 @@
 """Bundle-file primitives: frontmatter round-trip, deterministic page
-writes, reserved index.md/log.md rendering, and the {{metric:...}} marker
+writes, reserved index.md/log.md rendering, the OKF v0.2 trust fields
+(`generated`, actors, ISO 8601 datetimes), and the {{metric:...}} marker
 grammar. Everything here is pure file/string handling — no DB."""
 import hashlib
 import os
 import re
-from datetime import date
+from datetime import date, datetime, timezone
 
 import yaml
 
+OKF_VERSION = "0.2"
 RESERVED = {"index.md", "log.md"}
 # curator-owned pages seeded by export.py; everything else generated in a
 # project dir (history.md, index.md, log.md) is pipeline-owned
 CURATED_PAGES = {"overview.md", "positions.md", "impact.md"}
 PAGE_ORDER = ["overview", "history", "positions", "impact", "documents"]
+
+# OKF v0.2 §7 actor convention: `process:<id>` for automated processes,
+# `<producer>/<version>` for agents. The deterministic export/refresh is the
+# process; the LLM curator is an agent versioned by its model.
+PIPELINE_ACTOR = "process:councilhound-okf"
+# OKF v0.2 §5.4 reserves `status` for lifecycle. The city's project status
+# lives under `project_status` so a v0.2 consumer never reads
+# `pre_application` as an unknown lifecycle value.
+LIFECYCLE_STATUSES = {"draft", "stable", "deprecated"}
+# frontmatter keys rendered first, in this order, so every page reads the
+# same way; producer-defined keys follow in insertion order
+_KEY_ORDER = ["type", "title", "description", "resource", "tags", "generated",
+              "timestamp", "status", "stale_after", "project_status"]
+_ISO_DATETIME_RE = re.compile(
+    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$")
+
+
+def curator_actor(model: str) -> str:
+    return f"councilhound-curator/{model}"
+
+
+def iso_datetime(value) -> str:
+    """OKF v0.2 §5: every timestamp is an ISO 8601 datetime with an explicit
+    offset. A bare date (our meeting-derived stamps) becomes midnight UTC; a
+    naive datetime is taken as UTC; an aware one is converted."""
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        value = value.astimezone(timezone.utc).replace(microsecond=0)
+        return value.isoformat().replace("+00:00", "Z")
+    if isinstance(value, date):
+        return f"{value.isoformat()}T00:00:00Z"
+    text = str(value).strip()
+    if _ISO_DATETIME_RE.match(text):
+        return text
+    return f"{text[:10]}T00:00:00Z"
+
+
+def is_iso_datetime(value) -> bool:
+    if isinstance(value, datetime):
+        return value.tzinfo is not None
+    return isinstance(value, str) and bool(_ISO_DATETIME_RE.match(value))
+
+
+def generated(by: str, at) -> dict:
+    """The v0.2 `generated` family: who produced the content and when it last
+    meaningfully changed."""
+    return {"by": by, "at": iso_datetime(at)}
+
+
+def generated_at(frontmatter: dict | None) -> str | None:
+    """The page's last-change instant as an ISO string: `generated.at`, or
+    the v0.1 `timestamp` a v0.2 consumer may fall back to (§13.1)."""
+    fm = frontmatter or {}
+    gen = fm.get("generated")
+    raw = gen.get("at") if isinstance(gen, dict) else None
+    if raw in (None, ""):
+        raw = fm.get("timestamp")
+    if raw in (None, ""):
+        return None
+    return iso_datetime(raw)
+
+
+def generated_date(frontmatter: dict | None) -> date | None:
+    stamp = generated_at(frontmatter)
+    if stamp is None:
+        return None
+    try:
+        return date.fromisoformat(stamp[:10])
+    except ValueError:
+        return None
+
+
+def order_frontmatter(frontmatter: dict) -> dict:
+    head = {k: frontmatter[k] for k in _KEY_ORDER if k in frontmatter}
+    head.update({k: v for k, v in frontmatter.items() if k not in head})
+    return head
 
 MARKER_RE = re.compile(r"\{\{(metric|map):([a-z0-9][a-z0-9-]*)\}\}")
 # root-absolute markdown links assert bundle-internal relationships
@@ -34,10 +113,13 @@ def content_hash(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
 
 
+def render_frontmatter(frontmatter: dict) -> str:
+    return yaml.safe_dump(order_frontmatter(frontmatter), sort_keys=False,
+                          allow_unicode=True, default_flow_style=False, width=88)
+
+
 def render_page(frontmatter: dict, body: str) -> str:
-    fm = yaml.safe_dump(frontmatter, sort_keys=False, allow_unicode=True,
-                        default_flow_style=False, width=88)
-    return f"---\n{fm}---\n\n{body.strip()}\n"
+    return f"---\n{render_frontmatter(frontmatter)}---\n\n{body.strip()}\n"
 
 
 def parse_page(text: str) -> tuple[dict | None, str]:
@@ -72,13 +154,19 @@ def write_page(bundle_dir: str, rel_path: str, frontmatter: dict, body: str) -> 
     return write_text(bundle_dir, rel_path, render_page(frontmatter, body))
 
 
-def render_index(title: str, entries: list[tuple[str, str, str]]) -> str:
-    """Reserved index.md: no frontmatter, one line per concept.
+def render_index(title: str, entries: list[tuple[str, str, str]],
+                 root: bool = False) -> str:
+    """Reserved index.md: one line per concept, no frontmatter — except the
+    bundle root, which declares the spec version it targets (v0.2 §12, the
+    only frontmatter an index may carry).
     entries: (root-absolute link, title, one-line description)."""
     lines = [f"# {title}", ""]
     lines += [f"- [{name}]({link}) — {desc}" if desc else f"- [{name}]({link})"
               for link, name, desc in entries]
-    return "\n".join(lines) + "\n"
+    body = "\n".join(lines) + "\n"
+    if root:
+        return f"---\n{render_frontmatter({'okf_version': OKF_VERSION})}---\n\n{body}"
+    return body
 
 
 def append_log(bundle_dir: str, rel_dir: str, lines: list[str],

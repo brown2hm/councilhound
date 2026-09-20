@@ -7,8 +7,11 @@ resource: https://councilhound.net/development/10340-Democracy-Lane
 tags:
 - private-development
 - pre-application
+generated:
+  by: process:councilhound-okf
+  at: '2026-03-09T00:00:00Z'
 timestamp: '2026-03-09'
-status: pre_application
+project_status: pre_application
 source: official
 address: 10340 Democracy Lane, Fairfax, VA 22030
 applicant: Evan Pritchard Wire Gill, LLP

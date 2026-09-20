@@ -7,8 +7,11 @@ resource: https://councilhound.net/development/Blenheim-Blvd-Multimodal-Improvem
 tags:
 - city-project
 - approved
+generated:
+  by: process:councilhound-okf
+  at: '2026-06-23T00:00:00Z'
 timestamp: '2026-06-23'
-status: approved
+project_status: approved
 source: meetings
 evaluation_status: synthesized
 ---

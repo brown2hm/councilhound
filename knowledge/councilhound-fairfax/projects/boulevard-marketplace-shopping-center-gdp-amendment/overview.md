@@ -9,8 +9,11 @@ description: The Boulevard Marketplace Shopping Center GDP Amendment concerns a 
 resource: https://councilhound.net/topics/boulevard-marketplace-shopping-center-gdp-amendment
 tags:
 - approved
+generated:
+  by: process:councilhound-okf
+  at: '2024-12-10T00:00:00Z'
 timestamp: '2024-12-10'
-status: approved
+project_status: approved
 source: meetings
 ---
 

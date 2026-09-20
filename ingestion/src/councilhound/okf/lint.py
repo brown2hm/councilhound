@@ -1,11 +1,16 @@
-"""OKF v0.1 conformance + house rules for the knowledge bundle.
+"""OKF v0.2 conformance + house rules for the knowledge bundle.
 
 Spec conformance: every non-reserved .md parses YAML frontmatter with a
-non-empty `type`; reserved index.md/log.md carry no frontmatter. House
-rules: root-absolute links resolve inside the bundle, {{metric:...}} markers
-are well-formed, and (when a DB session is supplied) metric keys resolve
-against the project's synthesized evaluation and every link out to the
-public site points at a page that actually exists."""
+non-empty `type`; reserved index.md/log.md carry no frontmatter, except the
+bundle-root index.md, which may declare `okf_version` (§12); when the trust
+and lifecycle families are present they are well-formed — `generated` has an
+actor and an ISO 8601 datetime with an offset (§5.2), `status` is a lifecycle
+value (§5.4). House rules: every concept page carries `generated` (the v0.1
+`timestamp` alone is a page the refresh has not migrated), root-absolute
+links resolve inside the bundle, {{metric:...}} markers are well-formed, and
+(when a DB session is supplied) metric keys resolve against the project's
+synthesized evaluation and every link out to the public site points at a
+page that actually exists."""
 import os
 
 import yaml
@@ -19,8 +24,10 @@ from councilhound.db.models import (
     ProjectEvaluation,
 )
 from councilhound.okf.bundle import (
+    LIFECYCLE_STATUSES,
     RESERVED,
     bundle_links,
+    is_iso_datetime,
     markers,
     parse_page,
     site_links,
@@ -28,6 +35,31 @@ from councilhound.okf.bundle import (
     walk_pages,
 )
 from councilhound.config import SITE_BASE_URL
+
+# the one frontmatter key a reserved file may carry, and only at the root
+_ROOT_INDEX_KEYS = {"okf_version"}
+
+
+def _trust_problems(rel: str, fm: dict) -> list[str]:
+    """Shape checks for the v0.2 families this bundle writes."""
+    problems = []
+    gen = fm.get("generated")
+    if gen is None:
+        problems.append(f"{rel}: missing `generated` (v0.2 supersedes `timestamp`)")
+    elif not isinstance(gen, dict) or not str(gen.get("by") or "").strip():
+        problems.append(f"{rel}: `generated` needs a `by` actor")
+    elif not is_iso_datetime(gen.get("at")):
+        problems.append(f"{rel}: `generated.at` is not an ISO 8601 datetime "
+                        "with an explicit offset")
+    status = fm.get("status")
+    if status is not None and status not in LIFECYCLE_STATUSES:
+        problems.append(f"{rel}: `status` {status!r} is not a lifecycle value "
+                        "(draft|stable|deprecated); project status belongs "
+                        "under `project_status`")
+    if "stale_after" in fm and not is_iso_datetime(fm["stale_after"]):
+        problems.append(f"{rel}: `stale_after` is not an ISO 8601 datetime "
+                        "with an explicit offset")
+    return problems
 
 # Site paths that are real routes rather than a slug lookup.
 STATIC_SITE_PATHS = {("development", "methods")}
@@ -90,13 +122,18 @@ def lint_bundle(bundle_dir: str, session: Session | None = None) -> list[str]:
             continue
 
         if name in RESERVED:
-            if frontmatter is not None:
-                problems.append(f"{rel}: reserved file must not carry frontmatter")
+            if frontmatter is not None and not (
+                    rel == "index.md" and set(frontmatter) <= _ROOT_INDEX_KEYS):
+                problems.append(f"{rel}: reserved file must not carry frontmatter"
+                                + (" (a root index may declare only okf_version)"
+                                   if rel == "index.md" else ""))
         else:
             if frontmatter is None:
                 problems.append(f"{rel}: missing YAML frontmatter")
             elif not str(frontmatter.get("type") or "").strip():
                 problems.append(f"{rel}: frontmatter `type` is missing or empty")
+            else:
+                problems += _trust_problems(rel, frontmatter)
 
         for link in bundle_links(body):
             if link not in known_paths:

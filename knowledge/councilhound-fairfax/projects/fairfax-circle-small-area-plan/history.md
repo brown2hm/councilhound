@@ -2,9 +2,12 @@
 type: project-history
 title: Fairfax Circle Small Area Plan — meeting history
 description: Dated record of every meeting action on Fairfax Circle Small Area Plan, through
-  2025-10-27.
+  2026-03-03.
 resource: https://councilhound.net/topics/fairfax-circle-small-area-plan
-timestamp: '2025-10-27'
+generated:
+  by: process:councilhound-okf
+  at: '2026-03-03T00:00:00Z'
+timestamp: '2026-03-03'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
@@ -38,8 +41,21 @@ timestamp: '2025-10-27'
 - [10] City Council adopted the Fairfax Circle Small Area Plan at its July 23, 2024 meeting, as reported by staff.
 - Status after: **approved**
 
+## 2025-06-12 — PRAB Regular Meeting
+
+**Agenda item 4a**: Future Stream Restoration Projects – Satoshi Eto, Storm Water Manager
+- Outcome: Satoshi Eto presented a stream assessment covering 128 segments along Accotink Creek and its tributaries. Staff recommended preliminary engineering for Daniels Run Park (segment 2) and conceptual engineering and phasing for Accotink Creek from Fairfax Blvd to Pickett Rd (segments 5 and 6). Community survey results and grant funding options were discussed.
+- [4a] Staff noted that completing stream restoration in the Accotink Creek corridor from Fairfax Blvd to Pickett Rd would allow components of the Fairfax Circle Small Area Plan to move forward.
+
 ## 2025-10-27 — Planning Commission Regular Meeting/Work Session
 
 **Agenda item 10**: Staff Report ([watch the moment](https://fairfax.granicus.com/MediaPlayer.php?view_id=13&clip_id=4368&starttime=1989&entrytime=1989))
 - Outcome: Staff reported on several recent and upcoming items, including City Council actions, ongoing plans, and commission vacancies.
 - [10] Staff discussed the Fairfax Circle Small Area Plan at a transportation department meeting focused on the Fairfax Circle area, with follow-up meetings with local homeowner associations anticipated.
+
+## 2026-03-03 — HHCAB Committee Meeting (Housing Goals & Targets)
+
+**Agenda item 3**: Discussion of Next Steps
+- Outcome: The team identified action items for the next meeting on March 24, 2026: staff to share an AI-generated funding model focused on affordable housing benchmarks, gather housing production trends over the past decade, and gather information on the fiscal impact of schools on housing; Strategy Team members to continue reviewing and inventorying data points in the attached spreadsheet.
+- [3] Referenced as approved July 23, 2024, the most recently adopted of the four Activity Center Small Area Plans in the City of Fairfax.
+- Status after: **completed**

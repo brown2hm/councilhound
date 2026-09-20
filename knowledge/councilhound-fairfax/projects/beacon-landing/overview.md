@@ -6,8 +6,11 @@ description: Beacon Landing is a 54-unit supportive/affordable housing developme
 resource: https://councilhound.net/topics/beacon-landing
 tags:
 - in-progress
+generated:
+  by: process:councilhound-okf
+  at: '2026-05-05T00:00:00Z'
 timestamp: '2026-05-05'
-status: in_progress
+project_status: in_progress
 source: meetings
 ---
 

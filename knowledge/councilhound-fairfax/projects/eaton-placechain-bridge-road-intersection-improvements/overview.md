@@ -6,6 +6,9 @@ description: Reconfiguration of the Eaton Place/Chain Bridge Road intersection t
 resource: https://councilhound.net/development/Eaton-Place-Chain-Bridge-Road-Intersection-Improvements
 tags:
 - city-project
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
 source: official
 address: Chain Bridge Road (Route 123) and Eaton Place, Fairfax, VA 22030

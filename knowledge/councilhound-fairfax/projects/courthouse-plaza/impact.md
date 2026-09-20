@@ -3,6 +3,9 @@ type: project-impact
 title: Courthouse Plaza — impact analysis
 description: Screening-level economic and fiscal estimates for Courthouse Plaza.
 resource: https://councilhound.net/development/Courthouse-Plaza
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-30T00:00:00Z'
 timestamp: '2026-07-30'
 ---
 

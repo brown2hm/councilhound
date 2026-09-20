@@ -7,8 +7,11 @@ resource: https://councilhound.net/development/Northfax-Chain-Bridge
 tags:
 - private-development
 - pre-application
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
-status: pre_application
+project_status: pre_application
 source: official
 address: 3575 Chain Bridge Road and 10464-10480 Fairfax Boulevard, Fairfax, VA 22030
 applicant: Chain Bridge, LLC

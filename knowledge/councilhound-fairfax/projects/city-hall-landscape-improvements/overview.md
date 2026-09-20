@@ -6,8 +6,11 @@ description: The City Hall Landscape Improvements Project is a municipal constru
 resource: https://councilhound.net/topics/city-hall-landscape-improvements
 tags:
 - approved
+generated:
+  by: process:councilhound-okf
+  at: '2025-01-14T00:00:00Z'
 timestamp: '2025-01-14'
-status: approved
+project_status: approved
 source: meetings
 ---
 

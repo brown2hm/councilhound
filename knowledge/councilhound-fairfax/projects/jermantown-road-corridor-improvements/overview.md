@@ -8,14 +8,17 @@ resource: https://councilhound.net/development/Jermantown-Road-Corridor-Improvem
 tags:
 - city-project
 - in-progress
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
+project_status: in_progress
 source: official
 address: Jermantown Road, Fairfax, VA 22030
 city_detail_url: https://www.fairfaxva.gov/Property-Business/Development/Projects/Jermantown-Road-Corridor-Improvements
 lat: 38.8589304
 lng: -77.3296783
 evaluation_status: synthesized
-status: in_progress
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->

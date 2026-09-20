@@ -1,9 +1,12 @@
 ---
 type: project-history
 title: Fairfax Square — meeting history
-description: Dated record of every meeting action on Fairfax Square, through 2025-09-09.
+description: Dated record of every meeting action on Fairfax Square, through 2025-12-01.
 resource: https://councilhound.net/development/Fairfax-Square
-timestamp: '2025-09-09'
+generated:
+  by: process:councilhound-okf
+  at: '2025-12-01T00:00:00Z'
+timestamp: '2025-12-01'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
@@ -21,3 +24,9 @@ timestamp: '2025-09-09'
 - Outcome: Briefing presented to Council during work session. No formal action taken.
 - [11a] Pre-application briefing on the Fairfax Square Professional Center at 9840–9946 Main Street was presented to Council during the work session; no formal action taken.
 - Status after: **proposed**
+
+## 2025-12-01 — HHCAB Regular Meeting
+
+**Agenda item 5**: December 2nd Council Presentation
+- Outcome: The board reviewed and discussed the presentation to be delivered to City Council on December 2, 2025, covering HHCAB's purpose, housing landscape, population data, community interest, workplan (including Home Sharing and Housing Trust Fund), and discussion items.
+- [5] Fairfax Square was referenced in the housing costs rental table as a naturally occurring affordable housing property with 502 units, with 1BR average rent of $1,850.

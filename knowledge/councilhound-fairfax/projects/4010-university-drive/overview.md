@@ -7,8 +7,11 @@ description: 4010 University Drive (Tax Map 57-4-02-087-B) is a parcel in the CR
 resource: https://councilhound.net/topics/4010-university-drive
 tags:
 - in-progress
+generated:
+  by: process:councilhound-okf
+  at: '2025-02-25T00:00:00Z'
 timestamp: '2025-02-25'
-status: in_progress
+project_status: in_progress
 source: meetings
 ---
 

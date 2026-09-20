@@ -4,6 +4,9 @@ title: Chain Bridge Road Shared Use Path — impact analysis
 description: Screening-level economic and fiscal estimates for Chain Bridge Road Shared Use
   Path.
 resource: https://councilhound.net/development/Chain-Bridge-Road-Shared-Use-Path
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-27T00:00:00Z'
 timestamp: '2026-07-27'
 ---
 

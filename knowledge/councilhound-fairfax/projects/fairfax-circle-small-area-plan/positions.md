@@ -4,6 +4,9 @@ title: Fairfax Circle Small Area Plan — positions & open questions
 description: Recorded member positions and unresolved questions on Fairfax Circle Small Area
   Plan.
 resource: https://councilhound.net/topics/fairfax-circle-small-area-plan
+generated:
+  by: process:councilhound-okf
+  at: '2026-06-08T00:00:00Z'
 timestamp: '2026-06-08'
 ---
 

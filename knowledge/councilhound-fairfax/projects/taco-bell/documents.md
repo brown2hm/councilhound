@@ -3,6 +3,9 @@ type: project-documents
 title: Taco Bell — documents
 description: 30 document(s) published in the City of Fairfax project record for Taco Bell.
 resource: https://councilhound.net/development/Taco-Bell
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-30T00:00:00Z'
 timestamp: '2026-07-30'
 ---
 

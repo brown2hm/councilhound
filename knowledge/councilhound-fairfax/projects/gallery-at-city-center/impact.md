@@ -3,6 +3,9 @@ type: project-impact
 title: Gallery at City Center — impact analysis
 description: Screening-level economic and fiscal estimates for Gallery at City Center.
 resource: https://councilhound.net/development/Gallery-at-City-Center
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
 ---
 

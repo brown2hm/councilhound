@@ -8,14 +8,17 @@ resource: https://councilhound.net/development/University-Drive-Bicycle-Faciliti
 tags:
 - city-project
 - in-progress
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
+project_status: in_progress
 source: official
 address: University Drive between North Street and Layton Hall Drive, Fairfax, VA 22030
 city_detail_url: https://www.fairfaxva.gov/Property-Business/Development/Projects/University-Drive-Bicycle-Facilities
 lat: 38.8507776
 lng: -77.3024827
 evaluation_status: synthesized
-status: in_progress
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->

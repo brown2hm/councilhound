@@ -6,8 +6,11 @@ description: The Fairfax HS Electrical Program Build-Out is a Schools Capital Im
 resource: https://councilhound.net/topics/fairfax-hs-electrical-program-build-out
 tags:
 - approved
+generated:
+  by: process:councilhound-okf
+  at: '2025-11-18T00:00:00Z'
 timestamp: '2025-11-18'
-status: approved
+project_status: approved
 source: meetings
 ---
 

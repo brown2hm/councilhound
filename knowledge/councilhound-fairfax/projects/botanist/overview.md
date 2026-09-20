@@ -8,8 +8,11 @@ resource: https://councilhound.net/development/N29-WillowWood-Plaza-Residential-
 tags:
 - private-development
 - under-construction
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
-status: under_construction
+project_status: under_construction
 source: official
 address: 10306 Eaton Place, Fairfax, VA 22030
 applicant: Capital City Real Estate, LLC  Chris Love Managing Partner, Washington DC 3000
@@ -60,6 +63,7 @@ The applicant proposes to replace existing surface parking at WillowWood Office 
 
 ## In this wiki
 
+- [Meeting history](/projects/botanist/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/botanist/positions.md)
 - [Impact analysis](/projects/botanist/impact.md) — screening estimates with assumptions and ranges
 - [Documents](/projects/botanist/documents.md) — the city's published record for this project

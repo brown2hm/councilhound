@@ -3,6 +3,9 @@ type: project-history
 title: 3541 Chain Bridge Road — meeting history
 description: Dated record of every meeting action on 3541 Chain Bridge Road, through 2026-07-28.
 resource: https://councilhound.net/development/3541-Chain-Bridge-Road
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-28T00:00:00Z'
 timestamp: '2026-07-28'
 ---
 
@@ -16,6 +19,7 @@ timestamp: '2026-07-28'
 
 ## 2026-07-28 — City Council Meeting
 
-**Agenda item 10a**: Work Session: Pre-application briefing on a request by Network Realty Partners for the redevelopment of 3541 Chain Bridge Road
-- Outcome: Pre-application briefing was held during work session; no formal action taken.
-- [10a] A pre-application briefing on a redevelopment request by Network Realty Partners was presented to the Council during the work session; no formal action was taken.
+**Agenda item 11a**: Pre-application briefing on a request by Network Realty Partners for the redevelopment of 3541 Chain Bridge Road
+- Outcome: Pre-application briefing received; no council action taken.
+- [11a] Council received a pre-application briefing from Network Realty Partners proposing to replace two-story office buildings with 37 residential dwelling units (29 townhouses and 8 two-over-two multifamily units), a 2,730 sq ft freestanding retail building, and 88 parking spaces on 2.09 +/- acres; no action was taken.
+- Status after: **proposed**

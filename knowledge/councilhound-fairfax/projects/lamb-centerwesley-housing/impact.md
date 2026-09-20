@@ -3,6 +3,9 @@ type: project-impact
 title: Lamb Center/Wesley Housing — impact analysis
 description: Screening-level economic and fiscal estimates for Lamb Center/Wesley Housing.
 resource: https://councilhound.net/development/Lamb-Center-Wesley-Housing
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
 ---
 
