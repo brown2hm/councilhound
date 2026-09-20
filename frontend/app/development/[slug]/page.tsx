@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Markdown from "@/components/Markdown";
+import WikiTrustBadges from "@/components/WikiTrust";
 import { formatDate, type ImpactMetric, type ProjectWiki } from "@/lib/api";
 import { requireRecord } from "@/lib/not-found";
 import { metricsByKey, resolveBody, stripSection, WIKI_PAGE_LABELS } from "@/lib/wiki";
@@ -134,6 +135,9 @@ export default async function DevelopmentWikiPage({
                 through {formatDate(String(p.timestamp).slice(0, 10))}
               </span>
             )}
+          </div>
+          <div className="mb-3">
+            <WikiTrustBadges trust={p.trust} />
           </div>
           <div className="text-[14px] leading-[1.6]">
             <Markdown>

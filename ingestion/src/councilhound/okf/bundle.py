@@ -27,13 +27,40 @@ LIFECYCLE_STATUSES = {"draft", "stable", "deprecated"}
 # frontmatter keys rendered first, in this order, so every page reads the
 # same way; producer-defined keys follow in insertion order
 _KEY_ORDER = ["type", "title", "description", "resource", "tags", "generated",
-              "timestamp", "status", "stale_after", "project_status"]
+              "verified", "timestamp", "status", "stale_after", "project_status"]
 _ISO_DATETIME_RE = re.compile(
     r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$")
+# §7: `human:<id>`, `process:<id>`, or `<producer>/<version>`
+_ACTOR_RE = re.compile(r"^(human:\S+|process:\S+|[A-Za-z0-9_.-]+/\S+)$")
 
 
 def curator_actor(model: str) -> str:
     return f"councilhound-curator/{model}"
+
+
+def is_actor(value) -> bool:
+    return isinstance(value, str) and bool(_ACTOR_RE.match(value))
+
+
+def verified_events(frontmatter: dict | None) -> list[dict]:
+    """The `verified` family as a list (§5.2: a bare `{by, at}` mapping is a
+    one-element list). Malformed entries are dropped here and reported by
+    lint, so consumers never trip over them."""
+    raw = (frontmatter or {}).get("verified")
+    if isinstance(raw, dict):
+        raw = [raw]
+    if not isinstance(raw, list):
+        return []
+    return [e for e in raw if isinstance(e, dict)]
+
+
+def trust_tier(frontmatter: dict | None) -> str:
+    """§5.3: unverified, machine-confirmed, or human-reviewed — keyed off the
+    `human:` prefix, which is why the actor convention is enforced."""
+    events = verified_events(frontmatter)
+    if any(str(e.get("by", "")).startswith("human:") for e in events):
+        return "human-reviewed"
+    return "machine-confirmed" if events else "unverified"
 
 
 def iso_datetime(value) -> str:

@@ -27,6 +27,7 @@ from councilhound.okf.bundle import (
     LIFECYCLE_STATUSES,
     RESERVED,
     bundle_links,
+    is_actor,
     is_iso_datetime,
     markers,
     parse_page,
@@ -48,9 +49,22 @@ def _trust_problems(rel: str, fm: dict) -> list[str]:
         problems.append(f"{rel}: missing `generated` (v0.2 supersedes `timestamp`)")
     elif not isinstance(gen, dict) or not str(gen.get("by") or "").strip():
         problems.append(f"{rel}: `generated` needs a `by` actor")
+    elif not is_actor(gen.get("by")):
+        problems.append(f"{rel}: `generated.by` {gen.get('by')!r} does not "
+                        "follow the actor convention (human:<id>, "
+                        "process:<id>, <producer>/<version>)")
     elif not is_iso_datetime(gen.get("at")):
         problems.append(f"{rel}: `generated.at` is not an ISO 8601 datetime "
                         "with an explicit offset")
+    raw_verified = fm.get("verified")
+    if raw_verified is not None:
+        events = raw_verified if isinstance(raw_verified, list) else [raw_verified]
+        for i, event in enumerate(events):
+            if not isinstance(event, dict) or not is_actor(event.get("by")):
+                problems.append(f"{rel}: `verified[{i}]` needs a `by` actor")
+            elif not is_iso_datetime(event.get("at")):
+                problems.append(f"{rel}: `verified[{i}].at` is not an ISO 8601 "
+                                "datetime with an explicit offset")
     status = fm.get("status")
     if status is not None and status not in LIFECYCLE_STATUSES:
         problems.append(f"{rel}: `status` {status!r} is not a lifecycle value "

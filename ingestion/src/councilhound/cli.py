@@ -752,6 +752,29 @@ def okf_lint(bundle_dir, no_db):
     click.echo("bundle conformant")
 
 
+@cli.command("okf-verify")
+@bundle_dir_option
+@click.option("--slug", required=True, help="project wiki directory (canonical slug)")
+@click.option("--page", "pages", multiple=True,
+              type=click.Choice(["overview", "positions", "impact"]),
+              help="page(s) to mark; default: every curator-owned page present")
+@click.option("--by", required=True,
+              help="who is signing off, as an OKF actor — a person is "
+                   "`human:<id>`, which is what makes the page human-reviewed")
+def okf_verify(bundle_dir, slug, pages, by):
+    """Record that someone confirmed a project's wiki prose against the
+    record (OKF v0.2 `verified`). Commit the result; okf-sync mirrors it."""
+    from councilhound.okf.export import verify_pages
+
+    try:
+        marked = verify_pages(_bundle_dir(bundle_dir), slug, by, list(pages) or None)
+    except (ValueError, FileNotFoundError) as exc:
+        raise click.ClickException(str(exc))
+    if not marked:
+        raise click.ClickException(f"no curator-owned pages under projects/{slug}")
+    click.echo(f"verified {', '.join(marked)} for {slug} ({by})")
+
+
 @cli.command("okf-push")
 @bundle_dir_option
 @click.option("--dsn", envvar="IMPACT_PUSH_DATABASE_URL", default=None,

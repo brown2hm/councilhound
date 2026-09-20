@@ -115,3 +115,45 @@ def test_evaluation_has_wiki_flag(client, db):
     db.commit()
     body = client.get("/development/circle-gateway-official/evaluation").json()
     assert body["has_wiki"] is True
+
+
+def test_trust_block_reads_v02_families():
+    from datetime import datetime, timezone
+    from app.wiki import trust_block
+
+    now = datetime(2026, 9, 20, 12, 0, tzinfo=timezone.utc)
+    # v0.1 page: nothing to derive
+    assert trust_block({"timestamp": "2026-06-09"}, now) == {
+        "producer": None, "producer_kind": None, "tier": "unverified",
+        "verified_by": None, "verified_at": None, "edited_since_review": False,
+        "stale_after": None, "stale": False}
+
+    curated = {"generated": {"by": "councilhound-curator/claude-sonnet-4-6",
+                             "at": "2026-09-01T00:00:00Z"},
+               "verified": {"by": "human:hunter", "at": "2026-08-15T09:00:00Z"},
+               "stale_after": "2026-09-22T23:00:00Z"}
+    t = trust_block(curated, now)
+    assert t["producer_kind"] == "curator" and t["tier"] == "human-reviewed"
+    assert t["verified_by"] == "human:hunter"
+    assert t["edited_since_review"] is True   # curated after the sign-off
+    assert t["stale"] is False                 # the meeting is still ahead
+    assert trust_block(curated, datetime(2026, 9, 23, tzinfo=timezone.utc))["stale"] is True
+
+    pipeline = {"generated": {"by": "process:councilhound-okf", "at": "2026-09-01T00:00:00Z"},
+                "verified": [{"by": "process:nightly", "at": "2026-09-02T00:00:00Z"},
+                             {"by": "human:hunter", "at": "2026-09-03T00:00:00Z"}]}
+    t = trust_block(pipeline, now)
+    assert t["producer_kind"] == "pipeline" and t["tier"] == "human-reviewed"
+    assert t["verified_at"] == "2026-09-03T00:00:00Z" and t["edited_since_review"] is False
+    assert trust_block({"generated": {"by": "human:hunter", "at": "2026-09-01T00:00:00Z"},
+                        "verified": [{"by": "process:nightly", "at": "2026-09-02T00:00:00Z"}]},
+                       now)["tier"] == "machine-confirmed"
+
+
+def test_wiki_payload_carries_trust(client, db):
+    _wiki_project(db)
+    body = client.get("/development/circle-gateway-official/wiki").json()
+    by_page = {p["page"]: p for p in body["pages"]}
+    assert by_page["history"]["trust"]["producer_kind"] == "pipeline"
+    assert by_page["history"]["trust"]["tier"] == "unverified"
+    assert by_page["overview"]["trust"]["producer_kind"] is None

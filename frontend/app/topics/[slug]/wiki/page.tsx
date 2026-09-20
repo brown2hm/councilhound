@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { cache } from "react";
 import Markdown from "@/components/Markdown";
+import WikiTrustBadges from "@/components/WikiTrust";
 import { api, formatDate } from "@/lib/api";
 import { requireRecord } from "@/lib/not-found";
 import { resolveBody, WIKI_PAGE_LABELS } from "@/lib/wiki";
@@ -73,6 +74,9 @@ export default async function TopicWikiPage({
                 through {formatDate(String(p.timestamp).slice(0, 10))}
               </span>
             )}
+          </div>
+          <div className="mb-3">
+            <WikiTrustBadges trust={p.trust} />
           </div>
           <div className="text-[14px] leading-[1.6]">
             {/* no impact page without a city record, so no metrics to resolve */}

@@ -196,6 +196,16 @@ so re-running the pipeline on unchanged data stays a no-op. The v0.1
 `generated.at`. Because v0.2 reserves `status` for lifecycle
 (draft/stable/deprecated), the city's project status lives under
 `project_status`. `okf-refresh` migrates pages written under v0.1 in place.
+Two more v0.2 signals drive the badges on the wiki tab: `stale_after` is
+the next scheduled meeting of a body that has taken the project up (or one
+whose posted agenda names it), written on the meeting-driven pages
+(overview, positions, history) so a reader is told when a meeting may have
+outrun the page; and `verified` holds sign-off events — `okf-verify --slug
+<project> --by human:<id>` records that a person confirmed the prose against
+the record, which lifts the page from "not yet reviewed" to
+"reviewed" (a later edit shows as "edited since"). The API derives the
+trust tier, staleness and producer kind from these fields once, in
+`api/app/wiki.py`, and the frontend only renders them.
 The bundle
 (default `knowledge/councilhound-fairfax/`, override `$OKF_BUNDLE_DIR`) is
 canonical for narrative knowledge and designed for incremental maintenance
@@ -221,6 +231,7 @@ PYTHONPATH=src ../.venv/bin/python -m councilhound.cli okf-seed      # one-time 
 PYTHONPATH=src ../.venv/bin/python -m councilhound.cli okf-refresh   # deterministic: history, indexes, status
 PYTHONPATH=src ../.venv/bin/python -m councilhound.cli okf-curate    # LLM: minimal edits for stale wikis
 PYTHONPATH=src ../.venv/bin/python -m councilhound.cli okf-lint      # OKF conformance + marker/link checks
+PYTHONPATH=src ../.venv/bin/python -m councilhound.cli okf-verify --slug <project> --by human:<id>  # record a human sign-off
 PYTHONPATH=src ../.venv/bin/python -m councilhound.cli okf-push      # mirror into wiki_pages (--dsn for prod)
 ```
 
