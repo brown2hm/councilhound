@@ -6,6 +6,9 @@ description: The project will construct a new biking and walking connection betw
 resource: https://councilhound.net/development/Fern-Street-Neighborhood-Connection
 tags:
 - city-project
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
 source: official
 address: Fern Street and Draper Drive, 22030

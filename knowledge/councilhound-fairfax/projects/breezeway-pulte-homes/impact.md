@@ -3,6 +3,9 @@ type: project-impact
 title: Breezeway Pulte Homes — impact analysis
 description: Screening-level economic and fiscal estimates for Breezeway Pulte Homes.
 resource: https://councilhound.net/development/Breezeway-Pulte-Homes
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
 ---
 

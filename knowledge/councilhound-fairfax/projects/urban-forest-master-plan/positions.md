@@ -3,6 +3,9 @@ type: project-positions
 title: Urban Forest Master Plan — positions & open questions
 description: Recorded member positions and unresolved questions on Urban Forest Master Plan.
 resource: https://councilhound.net/topics/urban-forest-master-plan
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-14T00:00:00Z'
 timestamp: '2026-07-14'
 ---
 

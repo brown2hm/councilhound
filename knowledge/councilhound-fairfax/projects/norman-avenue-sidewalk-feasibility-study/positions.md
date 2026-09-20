@@ -4,6 +4,9 @@ title: Norman Avenue Sidewalk Feasibility Study — positions & open questions
 description: Recorded member positions and unresolved questions on Norman Avenue Sidewalk
   Feasibility Study.
 resource: https://councilhound.net/topics/norman-avenue-sidewalk-feasibility-study
+generated:
+  by: process:councilhound-okf
+  at: '2025-05-13T00:00:00Z'
 timestamp: '2025-05-13'
 ---
 

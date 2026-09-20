@@ -4,6 +4,9 @@ title: University Drive Bicycle Lanes Project — documents
 description: 5 document(s) published in the City of Fairfax project record for University
   Drive Bicycle Lanes Project.
 resource: https://councilhound.net/development/University-Drive-Bicycle-Facilities
+generated:
+  by: process:councilhound-okf
+  at: '2026-08-04T00:00:00Z'
 timestamp: '2026-08-04'
 ---
 

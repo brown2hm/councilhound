@@ -3,6 +3,9 @@ type: project-history
 title: Highlands at Mantua — meeting history
 description: Dated record of every meeting action on Highlands at Mantua, through 2026-07-27.
 resource: https://councilhound.net/development/The-Highlands-at-Mantua
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-27T00:00:00Z'
 timestamp: '2026-07-27'
 ---
 

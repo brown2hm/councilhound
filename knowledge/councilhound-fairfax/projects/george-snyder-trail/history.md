@@ -3,6 +3,9 @@ type: project-history
 title: George Snyder Trail — meeting history
 description: Dated record of every meeting action on George Snyder Trail, through 2026-05-26.
 resource: https://councilhound.net/topics/george-snyder-trail
+generated:
+  by: process:councilhound-okf
+  at: '2026-05-26T00:00:00Z'
 timestamp: '2026-05-26'
 ---
 
@@ -28,11 +31,25 @@ timestamp: '2026-05-26'
 - [15] Councilmember Hall inquired about the George Snyder Trail presentation; City Clerk Shinaberry confirmed it is scheduled for March 11, 2025. Councilmember Hall requested that the cost of canceling the project be included in the future presentation.
 - Status after: **in_progress**
 
+## 2025-02-13 — PRAB Regular Meeting
+
+**Agenda item 6a**: Summary of Recent Council Meeting Actions Pertaining to Parks and Recreation
+- Outcome: Board discussed upcoming trails discussion on March 4, George Snyder Trail walk on February 28, tight budget with requested staffing enhancements and heritage month funding, CIP requests for OTH FFE, Green Acres updates, and park security improvements. Van Dyck Park construction start pushed to FY28. PRAB expressed interest in advocating for staffing conversions.
+- [6a] A City Council walk on the George Snyder Trail is scheduled for February 28; a broader trails projects discussion is set for March 4.
+- Status after: **in_progress**
+
 ## 2025-03-11 — City Council Meeting
 
 **Agenda item 10a**: Work Session: Discussion and update on the George Snyder Trail project ([watch the moment](https://fairfax.granicus.com/MediaPlayer.php?view_id=13&clip_id=4131&starttime=4762&entrytime=4762))
 - Outcome: Discussion held during work session. No formal council action taken. Multiple members of the public spoke in opposition during general comment periods. Councilmember Bates stated his support for canceling the Country Club Hills Connector Trail and moving the Pickett Road Connector Trail to the west side; Councilmember Hall also requested more information on those connector trails and Jermantown Road CIP improvements.
 - [10a] Council received a discussion and update on the George Snyder Trail project during the work session; no formal action was taken, but significant public opposition was expressed and council members requested further discussion.
+- Status after: **in_progress**
+
+## 2025-03-13 — PRAB Regular Meeting
+
+**Agenda item 7c**: Summary of Recent Council Meeting Actions Pertaining to Parks and Recreation
+- Outcome: The George Snyder Trail was discussed for 2.5 hours at the last Council meeting. Parks is compiling the percentage of trail surfaces in the City. Discussion included building only the west half of the trail and an email sent to Mayor and City Council about PRAB's stance on the trail.
+- [7c] The George Snyder Trail was discussed for 2.5 hours at the last Council meeting; options including building only the west half were discussed, and PRAB's stance was communicated to the Mayor and City Council via email.
 - Status after: **in_progress**
 
 ## 2025-03-24 — Planning Commission Regular Meeting/Work Session
@@ -95,6 +112,13 @@ timestamp: '2026-05-26'
 - [9a] Council adopted Resolution R-25-20 (4-2) reaffirming previous approval of the George Snyder Trail Project (VDOT UPC 112816) as designed in its entirety; motions to build only the western half or to cancel the project both failed.
 - Status after: **approved**
 
+## 2025-06-12 — PRAB Regular Meeting
+
+**Agenda item 7a**: New Business – Summary of Recent Council Meeting Actions Pertaining to Parks and Recreation
+- Outcome: City Council voted to approve building the full George Snyder Trail.
+- [7a] City Council voted to approve building the full George Snyder Trail.
+- Status after: **approved**
+
 ## 2025-06-23 — Planning Commission Regular Meeting
 
 **Agenda item 7**: Staff Report ([watch the moment](https://fairfax.granicus.com/MediaPlayer.php?view_id=13&clip_id=4236&starttime=8237&entrytime=8237))
@@ -141,6 +165,13 @@ timestamp: '2026-05-26'
 - Outcome: Motion failed 3-3. The $4.6 million supplemental appropriation from Transform 66 Outside the Beltway Concession Funding for the George Snyder Trail was not approved.
 - Vote (failed): Approve the supplemental appropriation resolution in the amount of $4,600,000 from Transform 66 Outside the Beltway Concession Funding for the George Snyder Trail — Amos: yes, Bates: yes, Hall: no, Hardy-Chandler: yes, McQuillen: no, Peterson: no
 - [7e] The motion to approve a $4.6 million supplemental appropriation to cover construction bids exceeding the remaining $16 million project budget failed 3-3. [9a] Following the failed supplemental appropriation vote, the City Council voted 4-2 to cancel the George Snyder Trail Project in its entirety.
+- Status after: **denied**
+
+## 2026-02-12 — PRAB Regular Meeting
+
+**Agenda item 7a**: New Business – Summary of Recent Council Meeting Actions Pertaining to Parks and Recreation
+- Outcome: Board was briefed on: a Black History Month reception and proclamation on February 10th; the old Showmobile donated to the Town of Vienna (passed consent agenda); a Willard Sherwood presentation to Council including a cost-recovery model with three revenue streams; and the official cancellation of the George Snyder Trail.
+- [7a] The George Snyder Trail project has been officially cancelled.
 - Status after: **denied**
 
 ## 2026-05-26 — City Council Meeting

@@ -3,6 +3,9 @@ type: project-positions
 title: 4010 University Drive — positions & open questions
 description: Recorded member positions and unresolved questions on 4010 University Drive.
 resource: https://councilhound.net/topics/4010-university-drive
+generated:
+  by: process:councilhound-okf
+  at: '2025-02-25T00:00:00Z'
 timestamp: '2025-02-25'
 ---
 

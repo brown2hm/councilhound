@@ -3,6 +3,9 @@ type: project-impact
 title: 3541 Chain Bridge Road — impact analysis
 description: Screening-level economic and fiscal estimates for 3541 Chain Bridge Road.
 resource: https://councilhound.net/development/3541-Chain-Bridge-Road
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
 ---
 

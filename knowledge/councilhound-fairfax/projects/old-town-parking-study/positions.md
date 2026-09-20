@@ -3,6 +3,9 @@ type: project-positions
 title: Old Town Parking Study — positions & open questions
 description: Recorded member positions and unresolved questions on Old Town Parking Study.
 resource: https://councilhound.net/topics/old-town-parking-study
+generated:
+  by: process:councilhound-okf
+  at: '2025-06-23T00:00:00Z'
 timestamp: '2025-06-23'
 ---
 

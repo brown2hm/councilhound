@@ -6,8 +6,11 @@ description: The Stacy Sherwood Community Center project involves the expansion 
 resource: https://councilhound.net/topics/stacy-sherwood-community-center
 tags:
 - in-progress
+generated:
+  by: process:councilhound-okf
+  at: '2026-04-28T00:00:00Z'
 timestamp: '2026-04-28'
-status: in_progress
+project_status: in_progress
 source: meetings
 ---
 

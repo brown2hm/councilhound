@@ -6,8 +6,11 @@ description: The 1st/2nd Street Sidewalks project involves the construction of t
 resource: https://councilhound.net/topics/1st2nd-street-sidewalks
 tags:
 - in-progress
+generated:
+  by: process:councilhound-okf
+  at: '2025-09-09T00:00:00Z'
 timestamp: '2025-09-09'
-status: in_progress
+project_status: in_progress
 source: meetings
 ---
 

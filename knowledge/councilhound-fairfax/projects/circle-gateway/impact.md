@@ -3,6 +3,9 @@ type: project-impact
 title: Circle Gateway — impact analysis
 description: Screening-level economic and fiscal estimates for Circle Gateway.
 resource: https://councilhound.net/development/Circle-Gateway
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
 ---
 

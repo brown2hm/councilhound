@@ -10,7 +10,7 @@ it was and the failure is logged, never papered over.
 """
 import logging
 import os
-from datetime import date, datetime
+from datetime import date
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
@@ -26,7 +26,15 @@ from councilhound.db.models import (
     TranscriptChunk,
     Vote,
 )
-from councilhound.okf.bundle import CURATOR_OFF_RE, append_log, read_page, write_page
+from councilhound.okf.bundle import (
+    CURATOR_OFF_RE,
+    append_log,
+    curator_actor,
+    generated,
+    generated_date,
+    read_page,
+    write_page,
+)
 
 log = logging.getLogger(__name__)
 
@@ -116,17 +124,9 @@ def _call_claude(prompt: str) -> dict:
 
 
 def _page_stamp(frontmatter: dict | None) -> date | None:
-    raw = (frontmatter or {}).get("timestamp")
-    if isinstance(raw, date):
-        return raw
-    if isinstance(raw, datetime):
-        return raw.date()
-    if isinstance(raw, str) and raw:
-        try:
-            return date.fromisoformat(raw[:10])
-        except ValueError:
-            return None
-    return None
+    """The meeting date the page is current through: `generated.at`, or the
+    v0.1 `timestamp` on a page the refresh has not migrated yet."""
+    return generated_date(frontmatter)
 
 
 # Surname extraction mirrors api/app/routers/members.py:85 — the minutes key
@@ -292,6 +292,9 @@ def curate_project(session: Session, bundle_dir: str, entity: Entity) -> str:
     for rel, fm, new_body in [(f"{rel_dir}/overview.md", overview_fm, data["overview_body"]),
                               (f"{rel_dir}/positions.md", positions_fm, data["positions_body"])]:
         fm = dict(fm or {})
+        # the curator is now the producer of record (v0.2 §5.2); `timestamp`
+        # is the superseded v0.1 key, kept in step for one release
+        fm["generated"] = generated(curator_actor(DEFAULT_MODEL), stamp)
         fm["timestamp"] = stamp
         changed = write_page(bundle_dir, rel, fm, new_body) or changed
     if changed:

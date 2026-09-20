@@ -4,6 +4,9 @@ title: Jermantown Road Corridor Improvements — meeting history
 description: Dated record of every meeting action on Jermantown Road Corridor Improvements,
   through 2025-12-09.
 resource: https://councilhound.net/development/Jermantown-Road-Corridor-Improvements
+generated:
+  by: process:councilhound-okf
+  at: '2025-12-09T00:00:00Z'
 timestamp: '2025-12-09'
 ---
 

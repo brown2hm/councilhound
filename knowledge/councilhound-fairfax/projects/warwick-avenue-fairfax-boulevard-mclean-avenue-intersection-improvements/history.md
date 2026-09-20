@@ -4,6 +4,9 @@ title: Warwick Ave /Fairfax Blvd /McLean Ave Intersection Improvements — meeti
 description: Dated record of every meeting action on Warwick Ave /Fairfax Blvd /McLean Ave
   Intersection Improvements, through 2025-05-12.
 resource: https://councilhound.net/development/Warwick-Ave-Fairfax-Blvd-McLean-Ave-Intersection-Improvements
+generated:
+  by: process:councilhound-okf
+  at: '2025-05-12T00:00:00Z'
 timestamp: '2025-05-12'
 ---
 

@@ -3,6 +3,9 @@ type: project-impact
 title: Pickett Road Connector Trail — impact analysis
 description: Screening-level economic and fiscal estimates for Pickett Road Connector Trail.
 resource: https://councilhound.net/development/Pickett-Road-Connector-Trail
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-27T00:00:00Z'
 timestamp: '2026-07-27'
 ---
 

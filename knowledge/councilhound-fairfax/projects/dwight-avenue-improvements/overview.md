@@ -8,8 +8,11 @@ resource: https://councilhound.net/development/Dwight-Avenue-Improvements
 tags:
 - city-project
 - in-progress
+generated:
+  by: process:councilhound-okf
+  at: '2025-09-09T00:00:00Z'
 timestamp: '2025-09-09'
-status: in_progress
+project_status: in_progress
 source: meetings
 ---
 

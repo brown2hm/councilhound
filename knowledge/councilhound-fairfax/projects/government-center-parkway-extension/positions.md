@@ -4,6 +4,9 @@ title: Government Center Parkway Extension — positions & open questions
 description: Recorded member positions and unresolved questions on Government Center Parkway
   Extension.
 resource: https://councilhound.net/development/Government-Center-Parkway-Extension
+generated:
+  by: process:councilhound-okf
+  at: '2025-06-10T00:00:00Z'
 timestamp: '2025-06-10'
 ---
 

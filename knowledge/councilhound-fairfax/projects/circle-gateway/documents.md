@@ -3,6 +3,9 @@ type: project-documents
 title: Circle Gateway — documents
 description: 5 document(s) published in the City of Fairfax project record for Circle Gateway.
 resource: https://councilhound.net/development/Circle-Gateway
+generated:
+  by: process:councilhound-okf
+  at: '2026-09-12T00:00:00Z'
 timestamp: '2026-09-12'
 ---
 

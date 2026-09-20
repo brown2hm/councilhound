@@ -7,8 +7,11 @@ description: The Country Club Hills Connector Trail was a planned trail project 
 resource: https://councilhound.net/topics/country-club-hills-connector-trail
 tags:
 - withdrawn
+generated:
+  by: process:councilhound-okf
+  at: '2025-04-22T00:00:00Z'
 timestamp: '2025-04-22'
-status: withdrawn
+project_status: withdrawn
 source: meetings
 ---
 

@@ -4,6 +4,9 @@ title: CUE Transit Development Plan (TDP) — positions & open questions
 description: Recorded member positions and unresolved questions on CUE Transit Development
   Plan (TDP).
 resource: https://councilhound.net/topics/cue-transit-development-plan-tdp
+generated:
+  by: councilhound-curator/claude-sonnet-4-6
+  at: '2026-06-02T00:00:00Z'
 timestamp: '2026-06-02'
 ---
 

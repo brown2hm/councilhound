@@ -4,6 +4,9 @@ title: Chick-fil-A drive-through and building modification — meeting history
 description: Dated record of every meeting action on Chick-fil-A drive-through and building
   modification, through 2025-10-13.
 resource: https://councilhound.net/topics/chick-fil-a-drive-through-and-building-modification
+generated:
+  by: process:councilhound-okf
+  at: '2025-10-13T00:00:00Z'
 timestamp: '2025-10-13'
 ---
 

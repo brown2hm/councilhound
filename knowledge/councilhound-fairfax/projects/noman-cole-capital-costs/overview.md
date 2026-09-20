@@ -6,8 +6,11 @@ description: The Noman Cole capital costs project involves financing capital imp
 resource: https://councilhound.net/topics/noman-cole-capital-costs
 tags:
 - in-progress
+generated:
+  by: process:councilhound-okf
+  at: '2026-05-12T00:00:00Z'
 timestamp: '2026-05-12'
-status: in_progress
+project_status: in_progress
 source: meetings
 ---
 

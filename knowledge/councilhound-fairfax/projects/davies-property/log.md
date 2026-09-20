@@ -21,3 +21,7 @@
 ## 2026-08-22
 
 - Meeting history updated through 2025-07-28.
+
+## 2026-09-19
+
+- Meeting history updated through 2025-12-01.

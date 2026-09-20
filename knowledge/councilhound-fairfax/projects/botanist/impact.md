@@ -3,6 +3,9 @@ type: project-impact
 title: The Botanist — impact analysis
 description: Screening-level economic and fiscal estimates for The Botanist.
 resource: https://councilhound.net/development/N29-WillowWood-Plaza-Residential-Phase-I
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
 ---
 

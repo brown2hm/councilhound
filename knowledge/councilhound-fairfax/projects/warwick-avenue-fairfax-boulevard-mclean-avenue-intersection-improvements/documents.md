@@ -4,6 +4,9 @@ title: Warwick Ave /Fairfax Blvd /McLean Ave Intersection Improvements — docum
 description: 13 document(s) published in the City of Fairfax project record for Warwick Ave
   /Fairfax Blvd /McLean Ave Intersection Improvements.
 resource: https://councilhound.net/development/Warwick-Ave-Fairfax-Blvd-McLean-Ave-Intersection-Improvements
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-28T00:00:00Z'
 timestamp: '2026-07-28'
 ---
 

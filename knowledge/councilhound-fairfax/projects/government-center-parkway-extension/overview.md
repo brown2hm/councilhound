@@ -7,8 +7,11 @@ resource: https://councilhound.net/development/Government-Center-Parkway-Extensi
 tags:
 - city-project
 - in-progress
+generated:
+  by: process:councilhound-okf
+  at: '2025-06-10T00:00:00Z'
 timestamp: '2025-06-10'
-status: in_progress
+project_status: in_progress
 source: official
 address: Government Center Parkway, Fairfax, VA 22030
 city_detail_url: https://www.fairfaxva.gov/Property-Business/Development/Projects/Government-Center-Parkway-Extension

@@ -7,8 +7,11 @@ description: The City of Fairfax's Solid Waste Management Plan (SWMP) Update is 
 resource: https://councilhound.net/topics/solid-waste-management-plan-update
 tags:
 - approved
+generated:
+  by: process:councilhound-okf
+  at: '2026-05-12T00:00:00Z'
 timestamp: '2026-05-12'
-status: approved
+project_status: approved
 source: meetings
 ---
 

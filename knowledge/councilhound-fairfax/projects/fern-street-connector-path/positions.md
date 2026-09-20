@@ -3,6 +3,9 @@ type: project-positions
 title: Fern Street Connector Path — positions & open questions
 description: Recorded member positions and unresolved questions on Fern Street Connector Path.
 resource: https://councilhound.net/topics/fern-street-connector-path
+generated:
+  by: process:councilhound-okf
+  at: '2026-01-13T00:00:00Z'
 timestamp: '2026-01-13'
 ---
 

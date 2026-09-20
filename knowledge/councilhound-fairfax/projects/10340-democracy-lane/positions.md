@@ -3,6 +3,9 @@ type: project-positions
 title: 10340 Democracy Lane — positions & open questions
 description: Recorded member positions and unresolved questions on 10340 Democracy Lane.
 resource: https://councilhound.net/development/10340-Democracy-Lane
+generated:
+  by: process:councilhound-okf
+  at: '2026-03-09T00:00:00Z'
 timestamp: '2026-03-09'
 ---
 

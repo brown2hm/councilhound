@@ -5,6 +5,9 @@ description: Roadbed reconstruction on Fairfax Boulevard near Fairfax Circle, Ap
 resource: https://councilhound.net/development/Fairfax-Boulevard-Roadbed-Reconstruction
 tags:
 - city-project
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
 source: official
 address: Fairfax Boulevard and Spring Street, Fairfax, VA 22030

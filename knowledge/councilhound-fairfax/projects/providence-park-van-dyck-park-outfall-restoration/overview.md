@@ -7,13 +7,16 @@ resource: https://councilhound.net/development/Providence-Park-Van-Dyck-Park-Out
 tags:
 - city-project
 - approved
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
+project_status: approved
 source: official
 address: 10715 West Dr. and 3720 Blenheim Blvd., Fairfax, VA 22030
 city_detail_url: https://www.fairfaxva.gov/Property-Business/Development/Projects/Providence-Park-Van-Dyck-Park-Outfall-Restoration-Project
 lat: 38.8529871
 lng: -77.2985401
-status: approved
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->

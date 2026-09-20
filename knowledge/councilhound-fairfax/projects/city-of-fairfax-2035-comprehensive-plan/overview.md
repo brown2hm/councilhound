@@ -6,8 +6,11 @@ description: The City of Fairfax 2035 Comprehensive Plan is the city's long-rang
 resource: https://councilhound.net/topics/city-of-fairfax-2035-comprehensive-plan
 tags:
 - in-progress
+generated:
+  by: councilhound-curator/claude-sonnet-4-6
+  at: '2026-07-27T00:00:00Z'
 timestamp: '2026-07-27'
-status: in_progress
+project_status: in_progress
 source: meetings
 ---
 

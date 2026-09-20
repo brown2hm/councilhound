@@ -4,6 +4,9 @@ title: Norman Avenue Sidewalk Feasibility Study — meeting history
 description: Dated record of every meeting action on Norman Avenue Sidewalk Feasibility Study,
   through 2025-05-13.
 resource: https://councilhound.net/topics/norman-avenue-sidewalk-feasibility-study
+generated:
+  by: process:councilhound-okf
+  at: '2025-05-13T00:00:00Z'
 timestamp: '2025-05-13'
 ---
 

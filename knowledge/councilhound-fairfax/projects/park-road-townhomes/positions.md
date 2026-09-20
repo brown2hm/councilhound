@@ -3,6 +3,9 @@ type: project-positions
 title: Park Rd Townhomes — positions & open questions
 description: Recorded member positions and unresolved questions on Park Rd Townhomes.
 resource: https://councilhound.net/development/Park-Rd-Townhomes
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
 ---
 

@@ -3,6 +3,9 @@ type: project-history
 title: Noman Cole Capital Costs — meeting history
 description: Dated record of every meeting action on Noman Cole Capital Costs, through 2026-05-12.
 resource: https://councilhound.net/topics/noman-cole-capital-costs
+generated:
+  by: process:councilhound-okf
+  at: '2026-05-12T00:00:00Z'
 timestamp: '2026-05-12'
 ---
 

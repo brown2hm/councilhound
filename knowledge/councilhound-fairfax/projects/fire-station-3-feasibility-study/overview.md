@@ -6,8 +6,11 @@ description: 'The Fire Station #3 Feasibility Study is an ongoing city project e
 resource: https://councilhound.net/topics/fire-station-3-feasibility-study
 tags:
 - in-progress
+generated:
+  by: process:councilhound-okf
+  at: '2025-05-12T00:00:00Z'
 timestamp: '2025-05-12'
-status: in_progress
+project_status: in_progress
 source: meetings
 ---
 

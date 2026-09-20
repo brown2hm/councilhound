@@ -4,6 +4,9 @@ title: Jermantown Road Corridor Improvements — positions & open questions
 description: Recorded member positions and unresolved questions on Jermantown Road Corridor
   Improvements.
 resource: https://councilhound.net/development/Jermantown-Road-Corridor-Improvements
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
 ---
 

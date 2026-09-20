@@ -6,9 +6,12 @@ description: The applicant, Fairfax Presbyterian Church, is proposing to add ten
 resource: https://councilhound.net/development/Fairfax-Presbyterian-Church
 tags:
 - private-development
-- under-construction
+- in-progress
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
-status: under_construction
+project_status: in_progress
 source: official
 address: 10723 Main Street, Fairfax, VA 22030
 applicant: Fairfax Presbyterian Church  David S. Houston, Attorney Bean, Kinney & Korman,
@@ -59,6 +62,7 @@ The applicant, Fairfax Presbyterian Church, is proposing to add ten (10) townhou
 
 ## In this wiki
 
+- [Meeting history](/projects/fairfax-presbyterian-church/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/fairfax-presbyterian-church/positions.md)
 - [Impact analysis](/projects/fairfax-presbyterian-church/impact.md) — screening estimates with assumptions and ranges
 - [Documents](/projects/fairfax-presbyterian-church/documents.md) — the city's published record for this project

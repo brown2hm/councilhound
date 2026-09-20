@@ -6,13 +6,16 @@ resource: https://councilhound.net/development/Warwick-Ave-Fairfax-Blvd-McLean-A
 tags:
 - city-project
 - approved
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
+project_status: approved
 source: official
 address: Warwick Ave & Fairfax Blvd & McLean Ave, Fairfax, VA 22030
 city_detail_url: https://www.fairfaxva.gov/Property-Business/Development/Projects/Warwick-Ave-Fairfax-Blvd-McLean-Ave-Intersection-Improvements
 lat: 38.8567996
 lng: -77.3116271
-status: approved
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->

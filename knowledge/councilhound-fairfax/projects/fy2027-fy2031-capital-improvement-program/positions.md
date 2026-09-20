@@ -4,6 +4,9 @@ title: FY2027-FY2031 Capital Improvement Program — positions & open questions
 description: Recorded member positions and unresolved questions on FY2027-FY2031 Capital Improvement
   Program.
 resource: https://councilhound.net/topics/fy2027-fy2031-capital-improvement-program
+generated:
+  by: councilhound-curator/claude-sonnet-4-6
+  at: '2026-05-05T00:00:00Z'
 timestamp: '2026-05-05'
 ---
 

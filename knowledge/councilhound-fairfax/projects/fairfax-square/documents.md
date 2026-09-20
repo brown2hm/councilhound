@@ -3,6 +3,9 @@ type: project-documents
 title: Fairfax Square — documents
 description: 8 document(s) published in the City of Fairfax project record for Fairfax Square.
 resource: https://councilhound.net/development/Fairfax-Square
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-30T00:00:00Z'
 timestamp: '2026-07-30'
 ---
 

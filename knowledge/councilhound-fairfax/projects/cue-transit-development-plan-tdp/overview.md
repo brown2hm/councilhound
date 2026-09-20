@@ -4,11 +4,14 @@ title: CUE Transit Development Plan (TDP)
 description: The CUE Transit Development Plan (TDP) is a planning project for the City's CUE
   (City University Express) transit system.
 resource: https://councilhound.net/topics/cue-transit-development-plan-tdp
-timestamp: '2026-06-02'
-source: meetings
 tags:
 - in-progress
-status: in_progress
+generated:
+  by: councilhound-curator/claude-sonnet-4-6
+  at: '2026-06-02T00:00:00Z'
+timestamp: '2026-06-02'
+project_status: in_progress
+source: meetings
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->

@@ -3,6 +3,9 @@ type: project-impact
 title: 10340 Democracy Lane — impact analysis
 description: Screening-level economic and fiscal estimates for 10340 Democracy Lane.
 resource: https://councilhound.net/development/10340-Democracy-Lane
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
 ---
 

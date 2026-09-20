@@ -6,6 +6,9 @@ description: City of Fairfax project to extend South Street between University D
 resource: https://councilhound.net/development/South-Street-Extension
 tags:
 - city-project
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
 source: official
 address: South St., Fairfax, VA 22030

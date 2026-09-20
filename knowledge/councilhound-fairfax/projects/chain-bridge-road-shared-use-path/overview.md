@@ -6,6 +6,9 @@ description: This project will construct a missing link of path on the west side
 resource: https://councilhound.net/development/Chain-Bridge-Road-Shared-Use-Path
 tags:
 - city-project
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
 source: official
 address: Assembly Drive, 22030

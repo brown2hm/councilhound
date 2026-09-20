@@ -3,6 +3,9 @@ type: project-positions
 title: Move Fairfax City — positions & open questions
 description: Recorded member positions and unresolved questions on Move Fairfax City.
 resource: https://councilhound.net/topics/move-fairfax-city
+generated:
+  by: process:councilhound-okf
+  at: '2026-01-13T00:00:00Z'
 timestamp: '2026-01-13'
 ---
 

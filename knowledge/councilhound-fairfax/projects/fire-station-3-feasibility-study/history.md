@@ -4,6 +4,9 @@ title: 'Fire Station #3 Feasibility Study — meeting history'
 description: 'Dated record of every meeting action on Fire Station #3 Feasibility Study, through
   2025-05-12.'
 resource: https://councilhound.net/topics/fire-station-3-feasibility-study
+generated:
+  by: process:councilhound-okf
+  at: '2025-05-12T00:00:00Z'
 timestamp: '2025-05-12'
 ---
 

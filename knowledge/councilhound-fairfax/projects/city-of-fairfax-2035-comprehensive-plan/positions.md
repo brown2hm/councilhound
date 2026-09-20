@@ -4,6 +4,9 @@ title: City of Fairfax 2035 Comprehensive Plan — positions & open questions
 description: Recorded member positions and unresolved questions on City of Fairfax 2035 Comprehensive
   Plan.
 resource: https://councilhound.net/topics/city-of-fairfax-2035-comprehensive-plan
+generated:
+  by: councilhound-curator/claude-sonnet-4-6
+  at: '2026-07-27T00:00:00Z'
 timestamp: '2026-07-27'
 ---
 

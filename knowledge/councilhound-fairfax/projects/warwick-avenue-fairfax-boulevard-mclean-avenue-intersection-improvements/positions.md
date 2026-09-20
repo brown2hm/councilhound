@@ -5,6 +5,9 @@ title: Warwick Ave /Fairfax Blvd /McLean Ave Intersection Improvements — posit
 description: Recorded member positions and unresolved questions on Warwick Ave /Fairfax Blvd
   /McLean Ave Intersection Improvements.
 resource: https://councilhound.net/development/Warwick-Ave-Fairfax-Blvd-McLean-Ave-Intersection-Improvements
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
 ---
 

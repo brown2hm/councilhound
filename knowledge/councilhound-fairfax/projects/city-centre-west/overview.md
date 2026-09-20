@@ -10,8 +10,11 @@ resource: https://councilhound.net/development/City-Centre-West
 tags:
 - private-development
 - approved
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
-status: approved
+project_status: approved
 source: official
 address: 10501 Main Street, Fairfax, VA 22030
 applicant: Ox Hill Realty, LLC  Robert D. Brant, Attorney Walsh, Colucci, Lubeley & Walsh,

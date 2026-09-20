@@ -4,6 +4,9 @@ title: The Mosby Building 10560 Main Street — positions & open questions
 description: Recorded member positions and unresolved questions on The Mosby Building 10560
   Main Street.
 resource: https://councilhound.net/development/The-Mosby-Building-10560-Main-Street
+generated:
+  by: process:councilhound-okf
+  at: '2026-08-04T00:00:00Z'
 timestamp: '2026-08-04'
 ---
 

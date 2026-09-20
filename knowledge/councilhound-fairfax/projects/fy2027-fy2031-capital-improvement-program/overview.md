@@ -6,8 +6,11 @@ description: The FY2027–FY2031 Capital Improvement Program (CIP) is a multi-ye
 resource: https://councilhound.net/topics/fy2027-fy2031-capital-improvement-program
 tags:
 - approved
+generated:
+  by: councilhound-curator/claude-sonnet-4-6
+  at: '2026-05-05T00:00:00Z'
 timestamp: '2026-05-05'
-status: approved
+project_status: approved
 source: meetings
 ---
 

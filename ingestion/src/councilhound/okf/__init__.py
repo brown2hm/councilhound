@@ -1,7 +1,7 @@
 """Open Knowledge Format (OKF) knowledge bundle.
 
 One wiki-style directory per tracked development project, rendered from the
-DB per the OKF v0.1 spec (markdown concepts + YAML frontmatter, reserved
+DB per the OKF v0.2 spec (markdown concepts + YAML frontmatter, reserved
 index.md/log.md). The bundle is canonical for narrative knowledge; okf-push
 mirrors it into wiki_pages so the cloud API can serve it.
 

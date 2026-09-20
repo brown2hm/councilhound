@@ -7,6 +7,9 @@ description: Creation of a new roadway between Fairfax Blvd/Farr Avenue and Orch
 resource: https://councilhound.net/development/Roadway-Network-Northfax-West
 tags:
 - city-project
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
 source: official
 address: Fairfax Blvd/Farr Avenue to Orchard Street, Fairfax, VA 22030

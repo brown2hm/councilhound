@@ -1,9 +1,12 @@
 ---
 type: project-history
 title: Davies Property — meeting history
-description: Dated record of every meeting action on Davies Property, through 2025-07-28.
+description: Dated record of every meeting action on Davies Property, through 2025-12-01.
 resource: https://councilhound.net/development/Davies-Property
-timestamp: '2025-07-28'
+generated:
+  by: process:councilhound-okf
+  at: '2025-12-01T00:00:00Z'
+timestamp: '2025-12-01'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
@@ -57,6 +60,12 @@ timestamp: '2025-07-28'
 - [6a] The applicant's proposal for a 276-unit mixed-use building with ground-floor retail/commercial and a 3-level below-grade parking garage received a Planning Commission recommendation for denial 4:2.
 - Status after: **denied**
 
+## 2025-07-10 — PRAB Regular Meeting
+
+**Agenda item 5**: Stakeholder Updates
+- Outcome: Stakeholder liaisons provided updates. Yolanda Ortiz absent; Commission on the Arts liaison change noted. Environmental Sustainability Committee, School Board, and Student Representative had no updates.
+- [5] A development proposal for the Davies Property moved through the Board of Architectural Review and Planning Commission; the Planning Commission recommended not proceeding with the proposal, and City Council will vote on it.
+
 ## 2025-07-14 — Planning Commission Regular Meeting/Work Session
 
 **Agenda item 9**: Staff Report ([watch the moment](https://fairfax.granicus.com/MediaPlayer.php?view_id=13&clip_id=4275&starttime=7205&entrytime=7205))
@@ -79,3 +88,9 @@ timestamp: '2025-07-28'
 - Outcome: Planning Division Chief Paul Nabti reported on recent City Council actions and upcoming Planning Commission items, including: approval of the Davies property proposal at the July 22, 2025 City Council meeting; deferral of the Courthouse Plaza development decision to October 28, 2025; approval of zoning ordinance text amendments; a scheduled September 9, 2025 discussion with City Council on opening commercial corridors for residential development; and upcoming items including Zoning Ordinance amendments for Small Area Plans and Citywide Level of Service Standards.
 - [9] City Council approved the proposal for the Davies property at its July 22, 2025 meeting, as reported by staff.
 - Status after: **approved**
+
+## 2025-12-01 — HHCAB Regular Meeting
+
+**Agenda item 5**: December 2nd Council Presentation
+- Outcome: The board reviewed and discussed the presentation to be delivered to City Council on December 2, 2025, covering HHCAB's purpose, housing landscape, population data, community interest, workplan (including Home Sharing and Housing Trust Fund), and discussion items.
+- [5] Davies Property was listed as an approved but not yet constructed affordable housing project with 17 units.

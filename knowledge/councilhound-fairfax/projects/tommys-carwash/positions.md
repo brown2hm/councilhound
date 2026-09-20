@@ -3,6 +3,9 @@ type: project-positions
 title: Tommy's Carwash — positions & open questions
 description: Recorded member positions and unresolved questions on Tommy's Carwash.
 resource: https://councilhound.net/development/Tommys-Carwash
+generated:
+  by: councilhound-curator/claude-sonnet-4-6
+  at: '2024-12-10T00:00:00Z'
 timestamp: '2024-12-10'
 ---
 

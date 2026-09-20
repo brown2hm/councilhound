@@ -3,6 +3,9 @@ type: project-positions
 title: Davies Property — positions & open questions
 description: Recorded member positions and unresolved questions on Davies Property.
 resource: https://councilhound.net/development/Davies-Property
+generated:
+  by: process:councilhound-okf
+  at: '2025-07-28T00:00:00Z'
 timestamp: '2025-07-28'
 ---
 

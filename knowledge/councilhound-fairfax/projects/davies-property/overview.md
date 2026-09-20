@@ -8,8 +8,11 @@ resource: https://councilhound.net/development/Davies-Property
 tags:
 - private-development
 - approved
+generated:
+  by: process:councilhound-okf
+  at: '2025-07-28T00:00:00Z'
 timestamp: '2025-07-28'
-status: approved
+project_status: approved
 source: official
 address: 4131 Chain Bridge Road, Fairfax, VA 22030
 applicant: The Hill, A Davies Family LLC  David Houston, Attorney Bean Kinney & Korman, PC

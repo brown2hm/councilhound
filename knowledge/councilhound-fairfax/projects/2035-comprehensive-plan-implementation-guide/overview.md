@@ -7,8 +7,11 @@ description: The 2035 Comprehensive Plan Implementation Guide is an ongoing proj
 resource: https://councilhound.net/topics/2035-comprehensive-plan-implementation-guide
 tags:
 - in-progress
+generated:
+  by: councilhound-curator/claude-sonnet-4-6
+  at: '2026-07-13T00:00:00Z'
 timestamp: '2026-07-13'
-status: in_progress
+project_status: in_progress
 source: meetings
 ---
 

@@ -3,6 +3,9 @@ type: project-impact
 title: Northfax West — impact analysis
 description: Screening-level economic and fiscal estimates for Northfax West.
 resource: https://councilhound.net/development/Northfax-West
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-30T00:00:00Z'
 timestamp: '2026-07-30'
 ---
 

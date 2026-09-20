@@ -4,6 +4,9 @@ title: Chain Bridge Road Pedestrian and Bus Stop Improvements — documents
 description: 8 document(s) published in the City of Fairfax project record for Chain Bridge
   Road Pedestrian and Bus Stop Improvements.
 resource: https://councilhound.net/development/Chain-Bridge-Road-Pedestrian-and-Bus-Stop-Improvements-Taba-Cove-to-Warwick-Ave
+generated:
+  by: process:councilhound-okf
+  at: '2026-08-04T00:00:00Z'
 timestamp: '2026-08-04'
 ---
 

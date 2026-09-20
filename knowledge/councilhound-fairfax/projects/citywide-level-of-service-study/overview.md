@@ -7,8 +7,11 @@ description: The Citywide Level of Service Study is an ongoing analytical projec
 resource: https://councilhound.net/topics/citywide-level-of-service-study
 tags:
 - in-progress
+generated:
+  by: process:councilhound-okf
+  at: '2026-04-13T00:00:00Z'
 timestamp: '2026-04-13'
-status: in_progress
+project_status: in_progress
 source: meetings
 ---
 

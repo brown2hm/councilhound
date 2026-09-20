@@ -32,8 +32,13 @@ from councilhound.okf.bundle import (
     CURATOR_OFF_CLOSE,
     CURATOR_OFF_OPEN,
     CURATOR_OFF_RE,
+    LIFECYCLE_STATUSES,
     PAGE_ORDER,
+    PIPELINE_ACTOR,
     append_log,
+    curator_actor,
+    generated,
+    generated_at,
     read_page,
     render_index,
     slugify,
@@ -54,7 +59,49 @@ CURATED_NOTE = ("<!-- Curator-owned page: updated incrementally as new "
 # city dropped George Snyder Trail from its directory, the daily project sync
 # removed the row, and the wiki went on pointing at a 404 because nothing
 # recomputed the URI.
-REFRESHED_KEYS = {"status", "tags", "evaluation_status", "resource"}
+REFRESHED_KEYS = {"project_status", "tags", "evaluation_status", "resource"}
+# the curator's log line, from which a page written before `generated`
+# existed recovers who last produced it
+_CURATOR_LOG_RE = re.compile(r"\(curator: ([^,)]+),")
+
+
+def _stamp_fields(by: str, at) -> dict:
+    """`generated` (v0.2 §5.2) plus the v0.1 `timestamp` it superseded. The
+    legacy key stays for one release so an API still reading it keeps its
+    dates while the bundle rolls forward; readers prefer `generated.at`."""
+    if at in (None, ""):
+        return {}
+    gen = generated(by, at)
+    return {"generated": gen, "timestamp": gen["at"][:10]}
+
+
+def _legacy_actor(bundle_dir: str, slug: str) -> str:
+    """Who produced a curator-owned page that predates `generated`: the
+    curator, if the project log records one of its edits (it always edits
+    overview and positions together), else the pipeline that seeded it."""
+    path = os.path.join(bundle_dir, "projects", slug, "log.md")
+    if not os.path.exists(path):
+        return PIPELINE_ACTOR
+    with open(path, encoding="utf-8") as f:
+        models = _CURATOR_LOG_RE.findall(f.read())
+    return curator_actor(models[-1].strip()) if models else PIPELINE_ACTOR
+
+
+def _migrate_frontmatter(fm: dict, legacy_by: str) -> bool:
+    """Bring a page written under v0.1 up to v0.2 in place: `timestamp`
+    gains a `generated` sibling, and a city project status squatting on the
+    reserved lifecycle `status` key moves to `project_status`. Idempotent;
+    returns whether anything changed."""
+    changed = False
+    if "generated" not in fm and generated_at(fm):
+        fm["generated"] = generated(legacy_by, generated_at(fm))
+        changed = True
+    status = fm.get("status")
+    if status is not None and status not in LIFECYCLE_STATUSES:
+        fm.setdefault("project_status", status)
+        del fm["status"]
+        changed = True
+    return changed
 
 
 def _clip_link(view_id: str, clip_id: str | None,
@@ -141,8 +188,8 @@ def _overview_frontmatter(entity: Entity, ctx: dict, stamp: str) -> dict:
         or f"{entity.name}, tracked from City of Fairfax public meetings.",
         "resource": _resource_url(entity, city),
         "tags": _tags(entity, city),
-        "timestamp": stamp,
-        "status": entity.current_status or (city.official_status if city else None),
+        **_stamp_fields(PIPELINE_ACTOR, stamp),
+        "project_status": entity.current_status or (city.official_status if city else None),
         "source": "official" if city else "meetings",
     }
     if city:
@@ -384,7 +431,7 @@ def _history_page(entity: Entity, ctx: dict,
         "description": f"Dated record of every meeting action on {entity.name}, "
                        f"through {latest}.",
         "resource": _resource_url(entity, ctx["city"]),
-        "timestamp": latest,
+        **_stamp_fields(PIPELINE_ACTOR, latest),
     }
     parts = [PIPELINE_NOTE, ""]
     # one update per meeting (unique constraint), oldest first
@@ -572,6 +619,11 @@ def _write_documents(bundle_dir: str, entity: Entity, ctx: dict) -> bool:
     rel = f"projects/{entity.canonical_slug}/documents.md"
     existing = read_page(os.path.join(bundle_dir, rel))
     if existing is not None and existing[1].strip() == body.strip():
+        # same list, so the stamp stands — but a page written under v0.1
+        # still gets its `generated` (dated by that stamp, not today)
+        fm = dict(existing[0] or {})
+        if _migrate_frontmatter(fm, PIPELINE_ACTOR):
+            return write_page(bundle_dir, rel, fm, existing[1])
         return False
     n = len(ctx["city"].documents or [])
     return write_page(bundle_dir, rel, {
@@ -580,7 +632,7 @@ def _write_documents(bundle_dir: str, entity: Entity, ctx: dict) -> bool:
         "description": f"{n} document(s) published in the City of Fairfax "
                        f"project record for {entity.name}.",
         "resource": _resource_url(entity, ctx["city"]),
-        "timestamp": date.today().isoformat(),
+        **_stamp_fields(PIPELINE_ACTOR, date.today()),
     }, body)
 
 
@@ -607,9 +659,26 @@ def _write_impact(bundle_dir: str, entity: Entity, ctx: dict, stamp: str,
         "description": f"Screening-level economic and fiscal estimates "
                        f"for {entity.name}.",
         "resource": _resource_url(entity, ctx["city"]),
-        "timestamp": (evaluation.synthesized_at.date().isoformat()
-                      if evaluation.synthesized_at else stamp),
+        **_stamp_fields(PIPELINE_ACTOR, evaluation.synthesized_at or stamp),
     }, body)
+
+
+def _migrate_stranded_pages(bundle_dir: str, entity: Entity) -> bool:
+    """Pipeline-owned pages whose source has since emptied — a history.md
+    for a timeline that was detached, a documents.md for a record the city
+    withdrew — are no longer regenerated, so the regular writers never reach
+    their frontmatter. Bring them to v0.2 in place; whether such a page
+    should still exist is a separate question this pass does not answer."""
+    changed = False
+    for page in ("history", "documents"):
+        rel = f"projects/{entity.canonical_slug}/{page}.md"
+        parsed = read_page(os.path.join(bundle_dir, rel))
+        if parsed is None or parsed[0] is None:
+            continue
+        fm, body = parsed
+        if _migrate_frontmatter(fm, PIPELINE_ACTOR):
+            changed = write_page(bundle_dir, rel, fm, body) or changed
+    return changed
 
 
 def _write_history(session: Session, bundle_dir: str, entity: Entity,
@@ -636,7 +705,8 @@ def _refresh_overview(bundle_dir: str, entity: Entity, ctx: dict) -> bool:
     if page is None or page[0] is None:
         return False
     fm, body = page
-    fresh = _overview_frontmatter(entity, ctx, stamp=str(fm.get("timestamp", "")))
+    _migrate_frontmatter(fm, _legacy_actor(bundle_dir, slug))
+    fresh = _overview_frontmatter(entity, ctx, stamp=generated_at(fm) or "")
     for key in REFRESHED_KEYS:
         if key in fresh and fm.get(key) != fresh[key]:
             fm[key] = fresh[key]
@@ -698,18 +768,24 @@ def _refresh_sibling_resources(bundle_dir: str, entity: Entity,
                                ctx: dict) -> bool:
     """positions.md and impact.md carry the same derived `resource` URI as
     overview.md. Their bodies are the curator's, but that key is not — leave
-    it alone and it outlives the record it was derived from."""
+    it alone and it outlives the record it was derived from. The same pass
+    brings a v0.1 page's frontmatter up to v0.2 (impact.md is never touched
+    by the LLM curator, so its legacy producer is always the pipeline)."""
     slug = entity.canonical_slug
     fresh = _resource_url(entity, ctx["city"])
     changed = False
-    for page in ("positions", "impact"):
+    for page, legacy_by in (("positions", _legacy_actor(bundle_dir, slug)),
+                            ("impact", PIPELINE_ACTOR)):
         rel = f"projects/{slug}/{page}.md"
         parsed = read_page(os.path.join(bundle_dir, rel))
         if parsed is None or parsed[0] is None:
             continue
         fm, body = parsed
+        dirty = _migrate_frontmatter(fm, legacy_by)
         if fm.get("resource") != fresh:
             fm["resource"] = fresh
+            dirty = True
+        if dirty:
             changed = write_page(bundle_dir, rel, fm, body) or changed
     return changed
 
@@ -771,7 +847,8 @@ def _write_indexes(bundle_dir: str, session: Session) -> None:
     write_text(bundle_dir, "index.md", render_index(
         "CouncilHound knowledge bundle — City of Fairfax, VA",
         [("/projects/index.md", "Projects",
-          "development projects tracked from council meetings and official records")]))
+          "development projects tracked from council meetings and official records")],
+        root=True))
 
 
 def seed_bundle(session: Session, bundle_dir: str,
@@ -800,7 +877,7 @@ def seed_bundle(session: Session, bundle_dir: str,
             "description": f"Recorded member positions and unresolved questions "
                            f"on {entity.name}.",
             "resource": _resource_url(entity, ctx["city"]),
-            "timestamp": stamp,
+            **_stamp_fields(PIPELINE_ACTOR, stamp),
         }, _positions_body(ctx))
         _write_impact(bundle_dir, entity, ctx, stamp)
         _write_documents(bundle_dir, entity, ctx)
@@ -843,6 +920,7 @@ def refresh_bundle(session: Session, bundle_dir: str) -> dict:
                                       _narrative_stamp(ctx), only_if_missing=True)
         changed = seeded_impact or changed
         changed = _write_documents(bundle_dir, entity, ctx) or changed
+        changed = _migrate_stranded_pages(bundle_dir, entity) or changed
         changed = _refresh_overview(bundle_dir, entity, ctx) or changed
         changed = _refresh_sibling_resources(bundle_dir, entity, ctx) or changed
         changed = _refresh_member_links(bundle_dir, entity,

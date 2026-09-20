@@ -3,6 +3,9 @@ type: project-positions
 title: Noman Cole Capital Costs — positions & open questions
 description: Recorded member positions and unresolved questions on Noman Cole Capital Costs.
 resource: https://councilhound.net/topics/noman-cole-capital-costs
+generated:
+  by: process:councilhound-okf
+  at: '2026-05-12T00:00:00Z'
 timestamp: '2026-05-12'
 ---
 

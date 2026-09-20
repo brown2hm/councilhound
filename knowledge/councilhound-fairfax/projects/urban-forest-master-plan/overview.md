@@ -6,8 +6,11 @@ description: The Urban Forest Master Plan (UFMP) is the City of Fairfax's first 
 resource: https://councilhound.net/topics/urban-forest-master-plan
 tags:
 - approved
+generated:
+  by: process:councilhound-okf
+  at: '2026-07-14T00:00:00Z'
 timestamp: '2026-07-14'
-status: approved
+project_status: approved
 source: meetings
 ---
 

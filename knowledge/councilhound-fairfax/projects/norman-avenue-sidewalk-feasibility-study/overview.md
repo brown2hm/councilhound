@@ -6,8 +6,11 @@ description: The Norman Avenue Sidewalk Feasibility Study is a City-initiated tr
 resource: https://councilhound.net/topics/norman-avenue-sidewalk-feasibility-study
 tags:
 - in-progress
+generated:
+  by: process:councilhound-okf
+  at: '2025-05-13T00:00:00Z'
 timestamp: '2025-05-13'
-status: in_progress
+project_status: in_progress
 source: meetings
 ---
 

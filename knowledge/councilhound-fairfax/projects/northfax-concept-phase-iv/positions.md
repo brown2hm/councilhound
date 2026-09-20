@@ -4,6 +4,9 @@ title: Northfax Concept Phase IV — positions & open questions
 description: Recorded member positions and unresolved questions on Northfax Concept Phase
   IV.
 resource: https://councilhound.net/development/Northfax-Concept-Phase-IV
+generated:
+  by: process:councilhound-okf
+  at: '2026-08-04T00:00:00Z'
 timestamp: '2026-08-04'
 ---
 

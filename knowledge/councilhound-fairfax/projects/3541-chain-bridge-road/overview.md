@@ -8,7 +8,11 @@ resource: https://councilhound.net/development/3541-Chain-Bridge-Road
 tags:
 - private-development
 - proposed
+generated:
+  by: councilhound-curator/claude-sonnet-4-6
+  at: '2026-07-28T00:00:00Z'
 timestamp: '2026-07-28'
+project_status: proposed
 source: official
 address: 3541 Chain Bridge Road, Fairfax, VA 22030
 applicant: Evan Pritchard Wire Gill, LLP
@@ -16,7 +20,6 @@ city_detail_url: https://www.fairfaxva.gov/Property-Business/Development/Project
 evaluation_status: synthesized
 lat: 38.8607598
 lng: -77.3061536
-status: proposed
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->

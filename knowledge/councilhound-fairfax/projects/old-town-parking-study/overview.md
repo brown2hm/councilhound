@@ -7,8 +7,11 @@ description: The Old Town Parking Study is a city-commissioned project that anal
 resource: https://councilhound.net/topics/old-town-parking-study
 tags:
 - in-progress
+generated:
+  by: process:councilhound-okf
+  at: '2025-06-23T00:00:00Z'
 timestamp: '2025-06-23'
-status: in_progress
+project_status: in_progress
 source: meetings
 ---
 

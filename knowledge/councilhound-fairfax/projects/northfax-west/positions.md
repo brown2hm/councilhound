@@ -3,6 +3,9 @@ type: project-positions
 title: Northfax West — positions & open questions
 description: Recorded member positions and unresolved questions on Northfax West.
 resource: https://councilhound.net/development/Northfax-West
+generated:
+  by: councilhound-curator/claude-sonnet-4-6
+  at: '2026-09-01T00:00:00Z'
 timestamp: '2026-09-01'
 ---
 

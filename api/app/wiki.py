@@ -11,6 +11,17 @@ _PAGE_ORDER = {name: i for i, name in enumerate(
     ["overview", "history", "positions", "impact", "documents"])}
 
 
+def generated_at(frontmatter: dict | None) -> str | None:
+    """When the page last meaningfully changed: OKF v0.2 `generated.at`, or
+    the v0.1 `timestamp` on a page pushed before the bundle migrated (§13.1
+    lets a consumer fall back). Kept local rather than imported from
+    councilhound.okf.bundle, which needs PyYAML the API image doesn't ship."""
+    fm = frontmatter or {}
+    gen = fm.get("generated")
+    at = gen.get("at") if isinstance(gen, dict) else None
+    return at or fm.get("timestamp") or None
+
+
 def entity_has_wiki(session: Session, entity_id: int | None) -> bool:
     """Concept pages only — matches wiki_payload's 404 condition, so the flag
     never advertises a wiki the wiki routes would 404 on (an entity whose only
@@ -42,7 +53,10 @@ def wiki_payload(session: Session, entity: Entity) -> dict | None:
                 "title": (r.frontmatter or {}).get("title") or r.page.capitalize(),
                 "type": (r.frontmatter or {}).get("type"),
                 "description": (r.frontmatter or {}).get("description"),
-                "timestamp": (r.frontmatter or {}).get("timestamp"),
+                # OKF v0.2 `generated.at`, falling back to the v0.1
+                # `timestamp` for pages pushed before the migration (§13.1)
+                "timestamp": generated_at(r.frontmatter),
+                "generated": (r.frontmatter or {}).get("generated"),
                 "frontmatter": r.frontmatter or {},
                 "body": r.body,
             }
