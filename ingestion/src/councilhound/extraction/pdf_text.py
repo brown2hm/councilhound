@@ -9,6 +9,8 @@ reports) is stripped to text with BeautifulSoup.
 import logging
 import os
 import re
+import zipfile
+from xml.etree import ElementTree
 
 import fitz  # pymupdf
 from bs4 import BeautifulSoup
@@ -55,11 +57,38 @@ def html_to_text(path: str) -> str:
     return text.strip()
 
 
+_W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+
+
+def docx_to_text(path: str) -> str:
+    """Word agendas (Granicus serves closed-session agendas as .docx): one
+    line per paragraph, runs joined without separators, tabs kept as tabs.
+    Stdlib only — the files are small and the layout is plain."""
+    with zipfile.ZipFile(path) as z:
+        root = ElementTree.fromstring(z.read("word/document.xml"))
+    lines = []
+    for para in root.iter(f"{_W}p"):
+        parts = []
+        for node in para.iter():
+            if node.tag == f"{_W}t":
+                parts.append(node.text or "")
+            elif node.tag == f"{_W}tab":
+                parts.append("\t")
+            elif node.tag in (f"{_W}br", f"{_W}cr"):
+                parts.append("\n")
+        line = "".join(parts).strip()
+        if line:
+            lines.append(line)
+    return _sanitize("\n".join(lines))
+
+
 def extract_document(doc: Document) -> str | None:
     if doc.local_path.endswith(".pdf"):
         return pdf_to_text(doc.local_path)
     if doc.local_path.endswith(".html"):
         return html_to_text(doc.local_path)
+    if doc.local_path.endswith(".docx"):
+        return docx_to_text(doc.local_path)
     log.warning("document %s: unknown file type %s", doc.id, doc.local_path)
     return None
 
