@@ -14,6 +14,7 @@ import {
   type NamedInDiscussion,
   type VoteInfo,
 } from "@/lib/api";
+import { chapterTints, UNCHAPTERED_TINT } from "@/lib/chapters";
 import { requireRecord } from "@/lib/not-found";
 
 export const revalidate = 300;
@@ -234,13 +235,16 @@ function DecisionRow({ item, meetingId }: { item: AgendaItemInfo; meetingId: str
   );
 }
 
-function PresentedRow({ item, meetingId }: { item: AgendaItemInfo; meetingId: string }) {
+function PresentedRow({ item, meetingId, tint }: { item: AgendaItemInfo; meetingId: string; tint: string }) {
   const proclamation = isProclamation(item);
   const title = proclamation ? (item.title ?? "").replace(/^proclamation:\s*/i, "") : item.title ?? "";
   const note = proclamation ? `proclamation, ${proclamationDates(item.outcome)}` : outcomeText(item.outcome) || item.description || "";
   return (
     <li id={`item-${item.label}`} className="grid scroll-mt-24 grid-cols-[18px_36px_minmax(0,1fr)] items-baseline gap-2.5 border-t border-hairline py-2.5 text-sm sm:grid-cols-[18px_36px_minmax(0,1fr)_auto]">
-      <span aria-hidden className="mx-[5px] inline-block h-2 w-2 rounded-full bg-strong" />
+      {/* the item's segment colour from the chapter bar, as a stripe: the
+          negative margin closes the row padding so neighbours meet and the
+          column reads as one vertical bar divided by topic */}
+      <span aria-hidden className={`-my-2.5 mx-[7px] w-1 self-stretch rounded-sm ${tint} opacity-70`} />
       <span className="text-[12px] tabular-nums text-muted">{item.label}</span>
       <div className="min-w-0">
         <span className="font-semibold">
@@ -354,6 +358,9 @@ export default async function MeetingPage({ params }: { params: { id: string } }
   const chapters = items
     .filter((it) => it.start_seconds !== null && it.watch_url)
     .sort((a, b) => (a.start_seconds ?? 0) - (b.start_seconds ?? 0));
+  // row stripes reuse the chapter bar's colours, so a row keys back to its
+  // segment; items with no index point get the bar's neutral
+  const tints = chapterTints(items, meeting.duration_seconds);
   const topics = meeting.topics;
   const named = meeting.named_in_discussion;
   const inWiki = topics.filter((t) => t.has_wiki).length;
@@ -422,7 +429,7 @@ export default async function MeetingPage({ params }: { params: { id: string } }
               <h2 className="mb-1.5 text-[20px] font-semibold tracking-[-0.3px]">{decided.length ? "Presented" : "Discussed"}</h2>
               <ul>
                 {presented.map((it) => (
-                  <PresentedRow key={it.id} item={it} meetingId={params.id} />
+                  <PresentedRow key={it.id} item={it} meetingId={params.id} tint={tints.get(it.id) ?? UNCHAPTERED_TINT} />
                 ))}
               </ul>
             </section>
