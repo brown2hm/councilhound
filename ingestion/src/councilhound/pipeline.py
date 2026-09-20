@@ -100,10 +100,22 @@ def _upsert_document(session: Session, meeting: Meeting, doc_type: str, source_u
     return doc
 
 
-def _ext_for(content_type: str) -> str:
+def _ext_for(content_type: str, content: bytes = b"") -> str:
+    """Pick the on-disk extension the text extractor dispatches on. Granicus
+    labels Word agendas (closed sessions) `application/msword` even when the
+    payload is a .docx zip, so sniff the bytes when the header is vague."""
     if "pdf" in content_type:
         return ".pdf"
     if "html" in content_type:
+        return ".html"
+    if "msword" in content_type or "wordprocessingml" in content_type:
+        return ".docx"
+    head = content[:1024]
+    if head.startswith(b"%PDF"):
+        return ".pdf"
+    if head.startswith(b"PK") and b"[Content_Types].xml" in head:
+        return ".docx"
+    if b"<html" in head.lower() or b"<!doctype html" in head.lower():
         return ".html"
     return ".bin"
 
@@ -112,7 +124,7 @@ def _fetch_doc_content(session: Session, meeting: Meeting, doc: Document, filena
     if doc.local_path and os.path.exists(doc.local_path) and os.path.getsize(doc.local_path) > 0:
         return
     resp = http.get(doc.source_url)
-    ext = _ext_for(resp.headers.get("Content-Type", ""))
+    ext = _ext_for(resp.headers.get("Content-Type", ""), resp.content)
     path = os.path.join(_meeting_dir(meeting), filename_base + ext)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "wb") as f:

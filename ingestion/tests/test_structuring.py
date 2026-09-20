@@ -7,7 +7,7 @@ import datetime
 from sqlalchemy import func, select
 
 from councilhound.db.models import (
-    AgendaItem, Document, Entity, EntityUpdate, Meeting, Vote,
+    AgendaItem, Document, Entity, EntityUpdate, Extraction, Meeting, Vote,
 )
 from councilhound.entities import add_alias, resolve_entity
 from councilhound.extraction.llm_structure import apply_extraction
@@ -293,3 +293,45 @@ def test_city_and_its_bodies_are_never_entities(db_session):
     names = sorted(db_session.scalars(select(Entity.name)))
     assert names == ["Native Planting Program", "Van Dyck Park Playground"]
     assert db_session.scalar(select(func.count(EntityUpdate.id))) == 2
+
+
+def test_structure_pending_skips_meetings_without_agenda_text(db_session, monkeypatch):
+    """A recording-only swearing-in (no agenda document) or a closed meeting
+    whose agenda has no text yet cannot be structured; retrying them every
+    hour only produced tracebacks. They are not candidates until the agenda
+    has text, at which point they are picked up like any other meeting."""
+    from councilhound.extraction import llm_structure
+
+    s = db_session
+    no_agenda = _make_meeting(s, "4048", datetime.date(2025, 1, 13))
+    untexted = _make_meeting(s, "4364", datetime.date(2025, 10, 23))
+    s.add(Document(meeting_id=untexted.id, doc_type="agenda",
+                   source_url="https://x/agenda/4364", local_path="/tmp/agenda.bin"))
+    ready = _make_meeting(s, "4646", datetime.date(2026, 8, 18))
+    s.add(Document(meeting_id=ready.id, doc_type="agenda",
+                   source_url="https://x/agenda/4646", raw_text="1. Call to order"))
+    s.commit()
+
+    structured = []
+
+    def fake_structure(session, meeting, force=False):
+        structured.append(meeting.granicus_clip_id)
+        session.add(Extraction(meeting_id=meeting.id, model="fake", raw_json={},
+                               prompt_version=llm_structure.PROMPT_VERSION))
+        session.commit()
+
+    monkeypatch.setattr(llm_structure, "structure_meeting", fake_structure)
+    monkeypatch.setattr(llm_structure, "late_document_meetings", lambda session: [])
+
+    result = llm_structure.structure_pending(s)
+    assert structured == ["4646"]
+    assert result == {"structured": 1, "restructured": 0, "failed": 0, "candidates": 1}
+
+    # once the Word agenda has been read, the closed meeting becomes a candidate
+    doc = s.scalar(select(Document).where(Document.source_url == "https://x/agenda/4364"))
+    doc.raw_text = "School Board Closed Meeting Agenda"
+    s.commit()
+    structured.clear()
+    llm_structure.structure_pending(s)
+    assert structured == ["4364"]
+    assert no_agenda.granicus_clip_id not in structured

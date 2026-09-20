@@ -517,9 +517,16 @@ def structure_pending(session: Session, limit: int | None = None) -> dict:
     extraction yet (oldest first, so entity timelines build in order), then
     re-run it for meetings whose minutes/actions report arrived late."""
     sub = select(Extraction.meeting_id).where(Extraction.prompt_version == PROMPT_VERSION)
+    # Structuring needs agenda text. A meeting with no agenda document at all
+    # (a swearing-in that is recording-only) or whose agenda has no text yet
+    # (a scanned PDF, or a file on another machine) would fail identically on
+    # every hourly run, so it is not a candidate until text exists.
+    has_agenda_text = select(Document.meeting_id).where(
+        Document.doc_type == "agenda", Document.raw_text.isnot(None))
     q = (
         select(Meeting)
         .where(Meeting.status.in_(["fetched", "extracted"]), Meeting.id.not_in(sub),
+               Meeting.id.in_(has_agenda_text),
                ~Meeting.title.ilike("%cancel%"))
         .order_by(Meeting.meeting_date.asc())
     )
