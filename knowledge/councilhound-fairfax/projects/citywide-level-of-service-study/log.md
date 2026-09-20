@@ -19,3 +19,4 @@
 ## 2026-09-19
 
 - Meeting history updated through 2026-09-01.
+- Added 2026-09-01 City Council work session in which Council received a report on the study's findings; resolved the study completion open question accordingly. (curator: claude-sonnet-4-6, through 2026-09-01)

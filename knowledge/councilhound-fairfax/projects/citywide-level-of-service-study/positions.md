@@ -5,18 +5,17 @@ description: Recorded member positions and unresolved questions on Citywide Leve
   Study.
 resource: https://councilhound.net/topics/citywide-level-of-service-study
 generated:
-  by: process:councilhound-okf
-  at: '2026-04-13T00:00:00Z'
-timestamp: '2026-04-13'
+  by: councilhound-curator/claude-sonnet-4-6
+  at: '2026-09-01T00:00:00Z'
+timestamp: '2026-09-01'
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
 
 ## Open questions
 
-- Completion and delivery of the final Citywide Level of Service Study (estimated mid-2026).
 - Development and adoption of formal policy guidance on cash proffers, including what types the city may require and how to calculate them.
-- City Council consideration of findings and any resulting policy or ordinance changes once the study is complete.
+- City Council consideration of any resulting policy or ordinance changes following the study findings presented on 2026-09-01.
 
 ## Member commentary
 

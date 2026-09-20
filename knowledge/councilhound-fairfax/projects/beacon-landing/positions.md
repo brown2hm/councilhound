@@ -4,9 +4,9 @@ title: Beacon Landing — positions & open questions
 description: Recorded member positions and unresolved questions on Beacon Landing.
 resource: https://councilhound.net/topics/beacon-landing
 generated:
-  by: process:councilhound-okf
-  at: '2026-05-05T00:00:00Z'
-timestamp: '2026-05-05'
+  by: councilhound-curator/claude-sonnet-4-6
+  at: '2026-06-01T00:00:00Z'
+timestamp: '2026-06-01'
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->

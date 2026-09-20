@@ -9,9 +9,9 @@ tags:
 - private-development
 - approved
 generated:
-  by: process:councilhound-okf
-  at: '2025-07-28T00:00:00Z'
-timestamp: '2025-07-28'
+  by: councilhound-curator/claude-sonnet-4-6
+  at: '2025-12-01T00:00:00Z'
+timestamp: '2025-12-01'
 project_status: approved
 source: official
 address: 4131 Chain Bridge Road, Fairfax, VA 22030
@@ -25,7 +25,7 @@ lng: -77.3082288
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
 
-The Davies Property project involves a rezoning from RM to CU (retaining the TOD overlay) and a General Development Plan with proffers for a mixed-use building at 4131 Chain Bridge Rd on 2.69 acres. The proposed development includes 276 apartments, approximately 6,319 sq ft of retail, approximately 4,188 sq ft of office, and structured parking. A work session was held at the January 13, 2025 Planning Commission meeting, where staff presented a report that was incorporated into the record. City Council approved the proposal at its July 22, 2025 meeting, as reported by Planning Division Chief Paul Nabti at the July 28, 2025 Planning Commission meeting. Following approval, the Davies property's approved plan has become a recurring reference point in subsequent discussions of an adjacent development (discussed July 7, 2026), particularly regarding interparcel connectivity, shared greenway infrastructure, sidewalk continuity, and open space comparisons — with the assessed value of the existing structure on the Davies property noted as $262,000 and the site's access points described as located along the north side of the building.
+The Davies Property project involves a rezoning from RM to CU (retaining the TOD overlay) and a General Development Plan with proffers for a mixed-use building at 4131 Chain Bridge Rd on 2.69 acres. The proposed development includes 276 apartments, approximately 6,319 sq ft of retail, approximately 4,188 sq ft of office, and structured parking. A work session was held at the January 13, 2025 Planning Commission meeting, where staff presented a report that was incorporated into the record. City Council approved the proposal at its July 22, 2025 meeting, as reported by Planning Division Chief Paul Nabti at the July 28, 2025 Planning Commission meeting. Following approval, the Davies property's approved plan has become a recurring reference point in subsequent discussions of an adjacent development (discussed July 7, 2026), particularly regarding interparcel connectivity, shared greenway infrastructure, sidewalk continuity, and open space comparisons — with the assessed value of the existing structure on the Davies property noted as $262,000 and the site's access points described as located along the north side of the building. As of December 2025, the project was listed as approved but not yet constructed, with 17 affordable housing units, in materials prepared for a City Council presentation (2025-12-01 HHCAB Regular Meeting).
 
 <!-- curator:off -->
 

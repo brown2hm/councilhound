@@ -4,16 +4,16 @@ title: Davies Property — positions & open questions
 description: Recorded member positions and unresolved questions on Davies Property.
 resource: https://councilhound.net/development/Davies-Property
 generated:
-  by: process:councilhound-okf
-  at: '2025-07-28T00:00:00Z'
-timestamp: '2025-07-28'
+  by: councilhound-curator/claude-sonnet-4-6
+  at: '2025-12-01T00:00:00Z'
+timestamp: '2025-12-01'
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
 
 ## Open questions
 
-_No unresolved questions recorded._
+- When will construction commence? As of the 2025-12-01 HHCAB Regular Meeting, the project was listed as approved but not yet constructed.
 
 ## Member commentary
 

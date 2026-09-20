@@ -19,7 +19,7 @@ timestamp: '2026-07-28'
 
 ## 2026-07-28 — City Council Meeting
 
-**Agenda item 11a**: Pre-application briefing on a request by Network Realty Partners for the redevelopment of 3541 Chain Bridge Road
+**Agenda item 11a**: Pre-application briefing on a request by Network Realty Partners for the redevelopment of 3541 Chain Bridge Road ([watch the moment](https://fairfax.granicus.com/MediaPlayer.php?view_id=13&clip_id=4623&starttime=7118&entrytime=7118))
 - Outcome: Pre-application briefing received; no council action taken.
 - [11a] Council received a pre-application briefing from Network Realty Partners proposing to replace two-story office buildings with 37 residential dwelling units (29 townhouses and 8 two-over-two multifamily units), a 2,730 sq ft freestanding retail building, and 88 parking spaces on 2.09 +/- acres; no action was taken.
 - Status after: **proposed**

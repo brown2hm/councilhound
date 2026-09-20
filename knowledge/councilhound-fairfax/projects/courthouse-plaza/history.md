@@ -164,7 +164,7 @@ timestamp: '2026-07-28'
 
 ## 2026-07-28 — City Council Meeting
 
-**Agenda item 11b**: Discussion of a request by Combined Courthouse LLC for the redevelopment of 10300 Willard Way and 3922 Blenheim Boulevard
+**Agenda item 11b**: Discussion of a request by Combined Courthouse LLC for the redevelopment of 10300 Willard Way and 3922 Blenheim Boulevard ([watch the moment](https://fairfax.granicus.com/MediaPlayer.php?view_id=13&clip_id=4623&starttime=9885&entrytime=9885))
 - Outcome: Post-submission work session held; no council action taken.
 - [11b] The Combined Courthouse LLC redevelopment at Courthouse Plaza was discussed in a post-submission work session; public comment during the initial comment period also referenced this proposal.
 - Status after: **in_progress**

@@ -9,9 +9,9 @@ tags:
 - private-development
 - in-progress
 generated:
-  by: process:councilhound-okf
-  at: '2026-06-22T00:00:00Z'
-timestamp: '2026-06-22'
+  by: councilhound-curator/claude-sonnet-4-6
+  at: '2026-07-28T00:00:00Z'
+timestamp: '2026-07-28'
 project_status: in_progress
 source: official
 address: 10300 Willard Way and 3922 Blenheim Boulevard, Fairfax, VA 22030
@@ -24,7 +24,7 @@ evaluation_status: synthesized
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
 
-Courthouse Plaza is a mixed-use redevelopment proposal for the shopping center at 10300 Willard Way and 3922 Blenheim Boulevard in Fairfax, anchored by a Safeway grocery store. Combined Courthouse, LLC originally sought 8 Special Exceptions for a mixed-use development in the CR Commercial Retail district and Old Town Fairfax Transition Overlay District; a City Council work session was held on September 24, 2024, and a public hearing was held July 22, 2025, but Council deferred action to October 28, 2025 and ultimately denied the request 4–2 on that date. Following the denial, the applicant returned with a revised two-phase redevelopment concept: Phase 1 proposes a 6-story mixed-use building (315 units), and Phase 2 proposes a new street network and reorientation of the grocery anchor (an additional ~315 units, targeted post-2035), now requiring a rezoning from CR/CG to PD-M (Planned Development Mixed Use) with a Master Development Plan and multiple Special Exceptions. Pre-application briefings were presented to the Planning Commission on February 9, 2026, and to City Council on February 24, 2026; the applicant has since formally submitted a land use application with one resubmission received. A post-submission work session was held at the Planning Commission on June 22, 2026, and a City Council work session on the application is scheduled for July 28, 2026. The Board of Architectural Review has also reviewed the proposal, providing feedback including comments on the use of red brick in the building's design.
+Courthouse Plaza is a mixed-use redevelopment proposal for the shopping center at 10300 Willard Way and 3922 Blenheim Boulevard in Fairfax, anchored by a Safeway grocery store. Combined Courthouse, LLC originally sought 8 Special Exceptions for a mixed-use development in the CR Commercial Retail district and Old Town Fairfax Transition Overlay District; a City Council work session was held on September 24, 2024, and a public hearing was held July 22, 2025, but Council deferred action to October 28, 2025 and ultimately denied the request 4–2 on that date. Following the denial, the applicant returned with a revised two-phase redevelopment concept: Phase 1 proposes a 6-story mixed-use building (315 units), and Phase 2 proposes a new street network and reorientation of the grocery anchor (an additional ~315 units, targeted post-2035), now requiring a rezoning from CR/CG to PD-M (Planned Development Mixed Use) with a Master Development Plan and multiple Special Exceptions. Pre-application briefings were presented to the Planning Commission on February 9, 2026, and to City Council on February 24, 2026; the applicant has since formally submitted a land use application with two resubmissions received. A post-submission work session was held at the Board of Architectural Review on June 3, 2026, at the Planning Commission on June 22, 2026, and at City Council on July 28, 2026 (no Council action taken). The Board of Architectural Review has also reviewed the proposal, providing feedback including comments on the use of red brick in the building's design.
 
 <!-- curator:off -->
 
