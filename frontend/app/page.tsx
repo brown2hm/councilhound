@@ -13,7 +13,6 @@ import {
   type HotTopic,
   type HotTopicsResponse,
   type MeetingDetail,
-  type MeetingStats,
   type UpcomingAgendaTopic,
   type UpcomingDetail,
   type UpcomingEvent,
@@ -22,8 +21,8 @@ import { voteShape } from "@/lib/briefing";
 
 export const dynamic = "force-dynamic";
 
-// The briefing is a front page, not a dashboard: one lede, a line of
-// figures, then ruled ledgers. Every row carries a noun and a reason.
+// The briefing is a front page, not a dashboard: one lede, then ruled
+// ledgers. Every row carries a noun and a reason.
 
 interface Decision {
   badge: string; // PASSED | FAILED | CONTINUED | RECOMMENDED
@@ -400,50 +399,18 @@ function Masthead({ latest }: { latest: string }) {
 
 function LedeBlock({ lede }: { lede: Lede }) {
   return (
-    <section className="rounded-2xl bg-teal px-6 py-6 text-white sm:px-8 sm:py-7">
-      <div className="mb-3 text-xs font-semibold uppercase tracking-[1.5px] text-mint">{lede.eyebrow}</div>
-      <h1 className="max-w-[960px] font-display text-[30px] font-medium leading-[1.12] tracking-[-0.3px] [text-wrap:balance] sm:text-[40px]">
+    <section className="rounded-xl border border-hairline bg-strong/60 px-4 py-3 text-body sm:px-5">
+      <div className="mb-1 text-[10px] font-semibold uppercase tracking-[1.5px] text-muted">{lede.eyebrow}</div>
+      <h1 className="max-w-[860px] font-display text-[16px] font-medium leading-snug text-ink [text-wrap:balance] sm:text-[17px]">
         {lede.headline}
       </h1>
       {lede.quote && (
-        <p className="mt-4 max-w-[820px] border-l-2 border-mint/50 pl-4 font-display text-[17px] italic leading-snug text-white/85">
+        <p className="mt-2 max-w-[760px] border-l-2 border-hairline pl-3 font-display text-[13px] italic leading-snug text-muted">
           {lede.quote}
         </p>
       )}
-      {lede.meta && <p className="mt-4 max-w-[860px] text-[13px] leading-relaxed text-white/70">{lede.meta}</p>}
+      {lede.meta && <p className="mt-2 max-w-[860px] text-[12px] leading-relaxed text-muted">{lede.meta}</p>}
     </section>
-  );
-}
-
-interface Figure {
-  value: string;
-  label: string;
-  href?: string;
-}
-
-function Figures({ figures }: { figures: Figure[] }) {
-  return (
-    <ul className="mb-8 grid grid-cols-2 gap-x-6 gap-y-3 border-b border-hairline py-3 sm:grid-cols-3 lg:grid-cols-6">
-      {figures.map((f) => {
-        const inner = (
-          <>
-            <span className="text-[22px] font-semibold leading-none tracking-[-0.5px] tabular-nums">{f.value}</span>
-            <span className="mt-1 block text-[12px] leading-snug text-muted">{f.label}</span>
-          </>
-        );
-        return (
-          <li key={f.label} className="min-w-0">
-            {f.href ? (
-              <Link href={f.href} className="block hover:underline">
-                {inner}
-              </Link>
-            ) : (
-              inner
-            )}
-          </li>
-        );
-      })}
-    </ul>
   );
 }
 
@@ -797,7 +764,6 @@ function Attention({ panels }: { panels: { body: string; hot: HotTopicsResponse 
 // ---------------------------------------------------------------------------
 
 const NO_HOT: HotTopicsResponse = { meetings: [], topics: [], window_seconds: 0 };
-const NO_STATS: MeetingStats = { days: 30, meetings_held: 0, hours_of_meetings: 0, votes_taken: 0, motions_passed: 0, motions_failed: 0 };
 // Council meets about every other week, so a 7-day window left every other
 // briefing empty. Two weeks always holds the last regular meeting.
 const WINDOW_DAYS = 14;
@@ -811,14 +777,12 @@ export default async function Briefing() {
   // A front page of independent parts: one failing endpoint blanks its own
   // part, not the page. Only the meetings list is load-bearing enough to fall
   // through to the error boundary.
-  const [meetings, hotCouncil, hotPC, upcoming, changes, stats, projects] = await Promise.all([
+  const [meetings, hotCouncil, hotPC, upcoming, changes] = await Promise.all([
     api.meetings(new URLSearchParams({ limit: "8" })),
     api.hotTopics("city_council").catch(() => NO_HOT),
     api.hotTopics("planning_commission").catch(() => NO_HOT),
     api.upcoming().catch(() => [] as UpcomingEvent[]),
     api.changes(WINDOW_DAYS, 100).catch(() => NO_CHANGES),
-    api.stats(30).catch(() => NO_STATS),
-    api.developmentProjects(new URLSearchParams()).catch(() => []),
   ]);
   const today = localDay(new Date());
 
@@ -882,38 +846,14 @@ export default async function Briefing() {
     ...decisions.filter((d) => isConsent(d) && !absorbed.has(d)).map(voteRow),
   ].slice(0, 10);
 
-  const hearingMeetings = docket.filter((x) => x.hearings.length > 0).length;
-  // an older API answers without the flag: then the count is unknown, not zero
-  const hearingsKnown = docketDetails.some((d) => d?.topics.some((t) => "hearing" in t));
-  const analysed = projects.filter((p) => p.has_evaluation).length;
-  const figures: Figure[] = [
-    { value: String(stats.meetings_held), label: `meetings in ${stats.days} days`, href: "/meetings" },
-    { value: `${stats.hours_of_meetings.toFixed(1)} h`, label: "in session" },
-    {
-      value: String(stats.votes_taken),
-      label: stats.motions_failed ? `votes, ${stats.motions_failed} failed` : stats.votes_taken ? "votes, none failed" : "votes",
-    },
-    { value: String(moves.length), label: `status moves in ${changes.days} days`, href: `/topics?days=${changes.days}` },
-    ...(hearingsKnown
-      ? [
-          {
-            value: String(hearingMeetings),
-            label: hearingMeetings === 1 ? "meeting with a public hearing ahead" : "meetings with public hearings ahead",
-          },
-        ]
-      : []),
-    { value: String(analysed), label: "projects with an impact analysis", href: "/topics?official=true" },
-  ];
-
   const latest = meetings[0] ? formatDate(meetings[0].date) : "";
 
   return (
     <div className="mx-auto max-w-[1180px] px-4 pb-16 pt-6 sm:px-8">
       <Masthead latest={latest} />
-      <div className="mb-4">
+      <div className="mb-8">
         <LedeBlock lede={lede} />
       </div>
-      <Figures figures={figures} />
       <div className="flex flex-col gap-10">
         <Docket entries={docket} advisory={advisory} today={today} />
         <Moved rows={rows} fresh={fresh} days={changes.days} />
