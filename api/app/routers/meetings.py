@@ -14,6 +14,7 @@ from councilhound.db.models import (
 from councilhound.hot_topics import MIN_VARIANT_LEN
 
 from app.db import db_session
+from app.discussion import topic_context, transcript_discussion
 from app.links import clip_link
 
 router = APIRouter()
@@ -369,6 +370,11 @@ def get_meeting(meeting_id: int, session: Session = Depends(db_session)):
     if meeting is None:
         raise HTTPException(404, "meeting not found")
 
+    def link(seconds) -> str | None:
+        if seconds is None:
+            return None
+        return clip_link(meeting.granicus_view_id, meeting.granicus_clip_id, seconds)
+
     items = session.scalars(
         select(AgendaItem).where(AgendaItem.meeting_id == meeting.id).order_by(AgendaItem.id)
     ).all()
@@ -391,13 +397,16 @@ def get_meeting(meeting_id: int, session: Session = Depends(db_session)):
             "agenda_item_id": d.agenda_item_id,
         })
 
-    # the topics each agenda item touches: tracked updates first, then bare
+    # the topics each agenda item touches: tracked updates first (with the
+    # sentence the record filed for the topic at this item), then bare
     # mentions, so a reader can jump from the meeting to a project's history
     # (the topic -> meeting link has always existed; this is the reverse)
     entities_by_item: dict[int | None, list] = {}
+    linked_by_item: dict[int | None, set[int]] = {}
     seen_pairs: set[tuple[int | None, int]] = set()
-    for item_id, entity, status_after in session.execute(
-        select(EntityUpdate.agenda_item_id, Entity, EntityUpdate.status_after)
+    for item_id, entity, status_after, update_text in session.execute(
+        select(EntityUpdate.agenda_item_id, Entity, EntityUpdate.status_after,
+               EntityUpdate.update_text)
         .join(Entity, EntityUpdate.entity_id == Entity.id)
         .where(EntityUpdate.meeting_id == meeting.id,
                Entity.entity_type != "person")
@@ -406,12 +415,15 @@ def get_meeting(meeting_id: int, session: Session = Depends(db_session)):
         if (item_id, entity.id) in seen_pairs:
             continue
         seen_pairs.add((item_id, entity.id))
+        linked_by_item.setdefault(item_id, set()).add(entity.id)
         entities_by_item.setdefault(item_id, []).append({
+            "id": entity.id,
             "slug": entity.canonical_slug,
             "name": entity.name,
             "entity_type": entity.entity_type,
             "current_status": entity.current_status,
             "status_after": status_after,
+            "update_text": update_text,
         })
     for item_id, entity in session.execute(
         select(EntityMention.agenda_item_id, Entity)
@@ -424,13 +436,60 @@ def get_meeting(meeting_id: int, session: Session = Depends(db_session)):
         if (item_id, entity.id) in seen_pairs:
             continue
         seen_pairs.add((item_id, entity.id))
+        linked_by_item.setdefault(item_id, set()).add(entity.id)
         entities_by_item.setdefault(item_id, []).append({
+            "id": entity.id,
             "slug": entity.canonical_slug,
             "name": entity.name,
             "entity_type": entity.entity_type,
             "current_status": entity.current_status,
             "status_after": None,
+            "update_text": None,
         })
+
+    # what the wiki and profile already say about each topic, once per topic
+    # in agenda order, with the status this meeting set if any
+    context = topic_context(session, meeting, {eid for ids in linked_by_item.values() for eid in ids})
+    topics: list[dict] = []
+    topic_index: dict[int, int] = {}
+    for item in [*items, None]:
+        for row in entities_by_item.get(item.id if item else None, []):
+            ctx = context[row["id"]]
+            row["has_wiki"] = ctx["has_wiki"]
+            row["official_slug"] = ctx["official_slug"]
+            i = topic_index.get(row["id"])
+            if i is None:
+                topic_index[row["id"]] = len(topics)
+                topics.append({
+                    "slug": row["slug"],
+                    "name": row["name"],
+                    "entity_type": row["entity_type"],
+                    "current_status": row["current_status"],
+                    "status_after": row["status_after"],
+                    **ctx,
+                })
+            elif row["status_after"] and not topics[i]["status_after"]:
+                topics[i]["status_after"] = row["status_after"]
+    for rows in entities_by_item.values():
+        for row in rows:
+            row.pop("id")
+
+    # the transcript's own account: how long each chaptered item ran, which
+    # tracked topics it names beyond its filed links, and the topics named
+    # that the agenda never linked at all
+    discussion_by_item, named_unlinked, transcribed = transcript_discussion(
+        session, meeting, items, linked_by_item, link)
+    for row in named_unlinked:
+        row["has_wiki"] = False
+        row["official_slug"] = None
+    if named_unlinked:
+        by_slug = {e.canonical_slug: e.id for e in session.scalars(
+            select(Entity).where(Entity.canonical_slug.in_([r["slug"] for r in named_unlinked])))}
+        named_ctx = topic_context(session, meeting, set(by_slug.values()))
+        for row in named_unlinked:
+            ctx = named_ctx[by_slug[row["slug"]]]
+            row["has_wiki"] = ctx["has_wiki"]
+            row["official_slug"] = ctx["official_slug"]
 
     return {
         "id": meeting.id,
@@ -443,6 +502,7 @@ def get_meeting(meeting_id: int, session: Session = Depends(db_session)):
         "video_url": meeting.video_url,
         "agenda_url": meeting.agenda_url,
         "minutes_url": meeting.minutes_url,
+        "transcribed": transcribed,
         "agenda_items": [
             {
                 "id": it.id,
@@ -451,11 +511,12 @@ def get_meeting(meeting_id: int, session: Session = Depends(db_session)):
                 "description": it.description,
                 "outcome": it.outcome,
                 "start_seconds": it.start_seconds,
-                "watch_url": clip_link(meeting.granicus_view_id, meeting.granicus_clip_id,
-                                       it.start_seconds) if it.start_seconds is not None else None,
+                "watch_url": link(it.start_seconds),
                 "votes": votes_by_item.get(it.id, []),
                 "entities": entities_by_item.get(it.id, []),
                 "documents": docs_by_item.get(it.id, []),
+                # null when the item has no index point or the meeting no transcript
+                "discussion": discussion_by_item.get(it.id),
             }
             for it in items
         ],
@@ -463,6 +524,10 @@ def get_meeting(meeting_id: int, session: Session = Depends(db_session)):
         # matters raised outside any numbered item (member comments, staff
         # reports, public comment) — on the meeting, not on an item
         "other_discussion": entities_by_item.get(None, []),
+        # every topic the meeting touched, with what the wiki already knows
+        "topics": topics,
+        # tracked topics the transcript names that nothing on the agenda links
+        "named_in_discussion": named_unlinked,
     }
 
 

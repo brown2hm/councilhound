@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { cache } from "react";
+import HashScroll from "@/components/HashScroll";
 import Markdown from "@/components/Markdown";
 import WikiTrustBadges from "@/components/WikiTrust";
 import { api, formatDate } from "@/lib/api";
@@ -31,6 +32,7 @@ export default async function TopicWikiPage({
 
   return (
     <div className="mx-auto max-w-[880px] px-4 pb-16 pt-8 sm:px-8">
+      <HashScroll />
       <Link
         href={`/topics/${params.slug}`}
         className="text-sm font-semibold text-muted hover:text-ink"

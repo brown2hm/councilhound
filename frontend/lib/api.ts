@@ -49,6 +49,53 @@ export interface AgendaItemEntity {
   entity_type: string;
   current_status: string | null;
   status_after: string | null;
+  // what the record filed for this topic at this item; null for a bare mention
+  update_text: string | null;
+  has_wiki: boolean;
+  official_slug: string | null; // the city's project slug when it keeps a record (wiki lives under /development)
+}
+
+/** A tracked topic the transcript names inside an item's window, beyond the
+ * topics the item is filed under. */
+export interface NamedTopic {
+  slug: string;
+  name: string;
+  count: number; // transcript passages
+}
+
+/** The transcript's account of a chaptered agenda item. */
+export interface ItemDiscussion {
+  seconds: number;
+  exact: boolean; // false when unchaptered items sit inside this item's window
+  chunks: number;
+  named: NamedTopic[];
+}
+
+/** One topic the meeting touched, with what the wiki already knows. */
+export interface MeetingTopic {
+  slug: string;
+  name: string;
+  entity_type: string;
+  current_status: string | null;
+  status_after: string | null;
+  has_wiki: boolean;
+  official_slug: string | null;
+  lede: string | null; // overview lede, else the profile's lead
+  open_questions: string[];
+  history_anchor: string | null; // this meeting's heading in the wiki history page, when it has one
+}
+
+/** A tracked topic the transcript names that no agenda item links. */
+export interface NamedInDiscussion {
+  slug: string;
+  name: string;
+  entity_type: string;
+  current_status: string | null;
+  has_wiki: boolean;
+  official_slug: string | null;
+  count: number;
+  seconds: number;
+  first: { start_seconds: number; watch_url: string | null; excerpt: string };
 }
 
 export interface AgendaItemInfo {
@@ -62,6 +109,7 @@ export interface AgendaItemInfo {
   votes: VoteInfo[];
   entities: AgendaItemEntity[];
   documents: MeetingDocument[];
+  discussion: ItemDiscussion | null; // null without an index point or a transcript
 }
 
 export interface MeetingDetail extends Omit<MeetingSummary, "agenda_item_count" | "status"> {
@@ -72,6 +120,9 @@ export interface MeetingDetail extends Omit<MeetingSummary, "agenda_item_count" 
   agenda_items: AgendaItemInfo[];
   documents: MeetingDocument[];
   other_discussion: AgendaItemEntity[]; // raised outside any numbered item (comments, reports, public comment)
+  transcribed: boolean;
+  topics: MeetingTopic[];
+  named_in_discussion: NamedInDiscussion[];
 }
 
 /** The light official-record fields the directory needs for a project card. */

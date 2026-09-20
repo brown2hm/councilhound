@@ -1,4 +1,5 @@
 import Link from "next/link";
+import HashScroll from "@/components/HashScroll";
 import Markdown from "@/components/Markdown";
 import WikiTrustBadges from "@/components/WikiTrust";
 import { formatDate, type ImpactMetric, type ProjectWiki } from "@/lib/api";
@@ -102,6 +103,7 @@ export default async function DevelopmentWikiPage({
 
   return (
     <div className="max-w-[880px]">
+      <HashScroll />
       <p className="mb-6 text-[13px] text-muted">
         A maintained knowledge base built from council meetings and official
         records — updated as new meetings land.
