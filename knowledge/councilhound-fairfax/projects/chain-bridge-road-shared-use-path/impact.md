@@ -7,7 +7,6 @@ resource: https://councilhound.net/development/Chain-Bridge-Road-Shared-Use-Path
 generated:
   by: process:councilhound-okf
   at: '2026-07-27T00:00:00Z'
-timestamp: '2026-07-27'
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->

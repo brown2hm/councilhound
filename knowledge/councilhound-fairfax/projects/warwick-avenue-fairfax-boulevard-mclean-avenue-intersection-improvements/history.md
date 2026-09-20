@@ -7,7 +7,6 @@ resource: https://councilhound.net/development/Warwick-Ave-Fairfax-Blvd-McLean-A
 generated:
   by: process:councilhound-okf
   at: '2025-05-12T00:00:00Z'
-timestamp: '2025-05-12'
 stale_after: '2026-09-22T23:00:00Z'
 ---
 
