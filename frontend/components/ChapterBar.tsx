@@ -1,12 +1,13 @@
 import type { AgendaItemInfo } from "@/lib/api";
+import { chapterTints, timedItems } from "@/lib/chapters";
 
 /**
  * Visual table of contents for a meeting: one segment per agenda item with a
  * Granicus index-point timestamp, width proportional to how long the item
  * ran (until the next timestamp, or end of meeting). Segments deep-link to
  * the video moment. Needs the meeting duration and >= 2 timestamped items.
+ * The item rows below the bar carry the same colours as a left stripe.
  */
-const SEGMENT_TINTS = ["bg-teal", "bg-ochre", "bg-mint"];
 
 function fmtTime(s: number): string {
   const h = Math.floor(s / 3600);
@@ -21,11 +22,9 @@ export default function ChapterBar({
   items: AgendaItemInfo[];
   durationSeconds: number | null;
 }) {
-  if (!durationSeconds) return null;
-  const timed = items
-    .filter((it) => it.start_seconds !== null && it.start_seconds < durationSeconds)
-    .sort((a, b) => (a.start_seconds ?? 0) - (b.start_seconds ?? 0));
-  if (timed.length < 2) return null;
+  const timed = timedItems(items, durationSeconds);
+  if (!durationSeconds || timed.length === 0) return null;
+  const tints = chapterTints(items, durationSeconds);
 
   const segments = timed.map((it, i) => {
     const start = it.start_seconds ?? 0;
@@ -38,21 +37,21 @@ export default function ChapterBar({
     <div className="mb-9">
       <div className="mb-1.5 flex h-4 w-full gap-px overflow-hidden rounded-full">
         {lead > 0 && <div className="h-4 bg-strong" style={{ flexGrow: lead }} />}
-        {segments.map(({ item, start, seconds }, i) =>
+        {segments.map(({ item, start, seconds }) =>
           item.watch_url ? (
             <a
               key={item.id}
               href={item.watch_url}
               target="_blank"
               title={`${item.label} · ${item.title ?? ""} · ${fmtTime(seconds)} — watch from ${fmtTime(start)}`}
-              className={`h-4 ${SEGMENT_TINTS[i % SEGMENT_TINTS.length]} opacity-70 transition-opacity hover:opacity-100`}
+              className={`h-4 ${tints.get(item.id)} opacity-70 transition-opacity hover:opacity-100`}
               style={{ flexGrow: Math.max(seconds, durationSeconds / 100) }}
             />
           ) : (
             <div
               key={item.id}
               title={`${item.label} · ${item.title ?? ""} · ${fmtTime(seconds)}`}
-              className={`h-4 ${SEGMENT_TINTS[i % SEGMENT_TINTS.length]} opacity-70`}
+              className={`h-4 ${tints.get(item.id)} opacity-70`}
               style={{ flexGrow: Math.max(seconds, durationSeconds / 100) }}
             />
           ),
