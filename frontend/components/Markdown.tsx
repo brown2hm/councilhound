@@ -1,5 +1,17 @@
+import type { ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { slugify } from "@/lib/wiki";
+
+/** The plain text of a heading's children, for its anchor id. */
+function textOf(children: ReactNode): string {
+  if (typeof children === "string" || typeof children === "number") return String(children);
+  if (Array.isArray(children)) return children.map(textOf).join("");
+  if (children && typeof children === "object" && "props" in children) {
+    return textOf((children as { props: { children?: ReactNode } }).props.children);
+  }
+  return "";
+}
 
 /**
  * Renders LLM-generated markdown (the /ask answer) with design-system
@@ -40,8 +52,17 @@ export default function Markdown({ children }: { children: string }) {
         h1: ({ node, ...props }) => (
           <h3 className="mb-2 mt-5 text-[16px] font-semibold first:mt-0" {...props} />
         ),
-        h2: ({ node, ...props }) => (
-          <h3 className="mb-2 mt-5 text-[16px] font-semibold first:mt-0" {...props} />
+        // section headings carry an anchor: the wiki history page's dated
+        // entries ("## 2026-07-14 — City Council Meeting") are what a meeting
+        // page links into
+        h2: ({ node, children, ...props }) => (
+          <h3
+            id={slugify(textOf(children)) || undefined}
+            className="mb-2 mt-5 scroll-mt-24 text-[16px] font-semibold first:mt-0"
+            {...props}
+          >
+            {children}
+          </h3>
         ),
         h3: ({ node, ...props }) => (
           <h3 className="mb-2 mt-4 text-[15px] font-semibold first:mt-0" {...props} />
