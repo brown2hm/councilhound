@@ -7,7 +7,6 @@ resource: https://councilhound.net/development/University-Drive-Bicycle-Faciliti
 generated:
   by: process:councilhound-okf
   at: '2026-08-04T00:00:00Z'
-timestamp: '2026-08-04'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->

@@ -6,7 +6,6 @@ resource: https://councilhound.net/topics/gatewood-plaza
 generated:
   by: process:councilhound-okf
   at: '2025-02-10T00:00:00Z'
-timestamp: '2025-02-10'
 stale_after: '2026-09-22T23:00:00Z'
 ---
 

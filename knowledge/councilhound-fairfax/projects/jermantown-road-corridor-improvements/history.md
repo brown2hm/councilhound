@@ -7,7 +7,6 @@ resource: https://councilhound.net/development/Jermantown-Road-Corridor-Improvem
 generated:
   by: process:councilhound-okf
   at: '2025-12-09T00:00:00Z'
-timestamp: '2025-12-09'
 stale_after: '2026-09-22T23:00:00Z'
 ---
 
