@@ -11,7 +11,7 @@ generated:
   by: process:councilhound-okf
   at: '2025-06-23T00:00:00Z'
 timestamp: '2025-06-23'
-stale_after: '2026-09-22T23:00:00Z'
+stale_after: '2026-09-28T23:00:00Z'
 project_status: in_progress
 source: meetings
 ---

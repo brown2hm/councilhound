@@ -12,7 +12,7 @@ generated:
   by: councilhound-curator/claude-sonnet-4-6
   at: '2026-07-28T00:00:00Z'
 timestamp: '2026-07-28'
-stale_after: '2026-09-22T23:00:00Z'
+stale_after: '2026-09-28T23:00:00Z'
 project_status: proposed
 source: official
 address: 3541 Chain Bridge Road, Fairfax, VA 22030

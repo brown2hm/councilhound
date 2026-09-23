@@ -6,9 +6,9 @@ description: Recorded member positions and unresolved questions on City of Fairf
 resource: https://councilhound.net/topics/city-of-fairfax-2035-comprehensive-plan
 generated:
   by: councilhound-curator/claude-sonnet-4-6
-  at: '2026-07-27T00:00:00Z'
-timestamp: '2026-07-27'
-stale_after: '2026-09-22T23:00:00Z'
+  at: '2026-09-22T00:00:00Z'
+timestamp: '2026-09-22'
+stale_after: '2026-09-28T23:00:00Z'
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
@@ -19,6 +19,7 @@ stale_after: '2026-09-22T23:00:00Z'
 - Confirmation of outcomes from the July 13, 2026 Planning Commission work session presentation on Implementation Guide updates (no minutes or action report available)
 - Whether City Council will separately take up and adopt the Fairfax Circle Small Area Plan (the Planning Commission's July 8, 2024 recommendation to Council remains pending confirmation of Council action in the record)
 - Outcome of the July 27, 2026 Planning Commission public hearing on the Highlands at Mantua Comprehensive Plan Amendment request (no minutes or actions report available)
+- Outcome of the September 22, 2026 City Council public hearing and action on the RJL Associates, Inc. 9495 Silver King Court Comprehensive Plan Amendment and associated applications (no minutes or actions report available)
 
 ## Member commentary
 
@@ -26,4 +27,6 @@ stale_after: '2026-09-22T23:00:00Z'
 - **Staley (Council Member)** — Made the motion at the October 8, 2024 City Council meeting to adopt Resolution R-24-30 approving and adopting the City of Fairfax 2035 Comprehensive Plan dated September 27, 2024, and voted yes.
 - **Lim (Council Member)** — Seconded the October 8, 2024 motion to adopt Resolution R-24-30 and voted yes on the Comprehensive Plan adoption; abstained on a separate consent item (7C) at the same meeting.
 - **Ross (Council Member)** — Was recognized for comments during the October 8, 2024 Council discussion on the Comprehensive Plan adoption motion, though the specific substance of those comments is not captured in the available transcript excerpt; voted yes on adoption.
+- **Hardy Chandler (Council Member)** — Made the motion at the September 22, 2026 City Council meeting on the consent agenda item immediately preceding the 9495 Silver King Court public hearing (2026-09-22 City Council).
+- **Peterson (Council Member)** — Seconded the motion made by Council Member Hardy Chandler at the September 22, 2026 City Council meeting (2026-09-22 City Council).
 - **Napty, Paul (Planning Division Chief — staff)** — Served as the primary staff presenter throughout the five-year review process: provided the staff presentation at the September 10, 2024 Council work session, presented the staff report at the September 23, 2024 Planning Commission public hearing describing the review timeline beginning in summer 2023, presented at the October 8, 2024 Council public hearing, and presented the staff report on the potential mixed-use development outside activity centers review at the March 24, 2025 Planning Commission work session.

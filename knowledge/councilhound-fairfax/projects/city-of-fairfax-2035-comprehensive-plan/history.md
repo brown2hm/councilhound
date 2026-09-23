@@ -2,13 +2,13 @@
 type: project-history
 title: City of Fairfax 2035 Comprehensive Plan — meeting history
 description: Dated record of every meeting action on City of Fairfax 2035 Comprehensive Plan,
-  through 2026-07-27.
+  through 2026-09-22.
 resource: https://councilhound.net/topics/city-of-fairfax-2035-comprehensive-plan
 generated:
   by: process:councilhound-okf
-  at: '2026-07-27T00:00:00Z'
-timestamp: '2026-07-27'
-stale_after: '2026-09-22T23:00:00Z'
+  at: '2026-09-22T00:00:00Z'
+timestamp: '2026-09-22'
+stale_after: '2026-09-28T23:00:00Z'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
@@ -136,3 +136,9 @@ stale_after: '2026-09-22T23:00:00Z'
 **Agenda item 6a**: Highlands at Mantua – Public Hearing ([watch the moment](https://fairfax.granicus.com/MediaPlayer.php?view_id=13&clip_id=4622&starttime=190&entrytime=190))
 - Outcome: Public hearing scheduled per the agenda; no minutes or actions report available.
 - [6a] The City of Fairfax 2035 Comprehensive Plan is implicated by the requested Comprehensive Plan Amendment for the Highlands at Mantua project.
+
+## 2026-09-22 — City Council Meeting
+
+**Agenda item 8a**: Public Hearing: RJL Associates, Inc. – 9495 Silver King Court Redevelopment (GDP Amendment, Comprehensive Plan Amendment, Rezoning, and Master Development Plan)
+- Outcome: Scheduled per agenda. A public hearing and Council action were scheduled on a request from RJL Associates, Inc. for a General Development Plan amendment, Comprehensive Plan Amendment, Zoning Map Amendment (Rezoning from PD-C to PD-R with ACOD retained), and approval of a Master Development Plan to replace approximately 21,566 sq ft of office space with 14 front-loaded townhomes on 2.12 acres at 9495 Silver King Court. No minutes or actions report available.
+- [8a] The City of Fairfax 2035 Comprehensive Plan was implicated by the requested Comprehensive Plan Amendment from Commercial Corridor to Townhouse/Single-Family Attached Neighborhood Place Type for 9495 Silver King Court.
