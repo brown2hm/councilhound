@@ -212,6 +212,9 @@ class Roster(BaseModel):
     parser: str = "static"                 # id in councilhound.seed.ROSTER_PARSERS
     static: list[RosterMember] = Field(default_factory=list)
     roles: dict[str, RosterRole] = Field(default_factory=dict)
+    # the noun in a member's district alias ("Sully District Supervisor",
+    # "Braddock District Commissioner"); defaults to the role's first alias
+    district_title: str | None = None
 
 
 class BodyConfig(BaseModel):
@@ -312,6 +315,10 @@ class JurisdictionConfig(BaseModel):
         if len(colors) != len(set(colors)):
             raise ValueError(f"body colors must be unique: {colors}")
         titles: dict[str, str] = {}
+        # a title alias is how the members roster tells which body a person
+        # sits on ("Chair McKay" -> Board of Supervisors), so the same alias
+        # word on two bodies would file one body's officer under the other
+        alias_body: dict[str, str] = {}
         for b in self.bodies:
             if b.roster:
                 for role_key, role in b.roster.roles.items():
@@ -320,6 +327,12 @@ class JurisdictionConfig(BaseModel):
                             f"roster title {role.title!r} is used by both "
                             f"{titles[role.title]} and {b.key}; titles must be unique")
                     titles[role.title] = b.key
+                    for alias in role.aliases:
+                        other = alias_body.setdefault(alias.lower(), b.key)
+                        if other != b.key:
+                            raise ValueError(
+                                f"roster alias {alias!r} is used by both {other} and {b.key}; "
+                                "qualify it (e.g. 'Commission Chair')")
                     for other in role.also:
                         if other not in b.roster.roles:
                             raise ValueError(

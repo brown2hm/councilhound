@@ -259,6 +259,16 @@ def parse_roster(raw_text: str, body: Body) -> dict[str, list[str]]:
     return {k: v for k, v in parsed.items() if v}
 
 
+def district_alias(district: str | None, noun: str | None) -> str | None:
+    """"Sully District Supervisor" for a district seat — the record says
+    "Supervisor Smith, Sully District" and "the Sully District Supervisor"
+    interchangeably. None for at-large seats: several members share one,
+    so "At-Large Commissioner" names nobody in particular."""
+    if not district or not noun or district.strip().lower().startswith("at-large"):
+        return None
+    return f"{district.strip()} District {noun}"
+
+
 def seed_people(session: Session) -> dict:
     """Scan every agenda's header and seed person entities + aliases."""
     docs = session.execute(
@@ -277,12 +287,9 @@ def seed_people(session: Session) -> dict:
         for role_key, names in parse_roster(doc.raw_text, body).items():
             titles = body.seed_titles(role_key)
             for name in names:
-                extra = ()
-                if districts.get(name):
-                    # the record says "Supervisor Smith, Sully District" and
-                    # "the Sully District Supervisor" interchangeably
-                    extra = (f"{districts[name]} District {titles[0]}",) if titles else ()
-                _seed_person(session, name, titles, meeting.id, extra)
+                alias = district_alias(districts.get(name), body.roster.district_title
+                                       or (titles[0] if titles else None))
+                _seed_person(session, name, titles, meeting.id, (alias,) if alias else ())
                 seen_names.add(name)
     session.commit()
 
