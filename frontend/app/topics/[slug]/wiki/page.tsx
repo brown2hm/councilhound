@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getJurisdiction } from "@/lib/jurisdiction";
 import { cache } from "react";
 import HashScroll from "@/components/HashScroll";
 import Markdown from "@/components/Markdown";
@@ -16,10 +17,10 @@ export const dynamic = "force-dynamic";
 const getWiki = cache((slug: string) => api.entityWiki(slug));
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const wiki = await requireRecord(getWiki(params.slug));
+  const [wiki, j] = await Promise.all([requireRecord(getWiki(params.slug)), getJurisdiction()]);
   return {
     title: `${wiki.name} — wiki`,
-    description: `A maintained knowledge base on ${wiki.name}: overview, meeting history, and member positions, built from City of Fairfax meeting records.`,
+    description: `A maintained knowledge base on ${wiki.name}: overview, meeting history, and member positions, built from ${j.identity.short_name} meeting records.`,
   };
 }
 
@@ -44,7 +45,7 @@ export default async function TopicWikiPage({
       </div>
       <h1 className="mb-2 text-[32px] font-medium tracking-[-0.5px]">{wiki.name}</h1>
       <p className="mb-6 text-[13px] text-muted">
-        A maintained knowledge base built from council and commission meetings —
+        A maintained knowledge base built from public meetings —
         updated as new meetings land.
         {wiki.pushed_at && ` Last synced ${formatDate(wiki.pushed_at.slice(0, 10))}.`}
       </p>

@@ -7,14 +7,14 @@ import { useSearchParams } from "next/navigation";
 import FollowTopic from "@/components/FollowTopic";
 import Markdown from "@/components/Markdown";
 import StatusBadge from "@/components/StatusBadge";
+import { useJurisdiction } from "@/components/JurisdictionProvider";
 import { formatDate, type AskResponse, type Citation } from "@/lib/api";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
-const SUGGESTIONS = [
+const FALLBACK_SUGGESTIONS = [
   "What has the council decided about affordable housing this year?",
   "What did the council decide about accessory dwelling units?",
-  "What's happening with the Fairfax Circle Small Area Plan?",
 ];
 
 function fmtTime(s: number) {
@@ -73,6 +73,8 @@ function SourceRow({ c }: { c: Citation }) {
 }
 
 function AskInner() {
+  const { display } = useJurisdiction();
+  const SUGGESTIONS = display.ask_suggestions.length ? display.ask_suggestions : FALLBACK_SUGGESTIONS;
   const searchParams = useSearchParams();
   const [question, setQuestion] = useState(searchParams.get("q") ?? "");
   const [loading, setLoading] = useState(false);
@@ -133,7 +135,7 @@ function AskInner() {
         <input
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
-          placeholder="What has the council decided about affordable housing this year?"
+          placeholder={display.ask_placeholder || "What has the council decided about affordable housing this year?"}
           aria-label="Your question"
           className="min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted-soft"
         />

@@ -1,4 +1,5 @@
-import { api, BODY_LABELS, formatDate } from "@/lib/api";
+import { api, formatDate } from "@/lib/api";
+import { bodyLabel, getJurisdiction } from "@/lib/jurisdiction";
 
 function ago(iso: string): string {
   const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
@@ -11,7 +12,7 @@ function ago(iso: string): string {
 /** The record's own state, in the footer of every page. A civic archive that
  * can't say when it last looked can't be told apart from one that's broken. */
 export default async function RecordFreshness() {
-  const status = await api.status().catch(() => null);
+  const [status] = await Promise.all([api.status().catch(() => null), getJurisdiction()]);
   if (!status) return null;
 
   const { last_run: run, latest_meeting: latest, counts } = status;
@@ -26,7 +27,7 @@ export default async function RecordFreshness() {
       {latest ? (
         <>
           Record current through the {formatDate(latest.date)}{" "}
-          {BODY_LABELS[latest.body] ?? latest.body} meeting
+          {bodyLabel(latest.body)} meeting
         </>
       ) : (
         <>No meetings ingested yet</>

@@ -4,7 +4,8 @@ import FollowButton from "@/components/FollowButton";
 import MemberLedger from "@/components/MemberLedger";
 import { AlignmentList, CategoryBars, MattersList, MeetingStrip, NoVotesByMember, SplitBar, SplitPatterns } from "@/components/MemberRecord";
 import StatusBadge from "@/components/StatusBadge";
-import { api, BODY_SHORT, bodyLabel, formatDate, type MemberDetail, type MemberVote } from "@/lib/api";
+import { api, formatDate, type MemberDetail, type MemberVote } from "@/lib/api";
+import { bodyLabel, bodyShort, getJurisdiction } from "@/lib/jurisdiction";
 import { requireRecord } from "@/lib/not-found";
 import { resultLine, subjectOf } from "@/lib/subject";
 
@@ -13,10 +14,10 @@ export const dynamic = "force-dynamic";
 const getMember = cache((slug: string) => api.member(slug));
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const member = await requireRecord(getMember(params.slug));
+  const [member, j] = await Promise.all([requireRecord(getMember(params.slug)), getJurisdiction()]);
   return {
     title: member.name,
-    description: `${member.name}'s record in City of Fairfax meetings: ${member.record.votes} votes, where the no votes fall, who they vote with, and positions recorded in the minutes.`,
+    description: `${member.name}'s record in ${j.identity.short_name} meetings: ${member.record.votes} votes, where the no votes fall, who they vote with, and positions recorded in the minutes.`,
   };
 }
 
@@ -34,7 +35,7 @@ function lede(m: MemberDetail): string {
   const first = firstName(m.name);
   const isMayor = m.roles.includes("Mayor");
   if (r.votes === 0) return `No recorded votes yet${isMayor ? "; the mayor votes only to break a tie" : ""}.`;
-  const body = m.body ? BODY_SHORT[m.body] ?? "" : "";
+  const body = m.body ? bodyShort(m.body) : "";
   const parts = [
     `${r.votes} recorded ${r.votes === 1 ? "vote" : "votes"} in ${r.meetings} ${body} ${r.meetings === 1 ? "meeting" : "meetings"} since ${r.first_vote ? monthYear(r.first_vote) : ""}${isMayor ? ", cast only to break ties" : ""}.`,
   ];
@@ -92,7 +93,7 @@ function NoVotesByMatter({ member }: { member: MemberDetail }) {
         The {nos.length} no {nos.length === 1 ? "vote" : "votes"}
       </h2>
       <p className="mb-2 mt-1 text-[13px] text-muted">
-        Grouped by what was before the {member.body ? BODY_SHORT[member.body] : "body"}. The tally is the whole body&apos;s; &ldquo;with&rdquo; names who voted no alongside{" "}
+        Grouped by what was before the {member.body ? bodyShort(member.body) : "body"}. The tally is the whole body&apos;s; &ldquo;with&rdquo; names who voted no alongside{" "}
         {firstName(member.name)}.
       </p>
       {Array.from(groups.entries()).map(([name, g]) => (
@@ -142,6 +143,7 @@ function Stat({ value, label }: { value: string | number; label: string }) {
 }
 
 export default async function MemberPage({ params }: { params: { slug: string } }) {
+  await getJurisdiction();
   const member = await requireRecord(getMember(params.slug));
   const r = member.record;
   const first = firstName(member.name);
@@ -295,7 +297,7 @@ export default async function MemberPage({ params }: { params: { slug: string } 
 
           {r.comparisons && votingColleagues.length > 0 && (
             <div>
-              <div className="mb-1 text-xs font-semibold uppercase tracking-[1.5px] text-muted">No votes, current {member.body ? BODY_SHORT[member.body] : "members"}</div>
+              <div className="mb-1 text-xs font-semibold uppercase tracking-[1.5px] text-muted">No votes, current {member.body ? bodyShort(member.body) : "members"}</div>
               <p className="mb-2.5 text-[12px] text-muted">Members who joined later have fewer votes on record.</p>
               <NoVotesByMember colleagues={member.colleagues} self={{ slug: member.slug, name: member.name, no_votes: member.vote_stats.no ?? 0 }} />
             </div>
@@ -315,7 +317,7 @@ export default async function MemberPage({ params }: { params: { slug: string } 
           {r.comparisons && member.splits.length > 0 && (
             <div>
               <div className="mb-1 flex items-baseline justify-between">
-                <span className="text-xs font-semibold uppercase tracking-[1.5px] text-muted">How the {member.body ? BODY_SHORT[member.body] : "body"} splits</span>
+                <span className="text-xs font-semibold uppercase tracking-[1.5px] text-muted">How the {member.body ? bodyShort(member.body) : "body"} splits</span>
                 <span className="text-[11px] text-muted">
                   <span aria-hidden className="mr-1 inline-block h-2 w-2 rounded-full bg-teal" />
                   yes

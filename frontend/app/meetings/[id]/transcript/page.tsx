@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getJurisdiction } from "@/lib/jurisdiction";
 import { cache } from "react";
 import BodyTag from "@/components/BodyTag";
 import TranscriptReader from "@/components/TranscriptReader";
@@ -8,10 +9,10 @@ import { requireRecord } from "@/lib/not-found";
 const getTranscript = cache((id: string) => api.transcript(id));
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
-  const t = await requireRecord(getTranscript(params.id));
+  const [t, j] = await Promise.all([requireRecord(getTranscript(params.id)), getJurisdiction()]);
   return {
     title: `Transcript · ${t.title}`,
-    description: `The full timestamped transcript of the ${formatDate(t.date)} ${t.title}, with every moment linked to the city's video.`,
+    description: `The full timestamped transcript of the ${formatDate(t.date)} ${t.title}, with every moment linked to the ${j.identity.noun}'s video.`,
   };
 }
 

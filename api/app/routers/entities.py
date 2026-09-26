@@ -18,7 +18,10 @@ from councilhound.db.models import (
 from councilhound.hot_topics import MIN_VARIANT_LEN
 from councilhound.hot_topics import entity_discussion_series, hot_topics
 from councilhound.changes import recent_changes as compute_recent_changes, status_words
+from councilhound.config import JURISDICTION
 from councilhound.notify import SITE_BASE_URL
+
+_ID = JURISDICTION.identity
 
 from app.db import db_session
 from app.links import clip_link
@@ -138,16 +141,21 @@ def list_entities(
                CityProject,
                func.coalesce(CityProject.lat, geo.c.lat).label("lat"),
                func.coalesce(CityProject.lng, geo.c.lng).label("lng"))
-        .join(uc, Entity.id == uc.c.entity_id)
+        # official records are listed even before any meeting mentions them
+        # (a new jurisdiction's cases have no history yet), so the activity
+        # rollup is an outer join for that view; the meeting-derived
+        # directory keeps its inner join (an entity IS its updates there)
+        .join(uc, Entity.id == uc.c.entity_id, isouter=official is True)
         .outerjoin(CityProject, CityProject.entity_id == Entity.id)
         .outerjoin(geo, geo.c.entity_id == Entity.id)
     )
+    n_updates = func.coalesce(uc.c.n, 0)
     if sort == "active":
-        query = query.order_by(uc.c.n.desc(), uc.c.last_date.desc(), Entity.name)
+        query = query.order_by(n_updates.desc(), uc.c.last_date.desc().nulls_last(), Entity.name)
     elif sort == "name":
         query = query.order_by(Entity.name)
     else:
-        query = query.order_by(uc.c.last_date.desc(), uc.c.n.desc(), Entity.name)
+        query = query.order_by(uc.c.last_date.desc().nulls_last(), n_updates.desc(), Entity.name)
     if entity_type:
         query = query.where(Entity.entity_type == entity_type)
     if exclude_type:
@@ -162,7 +170,10 @@ def list_entities(
     if days:
         query = query.where(
             uc.c.last_date >= datetime.date.today() - datetime.timedelta(days=days))
-    if min_updates > 1:
+    if min_updates > 1 and official is not True:
+        # an official record is a record in its own right: the directory
+        # lists it whether or not a meeting has mentioned it yet (a new
+        # jurisdiction's cases have no meeting history at all)
         query = query.where(uc.c.n >= min_updates)
     if official is True:
         query = query.where(CityProject.id.isnot(None))
@@ -184,7 +195,7 @@ def list_entities(
             "name": e.name,
             "entity_type": e.entity_type,
             "current_status": e.current_status,
-            "update_count": n,
+            "update_count": n or 0,
             "last_seen": last.isoformat() if last else None,
             "first_seen": first.isoformat() if first else None,
             "bodies": sorted(b for b in (bodies or []) if b),
@@ -314,7 +325,7 @@ def recent_changes_feed(session: Session = Depends(db_session)):
     lines = [
         '<?xml version="1.0" encoding="utf-8"?>',
         '<feed xmlns="http://www.w3.org/2005/Atom">',
-        "<title>CouncilHound — what changed in City of Fairfax council business</title>",
+        f"<title>CouncilHound — what changed in {xml_escape(_ID.short_name)} {xml_escape(_ID.record_phrase)}</title>",
         f'<link href="{xml_escape(SITE_BASE_URL)}/topics?view=changes"/>',
         f'<link rel="self" href="{xml_escape(SITE_BASE_URL)}/entities/changes.atom"/>',
         f"<id>{xml_escape(SITE_BASE_URL)}/entities/changes.atom</id>",
@@ -333,7 +344,7 @@ def recent_changes_feed(session: Session = Depends(db_session)):
             "<entry>",
             f"<title>{xml_escape(title)}</title>",
             f'<link href="{xml_escape(link)}"/>',
-            f"<id>tag:councilhound.net,2026:change/{c['id']}</id>",
+            f"<id>tag:{JURISDICTION.site.uid_domain},2026:change/{c['id']}</id>",
             f"<updated>{c['date']}T00:00:00Z</updated>",
             f"<summary>{xml_escape(summary)}</summary>",
             "</entry>",

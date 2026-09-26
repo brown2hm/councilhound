@@ -13,6 +13,9 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from councilhound.bodies import BODY_KEYS
+from councilhound.config import JURISDICTION
+
+_ACTIVITY = JURISDICTION.identity.activity_noun
 from councilhound.db.models import Entity, EntityAlias, EntityUpdate, TopicSubscription, Vote
 from councilhound.mail import send_email
 from councilhound.notify import API_BASE_URL, SITE_BASE_URL, describe
@@ -128,13 +131,13 @@ def subscribe(req: SubscribeRequest, request: Request,
         email,
         f"Confirm: follow {name} on CouncilHound",
         f"You (or someone with your address) asked to follow {name} "
-        f"on CouncilHound. Confirm to get an email when the council record "
+        f"on CouncilHound. Confirm to get an email when the {_ACTIVITY} record "
         f"for {what} changes:\n\n{confirm}\n\nIf this wasn't you, "
         f"ignore this email and nothing will be sent.",
         f'<p>You (or someone with your address) asked to follow '
         f'<strong>{name}</strong> on CouncilHound.</p>'
         f'<p><a href="{confirm}">Confirm to follow {what}</a> and get an '
-        f'email when its council record changes.</p>'
+        f'email when its {_ACTIVITY} record changes.</p>'
         f"<p style='font-size:12px;color:#666'>If this wasn't you, ignore "
         f"this email and nothing will be sent.</p>")
     return {"status": "confirmation-sent" if sent else "email-unavailable"}

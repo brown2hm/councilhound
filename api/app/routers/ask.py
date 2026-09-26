@@ -28,14 +28,18 @@ from councilhound.embeddings.embed import embed_query
 from app.db import db_session
 from app.links import clip_link
 from app.ratelimit import check_ask_rate
+from councilhound.bodies import REGISTRY
+from councilhound.config import JURISDICTION
 
 router = APIRouter()
 
 ASK_MODEL = os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-6")
 TOP_K = 8
 
-ANSWER_SYSTEM = """\
-You answer questions about city council and planning commission activity \
+_BODY_NAMES = ", ".join(b.label for b in REGISTRY.bodies.values() if b.hot) \
+    or ", ".join(b.label for b in REGISTRY.bodies.values()) or "council and commission"
+ANSWER_SYSTEM = f"""\
+You answer questions about {_BODY_NAMES} activity in {JURISDICTION.identity.short_name} \
 using ONLY the numbered sources provided. Rules:
 - Every factual claim must cite its source(s) inline as [n].
 - If the sources don't contain the answer, say so plainly — never fill gaps \

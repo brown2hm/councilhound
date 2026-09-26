@@ -335,3 +335,42 @@ def test_structure_pending_skips_meetings_without_agenda_text(db_session, monkey
     llm_structure.structure_pending(s)
     assert structured == ["4364"]
     assert no_agenda.granicus_clip_id not in structured
+
+
+def test_call_claude_refuses_truncated_output(monkeypatch):
+    """A tool call cut off by max_tokens parses to a hollow dict (summary
+    only); the call must fail rather than store it as the extraction."""
+    import types
+    from councilhound.extraction import llm_structure as ls
+
+    class _Stream:
+        def __init__(self, stop_reason):
+            self.stop_reason = stop_reason
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def get_final_message(self):
+            block = types.SimpleNamespace(type="tool_use", input={"summary": "cut off"})
+            return types.SimpleNamespace(stop_reason=self.stop_reason, content=[block])
+
+    calls = {}
+
+    class _Messages:
+        def stream(self, **kw):
+            calls.update(kw)
+            return _Stream(calls.pop("_stop", "max_tokens"))
+
+    class _Client:
+        def __init__(self, api_key=None):
+            self.messages = _Messages()
+
+    monkeypatch.setattr("anthropic.Anthropic", _Client)
+    import pytest
+    with pytest.raises(ValueError, match="truncated"):
+        ls._call_claude.__wrapped__("prompt")
+    assert calls["max_tokens"] == ls.MAX_OUTPUT_TOKENS
+    assert calls["tool_choice"] == {"type": "tool", "name": "record_meeting_extraction"}

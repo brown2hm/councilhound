@@ -3,6 +3,7 @@
 // (NEXT_PUBLIC_API_URL).
 
 import { unstable_cache } from "next/cache";
+import type { Jurisdiction } from "@/lib/jurisdiction";
 
 export const API_URL = process.env.API_URL ?? "http://localhost:8000";
 export const PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -859,24 +860,8 @@ export const api = {
     }),
   member: (slug: string) => get<MemberDetail>(`/members/${encodeURIComponent(slug)}`),
   status: () => get<RecordStatus>("/status/"),
+  jurisdiction: () => get<Jurisdiction>("/jurisdiction/"),
 };
-
-/** The bodies the tracker follows, in display order. Mirrors
- * ingestion/src/councilhound/bodies.py: `key` is the API/URL value, `label`
- * the name, `short` the noun for "Follow ... meetings". */
-export const BODIES: { key: string; label: string; short: string }[] = [
-  { key: "city_council", label: "City Council", short: "council" },
-  { key: "planning_commission", label: "Planning Commission", short: "commission" },
-  { key: "school_board", label: "School Board", short: "school board" },
-  { key: "prab", label: "Parks and Recreation Advisory Board", short: "parks board" },
-  { key: "hhcab", label: "Housing and Healthy Communities Advisory Board", short: "housing board" },
-];
-
-export const BODY_LABELS: Record<string, string> = Object.fromEntries(BODIES.map((b) => [b.key, b.label]));
-export const BODY_SHORT: Record<string, string> = Object.fromEntries(BODIES.map((b) => [b.key, b.short]));
-
-/** Label for a body key; unknown or missing keys read as the key itself. */
-export const bodyLabel = (key: string | null | undefined): string => (key ? BODY_LABELS[key] ?? key : "");
 
 export function formatDate(iso: string): string {
   return new Date(iso + "T00:00:00").toLocaleDateString("en-US", {

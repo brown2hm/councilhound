@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from councilhound.config import JURISDICTION
 from councilhound.db.models import (
     AgendaItem, CityProject, Document, Entity, EntityAlias, EntityMention,
     EntityUpdate, Meeting, ProjectEvaluation, TranscriptChunk, UpcomingMeeting, Vote,
@@ -140,30 +141,33 @@ def _ics_escape(text: str) -> str:
                 .replace(",", "\\,").replace("\n", "\\n"))
 
 
-# Static VTIMEZONE for the city's zone so TZID references are self-contained.
-_VTIMEZONE = """BEGIN:VTIMEZONE
-TZID:America/New_York
-BEGIN:DAYLIGHT
-TZOFFSETFROM:-0500
-TZOFFSETTO:-0400
-TZNAME:EDT
-DTSTART:19700308T020000
-RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU
-END:DAYLIGHT
-BEGIN:STANDARD
-TZOFFSETFROM:-0400
-TZOFFSETTO:-0500
-TZNAME:EST
-DTSTART:19701101T020000
-RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU
-END:STANDARD
-END:VTIMEZONE"""
+def _vtimezone(tzid: str, std: str, dst: str, std_off: str, dst_off: str) -> str:
+    """A static US VTIMEZONE block (post-2007 DST rules) so TZID references
+    in the feed are self-contained."""
+    return "\n".join([
+        "BEGIN:VTIMEZONE", f"TZID:{tzid}",
+        "BEGIN:DAYLIGHT", f"TZOFFSETFROM:{std_off}", f"TZOFFSETTO:{dst_off}", f"TZNAME:{dst}",
+        "DTSTART:19700308T020000", "RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU", "END:DAYLIGHT",
+        "BEGIN:STANDARD", f"TZOFFSETFROM:{dst_off}", f"TZOFFSETTO:{std_off}", f"TZNAME:{std}",
+        "DTSTART:19701101T020000", "RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU", "END:STANDARD",
+        "END:VTIMEZONE",
+    ])
+
+
+_VTIMEZONES = {
+    "America/New_York": _vtimezone("America/New_York", "EST", "EDT", "-0500", "-0400"),
+    "America/Chicago": _vtimezone("America/Chicago", "CST", "CDT", "-0600", "-0500"),
+    "America/Denver": _vtimezone("America/Denver", "MST", "MDT", "-0700", "-0600"),
+    "America/Los_Angeles": _vtimezone("America/Los_Angeles", "PST", "PDT", "-0800", "-0700"),
+}
+_TZID = JURISDICTION.identity.timezone
+_VTIMEZONE = _VTIMEZONES.get(_TZID) or _VTIMEZONES["America/New_York"]
 
 
 @router.get("/upcoming.ics")
 def upcoming_calendar(session: Session = Depends(db_session)):
     """Upcoming meetings as an iCalendar feed — subscribe from any calendar
-    app to keep the city's meeting schedule on your own calendar."""
+    app to keep the jurisdiction's meeting schedule on your own calendar."""
     from fastapi.responses import Response
 
     rows = session.scalars(
@@ -174,8 +178,8 @@ def upcoming_calendar(session: Session = Depends(db_session)):
     lines = [
         "BEGIN:VCALENDAR",
         "VERSION:2.0",
-        "PRODID:-//CouncilHound//City of Fairfax meetings//EN",
-        "X-WR-CALNAME:City of Fairfax meetings (CouncilHound)",
+        f"PRODID:-//CouncilHound//{_ics_escape(JURISDICTION.identity.short_name)} meetings//EN",
+        f"X-WR-CALNAME:{_ics_escape(JURISDICTION.identity.short_name)} meetings (CouncilHound)",
         "REFRESH-INTERVAL;VALUE=DURATION:PT12H",
         _VTIMEZONE,
     ]
@@ -184,10 +188,10 @@ def upcoming_calendar(session: Session = Depends(db_session)):
         end = (u.starts_at + datetime.timedelta(hours=2)).strftime("%Y%m%dT%H%M%S")
         lines += [
             "BEGIN:VEVENT",
-            f"UID:{u.granicus_event_id}@councilhound.net",
+            f"UID:{u.granicus_event_id}@{JURISDICTION.site.uid_domain}",
             f"DTSTAMP:{datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')}",
-            f"DTSTART;TZID=America/New_York:{start}",
-            f"DTEND;TZID=America/New_York:{end}",
+            f"DTSTART;TZID={_TZID}:{start}",
+            f"DTEND;TZID={_TZID}:{end}",
             f"SUMMARY:{_ics_escape(u.title)}",
         ]
         if u.agenda_url:
@@ -196,7 +200,7 @@ def upcoming_calendar(session: Session = Depends(db_session)):
         lines.append("END:VEVENT")
     lines.append("END:VCALENDAR")
     return Response("\r\n".join(lines) + "\r\n", media_type="text/calendar",
-                    headers={"Content-Disposition": 'inline; filename="councilhound.ics"',
+                    headers={"Content-Disposition": f'inline; filename="{JURISDICTION.site.ics_filename}"',
                              "Cache-Control": "public, max-age=3600"})
 
 

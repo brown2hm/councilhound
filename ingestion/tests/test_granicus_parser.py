@@ -128,8 +128,8 @@ def test_classify():
     assert classify("city_council", "City Council Regular Meeting") == ("city_council", "council_regular")
     assert classify("city_council", "City Council Work Session") == ("city_council", "council_work_session")
     assert classify("city_council", "City Council Retreat") == ("city_council", "council_retreat")
-    assert classify("community_development", "BAR Regular Meeting") is None
-    assert classify("community_development", "Planning Commission Work Session") == (
+    assert classify("planning_commission", "BAR Regular Meeting") is None
+    assert classify("planning_commission", "Planning Commission Work Session") == (
         "planning_commission", "planning_commission",
     )
     assert classify("school_board", "School Board Work Session") == ("school_board", "school_board_work_session")

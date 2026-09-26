@@ -1,4 +1,5 @@
 import type { WikiTrust } from "@/lib/api";
+import { timezone } from "@/lib/jurisdiction";
 
 // The OKF v0.2 trust and lifecycle signals for one wiki page, read from the
 // API's `trust` block (api/app/wiki.py derives it from the page frontmatter):
@@ -24,13 +25,13 @@ const PRODUCER: Record<string, { label: string; hint: string }> = {
   },
 };
 
-/** A meeting instant in city-local time, so a 7:30 pm meeting is dated the
+/** A meeting instant in the jurisdiction's local time, so a 7:30 pm meeting is dated the
  * evening it happens rather than the UTC day after. */
 function fmtInstant(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso.slice(0, 10);
   return d.toLocaleDateString("en-US", {
-    timeZone: "America/New_York",
+    timeZone: timezone(),
     month: "short",
     day: "numeric",
     year: d.getFullYear() === new Date().getFullYear() ? undefined : "numeric",

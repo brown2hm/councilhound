@@ -12,16 +12,19 @@ import {
   type EntitySummary,
   type HotTopicsResponse,
   type MapLocation,
-  bodyLabel,
 } from "@/lib/api";
+import { bodyLabel, getJurisdiction, hotBodies } from "@/lib/jurisdiction";
 
 const NO_HOT: HotTopicsResponse = { meetings: [], topics: [], window_seconds: 0 };
 
-export const metadata = {
-  title: "Projects & topics",
-  description:
-    "Every project, ordinance, plan, and development the City of Fairfax council and planning commission have touched — official city records and meeting-derived topics in one directory, with status, activity, and a map.",
-};
+export async function generateMetadata() {
+  const j = await getJurisdiction();
+  return {
+    title: "Projects & topics",
+    description:
+      `Every project, ordinance, plan, and development ${j.identity.short_name}'s public bodies have touched — official ${j.identity.noun} records and meeting-derived topics in one directory, with status, activity, and a map.`,
+  };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -125,15 +128,15 @@ function HotSection({ hot, title, dot, barColor }: { hot: HotTopicsResponse; tit
 }
 
 async function HotList() {
-  // one body failing shouldn't blank the other's ranking
-  const [council, pc] = await Promise.all([
-    api.hotTopics("city_council").catch(() => NO_HOT),
-    api.hotTopics("planning_commission").catch(() => NO_HOT),
-  ]);
+  await getJurisdiction();
+  const bodies = hotBodies();
+  // one body failing shouldn't blank the others' rankings
+  const hots = await Promise.all(bodies.map((b) => api.hotTopics(b.key).catch(() => NO_HOT)));
   return (
     <div>
-      <HotSection hot={council} title="City Council" dot="bg-teal" barColor="bg-teal" />
-      <HotSection hot={pc} title="Planning Commission" dot="bg-ochre" barColor="bg-ochre" />
+      {bodies.map((b, i) => (
+        <HotSection key={b.key} hot={hots[i]} title={b.label} dot={bodyDot(b.key)} barColor={bodyDot(b.key)} />
+      ))}
     </div>
   );
 }
@@ -169,7 +172,7 @@ function OfficialCard({ e }: { e: EntitySummary }) {
         />
       ) : (
         <div className="flex h-32 w-full items-center justify-center rounded-xl bg-card text-[11px] font-semibold uppercase tracking-[1px] text-muted-soft">
-          {o.project_type ?? "City project"}
+          {o.project_type ?? "Official project"}
         </div>
       )}
       <div className="min-h-[39px] text-[15px] font-semibold leading-[1.3] group-hover:underline group-hover:underline-offset-2">
@@ -251,6 +254,7 @@ function toMapLocation(e: EntitySummary): MapLocation {
 }
 
 export default async function TopicsPage({ searchParams }: { searchParams: Query }) {
+  const j = await getJurisdiction();
   const view = searchParams.view === "map" || searchParams.view === "hot" ? searchParams.view : "list";
   const page = Math.max(1, Number(searchParams.page) || 1);
   const isMap = view === "map";
@@ -288,7 +292,7 @@ export default async function TopicsPage({ searchParams }: { searchParams: Query
     : searchParams.type === "person"
       ? "People named in the record"
       : searchParams.official === "true"
-        ? "Official city projects"
+        ? `Official ${j.identity.noun} projects`
         : "Matching records";
 
   return (
@@ -312,9 +316,9 @@ export default async function TopicsPage({ searchParams }: { searchParams: Query
         </div>
       </div>
       <p className="mb-5 max-w-[860px] text-sm text-muted">
-        {counts ? `${counts.records.toLocaleString("en-US")} projects` : "Projects"}, plans, ordinances and places the
-        council and commission have touched, with status and history. People named in the record are listed
-        separately.
+        {counts ? `${counts.records.toLocaleString("en-US")} projects` : "Projects"}, plans, ordinances and places{" "}
+        {j.identity.short_name}&apos;s public bodies have touched, with status and history. People named in the record are
+        listed separately.
       </p>
 
       {!isHot && (
@@ -346,9 +350,9 @@ export default async function TopicsPage({ searchParams }: { searchParams: Query
             <section className="mb-11">
               <div className="mb-3.5 flex flex-wrap items-baseline justify-between gap-3">
                 <div>
-                  <h2 className="text-[22px] font-semibold tracking-[-0.3px]">Official city projects</h2>
+                  <h2 className="text-[22px] font-semibold tracking-[-0.3px]">Official {j.identity.noun} projects</h2>
                   <p className="text-[13px] text-muted">
-                    {counts ? `${counts.official} records` : "Records"} from the city&apos;s own project pages, with
+                    {counts ? `${counts.official} records` : "Records"} from the {j.identity.noun}&apos;s own project pages, with
                     their photos, addresses and staff status.
                   </p>
                 </div>
@@ -387,8 +391,12 @@ export default async function TopicsPage({ searchParams }: { searchParams: Query
                     <Th className="hidden px-3 md:table-cell">
                       Body{" "}
                       <span className="font-medium normal-case tracking-normal">
-                        (<span aria-hidden className="inline-block h-2 w-2 rounded-full bg-teal" /> council ·{" "}
-                        <span aria-hidden className="inline-block h-2 w-2 rounded-full bg-ochre" /> commission)
+                        ({hotBodies().map((b, i) => (
+                          <span key={b.key}>
+                            {i > 0 && " · "}
+                            <span aria-hidden className={`inline-block h-2 w-2 rounded-full ${bodyDot(b.key)}`} /> {b.short}
+                          </span>
+                        ))})
                       </span>
                     </Th>
                     <Th className="px-3 text-right">Updates</Th>

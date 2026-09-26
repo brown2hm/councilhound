@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { BODIES } from "@/lib/api";
+import { useJurisdiction } from "@/components/JurisdictionProvider";
 
 const STATUSES = ["proposed", "in_progress", "approved", "denied", "deferred", "completed", "withdrawn"];
 
@@ -9,7 +9,7 @@ const STATUSES = ["proposed", "in_progress", "approved", "denied", "deferred", "
  * city's own project records, `type=` for everything the meetings named. */
 const KINDS = [
   { value: "", label: "Any kind" },
-  { value: "official", label: "Official city projects" },
+  { value: "official", label: "Official projects" },
   { value: "project", label: "Projects" },
   { value: "topic", label: "Plans & programs" },
   { value: "ordinance", label: "Ordinances" },
@@ -69,6 +69,8 @@ function Select({
  * control writes to the URL so views are shareable and the server component
  * re-renders. */
 export default function DirectoryFilters() {
+  const { bodies: BODIES, identity } = useJurisdiction();
+  const kinds = KINDS.map((k) => (k.value === "official" ? { ...k, label: `Official ${identity.noun} projects` } : k));
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -111,7 +113,7 @@ export default function DirectoryFilters() {
         onChange={(_, v) =>
           apply(v === "official" ? { official: "true", type: "" } : { official: "", type: v })
         }
-        options={KINDS}
+        options={kinds}
       />
       <Select
         name="status"

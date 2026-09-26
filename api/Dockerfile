@@ -14,6 +14,9 @@ RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTr
 
 COPY api/app/ ./app/
 COPY ingestion/src/councilhound/ ./councilhound/
+# per-jurisdiction configs (JURISDICTION selects one at runtime)
+COPY ingestion/jurisdictions/ ./jurisdictions/
+ENV JURISDICTIONS_DIR=/app/jurisdictions
 
 EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

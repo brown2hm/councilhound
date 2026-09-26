@@ -19,37 +19,24 @@ from councilhound.db.models import (
     AgendaItem, Document, Entity, EntityAlias, EntityMention, EntityProfile,
     EntityUpdate, Meeting, UpcomingMeeting, Vote,
 )
+from councilhound.bodies import REGISTRY
+from councilhound.config import LOCAL_TZ
 from councilhound.entities import resolve_entity
 from councilhound.people import last_name
-from councilhound.seed import parse_council_header, parse_pc_header, parse_school_board_header
+from councilhound.seed import parse_roster
 
 from app.db import db_session
 from app.links import clip_link
 
 router = APIRouter()
 
-_TITLE_ROLES = [
-    # longer, body-qualified prefixes first so "school board chair x" is not
-    # claimed by the bare "chair " rule
-    ("school board chair ", "School Board Chair"),
-    ("school board member ", "School Board Member"),
-    ("mayor ", "Mayor"),
-    ("councilmember ", "Councilmember"),
-    ("council member ", "Councilmember"),
-    ("councilwoman ", "Councilmember"),
-    ("councilman ", "Councilmember"),
-    ("vice-chair ", "Vice-Chair"),
-    ("vice chair ", "Vice-Chair"),
-    ("chairman ", "Chair"),
-    ("chair ", "Chair"),
-    ("commissioner ", "Commissioner"),
-]
-_ROLE_ORDER = {"Mayor": 0, "Councilmember": 1, "Chair": 2, "Vice-Chair": 3, "Commissioner": 4,
-               "School Board Chair": 5, "School Board Member": 6}
-_ROLE_BODY = {"Mayor": "city_council", "Councilmember": "city_council",
-              "Chair": "planning_commission", "Vice-Chair": "planning_commission",
-              "Commissioner": "planning_commission",
-              "School Board Chair": "school_board", "School Board Member": "school_board"}
+# Title-alias prefix -> role title, longest prefix first so a body-qualified
+# title ("school board chair ") is not claimed by the bare one ("chair ");
+# role display order and role -> body, all from the jurisdiction's roster
+# config (bodies[].roster.roles).
+_TITLE_ROLES = [(prefix, title) for prefix, title, _body in REGISTRY.title_roles()]
+_ROLE_ORDER = REGISTRY.role_order()
+_ROLE_BODY = {title: body for _prefix, title, body in REGISTRY.title_roles()}
 
 # Kinds of item a vote can be about, from the agenda title and the motion
 # text as filed. Order matters: the first match wins.
@@ -96,21 +83,19 @@ def _current_slugs(session: Session) -> set[str]:
     recent agenda header that yields names (the 24-month window spans a
     council turnover, so membership can't be assumed from aliases alone)."""
     current: set[str] = set()
-    for body, parse in (("city_council", parse_council_header),
-                        ("planning_commission", parse_pc_header),
-                        ("school_board", parse_school_board_header)):
+    for body in REGISTRY.bodies.values():
+        if body.roster is None:
+            continue
         docs = session.execute(
             select(Document.raw_text)
             .join(Meeting, Document.meeting_id == Meeting.id)
-            .where(Meeting.body == body, Document.doc_type == "agenda",
+            .where(Meeting.body == body.key, Document.doc_type == "agenda",
                    Document.raw_text.isnot(None))
             .order_by(Meeting.meeting_date.desc())
             .limit(5)
         ).scalars()
         for raw_text in docs:
-            header = parse(raw_text)
-            names = [n for v in header.values()
-                     for n in (v if isinstance(v, list) else [v]) if n]
+            names = [n for v in parse_roster(raw_text, body).values() for n in v]
             if not names:
                 continue  # malformed/special-meeting header; try the next one
             for name in names:
@@ -262,7 +247,7 @@ def _body_for(roles: list[str], vote_bodies: Counter) -> str | None:
 def _upcoming_for_body(session: Session, body: str | None) -> list[dict]:
     if not body:
         return []
-    today = datetime.datetime.now()
+    today = datetime.datetime.now(LOCAL_TZ).replace(tzinfo=None)
     rows = session.scalars(
         select(UpcomingMeeting)
         .where(UpcomingMeeting.body == body)

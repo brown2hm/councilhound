@@ -2,10 +2,10 @@
 
 Street addresses ('10300 Willard Way') resolve; area names ('Old Town')
 miss and are recorded as such so they aren't retried nightly. The suffix
-anchors bare street addresses to the city.
+anchors bare street addresses to the jurisdiction; a match outside its
+bounding box (when the config pins one) is a miss, not a wrong pin.
 """
 import logging
-import os
 import time
 
 from sqlalchemy import select
@@ -17,7 +17,16 @@ from councilhound.db.models import Entity, EntityGeocode
 log = logging.getLogger(__name__)
 
 CENSUS_URL = "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress"
-GEOCODE_SUFFIX = os.environ.get("GEOCODE_SUFFIX", "Fairfax, VA")
+from councilhound.config import GEOCODE_SUFFIX, JURISDICTION  # noqa: E402
+
+GEOCODE_BBOX = JURISDICTION.identity.geocode_bbox  # [min_lat, min_lng, max_lat, max_lng] | None
+
+
+def _inside(lat: float, lng: float) -> bool:
+    if not GEOCODE_BBOX:
+        return True
+    min_lat, min_lng, max_lat, max_lng = GEOCODE_BBOX
+    return min_lat <= lat <= max_lat and min_lng <= lng <= max_lng
 
 
 def geocode_address(address: str) -> dict | None:
@@ -31,9 +40,14 @@ def geocode_address(address: str) -> dict | None:
     if not matches:
         return None
     m = matches[0]
+    lat, lng = m["coordinates"]["y"], m["coordinates"]["x"]
+    if not _inside(lat, lng):
+        log.info("geocode %r landed outside the jurisdiction bbox (%s, %s); treating as a miss",
+                 address, lat, lng)
+        return None
     return {
-        "lat": m["coordinates"]["y"],
-        "lng": m["coordinates"]["x"],
+        "lat": lat,
+        "lng": lng,
         "matched_address": m.get("matchedAddress"),
     }
 

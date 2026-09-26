@@ -12,12 +12,11 @@ import logging
 import os
 import re
 from datetime import date, datetime, timezone
-from zoneinfo import ZoneInfo
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from councilhound.config import GRANICUS_BASE_URL, SITE_BASE_URL
+from councilhound.config import GRANICUS_BASE_URL, JURISDICTION, LOCAL_TZ, SITE_BASE_URL
 from councilhound.db.models import (
     AgendaItem,
     CityProject,
@@ -53,7 +52,8 @@ from councilhound.okf.bundle import (
 )
 
 # UpcomingMeeting.starts_at is city-local and naive (scraper/granicus.py)
-CITY_TZ = ZoneInfo("America/New_York")
+CITY_TZ = LOCAL_TZ  # the jurisdiction's zone; name kept for importers
+_ID = JURISDICTION.identity
 # the curator-owned prose a person can sign off on (v0.2 `verified`)
 VERIFIABLE_PAGES = ("overview", "positions", "impact")
 
@@ -253,7 +253,7 @@ def _overview_frontmatter(entity: Entity, ctx: dict, stamp: str) -> dict:
         "description": _first_sentence(
             ctx["profile"].summary if ctx["profile"] else None)
         or _first_sentence(city.description if city else None)
-        or f"{entity.name}, tracked from City of Fairfax public meetings.",
+        or f"{entity.name}, tracked from {_ID.short_name} public meetings.",
         "resource": _resource_url(entity, city),
         "tags": _tags(entity, city),
         **_stamp_fields(PIPELINE_ACTOR, stamp),
@@ -700,7 +700,7 @@ def _write_documents(bundle_dir: str, entity: Entity, ctx: dict) -> bool:
     return write_page(bundle_dir, rel, {
         "type": "project-documents",
         "title": f"{entity.name} — documents",
-        "description": f"{n} document(s) published in the City of Fairfax "
+        "description": f"{n} document(s) published in the {_ID.short_name} "
                        f"project record for {entity.name}.",
         "resource": _resource_url(entity, ctx["city"]),
         **_stamp_fields(PIPELINE_ACTOR, date.today()),
@@ -950,7 +950,7 @@ def _write_indexes(bundle_dir: str, session: Session) -> None:
     write_text(bundle_dir, "projects/index.md",
                render_index("Projects", entries))
     write_text(bundle_dir, "index.md", render_index(
-        "CouncilHound knowledge bundle — City of Fairfax, VA",
+        f"CouncilHound knowledge bundle — {_ID.short_name}, {_ID.state_abbr}",
         [("/projects/index.md", "Projects",
           "development projects tracked from council meetings and official records")],
         root=True))

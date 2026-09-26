@@ -77,3 +77,170 @@ assessment_lucs:
 transit_feeds: []
 fringe_reference_blockgroup: null
 calibration_counts: null
+
+# --- core (non-impact) sections: today's hard-coded behavior, transcribed ---
+identity:
+  short_name: City of Fairfax
+  noun: city
+  state_abbr: VA
+  timezone: America/New_York
+  geocode_suffix: Fairfax, VA
+  geocode_bbox: null
+  self_names: [City of Fairfax, Fairfax City, Fairfax, "Fairfax, Virginia", Fairfax County]
+  self_prefixes: ["city of fairfax ", "fairfax city ", "fairfax "]
+  other_body_names:
+    - PRAB
+    - HHCAB
+    - Board of Architectural Review
+    - BAR
+    - Board of Zoning Appeals
+    - BZA
+    - Board of Equalization
+    - Commission for Women
+    - Commission on the Arts
+    - Electoral Board
+    - Environmental Sustainability Committee
+    - Fairfax Village in the City Advisory Board
+    - Human Services Committee
+    - Retirement Plan Administrative Committee
+  legislative_body_label: City Council
+  record_phrase: council business
+  activity_noun: council
+
+site:
+  site_base_url: https://councilhound.net
+  api_base_url: https://api.councilhound.net
+  uid_domain: councilhound.net
+  mail_from: CouncilHound <hound@councilhound.net>
+  okf_bundle_name: councilhound-fairfax
+  ics_filename: councilhound.ics
+  fly_app_prefix: councilhound
+
+granicus:
+  base_url: https://fairfax.granicus.com
+  media_host_slug: fairfax
+  views:
+    - {view_id: "13", layout: sections}
+  documents:
+    label_rules:
+      - {contains: reporter, type: actions_report}
+      - {contains: action, type: actions_report}
+      - {contains: minutes, type: minutes}
+    minutesviewer_default: other
+  media: {sources: [mp3], keep_video: false}
+  canary: {min_meetings: 50, min_recent_agendas: 5, min_recent_audio: 3, min_upcoming: 5, expect_mp3: true}
+
+bodies:
+  - key: city_council
+    label: City Council
+    short: council
+    archive_section: City Council Meetings
+    color: 0
+    hot: true
+    meeting_types:
+      - {contains: retreat, type: council_retreat}
+      - {contains: special, type: council_special}
+      - {contains: work session, type: council_work_session}
+      - {contains: regular, type: council_regular}
+    default_meeting_type: council_meeting
+    upcoming: {starts_with: [city council]}
+    roster:
+      parser: city_council_header
+      roles:
+        mayor: {title: Mayor, aliases: [Mayor]}
+        member: {title: Councilmember, aliases: [Councilmember, Council Member, Councilwoman, Councilman]}
+  - key: planning_commission
+    label: Planning Commission
+    short: commission
+    # rows share the section with BAR/BZA; the scraper filters on the title
+    archive_section: Community Development and Planning Meetings
+    title_must_contain: [planning commission]
+    color: 1
+    hot: true
+    recommends: true
+    default_meeting_type: planning_commission
+    upcoming: {starts_with: [planning commission]}
+    roster:
+      parser: pc_chair_line
+      roles:
+        chair: {title: Chair, aliases: [Chair, Chairman], also: [commissioner]}
+        vice_chair: {title: Vice-Chair, aliases: [Vice-Chair, Vice Chair], also: [commissioner]}
+        commissioner: {title: Commissioner, aliases: [Commissioner]}
+  - key: school_board
+    label: School Board
+    short: school board
+    archive_section: School Board Meetings
+    color: 2
+    meeting_types:
+      # closed meetings are archived as a title card with no substance
+      - {contains: closed, type: school_board_closed}
+      - {contains: joint, type: school_board_meeting}
+      - {contains: swearing, type: school_board_meeting}
+      - {contains: retreat, type: school_board_retreat}
+      - {contains: special, type: school_board_special}
+      - {contains: work session, type: school_board_work_session}
+      - {contains: regular, type: school_board_regular}
+    default_meeting_type: school_board_meeting
+    upcoming: {contains: [school board]}
+    roster:
+      # titles are body-qualified so the roster can tell a School Board chair
+      # from a Planning Commission chair by alias
+      parser: school_board_glued
+      roles:
+        chair: {title: School Board Chair, aliases: [School Board Chair]}
+        member: {title: School Board Member, aliases: [School Board Member]}
+  - key: prab
+    label: Parks and Recreation Advisory Board
+    short: parks board
+    archive_section: Park and Recreation Advisory Board Meetings
+    recorded: false
+    color: 3
+    default_meeting_type: prab_meeting
+    upcoming: {contains: [prab, park and recreation, parks and recreation]}
+  - key: hhcab
+    label: Housing and Healthy Communities Advisory Board
+    short: housing board
+    archive_section: Housing and Healthy Communities Advisory Board Meetings
+    recorded: false
+    color: 4
+    meeting_types:
+      # standing committees (Housing Trust Fund, Home Sharing, ...) meet
+      # under the same board and are archived in its section
+      - {contains: committee, type: hhcab_committee}
+    default_meeting_type: hhcab_meeting
+    upcoming: {contains: [hhcab, housing and healthy communities]}
+
+projects:
+  adapter: fairfaxva_opencities
+  generic_name_tokens: [city, fairfax, va]
+  params:
+    index_url: https://www.fairfaxva.gov/Property-Business/Development/Projects
+    arcgis_url: https://services2.arcgis.com/DANcyjLcCCpGk8Ri/arcgis/rest/services/Major_Developments_Project_Map_v2/FeatureServer/0/query
+    base_url: https://www.fairfaxva.gov
+    planner_email_domain: fairfaxva.gov
+    status_labels: {0: Pre-Application, 1: Under Review, 2: Approved, 3: Under Construction}
+
+extraction:
+  comment_period_items: [Council Comments and Committee reports out, Commission Comments]
+  vote_notes:
+    - Bodies such as the School Board record votes this way rather than by roll call.
+  max_doc_chars: 60000
+
+display:
+  map_center: [38.8462, -77.3064]
+  map_zoom: {compact: 15, full: 14}
+  map_bounds: [[38.83, -77.33], [38.87, -77.27]]
+  nearby_radii_m: [805, 1609, 3219]
+  example_address: 10455 Armstrong St
+  address_strip_regex: ", Fairfax"
+  ask_suggestions:
+    - What has the council decided about affordable housing this year?
+    - What's happening with the Fairfax Circle Small Area Plan?
+    - Which items got the most discussion time at the last council meeting?
+  ask_placeholder: What has the council decided about affordable housing?
+  boilerplate_terms: [city hall, council chambers]
+  glossary_overrides: []
+
+features:
+  impact: true
+  projects: true

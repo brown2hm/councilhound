@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { getJurisdiction } from "@/lib/jurisdiction";
+import { notFound, redirect } from "next/navigation";
 import AssumptionsLab from "@/components/AssumptionsLab";
 import HeadlineMetrics from "@/components/HeadlineMetrics";
 import ImpactMapClient from "@/components/ImpactMapClient";
@@ -24,13 +25,13 @@ function splitReport(markdown: string): { summary: string; rest: string | null }
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const project = await requireRecord(getProject(params.slug));
-  if (!project.has_evaluation) return {};
+  const [project, j] = await Promise.all([requireRecord(getProject(params.slug)), getJurisdiction()]);
+  if (!j.features.impact || !project.has_evaluation) return {};
   try {
     const evaluation = await getEvaluation(params.slug);
     return {
       title: `${evaluation.name} — impact analysis`,
-      description: `Screening estimates of the community impact of ${evaluation.name} in the City of Fairfax, with named assumptions and sensitivity ranges.`,
+      description: `Screening estimates of the community impact of ${evaluation.name} in ${j.identity.short_name}, with named assumptions and sensitivity ranges.`,
     };
   } catch {
     return {};
@@ -42,6 +43,8 @@ export default async function DevelopmentAnalysisPage({
 }: {
   params: { slug: string };
 }) {
+  const j = await getJurisdiction();
+  if (!j.features.impact) notFound();
   const project = await requireRecord(getProject(params.slug));
   let evaluation;
   try {

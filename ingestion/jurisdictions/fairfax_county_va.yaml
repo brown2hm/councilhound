@@ -1,0 +1,247 @@
+name: Fairfax County, Virginia
+fips:
+  state: '51'
+  county: '059'
+crs_projected: EPSG:2283
+# impact keys stay unpinned: features.impact is off for this jurisdiction
+projects_index_url: https://www.fairfaxcounty.gov/planning-development/
+
+identity:
+  short_name: Fairfax County
+  noun: county
+  state_abbr: VA
+  timezone: America/New_York
+  # the Census one-line geocoder under-matches with a county name; anchor to
+  # the state and reject matches outside the county's box instead
+  geocode_suffix: VA
+  geocode_bbox: [38.60, -77.55, 39.06, -77.03]
+  self_names: [Fairfax County, County of Fairfax, "Fairfax County, Virginia", Fairfax County Government, the County]
+  self_prefixes: ["fairfax county ", "county of fairfax "]
+  other_body_names:
+    - Board of Zoning Appeals
+    - BZA
+    - Fairfax County Redevelopment and Housing Authority
+    - FCRHA
+    - Fairfax County Park Authority
+    - Park Authority
+    - Audit Committee
+    - Budget Policy Committee
+    - Economic Initiatives Committee
+    - Environmental Committee
+    - Health and Human Services Committee
+    - Housing Committee
+    - Land Use Policy Committee
+    - Legislative Committee
+    - Personnel and Reorganization Committee
+    - Public Safety Committee
+    - Safety and Security Committee
+    - Transportation Committee
+    - Architectural Review Board
+    - History Commission
+    - Wetlands Board
+    - Board of Equalization
+    - Electoral Board
+  legislative_body_label: Board of Supervisors
+  record_phrase: county board business
+  activity_noun: Board
+
+site:
+  site_base_url: https://fairfaxcounty.councilhound.net
+  api_base_url: https://api-fairfaxcounty.councilhound.net
+  uid_domain: fairfaxcounty.councilhound.net
+  mail_from: CouncilHound <hound@councilhound.net>
+  okf_bundle_name: councilhound-fairfax-county
+  ics_filename: councilhound-fairfax-county.ics
+  fly_app_prefix: councilhound-fxco
+
+granicus:
+  base_url: https://video.fairfaxcounty.gov
+  media_host_slug: fairfaxva   # the County's Granicus tenant slug, confusingly
+  views:
+    # one view per body, one "Archived Videos" section each
+    - {view_id: "7", layout: single, body: board_of_supervisors}
+    - {view_id: "10", layout: single, body: planning_commission}
+    # committees: add {view_id, layout: single, body: <key>} plus a bodies[] entry
+  row:
+    clip_select: first
+    clip_label_prefer: English      # rows carry an English-captions and a Spanish-captions clip
+    external_archive:
+      link_text_contains: Full Meeting Archive
+      doc_type: meeting_page
+      follow_pdfs:
+        - {contains: Board Package, type: board_package}
+        - {contains: Summary, type: meeting_summary}
+      enabled: false                # the Board Package is hundreds of pages; measure first
+  documents:
+    # the Board's MinutesViewer link (empty anchor text) is the annotated
+    # agenda with per-item outcomes; formal minutes, when posted, say so
+    label_rules:
+      - {contains: minutes, type: minutes}
+    minutesviewer_default: agenda
+  media:
+    # real English captions are published per clip; the archive offers MP4
+    # only (8.5 GB for a Board meeting), so audio extraction is the fallback
+    sources: [captions, mp4_audio_extract]
+    keep_video: false
+  canary: {min_meetings: 100, min_recent_agendas: 5, min_recent_audio: 0, min_upcoming: 1, expect_mp3: false}
+
+bodies:
+  - key: board_of_supervisors
+    label: Board of Supervisors
+    short: Board
+    color: 0
+    hot: true
+    agenda_has_outcomes: true
+    meeting_types:
+      - {contains: budget, type: bos_budget}
+      - {contains: public hearing, type: bos_public_hearing}
+      - {contains: special, type: bos_special}
+    default_meeting_type: bos_meeting
+    upcoming: {contains: [board of supervisors], default_for_view: "7"}
+    roster:
+      parser: bos_supervisor_lines
+      # https://www.fairfaxcounty.gov/boardofsupervisors/members-and-districts (2024-2027 term)
+      static:
+        - {name: Jeffrey C. McKay, role: chairman}
+        - {name: Kathy L. Smith, role: supervisor, district: Sully}
+        - {name: Rachna Sizemore Heizer, role: supervisor, district: Braddock}
+        - {name: "James N. Bierman, Jr.", role: supervisor, district: Dranesville}
+        - {name: Rodney L. Lusk, role: supervisor, district: Franconia}
+        - {name: Walter L. Alcorn, role: supervisor, district: Hunter Mill}
+        - {name: Andres F. Jimenez, role: supervisor, district: Mason}
+        - {name: Daniel G. Storck, role: supervisor, district: Mount Vernon}
+        - {name: Dalia A. Palchik, role: supervisor, district: Providence}
+        - {name: Pat Herrity, role: supervisor, district: Springfield}
+      district_title: Supervisor
+      roles:
+        chairman: {title: Chairman, aliases: [Chairman, Chair]}
+        supervisor: {title: Supervisor, aliases: [Supervisor]}
+  - key: planning_commission
+    label: Planning Commission
+    short: commission
+    color: 1
+    hot: true
+    recommends: true
+    meeting_types:
+      - {contains: work session, type: planning_commission_work_session}
+      # PC standing committees (Policy Plan, Land Use Process Review, ...) are archived on the same view
+      - {contains: committee, type: planning_commission_committee}
+    default_meeting_type: planning_commission
+    # archive rows link no agenda (the cell is commented out); regular
+    # meeting agendas are date-named PDFs on the county site (verified
+    # 2026-09-20 for 2025-10-08, 2026-07-22, 2026-09-09, 2026-09-16)
+    agenda_url_template: https://www.fairfaxcounty.gov/planningcommission/sites/planningcommission/files/Assets/calendar/%Y/%-m.%-d.%y.pdf
+    upcoming: {contains: [planning commission], default_for_view: "10"}
+    roster:
+      # PC agendas carry no roster block and the members page renders empty,
+      # so the roster is pinned from the Commission's own minutes: the
+      # PRESENT/ABSENT header of 2026-04-22 and 2026-06-24 (both list these
+      # twelve; the committee pages' "Paul D. Thomas" is a stale entry — the
+      # minutes say James Thomas, Springfield). Update when the Commission
+      # reorganizes in January or a seat turns over:
+      # https://www.fairfaxcounty.gov/planningcommission/meeting-minutes-2026
+      # Secretary (Hancock) and Parliamentarian (Bennett) are officer posts,
+      # not roles the record addresses them by, so they seed as commissioners.
+      parser: static
+      district_title: Commissioner
+      static:
+        - {name: Phillip A. Niedzielski-Eichner, role: chair, district: At-Large}
+        - {name: Evelyn S. Spain, role: vice_chair, district: Sully}
+        - {name: Jeremy Hancock, role: commissioner, district: Providence}
+        - {name: Candice Bennett, role: commissioner, district: At-Large}
+        - {name: Alyssa Batchelor-Causey, role: commissioner, district: Dranesville}
+        - {name: John A. Carter, role: commissioner, district: Hunter Mill}
+        - {name: Walter C. Clarke, role: commissioner, district: Mount Vernon}
+        - {name: Mary D. Cortina, role: commissioner, district: Braddock}
+        - {name: Chris Landgraf, role: commissioner, district: Franconia}
+        - {name: Timothy J. Sargeant, role: commissioner, district: At-Large}
+        - {name: James Thomas, role: commissioner, district: Springfield}
+        - {name: Alis Wang, role: commissioner, district: Mason}
+      roles:
+        # the Commission says Chair / Vice Chair; qualified so they never
+        # collide with the Board's "Chair McKay"
+        chair: {title: Commission Chair, aliases: [Commission Chair], also: [commissioner]}
+        vice_chair: {title: Commission Vice Chair, aliases: [Commission Vice Chair, Vice Chair], also: [commissioner]}
+        commissioner: {title: Commissioner, aliases: [Commissioner]}
+
+projects:
+  # Fairfax County's zoning applications (rezonings, plan amendments, special
+  # exceptions, agricultural districts) from the PLUS feature layer behind
+  # the Planning & Development Explorer. BZA cases (variances, special
+  # permits) are left out; the record set is every case still in process
+  # plus those decided in the last year. Verified 2026-09-20: 262 records.
+  adapter: arcgis_feature_layer
+  generic_name_tokens: [county, fairfax, va, application, rezoning]
+  params:
+    layer_url: https://services1.arcgis.com/ioennV6PpG5Xodq0/arcgis/rest/services/PLUS_Zoning_Applications/FeatureServer/0
+    where: >-
+      APPTYPEALIAS NOT LIKE 'Variance%' AND APPTYPEALIAS NOT LIKE 'Special Permit%'
+      AND (RECORD_STATUS IN ('Application Accepted','In Review','Routed for Review','Staff Report Complete',
+      'PC Action','BOS Action','Active','Review In Process','Waiting for Resubmission')
+      OR (RECORD_STATUS IN ('Approved','Board Approved','Denied','Withdrawn')
+      AND RECORD_STATUS_DATE >= CURRENT_TIMESTAMP - INTERVAL '365' DAY AND RECORD_STATUS_DATE <= CURRENT_TIMESTAMP))
+    order_by: RECORD_STATUS_DATE DESC
+    fields:
+      external_slug: RECORDID
+      name: RECORDID             # the case number is how meetings name it, so it links to the extracted topic
+      project_type: APPTYPEALIAS
+      official_status: RECORD_STATUS
+      description: WORK_DESCRIPTION
+      applicant: APPLICANT
+      planner_name: STAFF_MEMBER
+      detail_url: LINK_URL
+    status_labels:
+      Application Accepted: Accepted
+      In Review: Under Review
+      Routed for Review: Under Review
+      Review In Process: Under Review
+      Staff Report Complete: Staff Report Complete
+      PC Action: Before the Planning Commission
+      BOS Action: Before the Board
+      Board Approved: Approved
+      Waiting for Resubmission: Awaiting Resubmission
+    division_from_id:
+      regex: "-([A-Z]{2})-"
+      codes: {BR: Braddock, DR: Dranesville, FR: Franconia, HM: Hunter Mill, LE: Lee, MA: Mason,
+              MV: Mount Vernon, PR: Providence, SP: Springfield, SU: Sully}
+
+extraction:
+  comment_period_items: [Matters Presented by Board Members, Board Matters, Commission Matters]
+  vote_notes:
+    - The Board's annotated agenda records an outcome per item ('Approved', 'Done', 'Deferred', 'Held'); a roll call is rarely printed, so record the outcome and leave vote_breakdown empty unless members' votes are listed by name.
+  max_doc_chars: 160000
+  max_output_tokens: 32000
+  # agendas print cases in compounds ("RZ-2017-HM-020 (RZPA-2025-HM-00031)",
+  # "PCA-84-L-020-29/CDPA-84-L-020-10"); split them so each case links to its
+  # PLUS record. RZPA is the umbrella application PLUS files the cases under.
+  case_numbers:
+    parent_prefixes: [RZPA]
+
+display:
+  map_center: [38.85, -77.30]
+  map_zoom: {compact: 11, full: 10}
+  map_bounds: [[38.60, -77.55], [39.06, -77.03]]
+  nearby_radii_m: [1609, 3219, 8047]
+  example_address: 12000 Government Center Pkwy
+  address_strip_regex: ", (Fairfax|Herndon|Vienna|Reston|Springfield|Annandale|McLean|Alexandria|Centreville|Chantilly|Lorton|Burke)"
+  ask_suggestions:
+    - What has the Board of Supervisors decided about data centers this year?
+    - What did the Planning Commission recommend on recent rezonings in Tysons?
+    - Which items got the most discussion time at the last Board meeting?
+  ask_placeholder: What has the Board decided about affordable housing?
+  boilerplate_terms: [government center, board auditorium]
+  glossary_overrides:
+    # the County's Zoning Ordinance has no "special use permit"; its
+    # case-by-case uses are special exceptions (Board) and special permits (BZA)
+    - {slug: special-use-permit, remove: true}
+    - slug: special-exception
+      definition: A use the Zoning Ordinance allows only case by case (a data center, a school, a larger building), approved by the Board of Supervisors after a Planning Commission hearing, usually with development conditions.
+    - {slug: board-of-architectural-review, term: Architectural Review Board, aliases: [ARB]}
+    - slug: first-reading
+      remove: true
+    - slug: second-reading
+      remove: true
+
+features:
+  impact: false
+  projects: true

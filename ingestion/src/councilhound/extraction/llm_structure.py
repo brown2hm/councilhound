@@ -37,14 +37,20 @@ from councilhound.db.models import (
     Meeting,
     Vote,
 )
-from councilhound.bodies import is_self_reference
-from councilhound.entities import resolve_entity
+from councilhound.bodies import REGISTRY, is_self_reference, label as body_label
+from councilhound.config import JURISDICTION
+from councilhound.jurisdiction import JurisdictionConfig
+from councilhound.cases import case_parent_pairs, split_case_name
+from councilhound.entities import add_alias, resolve_entity
 
 log = logging.getLogger(__name__)
 
 PROMPT_VERSION = "v1"
 DEFAULT_MODEL = os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-6")
-MAX_DOC_CHARS = 60_000  # defensive truncation; largest observed doc is ~44KB
+# defensive truncation (the City's largest observed doc is ~44KB; the County's
+# annotated agendas run longer, so the ceiling is per jurisdiction)
+MAX_DOC_CHARS = JURISDICTION.extraction.max_doc_chars
+MAX_OUTPUT_TOKENS = JURISDICTION.extraction.max_output_tokens
 
 ENTITY_TYPES = ["person", "project", "ordinance", "resolution", "case_number", "location", "topic"]
 STATUSES = ["proposed", "in_progress", "approved", "denied", "deferred", "completed", "withdrawn"]
@@ -61,7 +67,7 @@ ENTITY_SCHEMA = {
         "entity_type": {"type": "string", "enum": ENTITY_TYPES},
         "name": {
             "type": "string",
-            "description": "Proper name as the documents use it, e.g. 'George Snyder Trail', 'Ordinance 2026-04'.",
+            "description": "Proper name as the documents use it, e.g. 'Main Street Trail', 'Ordinance 2026-04'.",
         },
         "role": {"type": "string", "description": "e.g. 'subject', 'applicant', 'sponsor', 'location'."},
         "update_text": {
@@ -77,9 +83,13 @@ ENTITY_SCHEMA = {
     "required": ["entity_type", "name", "update_text"],
 }
 
+def _quoted(items: list[str]) -> str:
+    return ", ".join(f"'{i}'" for i in items)
+
+
 EXTRACTION_TOOL = {
     "name": "record_meeting_extraction",
-    "description": "Record the structured facts extracted from one council/commission meeting.",
+    "description": "Record the structured facts extracted from one public-body meeting.",
     "input_schema": {
         "type": "object",
         "properties": {
@@ -126,7 +136,9 @@ EXTRACTION_TOOL = {
             },
             "other_discussion": {
                 "type": "array",
-                "description": "Matters raised OUTSIDE any numbered agenda item, when the agenda has no item for that period: member/council/commission comments, committee reports, staff or city manager reports, public comment, announcements. Each carries the period it came up in. If the agenda does list such a period as an item ('Council Comments and Committee reports out', 'Commission Comments'), file the remark under that item instead and leave this empty.",
+                "description": "Matters raised OUTSIDE any numbered agenda item, when the agenda has no item for that period: member/council/commission comments, committee reports, staff or manager reports, public comment, announcements. Each carries the period it came up in. If the agenda does list such a period as an item ("
+                               + _quoted(JURISDICTION.extraction.comment_period_items or ["Council Comments and Committee reports out", "Commission Comments"])
+                               + "), file the remark under that item instead and leave this empty.",
                 "items": {
                     "type": "object",
                     "properties": {
@@ -142,39 +154,55 @@ EXTRACTION_TOOL = {
     },
 }
 
-SYSTEM_PROMPT = """\
-You extract structured facts from municipal meeting records (agenda, minutes, \
-and an official actions report when available). Rules:
-- The minutes and actions report are the source of truth for outcomes and \
-votes; the agenda alone only tells you what was scheduled.
-- Record only what the documents state. Never invent vote breakdowns, \
-outcomes, or statuses that are not written down. If a meeting has no minutes \
-or actions report yet, outcomes should say the item was scheduled/discussed \
-per the agenda, and there are no votes.
-- One derivation is allowed because it follows from the record: when the \
-minutes say a motion passed or failed "unanimously" and elsewhere record who \
-was present (roll call, attendance, "Members present"), fill vote_breakdown \
-with every present member (yes for passed, no for failed) and mark members \
-recorded absent as absent. Use the attendance as of that item if the minutes \
-note someone arriving or leaving. Bodies such as the School Board record \
-votes this way rather than by roll call.
-- Entity names: use the documents' own naming. Ordinances/resolutions keep \
-their numbers ('Ordinance 2026-04'). Projects keep their proper names. Do \
-not create entities for routine procedure (roll call, adoption of agenda, \
-approval of prior minutes) or for council members merely being present.
-- status_after is for trackable matters (projects, ordinances, resolutions, \
-zoning cases): what state is it in after this meeting?
-- The city itself and its own bodies (City Council, Planning Commission, \
-School Board, advisory boards and committees) are the actors, never \
-entities. A "Planning Commission update" or "School Board liaison report" \
-item gets entities for what was reported on, not for the body.
-- An agenda item's entities are only what that item itself concerned. A \
-matter raised during member or council comments, committee or staff reports, \
-public comment or announcements is NOT part of the item the minutes happen to \
-print it after. If the agenda lists that period as its own item ('Council \
-Comments and Committee reports out', 'Commission Comments'), file the remark \
-under that item; if it does not, put it in other_discussion with its period. \
-Never file such a remark under the last numbered item of the night."""
+def build_system_prompt(cfg: JurisdictionConfig) -> str:
+    """The extraction system prompt with the jurisdiction's vocabulary: its
+    noun, the bodies it tracks, the agenda items that are comment periods,
+    and any note about how its bodies record votes."""
+    bodies = [b.label for b in cfg.bodies]
+    if bodies:
+        body_list = ", ".join(bodies[:3]) + ", advisory boards and committees"
+    else:
+        body_list = "council, commissions, advisory boards and committees"
+    examples = _quoted(cfg.extraction.comment_period_items
+                       or ["Council Comments and Committee reports out", "Commission Comments"])
+    vote_notes = " ".join(cfg.extraction.vote_notes)
+    vote_line = (" " + vote_notes) if vote_notes else ""
+    noun = cfg.identity.noun
+    return (
+        "You extract structured facts from municipal meeting records (agenda, minutes, "
+        "and an official actions report when available). Rules:\n"
+        "- The minutes and actions report are the source of truth for outcomes and "
+        "votes; the agenda alone only tells you what was scheduled.\n"
+        "- Record only what the documents state. Never invent vote breakdowns, "
+        "outcomes, or statuses that are not written down. If a meeting has no minutes "
+        "or actions report yet, outcomes should say the item was scheduled/discussed "
+        "per the agenda, and there are no votes.\n"
+        "- One derivation is allowed because it follows from the record: when the "
+        "minutes say a motion passed or failed \"unanimously\" and elsewhere record who "
+        "was present (roll call, attendance, \"Members present\"), fill vote_breakdown "
+        "with every present member (yes for passed, no for failed) and mark members "
+        "recorded absent as absent. Use the attendance as of that item if the minutes "
+        f"note someone arriving or leaving.{vote_line}\n"
+        "- Entity names: use the documents' own naming. Ordinances/resolutions keep "
+        "their numbers ('Ordinance 2026-04'). Projects keep their proper names. Do "
+        "not create entities for routine procedure (roll call, adoption of agenda, "
+        "approval of prior minutes) or for members merely being present.\n"
+        "- status_after is for trackable matters (projects, ordinances, resolutions, "
+        "zoning cases): what state is it in after this meeting?\n"
+        f"- The {noun} itself and its own bodies ({body_list}) are the actors, never "
+        "entities. A \"Planning Commission update\" or \"liaison report\" item gets "
+        "entities for what was reported on, not for the body.\n"
+        "- An agenda item's entities are only what that item itself concerned. A "
+        "matter raised during member comments, committee or staff reports, public "
+        "comment or announcements is NOT part of the item the minutes happen to "
+        "print it after. If the agenda lists that period as its own item "
+        f"({examples}), file the remark under that item; if it does not, put it in "
+        "other_discussion with its period. Never file such a remark under the last "
+        "numbered item of the night."
+    )
+
+
+SYSTEM_PROMPT = build_system_prompt(JURISDICTION)
 
 
 def _needs_retry(exc: BaseException) -> bool:
@@ -192,14 +220,23 @@ def _call_claude(prompt: str) -> dict:
     import anthropic
 
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-    response = client.messages.create(
+    # streamed so a large output budget cannot trip the HTTP timeout; the
+    # final message is what a plain create() would have returned
+    with client.messages.stream(
         model=DEFAULT_MODEL,
-        max_tokens=8192,
+        max_tokens=MAX_OUTPUT_TOKENS,
         system=SYSTEM_PROMPT,
         tools=[EXTRACTION_TOOL],
         tool_choice={"type": "tool", "name": "record_meeting_extraction"},
         messages=[{"role": "user", "content": prompt}],
-    )
+    ) as stream:
+        response = stream.get_final_message()
+    if response.stop_reason == "max_tokens":
+        # a truncated tool call parses to a hollow dict (summary only); storing
+        # it would mark the meeting extracted with no items. Fail loudly instead.
+        raise ValueError(
+            f"extraction output truncated at {MAX_OUTPUT_TOKENS} tokens — raise "
+            "extraction.max_output_tokens for this jurisdiction")
     for block in response.content:
         if block.type == "tool_use":
             return block.input
@@ -253,9 +290,19 @@ def _build_prompt(meeting: Meeting, texts: dict[str, str],
                   known_entities: list[str] | None = None) -> str:
     parts = [
         f"Meeting: {meeting.title}",
-        f"Body: {meeting.body}",
+        f"Body: {body_label(meeting.body)}",
         f"Date: {meeting.meeting_date}",
     ]
+    body_cfg = REGISTRY.bodies.get(meeting.body)
+    if body_cfg and body_cfg.agenda_has_outcomes and "agenda" in texts:
+        parts += [
+            "",
+            "Note: this body publishes an annotated agenda — each item carries its "
+            "official outcome ('Approved', 'Deferred', 'Done', 'Held', ...). Treat "
+            "those outcomes as the record of what happened; a roll call is rarely "
+            "printed, so record outcomes and leave vote breakdowns empty unless "
+            "members' votes are listed by name.",
+        ]
     if known_entities:
         parts += [
             "",
@@ -326,15 +373,100 @@ _COMMENT_PERIOD = re.compile(
     r"(comments?|remarks|reports?)\b", re.I)
 
 
+_COMMENT_ITEM_NAMES = tuple(n.lower() for n in JURISDICTION.extraction.comment_period_items)
+
+
 def _is_comments_item(title: str | None) -> bool:
     """Is this agenda item itself the comments/reports period?"""
-    return bool(title) and bool(_COMMENTS_ITEM.search(title))
+    if not title:
+        return False
+    return bool(_COMMENTS_ITEM.search(title)) or title.strip().lower() in _COMMENT_ITEM_NAMES
 
 
 def _from_comment_period(update_text: str | None) -> bool:
     """Does the extractor's own sentence say the remark came from a comments
     or reports period ("During council comments, ...")?"""
     return bool(update_text) and bool(_COMMENT_PERIOD.search(update_text))
+
+
+# the jurisdiction's case-number grammar (None: names resolve verbatim)
+CASE_NUMBERS = JURISDICTION.extraction.case_numbers
+
+
+def _case_parts(name: str | None):
+    if CASE_NUMBERS is None:
+        return None
+    return split_case_name(name, CASE_NUMBERS.parent_prefixes)
+
+
+def resolve_named(session: Session, entity_type: str, name: str,
+                  meeting_id: int | None = None) -> list:
+    """The entities one extracted name stands for. Usually one; a compound
+    case name ("PCA-84-L-020-29/CDPA-84-L-020-10") stands for each case it
+    lists, written the way the official record writes it, so each links to
+    its own record. An umbrella application printed with a case becomes that
+    case's alias; printed alone it resolves through that alias."""
+    parts = _case_parts(name)
+    if parts is None or not (parts.primaries or parts.parents):
+        entity = resolve_entity(session, entity_type, name, first_seen_meeting_id=meeting_id)
+        return [entity] if entity else []
+    names = parts.primaries or parts.parents
+    found = []
+    for case in names:
+        entity = resolve_entity(session, entity_type, case, first_seen_meeting_id=meeting_id)
+        if entity is not None and entity not in found:
+            found.append(entity)
+    if found and parts.primaries:
+        if len(names) == 1 and name.strip() != names[0]:
+            add_alias(session, found[0], name)  # the compound spelling finds its one case
+        for parent in parts.parents:
+            add_alias(session, found[0], parent)
+    return found
+
+
+def fold_case_parents(session: Session, data: dict) -> int:
+    """Before resolving a meeting's names: an umbrella application number
+    that stands as an entity of its own (a bare "RZPA-2025-FR-00035" from an
+    earlier meeting) is folded into the case this meeting prints it with, so
+    both mentions become one thread. Returns merges made."""
+    from councilhound.dedupe import merge_entities
+    from councilhound.entities import slugify
+
+    if CASE_NUMBERS is None:
+        return 0
+    items = data.get("agenda_items", []) or []
+    ents = [e for item in items for e in item.get("entities", [])]
+    ents += list(data.get("other_discussion", []) or [])
+    # (first case, umbrella numbers) from entity names, then from item titles,
+    # where "Public Hearing on PCA-2023-PR-00010 (RZPA-2026-PR-00013)" pairs
+    # them even when the extractor named the umbrella number on its own
+    pairs: list[tuple[str, str, list[str]]] = []
+    for ent in ents:
+        parts = _case_parts(ent.get("name"))
+        if parts and parts.primaries and parts.parents:
+            pairs.append((parts.primaries[0], ent.get("entity_type", "case_number"), parts.parents))
+    for item in items:
+        for field in ("title", "description"):
+            for cases, parent in case_parent_pairs(item.get(field), CASE_NUMBERS.parent_prefixes):
+                pairs.append((cases[0], "case_number", [parent]))
+    merged = 0
+    for first_case, entity_type, parents in pairs:
+        case = resolve_entity(session, entity_type, first_case)
+        if case is None:
+            continue
+        for parent in parents:
+            stray = session.scalar(select(Entity).where(Entity.canonical_slug == slugify(parent)))
+            if stray is not None and stray.id != case.id:
+                try:
+                    with session.begin_nested():  # one odd row must not sink the meeting
+                        merge_entities(session, stray.canonical_slug, case.canonical_slug,
+                                       force_cross_type=True)
+                    merged += 1
+                except Exception:
+                    log.exception("could not fold %s into %s", parent, case.canonical_slug)
+                    continue
+            add_alias(session, case, parent)
+    return merged
 
 
 def apply_extraction(session: Session, meeting: Meeting, data: dict) -> None:
@@ -345,6 +477,7 @@ def apply_extraction(session: Session, meeting: Meeting, data: dict) -> None:
     for model in (EntityMention, Vote, EntityUpdate, AgendaItem):
         session.execute(delete(model).where(model.meeting_id == meeting.id))
     session.flush()
+    fold_case_parents(session, data)
 
     cite_docs = {
         d.doc_type: d
@@ -361,7 +494,9 @@ def apply_extraction(session: Session, meeting: Meeting, data: dict) -> None:
     # (and packet), the model has filed the packet's sample motions and the
     # routine procedure as passed votes; the prompt forbids it and this makes
     # the rule hold whatever the model does.
-    has_record = bool(cite_docs.get("minutes") or cite_docs.get("actions_report"))
+    body_cfg = REGISTRY.bodies.get(meeting.body)
+    has_record = bool(cite_docs.get("minutes") or cite_docs.get("actions_report")) \
+        or bool(body_cfg and body_cfg.agenda_has_outcomes and cite_docs.get("agenda"))
     dropped_votes = skipped_self = 0
 
     # entity_id -> {"texts": [...], "status": ..., "item_id": ...}
@@ -402,29 +537,27 @@ def apply_extraction(session: Session, meeting: Meeting, data: dict) -> None:
             if is_self_reference(ent.get("name")):
                 skipped_self += 1
                 continue
-            entity = resolve_entity(session, ent.get("entity_type", "topic"), ent.get("name", ""),
-                                    first_seen_meeting_id=meeting.id)
-            if entity is None:
-                continue
             # extractions made before the other_discussion bucket existed
             # filed comment-period remarks under whatever item came last;
             # unfile those on re-apply so they stop joining that item's votes
             stray = not comments_item and _from_comment_period(ent.get("update_text"))
             item_id = None if stray else row.id
             marker = "comments" if stray else label
-            session.add(EntityMention(
-                entity_id=entity.id,
-                meeting_id=meeting.id,
-                agenda_item_id=item_id,
-                document_id=cite_doc_id,
-                context_text=ent.get("update_text"),
-                role=ent.get("role"),
-            ))
-            u = updates.setdefault(entity.id, {"texts": [], "status": None, "item_id": item_id})
-            if ent.get("update_text"):
-                u["texts"].append(f"[{marker}] {ent['update_text']}")
-            if ent.get("status_after"):
-                u["status"] = ent["status_after"]
+            for entity in resolve_named(session, ent.get("entity_type", "topic"),
+                                        ent.get("name", ""), meeting.id):
+                session.add(EntityMention(
+                    entity_id=entity.id,
+                    meeting_id=meeting.id,
+                    agenda_item_id=item_id,
+                    document_id=cite_doc_id,
+                    context_text=ent.get("update_text"),
+                    role=ent.get("role"),
+                ))
+                u = updates.setdefault(entity.id, {"texts": [], "status": None, "item_id": item_id})
+                if ent.get("update_text"):
+                    u["texts"].append(f"[{marker}] {ent['update_text']}")
+                if ent.get("status_after"):
+                    u["status"] = ent["status_after"]
 
     # remarks from a period the agenda had no item for: on the meeting, no item
     for ent in data.get("other_discussion", []) or []:
@@ -432,23 +565,21 @@ def apply_extraction(session: Session, meeting: Meeting, data: dict) -> None:
         if is_self_reference(ent.get("name")):
             skipped_self += 1
             continue
-        entity = resolve_entity(session, ent.get("entity_type", "topic"), ent.get("name", ""),
-                                first_seen_meeting_id=meeting.id)
-        if entity is None:
-            continue
-        session.add(EntityMention(
-            entity_id=entity.id,
-            meeting_id=meeting.id,
-            agenda_item_id=None,
-            document_id=cite_doc_id,
-            context_text=ent.get("update_text"),
-            role=ent.get("role") or PERIOD_LABELS[period],
-        ))
-        u = updates.setdefault(entity.id, {"texts": [], "status": None, "item_id": None})
-        if ent.get("update_text"):
-            u["texts"].append(f"[{period}] {ent['update_text']}")
-        if ent.get("status_after"):
-            u["status"] = ent["status_after"]
+        for entity in resolve_named(session, ent.get("entity_type", "topic"),
+                                    ent.get("name", ""), meeting.id):
+            session.add(EntityMention(
+                entity_id=entity.id,
+                meeting_id=meeting.id,
+                agenda_item_id=None,
+                document_id=cite_doc_id,
+                context_text=ent.get("update_text"),
+                role=ent.get("role") or PERIOD_LABELS[period],
+            ))
+            u = updates.setdefault(entity.id, {"texts": [], "status": None, "item_id": None})
+            if ent.get("update_text"):
+                u["texts"].append(f"[{period}] {ent['update_text']}")
+            if ent.get("status_after"):
+                u["status"] = ent["status_after"]
 
     for entity_id, u in updates.items():
         if not u["texts"]:

@@ -5,20 +5,27 @@ import MapClient from "@/components/MapClient";
 import StatusBadge from "@/components/StatusBadge";
 import UseMyLocation from "@/components/UseMyLocation";
 import { api, formatDate, type GeocodeHit, type MapLocation, type NearbyResult } from "@/lib/api";
+import { getJurisdiction, type Jurisdiction } from "@/lib/jurisdiction";
 
-export const metadata = {
-  title: "Near me",
-  description:
-    "What the City of Fairfax council and planning commission are deciding near an address: projects and named places within walking distance, nearest first.",
-};
+export async function generateMetadata() {
+  const j = await getJurisdiction();
+  return {
+    title: "Near me",
+    description: `What ${j.identity.short_name}'s public bodies are deciding near an address: projects and named places nearby, nearest first.`,
+  };
+}
 
 export const dynamic = "force-dynamic";
 
-const RADII = [
-  { m: 800, label: "½ mile" },
-  { m: 1600, label: "1 mile" },
-  { m: 3200, label: "2 miles" },
-];
+/** The radius chips, from the jurisdiction's nearby_radii_m (a walkable
+ * city offers ½/1/2 miles; a county, 1/2/5). */
+function radiiFor(j: Jurisdiction): { m: number; label: string }[] {
+  return j.display.nearby_radii_m.map((m) => {
+    const mi = m / 1609.344;
+    const label = Math.abs(mi - 0.5) < 0.06 ? "½ mile" : `${Math.round(mi * 10) / 10} mile${Math.round(mi * 10) / 10 === 1 ? "" : "s"}`;
+    return { m, label };
+  });
+}
 
 function fmtDistance(m: number): string {
   const miles = m / 1609.344;
@@ -49,8 +56,10 @@ export default async function NearbyPage({
 }: {
   searchParams: { q?: string; lat?: string; lng?: string; r?: string };
 }) {
+  const j = await getJurisdiction();
+  const RADII = radiiFor(j);
   const q = (searchParams.q ?? "").trim();
-  const radius = RADII.some((r) => String(r.m) === searchParams.r) ? Number(searchParams.r) : 1600;
+  const radius = RADII.some((r) => String(r.m) === searchParams.r) ? Number(searchParams.r) : RADII[1]?.m ?? RADII[0].m;
   const lat = Number(searchParams.lat);
   const lng = Number(searchParams.lng);
   const haveCoords = Number.isFinite(lat) && Number.isFinite(lng) && searchParams.lat !== undefined;
@@ -63,7 +72,7 @@ export default async function NearbyPage({
     } catch (e) {
       geocodeError =
         e instanceof Error && e.message.endsWith("404")
-          ? "No street address matched that. Try a house number and street, like “10455 Armstrong St”."
+          ? `No street address matched that. Try a house number and street, like “${j.display.example_address}”.`
           : "The address lookup is unavailable right now. Try again in a minute, or use your location.";
     }
     if (hit) {
@@ -85,7 +94,7 @@ export default async function NearbyPage({
     <div className="mx-auto max-w-[1280px] px-4 pb-16 pt-8 sm:px-8">
       <h1 className="mb-1 text-[32px] font-medium tracking-[-0.5px]">Near me</h1>
       <p className="mb-5 max-w-[720px] text-sm text-muted">
-        Projects and named places the council and planning commission have taken up near an
+        Projects and named places {j.identity.short_name}&apos;s public bodies have taken up near an
         address, nearest first. Addresses are looked up and forgotten; nothing is stored.
       </p>
 
@@ -94,7 +103,7 @@ export default async function NearbyPage({
         <input
           name="q"
           defaultValue={q === "my location" ? "" : q}
-          placeholder="A street address in the city, e.g. 10455 Armstrong St"
+          placeholder={`A street address in the ${j.identity.noun}, e.g. ${j.display.example_address}`}
           aria-label="Street address"
           className="min-w-0 flex-1 rounded-xl border border-hairline bg-canvas px-4 py-2.5 text-[15px] outline-none placeholder:text-muted-soft focus:border-ink sm:min-w-[320px] sm:flex-none sm:basis-[420px]"
         />
@@ -137,7 +146,7 @@ export default async function NearbyPage({
         <p className="rounded-2xl border border-dashed border-hairline p-6 text-sm text-muted">
           Enter an address or share your location to see what&apos;s being decided nearby. Or browse{" "}
           <Link href="/map" className="font-semibold underline underline-offset-2">
-            the whole city on the map
+            the whole {j.identity.noun} on the map
           </Link>
           .
         </p>

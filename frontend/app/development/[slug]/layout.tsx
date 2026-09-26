@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getJurisdiction } from "@/lib/jurisdiction";
 import ProjectTabs from "@/components/ProjectTabs";
 import { requireRecord } from "@/lib/not-found";
 import { getProject } from "./project";
@@ -6,9 +7,9 @@ import { getProject } from "./project";
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const project = await requireRecord(getProject(params.slug));
+  const [project, j] = await Promise.all([requireRecord(getProject(params.slug)), getJurisdiction()]);
   return {
-    title: `${project.name} — City of Fairfax development project`,
+    title: `${project.name} — ${j.identity.short_name} development project`,
     description: project.description ?? undefined,
   };
 }
@@ -20,6 +21,7 @@ export default async function DevelopmentProjectLayout({
   children: React.ReactNode;
   params: { slug: string };
 }) {
+  const j = await getJurisdiction();
   const project = await requireRecord(getProject(params.slug));
 
   const meta = [project.project_type, project.division, project.address]
@@ -40,7 +42,7 @@ export default async function DevelopmentProjectLayout({
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={project.image_url}
-            alt={`${project.name}, as pictured in the city's project record`}
+            alt={`${project.name}, as pictured in the ${j.identity.noun}'s project record`}
             className="order-last h-auto w-full max-w-[280px] rounded-2xl border border-hairline object-cover sm:order-none sm:w-[200px]"
           />
         )}
@@ -72,7 +74,7 @@ export default async function DevelopmentProjectLayout({
           target="_blank"
           className="font-semibold underline underline-offset-2 hover:text-ink"
         >
-          city record ↗
+          {j.identity.noun} record ↗
         </a>
         {project.lat !== null && project.entity_slug && (
           <>

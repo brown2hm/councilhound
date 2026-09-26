@@ -5,7 +5,7 @@ entirely by environment:
     SMTP_HOST      unset -> emails are logged and dropped (local dev)
     SMTP_PORT      default 587
     SMTP_USERNAME / SMTP_PASSWORD
-    MAIL_FROM      default "CouncilHound <hound@councilhound.net>"
+    MAIL_FROM      default: the jurisdiction config's site.mail_from
 """
 import logging
 import os
@@ -18,7 +18,7 @@ SMTP_HOST = os.environ.get("SMTP_HOST")
 SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
 SMTP_USERNAME = os.environ.get("SMTP_USERNAME")
 SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD")
-MAIL_FROM = os.environ.get("MAIL_FROM", "CouncilHound <hound@councilhound.net>")
+from councilhound.config import MAIL_FROM  # noqa: E402,F401
 
 
 def send_email(to: str, subject: str, text: str, html: str | None = None) -> bool:

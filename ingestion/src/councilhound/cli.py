@@ -13,7 +13,7 @@ from datetime import datetime
 import click
 
 from councilhound.bodies import BODY_KEYS
-from councilhound.config import GRANICUS_VIEW_IDS
+from councilhound.config import GRANICUS_VIEW_IDS, JURISDICTION_SLUG
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logging.getLogger("pgserver").setLevel(logging.WARNING)
@@ -470,12 +470,50 @@ def upcoming(view_id):
 @cli.command()
 @click.option("--skip-details", is_flag=True, help="only use list page + ArcGIS fields")
 def projects(skip_details):
-    """Refresh official City of Fairfax development-project records."""
+    """Refresh the jurisdiction's official development-project records
+    (projects.adapter in its YAML; a no-op when it has none)."""
     from councilhound import pipeline
     from councilhound.db.session import get_session
 
     with get_session() as session:
         click.echo(pipeline.sync_projects(session, fetch_details=not skip_details))
+
+
+@cli.command("normalize-cases")
+@click.option("--apply", is_flag=True, help="make the changes (default: report only)")
+def normalize_cases(apply):
+    """Split entities named after compound case numbers ("RZ-2017-HM-020
+    (RZPA-2025-HM-00031)", "PCA-84-L-020-29/CDPA-84-L-020-10") into the cases
+    they list, so each links to its official record. Needs
+    extraction.case_numbers in the jurisdiction YAML; re-applies stored
+    extractions, no model calls."""
+    import json
+
+    from councilhound.db.session import get_session
+    from councilhound.dedupe import normalize_case_entities
+
+    with get_session() as session:
+        click.echo(json.dumps(normalize_case_entities(session, apply=apply), indent=2))
+
+
+@cli.command("projects-discover")
+@click.argument("url", required=False)
+def projects_discover(url):
+    """Describe an ArcGIS service or layer (fields, record count, sample
+    rows) so an operator can pin projects.params.layer_url / where / fields
+    in the jurisdiction YAML. Defaults to the pinned layer, then to any
+    params.candidates. Never writes the YAML itself."""
+    import json
+
+    from councilhound.config import JURISDICTION
+    from councilhound.scraper.arcgis_projects import describe_layer
+
+    params = JURISDICTION.projects.params
+    targets = [url] if url else [u for u in [params.get("layer_url"), *params.get("candidates", [])] if u]
+    if not targets:
+        raise click.UsageError("no URL given and nothing pinned under projects.params")
+    for target in targets:
+        click.echo(json.dumps(describe_layer(target), indent=2, default=str))
 
 
 @cli.command("index-points")
@@ -535,8 +573,8 @@ def status():
 # IP-blocking keep these out of the cloud `daily`/`catchup` flows.
 
 jurisdiction_option = click.option(
-    "--jurisdiction", default="fairfax_city_va", show_default=True,
-    help="jurisdiction config stem under ingestion/jurisdictions/",
+    "--jurisdiction", default=JURISDICTION_SLUG, show_default=True,
+    help="jurisdiction config stem under ingestion/jurisdictions/ (default: $JURISDICTION)",
 )
 
 
