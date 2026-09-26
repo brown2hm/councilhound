@@ -195,7 +195,7 @@ export default function TranscriptReader({
                     <a
                       href={seg.watch_url}
                       target="_blank"
-                      title="Watch this moment on the city's player"
+                      title="Watch this moment on the official player"
                       className="font-mono text-[12px] text-muted underline-offset-2 hover:text-ink hover:underline"
                     >
                       {fmtTime(seg.start_seconds)}

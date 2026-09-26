@@ -10,8 +10,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import (
-    meetings, entities, ask, development, members, search, status, subscriptions,
+    meetings, entities, ask, development, jurisdiction, members, search, status, subscriptions,
 )
+from councilhound.config import JURISDICTION
 
 
 @asynccontextmanager
@@ -25,7 +26,7 @@ async def lifespan(_app: FastAPI):
     yield
 
 
-app = FastAPI(title="CouncilHound API", lifespan=lifespan)
+app = FastAPI(title=f"CouncilHound API — {JURISDICTION.identity.short_name}", lifespan=lifespan)
 
 # Comma-separated origins; "*" only for local dev. Only the Ask page calls
 # the API from the browser — everything else is server-to-server.
@@ -45,6 +46,7 @@ app.include_router(members.router, prefix="/members", tags=["members"])
 app.include_router(search.router, prefix="/search", tags=["search"])
 app.include_router(subscriptions.router, prefix="/subscriptions", tags=["subscriptions"])
 app.include_router(status.router, prefix="/status", tags=["status"])
+app.include_router(jurisdiction.router, prefix="/jurisdiction", tags=["jurisdiction"])
 
 
 @app.get("/health")

@@ -2,6 +2,8 @@
  * and minutes. Matched case-insensitively on whole words, longest term
  * first, so "special use permit" wins over "permit". Keep entries short:
  * they render as hover tooltips as well as on /glossary. */
+import type { Jurisdiction } from "@/lib/jurisdiction";
+
 export interface GlossaryEntry {
   slug: string;
   term: string;
@@ -15,42 +17,42 @@ export const GLOSSARY: GlossaryEntry[] = [
     term: "Special use permit",
     aliases: ["special use permits", "SUP"],
     definition:
-      "Permission for a use the zoning allows only case by case (a drive-through, a school, a larger building). Needs a public hearing and a council vote, and can carry conditions.",
+      "Permission for a use the zoning allows only case by case (a drive-through, a school, a larger building). Needs a public hearing and a {{legislative_body}} vote, and can carry conditions.",
   },
   {
     slug: "special-exception",
     term: "Special exception",
     aliases: ["special exceptions"],
     definition:
-      "A council-approved departure from a specific zoning rule, such as parking counts or height, for one property.",
+      "A {{legislative_body}}-approved departure from a specific zoning rule, such as parking counts or height, for one property.",
   },
   {
     slug: "rezoning",
     term: "Rezoning",
     aliases: ["rezone", "rezoned", "zoning map amendment"],
     definition:
-      "Changing which zoning district a property sits in, which changes what can be built there. Goes to the Planning Commission for a recommendation, then to City Council for the vote.",
+      "Changing which zoning district a property sits in, which changes what can be built there. Goes to the Planning Commission for a recommendation, then to {{legislative_body}} for the vote.",
   },
   {
     slug: "zoning",
     term: "Zoning",
     aliases: ["zoning ordinance", "zoning district"],
     definition:
-      "The city rules that say what can be built where: uses, height, density, setbacks, and parking, by district.",
+      "The {{noun}} rules that say what can be built where: uses, height, density, setbacks, and parking, by district.",
   },
   {
     slug: "text-amendment",
     term: "Text amendment",
     aliases: ["zoning text amendment", "text amendments"],
     definition:
-      "A change to the words of the zoning ordinance itself, citywide, rather than to one property's district.",
+      "A change to the words of the zoning ordinance itself, {{noun}}wide, rather than to one property's district.",
   },
   {
     slug: "comprehensive-plan",
     term: "Comprehensive plan",
     aliases: ["comp plan", "2035 comprehensive plan"],
     definition:
-      "The city's long-range vision for land use, transportation, housing, and parks. Rezonings are judged partly on whether they fit it.",
+      "The {{noun}}'s long-range vision for land use, transportation, housing, and parks. Rezonings are judged partly on whether they fit it.",
   },
   {
     slug: "small-area-plan",
@@ -112,7 +114,7 @@ export const GLOSSARY: GlossaryEntry[] = [
     slug: "planning-commission",
     term: "Planning Commission",
     definition:
-      "The appointed body that reviews land-use applications and plans first and sends a recommendation to City Council, which makes the final decision.",
+      "The appointed body that reviews land-use applications and plans first and sends a recommendation to {{legislative_body}}, which makes the final decision.",
   },
   {
     slug: "public-hearing",
@@ -154,14 +156,14 @@ export const GLOSSARY: GlossaryEntry[] = [
     term: "Ordinance",
     aliases: ["ordinances"],
     definition:
-      "A local law. Ordinances amend the city code and need a public hearing and two readings.",
+      "A local law. Ordinances amend the {{noun}} code and need a public hearing and two readings.",
   },
   {
     slug: "resolution",
     term: "Resolution",
     aliases: ["resolutions"],
     definition:
-      "A formal statement of council position or a one-time action, such as approving a contract. Passes on a single vote.",
+      "A formal statement of {{legislative_body}} position or a one-time action, such as approving a contract. Passes on a single vote.",
   },
   {
     slug: "motion",
@@ -203,7 +205,7 @@ export const GLOSSARY: GlossaryEntry[] = [
     term: "Appropriation",
     aliases: ["appropriations", "supplemental appropriation"],
     definition:
-      "Council authorization to spend a specific amount of money. Budget changes mid-year come as supplemental appropriations.",
+      "{{legislative_body}} authorization to spend a specific amount of money. Budget changes mid-year come as supplemental appropriations.",
   },
   {
     slug: "accessory-dwelling-unit",
@@ -245,7 +247,7 @@ export const GLOSSARY: GlossaryEntry[] = [
     term: "Staff report",
     aliases: ["staff reports"],
     definition:
-      "The city staff's written analysis and recommendation on an agenda item, published with the agenda packet.",
+      "The {{noun}} staff's written analysis and recommendation on an agenda item, published with the agenda packet.",
   },
   {
     slug: "quorum",
@@ -287,4 +289,59 @@ export function lookupTerm(match: string): GlossaryEntry | null {
     return entry;
   }
   return null;
+}
+
+/** The glossary for one jurisdiction: `{{legislative_body}}` and `{{noun}}`
+ * in the base definitions become its words, and display.glossary_overrides
+ * remove or rewrite entries whose meaning differs there (a county's
+ * "special exception" is not a city's). Memoised per jurisdiction slug. */
+export interface GlossaryVariant {
+  entries: GlossaryEntry[];
+  lookup: { needle: string; entry: GlossaryEntry }[];
+  regex: RegExp;
+  lookupTerm: (match: string) => GlossaryEntry | null;
+}
+
+function buildVariant(entries: GlossaryEntry[]): GlossaryVariant {
+  const lookup = entries.flatMap((entry) => [entry.term, ...(entry.aliases ?? [])].map((needle) => ({ needle, entry })));
+  lookup.sort((a, b) => b.needle.length - a.needle.length);
+  const regex = new RegExp(`\\b(?:${lookup.map((l) => escapeRe(l.needle)).join("|")})\\b`, "gi");
+  const lookupTerm = (match: string): GlossaryEntry | null => {
+    const low = match.toLowerCase();
+    for (const { needle, entry } of lookup) {
+      if (needle.toLowerCase() !== low) continue;
+      // short all-caps acronyms (FAR, BAR, SUP) only match when written in caps
+      const isAcronym = needle.length <= 4 && needle === needle.toUpperCase();
+      if (isAcronym && match !== needle) return null;
+      return entry;
+    }
+    return null;
+  };
+  return { entries, lookup, regex, lookupTerm };
+}
+
+const variants = new Map<string, GlossaryVariant>();
+
+export function glossaryFor(j: Jurisdiction | null): GlossaryVariant {
+  const key = j?.slug ?? "";
+  const cached = variants.get(key);
+  if (cached) return cached;
+  const legislative = j?.identity.legislative_body_label ?? "City Council";
+  const noun = j?.identity.noun ?? "city";
+  const fill = (t: string) => t.replace(/\{\{legislative_body\}\}/g, legislative).replace(/\{\{noun\}\}/g, noun);
+  const overrides = new Map((j?.display.glossary_overrides ?? []).map((o) => [o.slug, o]));
+  const entries: GlossaryEntry[] = [];
+  for (const base of GLOSSARY) {
+    const o = overrides.get(base.slug);
+    if (o?.remove) continue;
+    entries.push({
+      slug: base.slug,
+      term: o?.term ?? fill(base.term),
+      aliases: o?.aliases ?? base.aliases,
+      definition: o?.definition ?? fill(base.definition),
+    });
+  }
+  const v = buildVariant(entries);
+  variants.set(key, v);
+  return v;
 }

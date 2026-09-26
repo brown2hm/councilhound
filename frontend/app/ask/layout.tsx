@@ -1,8 +1,12 @@
-export const metadata = {
-  title: "Ask the hound",
-  description:
-    "Natural-language questions answered from the City of Fairfax meeting record, with citations you can verify against the source video and documents.",
-};
+import { getJurisdiction } from "@/lib/jurisdiction";
+
+export async function generateMetadata() {
+  const j = await getJurisdiction();
+  return {
+    title: "Ask the hound",
+    description: `Natural-language questions answered from the ${j.identity.short_name} meeting record, with citations you can verify against the source video and documents.`,
+  };
+}
 
 export default function AskLayout({ children }: { children: React.ReactNode }) {
   return children;

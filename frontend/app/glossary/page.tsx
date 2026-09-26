@@ -1,14 +1,18 @@
 import Link from "next/link";
-import { GLOSSARY } from "@/lib/glossary";
+import { glossaryFor } from "@/lib/glossary";
+import { getJurisdiction } from "@/lib/jurisdiction";
 
-export const metadata = {
-  title: "Glossary",
-  description:
-    "Plain-language definitions of the terms that show up in City of Fairfax council, commission, and board agendas.",
-};
+export async function generateMetadata() {
+  const j = await getJurisdiction();
+  return {
+    title: "Glossary",
+    description: `Plain-language definitions of the terms that show up in ${j.identity.short_name} board, commission, and committee agendas.`,
+  };
+}
 
-export default function GlossaryPage() {
-  const entries = [...GLOSSARY].sort((a, b) => a.term.localeCompare(b.term));
+export default async function GlossaryPage() {
+  const j = await getJurisdiction();
+  const entries = [...glossaryFor(j).entries].sort((a, b) => a.term.localeCompare(b.term));
   return (
     <div className="mx-auto max-w-[860px] px-4 pb-16 pt-8 sm:px-8">
       <h1 className="mb-1 text-[32px] font-medium tracking-[-0.5px]">Glossary</h1>

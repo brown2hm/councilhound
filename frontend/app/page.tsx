@@ -5,7 +5,6 @@ import FollowButton from "@/components/FollowButton";
 import StatusBadge from "@/components/StatusBadge";
 import {
   api,
-  BODY_LABELS,
   formatDate,
   PUBLIC_API_URL,
   type ChangesResponse,
@@ -18,6 +17,7 @@ import {
   type UpcomingEvent,
 } from "@/lib/api";
 import { voteShape } from "@/lib/briefing";
+import { bodyLabel, bodyRecommends, getJurisdiction, jurisdiction, timezone } from "@/lib/jurisdiction";
 
 export const dynamic = "force-dynamic";
 
@@ -83,7 +83,7 @@ function deriveDecisions(details: MeetingDetail[]): Decision[] {
           text,
           meetingId: m.id,
         });
-      } else if (item.outcome && /recommend/i.test(item.outcome) && m.body === "planning_commission") {
+      } else if (item.outcome && /recommend/i.test(item.outcome) && bodyRecommends(m.body)) {
         decisions.push({
           badge: "RECOMMENDED",
           tally: "",
@@ -153,16 +153,15 @@ function countHeadline(decisions: Decision[], changes: ChangesResponse): string 
   if (votes) sentences.push(cap(votes) + ".");
   if (moved) sentences.push(cap(plural(moved, "topic")) + " changed status.");
   if (!sentences.length && fresh) sentences.push(cap(plural(fresh, "topic")) + " new to the record.");
-  return sentences.length ? sentences.join(" ") : "The latest from city hall.";
+  return sentences.length ? sentences.join(" ") : `The latest from the ${jurisdiction()?.identity.noun ?? "city"}.`;
 }
 
 const meetingNames = (details: MeetingDetail[]) =>
-  details.map((m) => `the ${BODY_LABELS[m.body] ?? m.body} meeting on ${formatDate(m.date)}`).join(" and ");
+  details.map((m) => `the ${bodyLabel(m.body)} meeting on ${formatDate(m.date)}`).join(" and ");
 
-/** YYYY-MM-DD in the city's own time zone, so "today" and "tomorrow" hold
- * whether the page renders in Virginia or on a UTC box. */
-const CITY_TZ = "America/New_York";
-const localDay = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: CITY_TZ });
+/** YYYY-MM-DD in the jurisdiction's own time zone, so "today" and "tomorrow"
+ * hold whether the page renders in Virginia or on a UTC box. */
+const localDay = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: timezone() });
 const daysBetween = (fromDay: string, toDay: string) =>
   Math.round((Date.parse(toDay) - Date.parse(fromDay)) / 86_400_000);
 const dayOf = (iso: string) => iso.slice(0, 10);
@@ -183,10 +182,15 @@ function relativeDay(iso: string, today: string): string {
 // ---------------------------------------------------------------------------
 // The docket: upcoming meetings with what's on them
 
-// agenda furniture that is tracked as a topic but is never the news
+// agenda furniture that is tracked as a topic but is never the news; the
+// jurisdiction adds its own (its hall, its chambers) via display.boilerplate_terms
 const BOILERPLATE =
-  /personnel|closed (session|meeting)|city hall|appointment|proclamation|heritage month|safety month|\bminutes\b|adjourn|call to order|comment period|pledge|council chambers/i;
-const substantiveTopic = (t: UpcomingAgendaTopic) => !BOILERPLATE.test(t.name);
+  /personnel|closed (session|meeting)|appointment|proclamation|heritage month|safety month|\bminutes\b|adjourn|call to order|comment period|pledge/i;
+const substantiveTopic = (t: UpcomingAgendaTopic) => {
+  if (BOILERPLATE.test(t.name)) return false;
+  const name = t.name.toLowerCase();
+  return !(jurisdiction()?.display.boilerplate_terms ?? []).some((term) => name.includes(term.toLowerCase()));
+};
 // what's concretely being decided outranks the plan it's decided under
 const TYPE_RANK: Record<string, number> = { location: 0, project: 1, case_number: 2, ordinance: 3, resolution: 4 };
 const typeRank = (t: UpcomingAgendaTopic) => TYPE_RANK[t.entity_type] ?? 5;
@@ -221,7 +225,7 @@ function hearingLede(entry: DocketEntry, today: string): Lede {
   const e = entry.event;
   const lead = entry.hearings[0];
   const others = entry.hearings.slice(1, 4);
-  const who = e.body ? BODY_LABELS[e.body] ?? e.body : e.title;
+  const who = e.body ? bodyLabel(e.body) : e.title;
   const when = e.starts_at ? `${relativeDay(e.starts_at, today)} at ${fmtTime(e.starts_at)}` : "soon";
   return {
     eyebrow: `Public hearing · ${who} · ${e.starts_at ? `${fmtShort(e.starts_at)}, ${fmtTime(e.starts_at)}` : ""}`,
@@ -281,7 +285,7 @@ function hearingLede(entry: DocketEntry, today: string): Lede {
 }
 
 function contestedLede(d: Decision): Lede {
-  const who = BODY_LABELS[d.body] ?? d.body;
+  const who = bodyLabel(d.body);
   const verb = d.badge === "FAILED" ? "rejected" : `split ${d.tally || ""} on`.replace("  ", " ");
   return {
     eyebrow: `${d.badge === "FAILED" ? "Failed vote" : "Split vote"} · ${who} · ${fmtShort(d.date)}`,
@@ -308,7 +312,7 @@ function contestedLede(d: Decision): Lede {
 
 function meetingLede(entry: DocketEntry, today: string): Lede {
   const e = entry.event;
-  const who = e.body ? BODY_LABELS[e.body] ?? e.body : e.title;
+  const who = e.body ? bodyLabel(e.body) : e.title;
   const top = entry.rest.slice(0, 3);
   return {
     eyebrow: `Next meeting · ${who} · ${e.starts_at ? `${fmtShort(e.starts_at)}, ${fmtTime(e.starts_at)}` : ""}`,
@@ -369,10 +373,12 @@ function countLede(decisions: Decision[], changes: ChangesResponse, details: Mee
 // Pieces
 
 function Masthead({ latest }: { latest: string }) {
+  const j = jurisdiction();
+  const place = j ? `${j.identity.short_name}, ${j.identity.state_abbr}` : "";
   return (
     <div className="mb-5 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-ink pb-3">
       <div className="text-xs font-semibold uppercase tracking-[1.5px] text-muted">
-        The briefing · Week of {latest} · City of Fairfax, VA
+        The briefing · Week of {latest} · {place}
       </div>
       <div className="flex min-w-0 flex-1 items-center justify-end gap-3 sm:flex-none">
         <form
@@ -384,7 +390,7 @@ function Masthead({ latest }: { latest: string }) {
           <Image src="/brand/hound.png" alt="" width={34} height={30} className="h-5 w-auto shrink-0" />
           <input
             name="q"
-            placeholder="What has the council decided about affordable housing?"
+            placeholder={j?.display.ask_placeholder || "What has the council decided about affordable housing?"}
             className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none placeholder:text-muted-soft"
           />
           <button className="shrink-0 rounded-md bg-ink px-3 py-1.5 text-xs font-semibold text-white hover:bg-ink-active">
@@ -477,7 +483,7 @@ function Docket({
                     href={`/meetings/upcoming/${encodeURIComponent(e.event_id)}`}
                     className="underline-offset-2 hover:underline"
                   >
-                    {e.body ? BODY_LABELS[e.body] ?? e.body : e.title}
+                    {e.body ? bodyLabel(e.body) : e.title}
                   </Link>
                 </div>
               </div>
@@ -630,7 +636,7 @@ function Moved({ rows, fresh, days }: { rows: Row[]; fresh: EntityChange[]; days
                 <div className="text-[12px] text-muted md:text-right">
                   <BodyTag body={body} className="md:hidden" />
                   <span className="md:hidden"> · </span>
-                  <span className="hidden md:inline">{BODY_LABELS[body]?.replace("City ", "") ?? body} · </span>
+                  <span className="hidden md:inline">{bodyLabel(body).replace(/^(City|County|Town) /, "")} · </span>
                   {fmtShort(date)}
                 </div>
               </li>
@@ -641,9 +647,9 @@ function Moved({ rows, fresh, days }: { rows: Row[]; fresh: EntityChange[]; days
               <Link href={`/topics?days=${days}`} className="underline-offset-2 hover:text-ink hover:underline">
                 {cap(plural(fresh.length, "topic"))} first appeared on the record
                 {top && top.n > 1 && byMeeting.size > 1
-                  ? `, ${top.n} of them at the ${BODY_LABELS[top.body] ?? top.body} meeting on ${fmtShort(top.date)}`
+                  ? `, ${top.n} of them at the ${bodyLabel(top.body)} meeting on ${fmtShort(top.date)}`
                   : top && byMeeting.size === 1
-                    ? `, all at the ${BODY_LABELS[top.body] ?? top.body} meeting on ${fmtShort(top.date)}`
+                    ? `, all at the ${bodyLabel(top.body)} meeting on ${fmtShort(top.date)}`
                     : ""}
                 .
               </Link>
@@ -683,7 +689,7 @@ function Attention({ panels }: { panels: { body: string; hot: HotTopicsResponse 
   const max = Math.max(1, ...shown.map((r) => r.topic.seconds));
   const transcribed = panels
     .filter((p) => p.hot.meetings.length)
-    .map((p) => `${p.hot.meetings.length} ${BODY_LABELS[p.body] ?? p.body}`)
+    .map((p) => `${p.hot.meetings.length} ${bodyLabel(p.body)}`)
     .join(" and ");
   return (
     <section>
@@ -750,7 +756,7 @@ function Attention({ panels }: { panels: { body: string; hot: HotTopicsResponse 
             {panels.map((p) => (
               <span key={p.body} className="flex items-center gap-1.5">
                 <span aria-hidden className={`h-2 w-2 rounded-full ${bodyDot(p.body)}`} />
-                {BODY_LABELS[p.body] ?? p.body}
+                {bodyLabel(p.body)}
               </span>
             ))}
             <span>Named discussion time across {transcribed || "no"} transcribed meetings, last 60 days. Share is of that body&apos;s hours.</span>
@@ -777,13 +783,15 @@ export default async function Briefing() {
   // A front page of independent parts: one failing endpoint blanks its own
   // part, not the page. Only the meetings list is load-bearing enough to fall
   // through to the error boundary.
-  const [meetings, hotCouncil, hotPC, upcoming, changes] = await Promise.all([
+  const j = await getJurisdiction();
+  const hotKeys = j.bodies.filter((b) => b.hot).map((b) => b.key);
+  const [meetings, upcoming, changes, hots] = await Promise.all([
     api.meetings(new URLSearchParams({ limit: "8" })),
-    api.hotTopics("city_council").catch(() => NO_HOT),
-    api.hotTopics("planning_commission").catch(() => NO_HOT),
     api.upcoming().catch(() => [] as UpcomingEvent[]),
     api.changes(WINDOW_DAYS, 100).catch(() => NO_CHANGES),
+    Promise.all(hotKeys.map((k) => api.hotTopics(k).catch(() => NO_HOT))),
   ]);
+  const hotPanels = hotKeys.map((body, i) => ({ body, hot: hots[i] }));
   const today = localDay(new Date());
 
   // The record: meetings in the same window the change feed uses. When
@@ -857,12 +865,7 @@ export default async function Briefing() {
       <div className="flex flex-col gap-10">
         <Docket entries={docket} advisory={advisory} today={today} />
         <Moved rows={rows} fresh={fresh} days={changes.days} />
-        <Attention
-          panels={[
-            { body: "city_council", hot: hotCouncil },
-            { body: "planning_commission", hot: hotPC },
-          ]}
-        />
+        <Attention panels={hotPanels} />
       </div>
     </div>
   );

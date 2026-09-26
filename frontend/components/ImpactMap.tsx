@@ -1,6 +1,7 @@
 "use client";
 
 import "leaflet/dist/leaflet.css";
+import { useJurisdiction } from "@/components/JurisdictionProvider";
 import L from "leaflet";
 import "leaflet.heat";
 import { useEffect, useMemo } from "react";
@@ -290,7 +291,7 @@ function EconomicPanels({
   const commercialRetailZones = layers.commercial_retail_zones;
   const cityBoundary = layers.city_boundary;
 
-  const defaultBounds: L.LatLngBoundsLiteral = [[38.83, -77.33], [38.87, -77.27]];
+  const defaultBounds: L.LatLngBoundsLiteral = useJurisdiction().display.map_bounds;
 
   const maxCapture = useMemo(
     () =>
@@ -555,7 +556,7 @@ function CorridorMap({
   const capturePoints = layers.bike_capture_points;
   const catchment = layers.bike_catchment;
   const cityBoundary = layers.city_boundary;
-  const defaultBounds: L.LatLngBoundsLiteral = [[38.83, -77.33], [38.87, -77.27]];
+  const defaultBounds: L.LatLngBoundsLiteral = useJurisdiction().display.map_bounds;
 
   const scaleMax = useMemo(
     () => niceCeil(maxDollar(capturePoints, ["bike_new_usd"])),
@@ -637,7 +638,7 @@ function TrailMap({
   const capturePoints = layers.trail_capture_points;
   const catchment = layers.trail_catchment;
   const premiumBand = layers.trail_premium_band;
-  const defaultBounds: L.LatLngBoundsLiteral = [[38.83, -77.33], [38.87, -77.27]];
+  const defaultBounds: L.LatLngBoundsLiteral = useJurisdiction().display.map_bounds;
 
   const scaleMax = useMemo(
     () => niceCeil(maxDollar(capturePoints, ["trail_usd"])),

@@ -11,3 +11,6 @@ requests>=2.32
 tenacity>=8.2
 # query-time embedding (councilhound.embeddings, local bge model)
 sentence-transformers>=3.0
+# the jurisdiction config (councilhound.jurisdiction) is YAML + pydantic
+pyyaml>=6.0
+pydantic>=2.7

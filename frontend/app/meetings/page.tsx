@@ -1,21 +1,25 @@
 import Link from "next/link";
-import { BODY_DOTS } from "@/components/BodyTag";
+import { bodyDot } from "@/components/BodyTag";
 import FollowButton from "@/components/FollowButton";
 import Pagination from "@/components/Pagination";
-import { api, BODIES as TRACKED_BODIES, PUBLIC_API_URL, type MeetingDecision, type MeetingSummary, type UpcomingEvent } from "@/lib/api";
+import { api, PUBLIC_API_URL, type MeetingDecision, type MeetingSummary, type UpcomingEvent } from "@/lib/api";
+import { getJurisdiction, type Jurisdiction } from "@/lib/jurisdiction";
 
-export const metadata = {
-  title: "Meetings",
-  description:
-    "Every archived City of Fairfax City Council, Planning Commission, School Board, and advisory board meeting, newest first, with what each one decided and links to the agenda, recording, and transcript.",
-};
+export async function generateMetadata() {
+  const j = await getJurisdiction();
+  return {
+    title: "Meetings",
+    description:
+      `Every archived ${j.identity.short_name} public meeting (${j.bodies.map((b) => b.label).join(", ")}), newest first, with what each one decided and links to the agenda, recording, and transcript.`,
+  };
+}
 
 /** Filter chips: a name too long for a chip gets its short noun instead
  * ("Parks Board" for the Parks and Recreation Advisory Board). */
 const CHIP_MAX = 24;
-const BODIES = [
+const bodyChips = (j: Jurisdiction) => [
   { key: "", label: "All bodies", short: "" },
-  ...TRACKED_BODIES.map((b) => ({
+  ...j.bodies.map((b) => ({
     key: b.key,
     label: b.label.length > CHIP_MAX ? titleCase(b.short) : b.label,
     short: b.short,
@@ -72,7 +76,7 @@ function whenUpcoming(iso: string): string {
 
 function Dot({ body }: { body: string | null }) {
   if (!body) return null;
-  return <span aria-hidden className={`mr-1.5 inline-block h-2 w-2 rounded-full ${BODY_DOTS[body] ?? "bg-muted-soft"}`} />;
+  return <span aria-hidden className={`mr-1.5 inline-block h-2 w-2 rounded-full ${bodyDot(body)}`} />;
 }
 
 const MARK: Record<string, { glyph: string; className: string }> = {
@@ -216,6 +220,7 @@ export default async function MeetingsPage({
 }: {
   searchParams: { body?: string; page?: string };
 }) {
+  const BODIES = bodyChips(await getJurisdiction());
   const body = searchParams.body ?? "";
   const page = Math.max(1, Number(searchParams.page) || 1);
   // fetch one extra row to learn whether another page exists
@@ -258,7 +263,7 @@ export default async function MeetingsPage({
                   b.key === body ? "bg-ink text-canvas" : "border border-hairline bg-canvas text-muted hover:text-ink"
                 }`}
               >
-                {b.key && <span aria-hidden className={`inline-block h-2 w-2 rounded-full ${BODY_DOTS[b.key]}`} />}
+                {b.key && <span aria-hidden className={`inline-block h-2 w-2 rounded-full ${bodyDot(b.key)}`} />}
                 {b.label}
               </Link>
             ))}
