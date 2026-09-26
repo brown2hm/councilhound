@@ -4,7 +4,7 @@ Phase 1: Discovery & raw ingest (orchestration half).
 discover()        -> upsert meetings rows from the archive page
 fetch_documents() -> download agenda HTML, agenda-item PDFs, minutes,
                      actions reports; upsert documents rows
-fetch_media()     -> download the meeting MP3 for Phase 2 transcription
+fetch_media()     -> captions VTT / MP3 / MP4 audio for Phase 2 transcription
 
 All steps are idempotent: meetings upsert on (view_id, clip_id), documents
 upsert on source_url, downloads skip existing non-empty files. Per-meeting
@@ -18,7 +18,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from councilhound import http
-from councilhound.config import RAW_DATA_DIR
+from councilhound.config import GRANICUS_BASE_URL, JURISDICTION, RAW_DATA_DIR
 from councilhound.db.models import CityProject, Document, EntityGeocode, IngestRun, Meeting
 from councilhound.entities import resolve_entity
 from councilhound.scraper import granicus
@@ -191,6 +191,11 @@ def link_index_points(session: Session, meeting: Meeting) -> int:
     matched = 0
     for item in items:
         t = by_label.get(item.label.lower().rstrip("."))
+        if t is None:
+            # labels that don't line up (the County numbers items per
+            # section, so the extractor writes 'Action Items 2' while the
+            # player says '2.'): fall back to the item's title
+            t = granicus.match_index_point_by_title(item.title, points)
         if t is not None:
             item.start_seconds = t
             matched += 1
@@ -286,15 +291,22 @@ def _upsert_project_geocode(session: Session, entity_id: int, lat, lng, address:
     geo.geocoded_at = datetime.now(timezone.utc)
 
 
-def sync_projects(session: Session, fetch_details: bool = True) -> dict:
-    """Refresh official City of Fairfax development-project records.
+def sync_projects(session: Session, fetch_details: bool = True, source=None) -> dict:
+    """Refresh the jurisdiction's official development-project records from
+    its projects adapter (councilhound.scraper.projects).
 
-    The city directory is the set of records; ArcGIS/detail coordinates are
-    mirrored into EntityGeocode for map pins. Unmatched official projects are
-    created as tracker project entities so the directory can cross-link
+    The official directory is the set of records; ArcGIS/detail coordinates
+    are mirrored into EntityGeocode for map pins. Unmatched official projects
+    are created as tracker project entities so the directory can cross-link
     uniformly to topic pages.
     """
-    discovered, html_complete = fairfax_projects.list_projects(fetch_details=fetch_details)
+    from councilhound.scraper.projects import get_source
+
+    source = source or get_source(JURISDICTION)
+    if source is None:
+        log.info("sync_projects: no projects adapter for %s; skipped", JURISDICTION.slug)
+        return {"skipped": "no projects adapter"}
+    discovered, html_complete = source.list_projects(fetch_details=fetch_details)
     old = {p.external_slug: p for p in session.scalars(select(CityProject))}
 
     created = updated = linked = geocoded = 0
@@ -357,22 +369,88 @@ def sync_projects(session: Session, fetch_details: bool = True) -> dict:
     return result
 
 
+def _captions_url(meeting: Meeting) -> str:
+    return f"{GRANICUS_BASE_URL}/videos/{meeting.granicus_clip_id}/captions.vtt"
+
+
+def _fetch_captions(meeting: Meeting) -> str | None:
+    """Save the clip's WebVTT captions when the tenant publishes real ones;
+    None when the endpoint 404s or the file is empty/placeholder."""
+    from councilhound.extraction.captions import is_real_captions
+
+    resp = http.get_http_session().get(_captions_url(meeting), timeout=120)
+    if resp.status_code != 200 or not is_real_captions(resp.text):
+        log.info("clip %s: no usable captions (HTTP %s, %d bytes)",
+                 meeting.granicus_clip_id, resp.status_code, len(resp.content))
+        return None
+    path = os.path.join(_meeting_dir(meeting), "captions.vtt")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "wb") as f:
+        f.write(resp.content)
+    return path
+
+
+def extract_audio_track(video_path: str, audio_path: str) -> str:
+    """Copy the first audio stream of a video container into its own file
+    (no re-encode) with PyAV, which ships with faster-whisper — the dev box
+    has no ffmpeg binary."""
+    import av
+
+    with av.open(video_path) as src:
+        in_stream = next((s for s in src.streams if s.type == "audio"), None)
+        if in_stream is None:
+            raise ValueError(f"{video_path}: no audio stream")
+        with av.open(audio_path, "w") as dst:
+            out_stream = dst.add_stream_from_template(in_stream)
+            for packet in src.demux(in_stream):
+                if packet.dts is None:
+                    continue
+                packet.stream = out_stream
+                dst.mux(packet)
+    return audio_path
+
+
 def fetch_media(session: Session, meeting: Meeting) -> str | None:
-    """Download the meeting MP3 (audio for Phase 2 transcription).
+    """Fetch what the transcript stage will consume, per the jurisdiction's
+    granicus.media.sources order: captions (VTT), the archive MP3, or the
+    MP4's audio track. Sets audio_local_path to whichever landed.
 
     Works from residential IPs with our browser User-Agent. Granicus's CDN
     hard-blocks datacenter IPs (verified from Fly 2026-08-02: 403 on both
     archive-video and the archive-stream HLS host), so cloud runs fail fast
     here (http.download's cold-403 path) and audio is fetched/transcribed
-    from a residential machine instead."""
-    if not meeting.audio_url:
-        log.warning("meeting %s (%s) has no audio_url", meeting.id, meeting.title)
-        return None
+    from a residential machine instead. Captions come from the tenant's own
+    host, which cloud runs can reach."""
     if meeting.audio_local_path and os.path.exists(meeting.audio_local_path) \
             and os.path.getsize(meeting.audio_local_path) > 0:
         return meeting.audio_local_path
-    path = os.path.join(_meeting_dir(meeting), "audio.mp3")
-    http.download(meeting.audio_url, path, timeout=600)
+    media = JURISDICTION.granicus.media
+    os.makedirs(_meeting_dir(meeting), exist_ok=True)
+    path: str | None = None
+    for source in media.sources:
+        if source == "captions":
+            path = _fetch_captions(meeting)
+        elif source == "mp3":
+            if not meeting.audio_url:
+                continue
+            path = os.path.join(_meeting_dir(meeting), "audio.mp3")
+            http.download(meeting.audio_url, path, timeout=600)
+        elif source == "mp4_audio_extract":
+            if not meeting.video_url:
+                continue
+            video = os.path.join(_meeting_dir(meeting), "video.mp4")
+            path = os.path.join(_meeting_dir(meeting), "audio.m4a")
+            if not (os.path.exists(path) and os.path.getsize(path) > 0):
+                http.download(meeting.video_url, video, timeout=3600)
+                extract_audio_track(video, path)
+                if not media.keep_video:
+                    os.remove(video)
+        if path:
+            break
+    if not path:
+        log.warning("meeting %s (%s) has no media source (%s)", meeting.id, meeting.title,
+                    ", ".join(media.sources))
+        return None
     meeting.audio_local_path = path
     session.commit()
     return path

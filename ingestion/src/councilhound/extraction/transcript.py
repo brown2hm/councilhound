@@ -1,8 +1,10 @@
 """
 Phase 2: transcription of meeting audio into transcript_chunks.
 
-No captions exist on any Fairfax Granicus clip (verified 2026-07-11), so the
-MP3 downloaded by fetch_media is transcribed locally. Two backends, chosen
+When the Granicus tenant publishes real captions (the County does; the
+City's caption endpoint 404s, verified 2026-07-11), fetch_media saves the
+VTT and this stage parses it instead of running whisper. Otherwise the audio
+fetch_media downloaded is transcribed locally. Two backends, chosen
 automatically:
 
   1. mlx-whisper  — Apple Silicon GPU (Metal); ~5-10x faster than CPU.
@@ -120,8 +122,19 @@ def transcribe_meeting(session: Session, meeting: Meeting, force: bool = False) 
         )
 
     started = time.monotonic()
-    segments = transcribe_audio(meeting.audio_local_path)
+    if meeting.audio_local_path.lower().endswith(".vtt"):
+        from councilhound.extraction.captions import parse_vtt
+        with open(meeting.audio_local_path, encoding="utf-8", errors="replace") as f:
+            segments = parse_vtt(f.read())
+        if not segments:
+            raise ValueError(f"meeting {meeting.id}: captions file has no cues")
+    else:
+        segments = transcribe_audio(meeting.audio_local_path)
     chunks = merge_segments(segments)
+    if meeting.duration_seconds is None and chunks:
+        # archives without a Duration column (the County's) learn the
+        # meeting length from its transcript
+        meeting.duration_seconds = int(chunks[-1]["end"])
 
     if force and existing:
         for row in session.scalars(
