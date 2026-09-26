@@ -40,7 +40,8 @@ from councilhound.db.models import (
 from councilhound.bodies import REGISTRY, is_self_reference, label as body_label
 from councilhound.config import JURISDICTION
 from councilhound.jurisdiction import JurisdictionConfig
-from councilhound.entities import resolve_entity
+from councilhound.cases import case_parent_pairs, split_case_name
+from councilhound.entities import add_alias, resolve_entity
 
 log = logging.getLogger(__name__)
 
@@ -388,6 +389,86 @@ def _from_comment_period(update_text: str | None) -> bool:
     return bool(update_text) and bool(_COMMENT_PERIOD.search(update_text))
 
 
+# the jurisdiction's case-number grammar (None: names resolve verbatim)
+CASE_NUMBERS = JURISDICTION.extraction.case_numbers
+
+
+def _case_parts(name: str | None):
+    if CASE_NUMBERS is None:
+        return None
+    return split_case_name(name, CASE_NUMBERS.parent_prefixes)
+
+
+def resolve_named(session: Session, entity_type: str, name: str,
+                  meeting_id: int | None = None) -> list:
+    """The entities one extracted name stands for. Usually one; a compound
+    case name ("PCA-84-L-020-29/CDPA-84-L-020-10") stands for each case it
+    lists, written the way the official record writes it, so each links to
+    its own record. An umbrella application printed with a case becomes that
+    case's alias; printed alone it resolves through that alias."""
+    parts = _case_parts(name)
+    if parts is None or not (parts.primaries or parts.parents):
+        entity = resolve_entity(session, entity_type, name, first_seen_meeting_id=meeting_id)
+        return [entity] if entity else []
+    names = parts.primaries or parts.parents
+    found = []
+    for case in names:
+        entity = resolve_entity(session, entity_type, case, first_seen_meeting_id=meeting_id)
+        if entity is not None and entity not in found:
+            found.append(entity)
+    if found and parts.primaries:
+        if len(names) == 1 and name.strip() != names[0]:
+            add_alias(session, found[0], name)  # the compound spelling finds its one case
+        for parent in parts.parents:
+            add_alias(session, found[0], parent)
+    return found
+
+
+def fold_case_parents(session: Session, data: dict) -> int:
+    """Before resolving a meeting's names: an umbrella application number
+    that stands as an entity of its own (a bare "RZPA-2025-FR-00035" from an
+    earlier meeting) is folded into the case this meeting prints it with, so
+    both mentions become one thread. Returns merges made."""
+    from councilhound.dedupe import merge_entities
+    from councilhound.entities import slugify
+
+    if CASE_NUMBERS is None:
+        return 0
+    items = data.get("agenda_items", []) or []
+    ents = [e for item in items for e in item.get("entities", [])]
+    ents += list(data.get("other_discussion", []) or [])
+    # (first case, umbrella numbers) from entity names, then from item titles,
+    # where "Public Hearing on PCA-2023-PR-00010 (RZPA-2026-PR-00013)" pairs
+    # them even when the extractor named the umbrella number on its own
+    pairs: list[tuple[str, str, list[str]]] = []
+    for ent in ents:
+        parts = _case_parts(ent.get("name"))
+        if parts and parts.primaries and parts.parents:
+            pairs.append((parts.primaries[0], ent.get("entity_type", "case_number"), parts.parents))
+    for item in items:
+        for field in ("title", "description"):
+            for cases, parent in case_parent_pairs(item.get(field), CASE_NUMBERS.parent_prefixes):
+                pairs.append((cases[0], "case_number", [parent]))
+    merged = 0
+    for first_case, entity_type, parents in pairs:
+        case = resolve_entity(session, entity_type, first_case)
+        if case is None:
+            continue
+        for parent in parents:
+            stray = session.scalar(select(Entity).where(Entity.canonical_slug == slugify(parent)))
+            if stray is not None and stray.id != case.id:
+                try:
+                    with session.begin_nested():  # one odd row must not sink the meeting
+                        merge_entities(session, stray.canonical_slug, case.canonical_slug,
+                                       force_cross_type=True)
+                    merged += 1
+                except Exception:
+                    log.exception("could not fold %s into %s", parent, case.canonical_slug)
+                    continue
+            add_alias(session, case, parent)
+    return merged
+
+
 def apply_extraction(session: Session, meeting: Meeting, data: dict) -> None:
     """Deterministically (re)build this meeting's structured rows from an
     extraction dict. Delete + recreate, so re-runs converge."""
@@ -396,6 +477,7 @@ def apply_extraction(session: Session, meeting: Meeting, data: dict) -> None:
     for model in (EntityMention, Vote, EntityUpdate, AgendaItem):
         session.execute(delete(model).where(model.meeting_id == meeting.id))
     session.flush()
+    fold_case_parents(session, data)
 
     cite_docs = {
         d.doc_type: d
@@ -455,29 +537,27 @@ def apply_extraction(session: Session, meeting: Meeting, data: dict) -> None:
             if is_self_reference(ent.get("name")):
                 skipped_self += 1
                 continue
-            entity = resolve_entity(session, ent.get("entity_type", "topic"), ent.get("name", ""),
-                                    first_seen_meeting_id=meeting.id)
-            if entity is None:
-                continue
             # extractions made before the other_discussion bucket existed
             # filed comment-period remarks under whatever item came last;
             # unfile those on re-apply so they stop joining that item's votes
             stray = not comments_item and _from_comment_period(ent.get("update_text"))
             item_id = None if stray else row.id
             marker = "comments" if stray else label
-            session.add(EntityMention(
-                entity_id=entity.id,
-                meeting_id=meeting.id,
-                agenda_item_id=item_id,
-                document_id=cite_doc_id,
-                context_text=ent.get("update_text"),
-                role=ent.get("role"),
-            ))
-            u = updates.setdefault(entity.id, {"texts": [], "status": None, "item_id": item_id})
-            if ent.get("update_text"):
-                u["texts"].append(f"[{marker}] {ent['update_text']}")
-            if ent.get("status_after"):
-                u["status"] = ent["status_after"]
+            for entity in resolve_named(session, ent.get("entity_type", "topic"),
+                                        ent.get("name", ""), meeting.id):
+                session.add(EntityMention(
+                    entity_id=entity.id,
+                    meeting_id=meeting.id,
+                    agenda_item_id=item_id,
+                    document_id=cite_doc_id,
+                    context_text=ent.get("update_text"),
+                    role=ent.get("role"),
+                ))
+                u = updates.setdefault(entity.id, {"texts": [], "status": None, "item_id": item_id})
+                if ent.get("update_text"):
+                    u["texts"].append(f"[{marker}] {ent['update_text']}")
+                if ent.get("status_after"):
+                    u["status"] = ent["status_after"]
 
     # remarks from a period the agenda had no item for: on the meeting, no item
     for ent in data.get("other_discussion", []) or []:
@@ -485,23 +565,21 @@ def apply_extraction(session: Session, meeting: Meeting, data: dict) -> None:
         if is_self_reference(ent.get("name")):
             skipped_self += 1
             continue
-        entity = resolve_entity(session, ent.get("entity_type", "topic"), ent.get("name", ""),
-                                first_seen_meeting_id=meeting.id)
-        if entity is None:
-            continue
-        session.add(EntityMention(
-            entity_id=entity.id,
-            meeting_id=meeting.id,
-            agenda_item_id=None,
-            document_id=cite_doc_id,
-            context_text=ent.get("update_text"),
-            role=ent.get("role") or PERIOD_LABELS[period],
-        ))
-        u = updates.setdefault(entity.id, {"texts": [], "status": None, "item_id": None})
-        if ent.get("update_text"):
-            u["texts"].append(f"[{period}] {ent['update_text']}")
-        if ent.get("status_after"):
-            u["status"] = ent["status_after"]
+        for entity in resolve_named(session, ent.get("entity_type", "topic"),
+                                    ent.get("name", ""), meeting.id):
+            session.add(EntityMention(
+                entity_id=entity.id,
+                meeting_id=meeting.id,
+                agenda_item_id=None,
+                document_id=cite_doc_id,
+                context_text=ent.get("update_text"),
+                role=ent.get("role") or PERIOD_LABELS[period],
+            ))
+            u = updates.setdefault(entity.id, {"texts": [], "status": None, "item_id": None})
+            if ent.get("update_text"):
+                u["texts"].append(f"[{period}] {ent['update_text']}")
+            if ent.get("status_after"):
+                u["status"] = ent["status_after"]
 
     for entity_id, u in updates.items():
         if not u["texts"]:
