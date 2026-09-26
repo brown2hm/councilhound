@@ -46,6 +46,16 @@ jobs:
         # tests/impact belongs to the impact job, which installs the geo stack
         # this one deliberately omits — running it here fails on shapely
         run: uv run pytest tests/ -v --ignore=tests/impact
+      - name: Tests under the second jurisdiction
+        # the module-global config path (bodies, config, prompts) must work
+        # for every checked-in jurisdiction, not just the default one
+        env:
+          PYTHONPATH: src
+          JURISDICTION: fairfax_county_va
+        run: |
+          uv run pytest tests/test_bodies_county.py tests/test_granicus_county.py \
+            tests/test_jurisdiction_configs.py tests/test_captions.py tests/test_seed_county.py \
+            tests/test_pipeline.py tests/test_projects_arcgis.py -v
 
   # impact-analysis subsystem with the full geo stack installed; the base
   # ingestion job runs the same tests but heavy-dep cases importorskip there

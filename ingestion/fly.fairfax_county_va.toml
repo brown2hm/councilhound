@@ -1,3 +1,4 @@
+# Fairfax County jobs image: scripts/fly_jobs_schedule.sh fairfax_county_va <label>
 # CouncilHound jobs image (nightly ingest). This app has NO always-on
 # machines — build+push the image, then a scheduled machine runs it daily:
 #   cd ingestion
@@ -7,7 +8,7 @@
 #     -e TRANSCRIBE_BACKEND=faster-whisper -e WHISPER_MODEL=distil-large-v3 \
 #     -e HF_HOME=/tmp/hf -e DATA_DIR=/tmp/data -e RAW_DATA_DIR=/tmp/data/raw \
 #     --restart no -- python -m councilhound.cli daily
-app = "councilhound-jobs"
+app = "councilhound-fxco-jobs"
 primary_region = "iad"
 
 [build]
@@ -19,7 +20,7 @@ primary_region = "iad"
   app = "tail -f /dev/null"
 
 [env]
-  JURISDICTION = "fairfax_city_va"
+  JURISDICTION = "fairfax_county_va"
   JURISDICTIONS_DIR = "/app/jurisdictions"
 
 [[vm]]

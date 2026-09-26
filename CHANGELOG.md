@@ -1,5 +1,53 @@
 # Changelog
 
+## Unreleased — one codebase, many jurisdictions: Fairfax County as the second (September 2026)
+
+CouncilHound was written against the City of Fairfax, with the City's Granicus
+host, bodies, agenda formats, branding and map baked into roughly 120 places
+across ingestion, the API and the web app. It now runs one stack per
+jurisdiction from one image, selected by `JURISDICTION`.
+
+- **One config per jurisdiction.** `ingestion/jurisdictions/<slug>.yaml`
+  (loader in `councilhound.jurisdiction`; the impact subsystem's models
+  moved there and are re-exported) carries identity, site, Granicus layout,
+  bodies with classification and roster rules, the projects adapter,
+  extraction vocabulary, display defaults and feature flags. `bodies.py` is
+  a registry built from it; `config.py` defaults come from it with the env
+  vars as overrides.
+- **Granicus adapter.** Views are `sections` (one view, `<h3>` per body) or
+  `single` (one view per body); classification ladders became per-body
+  rules; document links classify by config; rows with several player clips
+  pick one by label; dates come from the title when there is no Date
+  column; a body can name an `agenda_url_template`.
+- **Captions as a transcript source.** `granicus.media.sources` orders
+  `captions` / `mp3` / `mp4_audio_extract`. The County publishes real
+  English captions per clip, so its 8-hour Board meetings transcribe from a
+  1 MB VTT instead of an 8.5 GB MP4; the MP4 path extracts the audio track
+  with PyAV as the fallback.
+- **Extraction.** The system prompt is built from the jurisdiction's
+  vocabulary; a body whose agenda carries official outcomes
+  (`agenda_has_outcomes`) counts as the record; the output budget is per
+  jurisdiction and the call streams; a max_tokens-truncated tool call now
+  fails instead of storing a hollow extraction. Index points fall back to
+  title matching when item numbering resets per section.
+- **Rosters.** A parser registry (`ROSTER_PARSERS`) plus static rosters
+  and per-role aliases; the County's supervisors are resolved from
+  "Supervisor Smith, Sully District" lines against the pinned roster, with
+  district aliases.
+- **Official projects.** An adapter registry: the City's OpenCities
+  scraper, and a generic ArcGIS feature-layer adapter (`projects-discover`
+  describes a layer). The County's 262 active/recent zoning cases come from
+  the PLUS layer behind the Planning & Development Explorer.
+- **API + web.** `GET /jurisdiction/` serves the display config; the web
+  app reads it at runtime (no bodies, map bounds, timezone or copy baked
+  in). Feeds, ICS, email and the ask prompt are templated. Impact analysis
+  is gated by `features.impact` (404s and no analysis tabs where off).
+- **Ops.** Per-jurisdiction Fly TOMLs, `scripts/deploy.sh`,
+  `scripts/fly_jobs_schedule.sh`, a canary matrix over jurisdictions, and a
+  CI step running the County tests. Nothing is deployed yet.
+- **Fixed on the way:** naive UTC was compared with naive local time in the
+  weekly briefing and the members' upcoming window (up to 5 h off).
+
 ## Unreleased — extractor guards: no votes without a record, no bodies as topics (September 2026)
 
 Two things the two-year advisory-board backfill surfaced.

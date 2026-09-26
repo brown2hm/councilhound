@@ -1,6 +1,8 @@
+# Fairfax County API: same image as the City's, selected by JURISDICTION.
+# Deploy from the repo root: flyctl deploy -c api/fly.fairfax_county_va.toml
 # CouncilHound API — deploy from the REPO ROOT:
 #   flyctl deploy -c api/fly.toml
-app = "councilhound-api"
+app = "councilhound-fxco-api"
 primary_region = "iad"
 
 [build]
@@ -10,7 +12,7 @@ primary_region = "iad"
 
 [env]
   EMBEDDING_DEVICE = "cpu"
-  JURISDICTION = "fairfax_city_va"
+  JURISDICTION = "fairfax_county_va"
   JURISDICTIONS_DIR = "/app/jurisdictions"
   # set ALLOWED_ORIGINS via `fly secrets` or here once the domain is live
 
