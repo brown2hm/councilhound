@@ -37,14 +37,19 @@ from councilhound.db.models import (
     Meeting,
     Vote,
 )
-from councilhound.bodies import is_self_reference
+from councilhound.bodies import REGISTRY, is_self_reference, label as body_label
+from councilhound.config import JURISDICTION
+from councilhound.jurisdiction import JurisdictionConfig
 from councilhound.entities import resolve_entity
 
 log = logging.getLogger(__name__)
 
 PROMPT_VERSION = "v1"
 DEFAULT_MODEL = os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-6")
-MAX_DOC_CHARS = 60_000  # defensive truncation; largest observed doc is ~44KB
+# defensive truncation (the City's largest observed doc is ~44KB; the County's
+# annotated agendas run longer, so the ceiling is per jurisdiction)
+MAX_DOC_CHARS = JURISDICTION.extraction.max_doc_chars
+MAX_OUTPUT_TOKENS = JURISDICTION.extraction.max_output_tokens
 
 ENTITY_TYPES = ["person", "project", "ordinance", "resolution", "case_number", "location", "topic"]
 STATUSES = ["proposed", "in_progress", "approved", "denied", "deferred", "completed", "withdrawn"]
@@ -61,7 +66,7 @@ ENTITY_SCHEMA = {
         "entity_type": {"type": "string", "enum": ENTITY_TYPES},
         "name": {
             "type": "string",
-            "description": "Proper name as the documents use it, e.g. 'George Snyder Trail', 'Ordinance 2026-04'.",
+            "description": "Proper name as the documents use it, e.g. 'Main Street Trail', 'Ordinance 2026-04'.",
         },
         "role": {"type": "string", "description": "e.g. 'subject', 'applicant', 'sponsor', 'location'."},
         "update_text": {
@@ -77,9 +82,13 @@ ENTITY_SCHEMA = {
     "required": ["entity_type", "name", "update_text"],
 }
 
+def _quoted(items: list[str]) -> str:
+    return ", ".join(f"'{i}'" for i in items)
+
+
 EXTRACTION_TOOL = {
     "name": "record_meeting_extraction",
-    "description": "Record the structured facts extracted from one council/commission meeting.",
+    "description": "Record the structured facts extracted from one public-body meeting.",
     "input_schema": {
         "type": "object",
         "properties": {
@@ -126,7 +135,9 @@ EXTRACTION_TOOL = {
             },
             "other_discussion": {
                 "type": "array",
-                "description": "Matters raised OUTSIDE any numbered agenda item, when the agenda has no item for that period: member/council/commission comments, committee reports, staff or city manager reports, public comment, announcements. Each carries the period it came up in. If the agenda does list such a period as an item ('Council Comments and Committee reports out', 'Commission Comments'), file the remark under that item instead and leave this empty.",
+                "description": "Matters raised OUTSIDE any numbered agenda item, when the agenda has no item for that period: member/council/commission comments, committee reports, staff or manager reports, public comment, announcements. Each carries the period it came up in. If the agenda does list such a period as an item ("
+                               + _quoted(JURISDICTION.extraction.comment_period_items or ["Council Comments and Committee reports out", "Commission Comments"])
+                               + "), file the remark under that item instead and leave this empty.",
                 "items": {
                     "type": "object",
                     "properties": {
@@ -142,39 +153,55 @@ EXTRACTION_TOOL = {
     },
 }
 
-SYSTEM_PROMPT = """\
-You extract structured facts from municipal meeting records (agenda, minutes, \
-and an official actions report when available). Rules:
-- The minutes and actions report are the source of truth for outcomes and \
-votes; the agenda alone only tells you what was scheduled.
-- Record only what the documents state. Never invent vote breakdowns, \
-outcomes, or statuses that are not written down. If a meeting has no minutes \
-or actions report yet, outcomes should say the item was scheduled/discussed \
-per the agenda, and there are no votes.
-- One derivation is allowed because it follows from the record: when the \
-minutes say a motion passed or failed "unanimously" and elsewhere record who \
-was present (roll call, attendance, "Members present"), fill vote_breakdown \
-with every present member (yes for passed, no for failed) and mark members \
-recorded absent as absent. Use the attendance as of that item if the minutes \
-note someone arriving or leaving. Bodies such as the School Board record \
-votes this way rather than by roll call.
-- Entity names: use the documents' own naming. Ordinances/resolutions keep \
-their numbers ('Ordinance 2026-04'). Projects keep their proper names. Do \
-not create entities for routine procedure (roll call, adoption of agenda, \
-approval of prior minutes) or for council members merely being present.
-- status_after is for trackable matters (projects, ordinances, resolutions, \
-zoning cases): what state is it in after this meeting?
-- The city itself and its own bodies (City Council, Planning Commission, \
-School Board, advisory boards and committees) are the actors, never \
-entities. A "Planning Commission update" or "School Board liaison report" \
-item gets entities for what was reported on, not for the body.
-- An agenda item's entities are only what that item itself concerned. A \
-matter raised during member or council comments, committee or staff reports, \
-public comment or announcements is NOT part of the item the minutes happen to \
-print it after. If the agenda lists that period as its own item ('Council \
-Comments and Committee reports out', 'Commission Comments'), file the remark \
-under that item; if it does not, put it in other_discussion with its period. \
-Never file such a remark under the last numbered item of the night."""
+def build_system_prompt(cfg: JurisdictionConfig) -> str:
+    """The extraction system prompt with the jurisdiction's vocabulary: its
+    noun, the bodies it tracks, the agenda items that are comment periods,
+    and any note about how its bodies record votes."""
+    bodies = [b.label for b in cfg.bodies]
+    if bodies:
+        body_list = ", ".join(bodies[:3]) + ", advisory boards and committees"
+    else:
+        body_list = "council, commissions, advisory boards and committees"
+    examples = _quoted(cfg.extraction.comment_period_items
+                       or ["Council Comments and Committee reports out", "Commission Comments"])
+    vote_notes = " ".join(cfg.extraction.vote_notes)
+    vote_line = (" " + vote_notes) if vote_notes else ""
+    noun = cfg.identity.noun
+    return (
+        "You extract structured facts from municipal meeting records (agenda, minutes, "
+        "and an official actions report when available). Rules:\n"
+        "- The minutes and actions report are the source of truth for outcomes and "
+        "votes; the agenda alone only tells you what was scheduled.\n"
+        "- Record only what the documents state. Never invent vote breakdowns, "
+        "outcomes, or statuses that are not written down. If a meeting has no minutes "
+        "or actions report yet, outcomes should say the item was scheduled/discussed "
+        "per the agenda, and there are no votes.\n"
+        "- One derivation is allowed because it follows from the record: when the "
+        "minutes say a motion passed or failed \"unanimously\" and elsewhere record who "
+        "was present (roll call, attendance, \"Members present\"), fill vote_breakdown "
+        "with every present member (yes for passed, no for failed) and mark members "
+        "recorded absent as absent. Use the attendance as of that item if the minutes "
+        f"note someone arriving or leaving.{vote_line}\n"
+        "- Entity names: use the documents' own naming. Ordinances/resolutions keep "
+        "their numbers ('Ordinance 2026-04'). Projects keep their proper names. Do "
+        "not create entities for routine procedure (roll call, adoption of agenda, "
+        "approval of prior minutes) or for members merely being present.\n"
+        "- status_after is for trackable matters (projects, ordinances, resolutions, "
+        "zoning cases): what state is it in after this meeting?\n"
+        f"- The {noun} itself and its own bodies ({body_list}) are the actors, never "
+        "entities. A \"Planning Commission update\" or \"liaison report\" item gets "
+        "entities for what was reported on, not for the body.\n"
+        "- An agenda item's entities are only what that item itself concerned. A "
+        "matter raised during member comments, committee or staff reports, public "
+        "comment or announcements is NOT part of the item the minutes happen to "
+        "print it after. If the agenda lists that period as its own item "
+        f"({examples}), file the remark under that item; if it does not, put it in "
+        "other_discussion with its period. Never file such a remark under the last "
+        "numbered item of the night."
+    )
+
+
+SYSTEM_PROMPT = build_system_prompt(JURISDICTION)
 
 
 def _needs_retry(exc: BaseException) -> bool:
@@ -192,14 +219,23 @@ def _call_claude(prompt: str) -> dict:
     import anthropic
 
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-    response = client.messages.create(
+    # streamed so a large output budget cannot trip the HTTP timeout; the
+    # final message is what a plain create() would have returned
+    with client.messages.stream(
         model=DEFAULT_MODEL,
-        max_tokens=8192,
+        max_tokens=MAX_OUTPUT_TOKENS,
         system=SYSTEM_PROMPT,
         tools=[EXTRACTION_TOOL],
         tool_choice={"type": "tool", "name": "record_meeting_extraction"},
         messages=[{"role": "user", "content": prompt}],
-    )
+    ) as stream:
+        response = stream.get_final_message()
+    if response.stop_reason == "max_tokens":
+        # a truncated tool call parses to a hollow dict (summary only); storing
+        # it would mark the meeting extracted with no items. Fail loudly instead.
+        raise ValueError(
+            f"extraction output truncated at {MAX_OUTPUT_TOKENS} tokens — raise "
+            "extraction.max_output_tokens for this jurisdiction")
     for block in response.content:
         if block.type == "tool_use":
             return block.input
@@ -253,9 +289,19 @@ def _build_prompt(meeting: Meeting, texts: dict[str, str],
                   known_entities: list[str] | None = None) -> str:
     parts = [
         f"Meeting: {meeting.title}",
-        f"Body: {meeting.body}",
+        f"Body: {body_label(meeting.body)}",
         f"Date: {meeting.meeting_date}",
     ]
+    body_cfg = REGISTRY.bodies.get(meeting.body)
+    if body_cfg and body_cfg.agenda_has_outcomes and "agenda" in texts:
+        parts += [
+            "",
+            "Note: this body publishes an annotated agenda — each item carries its "
+            "official outcome ('Approved', 'Deferred', 'Done', 'Held', ...). Treat "
+            "those outcomes as the record of what happened; a roll call is rarely "
+            "printed, so record outcomes and leave vote breakdowns empty unless "
+            "members' votes are listed by name.",
+        ]
     if known_entities:
         parts += [
             "",
@@ -326,9 +372,14 @@ _COMMENT_PERIOD = re.compile(
     r"(comments?|remarks|reports?)\b", re.I)
 
 
+_COMMENT_ITEM_NAMES = tuple(n.lower() for n in JURISDICTION.extraction.comment_period_items)
+
+
 def _is_comments_item(title: str | None) -> bool:
     """Is this agenda item itself the comments/reports period?"""
-    return bool(title) and bool(_COMMENTS_ITEM.search(title))
+    if not title:
+        return False
+    return bool(_COMMENTS_ITEM.search(title)) or title.strip().lower() in _COMMENT_ITEM_NAMES
 
 
 def _from_comment_period(update_text: str | None) -> bool:
@@ -361,7 +412,9 @@ def apply_extraction(session: Session, meeting: Meeting, data: dict) -> None:
     # (and packet), the model has filed the packet's sample motions and the
     # routine procedure as passed votes; the prompt forbids it and this makes
     # the rule hold whatever the model does.
-    has_record = bool(cite_docs.get("minutes") or cite_docs.get("actions_report"))
+    body_cfg = REGISTRY.bodies.get(meeting.body)
+    has_record = bool(cite_docs.get("minutes") or cite_docs.get("actions_report")) \
+        or bool(body_cfg and body_cfg.agenda_has_outcomes and cite_docs.get("agenda"))
     dropped_votes = skipped_self = 0
 
     # entity_id -> {"texts": [...], "status": ..., "item_id": ...}
