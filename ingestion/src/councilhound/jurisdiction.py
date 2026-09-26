@@ -243,6 +243,13 @@ class Projects(BaseModel):
     params: dict[str, Any] = Field(default_factory=dict)
 
 
+class CaseNumbers(BaseModel):
+    """Split compound case-number names into their cases (councilhound.cases).
+    parent_prefixes: umbrella application numbers ("RZPA") that alias the
+    case they are printed with instead of standing as cases of their own."""
+    parent_prefixes: list[str] = Field(default_factory=list)
+
+
 class Extraction(BaseModel):
     comment_period_items: list[str] = Field(default_factory=list)
     vote_notes: list[str] = Field(default_factory=list)
@@ -250,6 +257,8 @@ class Extraction(BaseModel):
     # output budget for the structuring call; a 40-item annotated agenda with
     # entities per item runs well past 8k tokens
     max_output_tokens: int = 8192
+    # None: entity names are resolved verbatim (the City)
+    case_numbers: CaseNumbers | None = None
 
 
 class Display(BaseModel):

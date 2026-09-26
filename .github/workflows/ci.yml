@@ -55,7 +55,7 @@ jobs:
         run: |
           uv run pytest tests/test_bodies_county.py tests/test_granicus_county.py \
             tests/test_jurisdiction_configs.py tests/test_captions.py tests/test_seed_county.py \
-            tests/test_pipeline.py tests/test_projects_arcgis.py -v
+            tests/test_pipeline.py tests/test_projects_arcgis.py tests/test_cases.py -v
 
   # impact-analysis subsystem with the full geo stack installed; the base
   # ingestion job runs the same tests but heavy-dep cases importorskip there

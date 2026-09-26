@@ -211,6 +211,11 @@ extraction:
     - The Board's annotated agenda records an outcome per item ('Approved', 'Done', 'Deferred', 'Held'); a roll call is rarely printed, so record the outcome and leave vote_breakdown empty unless members' votes are listed by name.
   max_doc_chars: 160000
   max_output_tokens: 32000
+  # agendas print cases in compounds ("RZ-2017-HM-020 (RZPA-2025-HM-00031)",
+  # "PCA-84-L-020-29/CDPA-84-L-020-10"); split them so each case links to its
+  # PLUS record. RZPA is the umbrella application PLUS files the cases under.
+  case_numbers:
+    parent_prefixes: [RZPA]
 
 display:
   map_center: [38.85, -77.30]

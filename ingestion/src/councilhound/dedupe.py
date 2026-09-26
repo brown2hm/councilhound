@@ -435,3 +435,61 @@ def merge_batch(session: Session, entries: list[dict], apply: bool = False) -> l
     if apply:
         session.commit()
     return results
+
+
+def normalize_case_entities(session: Session, apply: bool = False) -> dict:
+    """One-off repair for entities made before compound case names were split
+    (councilhound.cases): fold each umbrella application number into the case
+    printed with it, merge every compound-named entity into its first case
+    (old name and slug stay as aliases, so links keep working), then re-apply
+    the stored extractions so a name listing several cases attaches to each.
+    No model calls. Dry run unless apply."""
+    from councilhound.db.models import Extraction, Meeting
+    from councilhound.entities import resolve_entity, slugify
+    from councilhound.extraction import llm_structure as ls
+
+    if ls.CASE_NUMBERS is None:
+        return {"skipped": "no case-number grammar for this jurisdiction"}
+
+    extractions = session.execute(
+        select(Extraction, Meeting).join(Meeting, Extraction.meeting_id == Meeting.id)
+        .where(Extraction.prompt_version == ls.PROMPT_VERSION)
+        .order_by(Meeting.meeting_date, Meeting.id)).all()
+
+    folded = 0
+    if apply:
+        for extraction, _meeting in extractions:
+            folded += ls.fold_case_parents(session, extraction.raw_json or {})
+        session.flush()
+
+    merges = []
+    for e in session.scalars(select(Entity).where(Entity.entity_type != "person")
+                             .order_by(Entity.canonical_slug)).all():
+        parts = ls._case_parts(e.name)
+        if not parts or not parts.primaries:
+            continue
+        target_slug = slugify(parts.primaries[0])
+        if e.canonical_slug == target_slug:
+            continue
+        merges.append({"source": e.canonical_slug, "target": target_slug, "cases": parts.primaries})
+        if not apply:
+            continue
+        target = resolve_entity(session, e.entity_type, parts.primaries[0])
+        if target is None or target.id == e.id:
+            continue
+        try:
+            with session.begin_nested():
+                merge_entities(session, e.canonical_slug, target.canonical_slug,
+                               force_cross_type=True)
+        except Exception as exc:
+            log.exception("case merge failed: %s", merges[-1])
+            merges[-1]["error"] = str(exc)
+
+    reapplied = 0
+    if apply:
+        for _extraction, meeting in extractions:
+            ls.structure_meeting(session, meeting, reapply_only=True)
+            reapplied += 1
+        session.commit()
+    return {"merges": merges, "parents_folded": folded, "meetings_reapplied": reapplied,
+            "applied": apply}

@@ -479,6 +479,23 @@ def projects(skip_details):
         click.echo(pipeline.sync_projects(session, fetch_details=not skip_details))
 
 
+@cli.command("normalize-cases")
+@click.option("--apply", is_flag=True, help="make the changes (default: report only)")
+def normalize_cases(apply):
+    """Split entities named after compound case numbers ("RZ-2017-HM-020
+    (RZPA-2025-HM-00031)", "PCA-84-L-020-29/CDPA-84-L-020-10") into the cases
+    they list, so each links to its official record. Needs
+    extraction.case_numbers in the jurisdiction YAML; re-applies stored
+    extractions, no model calls."""
+    import json
+
+    from councilhound.db.session import get_session
+    from councilhound.dedupe import normalize_case_entities
+
+    with get_session() as session:
+        click.echo(json.dumps(normalize_case_entities(session, apply=apply), indent=2))
+
+
 @cli.command("projects-discover")
 @click.argument("url", required=False)
 def projects_discover(url):
