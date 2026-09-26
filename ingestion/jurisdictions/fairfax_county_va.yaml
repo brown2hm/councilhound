@@ -112,6 +112,7 @@ bodies:
         - {name: Daniel G. Storck, role: supervisor, district: Mount Vernon}
         - {name: Dalia A. Palchik, role: supervisor, district: Providence}
         - {name: Pat Herrity, role: supervisor, district: Springfield}
+      district_title: Supervisor
       roles:
         chairman: {title: Chairman, aliases: [Chairman, Chair]}
         supervisor: {title: Supervisor, aliases: [Supervisor]}
@@ -132,14 +133,35 @@ bodies:
     agenda_url_template: https://www.fairfaxcounty.gov/planningcommission/sites/planningcommission/files/Assets/calendar/%Y/%-m.%-d.%y.pdf
     upcoming: {contains: [planning commission], default_for_view: "10"}
     roster:
-      # PC agendas carry no roster block; the members page is rendered
-      # client-side, so pin the roster here from
-      # https://www.fairfaxcounty.gov/planningcommission/planningcommissionmembers
+      # PC agendas carry no roster block and the members page renders empty,
+      # so the roster is pinned from the Commission's own minutes: the
+      # PRESENT/ABSENT header of 2026-04-22 and 2026-06-24 (both list these
+      # twelve; the committee pages' "Paul D. Thomas" is a stale entry — the
+      # minutes say James Thomas, Springfield). Update when the Commission
+      # reorganizes in January or a seat turns over:
+      # https://www.fairfaxcounty.gov/planningcommission/meeting-minutes-2026
+      # Secretary (Hancock) and Parliamentarian (Bennett) are officer posts,
+      # not roles the record addresses them by, so they seed as commissioners.
       parser: static
-      static: []
+      district_title: Commissioner
+      static:
+        - {name: Phillip A. Niedzielski-Eichner, role: chair, district: At-Large}
+        - {name: Evelyn S. Spain, role: vice_chair, district: Sully}
+        - {name: Jeremy Hancock, role: commissioner, district: Providence}
+        - {name: Candice Bennett, role: commissioner, district: At-Large}
+        - {name: Alyssa Batchelor-Causey, role: commissioner, district: Dranesville}
+        - {name: John A. Carter, role: commissioner, district: Hunter Mill}
+        - {name: Walter C. Clarke, role: commissioner, district: Mount Vernon}
+        - {name: Mary D. Cortina, role: commissioner, district: Braddock}
+        - {name: Chris Landgraf, role: commissioner, district: Franconia}
+        - {name: Timothy J. Sargeant, role: commissioner, district: At-Large}
+        - {name: James Thomas, role: commissioner, district: Springfield}
+        - {name: Alis Wang, role: commissioner, district: Mason}
       roles:
-        chairman: {title: Commission Chairman, aliases: [Commission Chairman], also: [commissioner]}
-        vice_chair: {title: Commission Vice Chairman, aliases: [Commission Vice Chairman, Vice Chairman], also: [commissioner]}
+        # the Commission says Chair / Vice Chair; qualified so they never
+        # collide with the Board's "Chair McKay"
+        chair: {title: Commission Chair, aliases: [Commission Chair], also: [commissioner]}
+        vice_chair: {title: Commission Vice Chair, aliases: [Commission Vice Chair, Vice Chair], also: [commissioner]}
         commissioner: {title: Commissioner, aliases: [Commissioner]}
 
 projects:

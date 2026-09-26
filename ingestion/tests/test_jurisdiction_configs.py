@@ -73,6 +73,12 @@ def test_validation_catches_bad_configs(tmp_path, monkeypatch):
         "  - {key: b, label: B, short: b, archive_section: B, roster: {roles: {c: {title: Chair, aliases: [Chair]}}}}\n")
     with pytest.raises(ValueError, match="titles must be unique"):
         JurisdictionConfig.load("titles")
+    (tmp_path / "aliases.yaml").write_text(
+        base + "bodies:\n"
+        "  - {key: a, label: A, short: a, archive_section: A, roster: {roles: {c: {title: Chairman, aliases: [Chair]}}}}\n"
+        "  - {key: b, label: B, short: b, archive_section: B, roster: {roles: {c: {title: Commission Chair, aliases: [Chair]}}}}\n")
+    with pytest.raises(ValueError, match="alias 'Chair' is used by both"):
+        JurisdictionConfig.load("aliases")
 
 
 def test_current_honours_env(monkeypatch):
