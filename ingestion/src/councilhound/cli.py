@@ -158,6 +158,60 @@ def transcribe(limit, clip_id):
                 click.echo(transcribe_pending(session, limit=limit))
 
 
+@cli.command()
+@body_option
+@since_option
+@until_option
+@limit_option
+@click.option("--clip-id", default=None, help="one meeting by Granicus clip_id")
+@click.option("--min-coverage", type=float, default=0.9, show_default=True,
+              help="keep the old transcript if the new one has fewer of its words")
+@click.option("--dry-run", is_flag=True, help="transcribe and report, change nothing")
+def retranscribe(bodies, since, until, limit, clip_id, min_coverage, dry_run):
+    """Re-transcribe already-transcribed meetings with speaker labels, newest
+    first. Resumable; local only (needs Granicus audio + pyannote)."""
+    import tempfile
+
+    from councilhound.db.session import get_session, stage_lock
+    from councilhound.extraction.retranscribe import LOG_PATH, candidates, retranscribe_meeting
+
+    log = logging.getLogger(__name__)
+    with get_session() as session:
+        meetings = candidates(session, bodies=bodies, since=since, until=until,
+                              clip_id=clip_id, limit=limit)
+        click.echo(f"{len(meetings)} meeting(s) to re-transcribe; log: {LOG_PATH}")
+        tally: dict[str, int] = {}
+        failures_in_a_row = 0
+        with tempfile.TemporaryDirectory(prefix="retranscribe-") as workdir:
+            for meeting in meetings:
+                # per meeting, so the overnight routine can interleave
+                with stage_lock("transcribe") as held:
+                    if not held:
+                        _skipped("transcribe")
+                        click.echo("stopping; re-run to resume")
+                        break
+                    label = f"{meeting.meeting_date} {meeting.body} (clip {meeting.granicus_clip_id})"
+                    try:
+                        r = retranscribe_meeting(session, meeting, workdir,
+                                                 min_coverage=min_coverage, dry_run=dry_run)
+                    except Exception as exc:
+                        session.rollback()
+                        log.exception("retranscribe failed for meeting %s", meeting.id)
+                        click.echo(f"{label}: FAILED {exc}")
+                        tally["failed"] = tally.get("failed", 0) + 1
+                        failures_in_a_row += 1
+                        if failures_in_a_row >= 2:
+                            click.echo("two failures in a row; stopping")
+                            break
+                        continue
+                    failures_in_a_row = 0
+                    tally[r["status"]] = tally.get(r["status"], 0) + 1
+                    click.echo(f"{label}: {r['status']} — {r['old_chunks']}→{r['new_chunks']} chunks, "
+                               f"{r['speakers']} speakers, coverage {r['coverage']:.0%}, "
+                               f"loops {r['old_loop_chunks']}→{r['new_loop_chunks']}, {r['seconds']}s")
+        click.echo(tally)
+
+
 @cli.command("seed-entities")
 def seed_entities():
     """Phase 3 setup: seed person entities + aliases from agenda headers."""
