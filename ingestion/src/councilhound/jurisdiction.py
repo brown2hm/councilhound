@@ -227,6 +227,12 @@ class TermSeat(BaseModel):
     note: str | None = None
 
 
+class Contest(BaseModel):
+    """One contest on the official ballot, as printed."""
+    contest: str                           # "City Council (vote for not more than six)"
+    names: list[str] = Field(default_factory=list)
+
+
 class Terms(BaseModel):
     """How a body's members get and keep their seats, pinned from an
     official source like every other jurisdiction fact. Lets the members
@@ -239,7 +245,7 @@ class Terms(BaseModel):
     term_ends: date | None = None          # when every seat's term ends together
     next_election: date | None = None
     seats_up: str | None = None            # "Mayor and all six council seats"
-    candidates: list[str] = Field(default_factory=list)  # official ballot for next_election
+    candidates: list[Contest] = Field(default_factory=list)  # official ballot for next_election
     members: list[TermSeat] = Field(default_factory=list)
     note: str | None = None
     source: str                            # URL the schedule was read from

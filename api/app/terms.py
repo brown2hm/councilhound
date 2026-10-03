@@ -60,7 +60,8 @@ def body_terms(body_key: str, today: datetime.date | None = None) -> dict | None
     if body is None or body.terms is None:
         return None
     out = term_for(body_key, None, today)
-    out["candidates"] = list(body.terms.candidates)
+    out["candidates"] = [{"contest": c.contest, "names": list(c.names)}
+                         for c in body.terms.candidates]
     out["seats"] = [
         {"name": s.name, "term_ends": s.term_ends.isoformat() if s.term_ends else None,
          "on_ballot": s.on_ballot, "note": s.note}

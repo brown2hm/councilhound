@@ -160,27 +160,20 @@ bodies:
       next_election: 2026-11-03
       seats_up: Mayor and all six council seats
       candidates:
-        - Kirsten Sides Lockhart (Mayor)
-        - Thomas D. "Tom" Peterson (Mayor)
-        - Stacy R. Hall
-        - Rachel M McQuillen
-        - Anthony T. Amos
-        - Sandi W. Slappey Brown
-        - Kelly M. O'Brien
-        - Russell A. Jones
-        - Stephen S. Kim
-        - Susan Hartley Kuiler
-        - María José Padmore
-        - Steve S Chang
-        - Jessica L. Lough
+        - contest: Mayor (vote for one)
+          names: [Kirsten Sides Lockhart, 'Thomas D. "Tom" Peterson']
+        - contest: City Council (vote for not more than six)
+          names: [Stacy R. Hall, Rachel M McQuillen, Anthony T. Amos, Sandi W. Slappey Brown,
+                  Kelly M. O'Brien, Russell A. Jones, Stephen S. Kim, Susan Hartley Kuiler,
+                  María José Padmore, Steve S Chang, Jessica L. Lough]
       members:
         - {name: Catherine S. Read, on_ballot: false, note: Not seeking a third term as Mayor.}
         - {name: Billy M. Bates, on_ballot: false, note: Not seeking reelection.}
         - {name: Stacey D. Hardy-Chandler, on_ballot: false, note: Not seeking reelection.}
         - {name: Thomas D. Peterson, on_ballot: true, note: Running for Mayor rather than reelection to Council.}
-        - {name: Stacy R. Hall, on_ballot: true}
-        - {name: Rachel M. McQuillen, on_ballot: true}
-        - {name: Anthony T. Amos, on_ballot: true}
+        - {name: Stacy R. Hall, on_ballot: true, note: Running for reelection to Council.}
+        - {name: Rachel M. McQuillen, on_ballot: true, note: Running for reelection to Council.}
+        - {name: Anthony T. Amos, on_ballot: true, note: Running for reelection to Council.}
       source: https://www.fairfaxva.gov/Government/Council/Mayor-and-Council-Members
       verified: 2026-10-03
   - key: planning_commission
@@ -247,7 +240,9 @@ bodies:
       selection: elected
       next_election: 2026-11-03
       seats_up: all five School Board seats
-      candidates: [Carolyn S. Pitches, Amit Sarah Hickman, Kristina M. Cecere, Sarah M. Kelsey, Lauren A. Bartelme]
+      candidates:
+        - contest: School Board (vote for not more than five)
+          names: [Carolyn S. Pitches, Amit Sarah Hickman, Kristina M. Cecere, Sarah M. Kelsey, Lauren A. Bartelme]
       source: https://www.fairfaxva.gov/files/assets/city/v/1/elections/documents/sample-ballots/sample-ballot-nov2026-full.pdf
       verified: 2026-10-03
   - key: prab
