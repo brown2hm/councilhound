@@ -722,9 +722,12 @@ export interface HotTopicsResponse {
 
 export interface Citation {
   index: number;
+  /** transcript, agenda_item, vote, document, timeline, profile, wiki,
+   * project, impact, member, comparison, term, roster, commentary, upcoming */
   kind: string;
-  date: string;
-  meeting_id: number;
+  title: string;
+  date: string | null;
+  meeting_id: number | null;
   meeting_title: string;
   agenda_item_label: string | null;
   start_seconds: number | null;
@@ -743,11 +746,45 @@ export interface AskTopic {
   official_slug: string | null;
 }
 
+/** When a member's seat is next decided, from the jurisdiction's pinned
+ * term schedule (null when the body has none on file). */
+export interface MemberTerm {
+  body: string;
+  body_label: string;
+  selection: "elected" | "appointed";
+  appointed_by: string | null;
+  term_years: number | null;
+  staggered: boolean;
+  term_ends: string | null;
+  next_election: string | null;
+  on_ballot: boolean | null;
+  seats_up: string | null;
+  note: string | null;
+  source: string;
+  verified: string;
+}
+
+/** A member whose record or seat the answer cites. */
+export interface AskMember {
+  slug: string;
+  name: string;
+  roles: string[];
+  body: string | null;
+  term: MemberTerm | null;
+}
+
 export interface AskResponse {
   answer: string;
   citations: Citation[];
   topics?: AskTopic[];
+  members?: AskMember[];
 }
+
+/** One line of POST /ask/stream. */
+export type AskStreamEvent =
+  | { type: "step"; label: string }
+  | ({ type: "answer" } & AskResponse)
+  | { type: "error"; message: string };
 
 export interface TranscriptSegment {
   id: number;
