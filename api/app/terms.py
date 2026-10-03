@@ -36,7 +36,8 @@ class Terms:
     term_ends: datetime.date | None = None   # when every seat's term ends together
     next_election: datetime.date | None = None
     seats_up: str | None = None
-    candidates: tuple[str, ...] = ()   # official ballot for next_election
+    # official ballot for next_election: (contest as printed, candidates)
+    candidates: tuple[tuple[str, tuple[str, ...]], ...] = ()
     members: tuple[TermSeat, ...] = field(default_factory=tuple)
     note: str | None = None
 
@@ -49,10 +50,11 @@ TERMS: dict[str, Terms] = {
         selection="elected", term_years=2, term_ends=_D(2026, 12, 31),
         next_election=_D(2026, 11, 3), seats_up="Mayor and all six council seats",
         candidates=(
-            "Kirsten Sides Lockhart (Mayor)", 'Thomas D. "Tom" Peterson (Mayor)',
-            "Stacy R. Hall", "Rachel M McQuillen", "Anthony T. Amos", "Sandi W. Slappey Brown",
-            "Kelly M. O'Brien", "Russell A. Jones", "Stephen S. Kim", "Susan Hartley Kuiler",
-            "María José Padmore", "Steve S Chang", "Jessica L. Lough",
+            ("Mayor (vote for one)", ("Kirsten Sides Lockhart", 'Thomas D. "Tom" Peterson')),
+            ("City Council (vote for not more than six)", (
+                "Stacy R. Hall", "Rachel M McQuillen", "Anthony T. Amos", "Sandi W. Slappey Brown",
+                "Kelly M. O'Brien", "Russell A. Jones", "Stephen S. Kim", "Susan Hartley Kuiler",
+                "María José Padmore", "Steve S Chang", "Jessica L. Lough")),
         ),
         members=(
             TermSeat("Catherine S. Read", on_ballot=False, note="Not seeking a third term as Mayor."),
@@ -60,9 +62,9 @@ TERMS: dict[str, Terms] = {
             TermSeat("Stacey D. Hardy-Chandler", on_ballot=False, note="Not seeking reelection."),
             TermSeat("Thomas D. Peterson", on_ballot=True,
                      note="Running for Mayor rather than reelection to Council."),
-            TermSeat("Stacy R. Hall", on_ballot=True),
-            TermSeat("Rachel M. McQuillen", on_ballot=True),
-            TermSeat("Anthony T. Amos", on_ballot=True),
+            TermSeat("Stacy R. Hall", on_ballot=True, note="Running for reelection to Council."),
+            TermSeat("Rachel M. McQuillen", on_ballot=True, note="Running for reelection to Council."),
+            TermSeat("Anthony T. Amos", on_ballot=True, note="Running for reelection to Council."),
         ),
         source="https://www.fairfaxva.gov/Government/Council/Mayor-and-Council-Members",
         verified=_D(2026, 10, 3),
@@ -88,8 +90,9 @@ TERMS: dict[str, Terms] = {
     # five"); term length not yet pinned
     "school_board": Terms(
         selection="elected", next_election=_D(2026, 11, 3), seats_up="all five School Board seats",
-        candidates=("Carolyn S. Pitches", "Amit Sarah Hickman", "Kristina M. Cecere",
-                    "Sarah M. Kelsey", "Lauren A. Bartelme"),
+        candidates=(("School Board (vote for not more than five)", (
+            "Carolyn S. Pitches", "Amit Sarah Hickman", "Kristina M. Cecere",
+            "Sarah M. Kelsey", "Lauren A. Bartelme")),),
         source=_BALLOT, verified=_D(2026, 10, 3),
     ),
 }
@@ -146,7 +149,8 @@ def body_terms(body_key: str, today: datetime.date | None = None) -> dict | None
     if terms is None or body_key not in BODIES:
         return None
     out = term_for(body_key, None, today)
-    out["candidates"] = list(terms.candidates)
+    out["candidates"] = [{"contest": contest, "names": list(names)}
+                         for contest, names in terms.candidates]
     out["seats"] = [
         {"name": s.name, "term_ends": s.term_ends.isoformat() if s.term_ends else None,
          "on_ballot": s.on_ballot, "note": s.note}
