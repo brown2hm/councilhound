@@ -455,10 +455,28 @@ def match_member(session: Session, name: str) -> tuple[dict | None, list[str]]:
     scored = sorted(((score(p), p["is_current"], p) for p in people if score(p)),
                     key=lambda t: (-t[0], not t[1], t[2]["entity"].name))
     if not scored:
+        scored = _fallback_by_last_name(people, needle)
+    if not scored:
         return None, []
     best = scored[0]
     others = [p["entity"].name for s, cur, p in scored[1:] if s == best[0]]
     return best[2], others
+
+
+def _fallback_by_last_name(people: list[dict], needle: str) -> list[tuple]:
+    """For a nickname or a misspelt first name ("Tom Peterson", "Kristen
+    Lockhart"): match the last word as the last name; when several people
+    share it, keep those whose first name starts with the same letter."""
+    words = needle.replace(",", " ").split()
+    if not words:
+        return []
+    last = words[-1]
+    hits = [p for p in people if members_router.last_name(p["entity"].name).lower() == last]
+    if len(hits) > 1 and len(words) > 1:
+        initial = [p for p in hits if p["entity"].name.lower().startswith(words[0][0])]
+        hits = initial or hits
+    return sorted(((1, p["is_current"], p) for p in hits),
+                  key=lambda t: (not t[1], t[2]["entity"].name))
 
 
 def _member_term(person: dict) -> dict | None:
@@ -512,7 +530,54 @@ def _member_summary_text(person: dict, d: dict) -> str:
             for m in d["matters"][:8]) + ".")
     if d["record"]["absent_meetings"]:
         lines.append(f"Absent for every roll call at {len(d['record']['absent_meetings'])} meetings.")
+    lines += _tendency_lines(d)
     return "\n".join(lines)
+
+
+# land-use actions: what a Planning Commission recommends on and a Council decides
+_LAND_USE = re.compile(
+    r"rezon|special (exception|use)|\bgdp\b|general development plan|site plan|subdivision|"
+    r"certificate of appropriateness|zoning map|comprehensive plan amendment|"
+    r"recommend (approval|denial)|\bvariance\b", re.I)
+_DENIAL = re.compile(r"\bden(y|ial)\b", re.I)
+
+
+def _against_application(v: dict) -> bool | None:
+    """Did this cast oppose the application? A no on an approval motion, or
+    a yes on a denial motion; None when the cast took no side."""
+    if v["vote"] not in ("yes", "no"):
+        return None
+    denial = bool(_DENIAL.search(v["description"] or ""))
+    return (v["vote"] == "no") != denial
+
+
+def _tendency_lines(d: dict) -> list[str]:
+    """Rates that mean the same thing whichever body the member sits on,
+    so a commissioner and a councilmember can be set side by side: how
+    often they opposed a land-use application, how often they were on the
+    losing side, and how often they missed a roll call. Each carries its
+    count, and the advisory nature of a recommending body is stated."""
+    votes = d["votes"]
+    if not votes:
+        return []
+    out = []
+    land = [v for v in votes if _LAND_USE.search(f"{v['item_title'] or ''} {v['description'] or ''}")]
+    sided = [v for v in land if _against_application(v) is not None]
+    if sided:
+        against = sum(_against_application(v) for v in sided)
+        out.append(f"Land-use applications (rezonings, special exceptions, site plans and the like): "
+                   f"opposed {against} of {len(sided)} roll calls where they took a side"
+                   + (" (as recommendations; the Planning Commission advises and Council decides)"
+                      if d["body"] == "planning_commission" else "") + ".")
+    cast = [v for v in votes if v["vote"] in ("yes", "no")]
+    if cast:
+        losing = sum(v["in_minority"] for v in cast)
+        out.append(f"On the losing side of {losing} of {len(cast)} yes/no votes "
+                   f"({round(100 * losing / len(cast))}%); {sum(v['contested'] for v in votes)} of "
+                   f"{len(votes)} roll calls they sat for had at least one no vote.")
+    absent = sum(v["vote"] == "absent" for v in votes)
+    out.append(f"Absent for {absent} of {len(votes)} roll calls ({round(100 * absent / len(votes))}%).")
+    return out
 
 
 def _add_member_record(sources: Sources, person: dict, d: dict) -> int:
@@ -567,6 +632,101 @@ def get_member(session: Session, sources: Sources, name: str) -> tuple[list[int]
     return out, header, person["entity"].id
 
 
+SHARED_TOPIC_LIMIT = 10
+_INSTRUMENTS = ("ordinance", "resolution")
+
+
+def _acts_by_topic(d: dict) -> dict[str, dict]:
+    """slug -> {name, slug, votes, said} for every topic a member voted on
+    or spoke to, from their member record."""
+    acts: dict[str, dict] = {}
+    for v in d["votes"]:
+        for t in v["topics"]:
+            if t["entity_type"] in _INSTRUMENTS:
+                continue
+            acts.setdefault(t["slug"], {"name": t["name"], "slug": t["slug"], "votes": [], "said": None})["votes"].append(v)
+    for c in d["commentary"]:
+        acts.setdefault(c["topic_slug"], {"name": c["topic_name"], "slug": c["topic_slug"], "votes": [], "said": None})["said"] = c["summary"]
+    return acts
+
+
+def _act_lines(name: str, body: str | None, act: dict | None) -> list[str]:
+    if act is None:
+        return [f"{name}: no recorded vote or remark."]
+    lines = []
+    for v in sorted(act["votes"], key=lambda v: v["date"])[:4]:
+        t = v["tally"]
+        lines.append(f"{name} ({_body_label(v['body'])}, {v['date']}"
+                     + (f", item {v['item_label']}" if v["item_label"] else "") + f"): voted {v['vote']} on "
+                     f"{(v['description'] or v['item_title'] or 'the motion')!r}; "
+                     f"{v['motion_result'] or 'result not recorded'} {t.get('yes', 0)}-{t.get('no', 0)}.")
+    if len(act["votes"]) > 4:
+        lines.append(f"{name}: {len(act['votes']) - 4} more roll calls on this topic.")
+    if act["said"]:
+        lines.append(f"{name}, from the topic's summary of the record: {act['said']}")
+    return lines
+
+
+def _shared_topics(sources: Sources, a: dict, da: dict, b: dict, db: dict) -> tuple[list[int], str]:
+    """Members who never cast a vote together can still be compared where
+    the same matter passed through both of them: a land-use case the
+    Planning Commission recommends on and Council then decides, a plan both
+    bodies review. One source per matter (topics naming the same agenda
+    items are merged), each member's votes and stated position in date
+    order; plus the matters only one of them acted on."""
+    acts_a, acts_b = _acts_by_topic(da), _acts_by_topic(db)
+    shared = set(acts_a) & set(acts_b)
+
+    def item_keys(act):
+        return frozenset((v["meeting_id"], v["item_label"]) for v in act["votes"])
+
+    # topics that name overlapping agenda items on both sides are one matter
+    # ("Accessory Dwelling Units" and "Detached Accessory Dwelling Units")
+    merged: list[dict] = []
+    for slug in sorted(shared):
+        ka, kb = item_keys(acts_a[slug]), item_keys(acts_b[slug])
+        home = next((g for g in merged if ka and kb and g["ka"] & ka and g["kb"] & kb), None)
+        if home is None:
+            merged.append({"ka": set(ka), "kb": set(kb), "slugs": [slug]})
+        else:
+            home["ka"] |= ka
+            home["kb"] |= kb
+            home["slugs"].append(slug)
+    groups = {i: g["slugs"] for i, g in enumerate(merged)}
+
+    def rank(slugs):
+        x, y = acts_a[slugs[0]], acts_b[slugs[0]]
+        both_said = bool(x["said"]) and bool(y["said"])
+        both_voted = bool(x["votes"]) and bool(y["votes"])
+        latest = max([v["date"] for v in x["votes"] + y["votes"]] or [""])
+        return (not both_said, not both_voted, -(len(x["votes"]) + len(y["votes"])), latest)
+
+    an, bn = a["entity"].name, b["entity"].name
+    out = []
+    for slugs in sorted(groups.values(), key=rank)[:SHARED_TOPIC_LIMIT]:
+        slugs.sort(key=lambda s_: -(len(acts_a[s_]["votes"]) + len(acts_b[s_]["votes"])))
+        lead = slugs[0]
+        label = " / ".join(acts_a[s_]["name"] for s_ in slugs)
+        lines = [f"Matter: {label}."]
+        lines += _act_lines(an, a["body"], acts_a[lead])
+        lines += _act_lines(bn, b["body"], acts_b[lead])
+        dates = [v["date"] for v in acts_a[lead]["votes"] + acts_b[lead]["votes"]]
+        out.append(sources.add(
+            ("shared", a["entity"].id, b["entity"].id, lead), kind="shared_topic",
+            title=f"{an} and {bn} on {label}", text="\n".join(lines),
+            date=max(dates) if dates else None, link=f"/topics/{lead}"))
+
+    def only(acts, other):
+        rows = sorted((x for k, x in acts.items() if k not in other),
+                      key=lambda x: -(len(x["votes"]) + (2 if x["said"] else 0)))[:8]
+        return ", ".join(f"{x['name']} ({len(x['votes'])} votes{', remarks' if x['said'] else ''})" for x in rows)
+
+    summary = (f"{an} and {bn} both acted on {len(groups)} matter(s) in the indexed record."
+               + (f" Only {an}: {only(acts_a, acts_b)}." if set(acts_a) - shared else "")
+               + (f" Only {bn}: {only(acts_b, acts_a)}." if set(acts_b) - shared else ""))
+    return out, summary
+
+
 def compare_members(session: Session, sources: Sources, names: list[str]) -> tuple[list[int], str]:
     people, notes = [], []
     for name in names[:6]:
@@ -593,8 +753,10 @@ def compare_members(session: Session, sources: Sources, names: list[str]) -> tup
         elif p["body"]:
             notes.append(f"No term or election schedule is on file for the {_body_label(p['body'])}.")
 
-    # head to head: every roll call both cast yes/no on, contested or not
+    # head to head: every roll call both cast yes/no on, contested or not;
+    # members on different bodies are compared on the matters both touched
     lines = []
+    shared_out: list[int] = []
     split_keys: set[tuple] = set()
     for i, a in enumerate(people):
         for b in people[i + 1:]:
@@ -614,19 +776,27 @@ def compare_members(session: Session, sources: Sources, names: list[str]) -> tup
                     if theirs != v["vote"]:
                         split_keys.add((v["meeting_id"], v["item_label"], v["description"]))
             an, bn = a["entity"].name, b["entity"].name
+            db_ = details[b["entity"].id]
+            if a["body"] != b["body"] and db_:
+                nums, summary = _shared_topics(sources, a, da, b, db_)
+                shared_out.extend(nums)
+                lines.append(f"{an} sits on the {_body_label(a['body'])} and {bn} on the "
+                             f"{_body_label(b['body'])}, so they are compared on the matters both acted on, "
+                             f"not on shared roll calls. " + summary)
+                if both == 0:
+                    continue
             if both == 0:
-                lines.append(f"{an} and {bn}: no roll calls in common"
-                             + (f" ({an} sits on the {_body_label(a['body'])}, {bn} on the {_body_label(b['body'])})."
-                                if a["body"] != b["body"] else "."))
+                lines.append(f"{an} and {bn}: no roll calls in common.")
             else:
                 lines.append(f"{an} and {bn}: voted the same way on {agree} of {both} shared roll calls; "
                              f"on contested ones, {c_agree} of {c_both}"
                              + (f" ({round(100 * c_agree / c_both)}%)." if c_both else "."))
     if lines:
         out.append(sources.add(("compare", tuple(sorted(p["entity"].id for p in people))), kind="comparison",
-                               title="Head-to-head on shared roll calls (computed from the minutes)",
+                               title="Head-to-head (computed from the minutes and topic records)",
                                text="\n".join(lines), link="/members",
                                date=max((d["record"]["last_vote"] or "" for d in details.values() if d), default=None) or None))
+    out.extend(shared_out)
     first = details[people[0]["entity"].id]
     if first and split_keys:
         for v, m, it in _vote_rows_for(session, first, SPLIT_LIMIT,

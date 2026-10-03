@@ -201,3 +201,106 @@ def test_member_routes_carry_the_term(client, db):
     assert read["term"]["on_ballot"] is False
     listing = {m["slug"]: m for m in client.get("/members/").json()}
     assert listing["stacy-hall"]["term"]["on_ballot"] is True
+
+
+# ---------------------------------------------------------------- across bodies
+
+def _seed_candidates(db):
+    """A commissioner and a councilmember (both running for Mayor) who never
+    voted together but both acted on one rezoning: she recommended denial,
+    he voted against approval."""
+    import datetime
+
+    from councilhound.db.models import (
+        AgendaItem, Document, Entity, EntityAlias, EntityMention, EntityProfile, Meeting, Vote,
+    )
+
+    pc = Meeting(granicus_clip_id="400", granicus_view_id="13", body="planning_commission",
+                 meeting_type="planning_commission", meeting_date=datetime.date(2025, 6, 23),
+                 title="Planning Commission Regular Meeting", status="extracted")
+    cc = Meeting(granicus_clip_id="401", granicus_view_id="13", body="city_council",
+                 meeting_type="council_regular", meeting_date=datetime.date(2025, 7, 22),
+                 title="City Council Meeting", status="extracted")
+    db.add_all([pc, cc])
+    db.flush()
+    pc_item = AgendaItem(meeting_id=pc.id, label="5a", title="Public hearing: rezoning of 4131 Chain Bridge Road")
+    cc_item = AgendaItem(meeting_id=cc.id, label="9a", title="Rezoning and GDP, 4131 Chain Bridge Road")
+    db.add_all([pc_item, cc_item])
+    db.flush()
+    db.add_all([
+        Document(meeting_id=cc.id, doc_type="agenda", source_url="cc-agenda",
+                 raw_text="City of Fairfax\nMayor\nCatherine S. Read\nCity Council\nThomas D. Peterson\n"),
+        Document(meeting_id=pc.id, doc_type="agenda", source_url="pc-agenda",
+                 raw_text="Planning Commission\nJames Feather, Chair\nKirsten Lockhart, Vice-Chair\n"),
+        Vote(meeting_id=pc.id, agenda_item_id=pc_item.id, description="Recommend denial of the rezoning",
+             motion_result="passed", vote_breakdown={"Lockhart": "yes", "Feather": "yes", "Rice": "no"}),
+        Vote(meeting_id=cc.id, agenda_item_id=cc_item.id, description="Approve the rezoning and GDP",
+             motion_result="failed", vote_breakdown={"Peterson": "no", "Read": "yes", "Hall": "no"}),
+    ])
+    lockhart = Entity(entity_type="person", name="Kirsten Lockhart", canonical_slug="kirsten-lockhart")
+    peterson = Entity(entity_type="person", name="Thomas Peterson", canonical_slug="thomas-peterson")
+    site = Entity(entity_type="project", name="4131 Chain Bridge Road", canonical_slug="4131-chain-bridge-road")
+    alias_topic = Entity(entity_type="project", name="Davies Property", canonical_slug="davies-property")
+    db.add_all([lockhart, peterson, site, alias_topic])
+    db.flush()
+    db.add_all([
+        EntityAlias(entity_id=lockhart.id, alias="Vice-Chair Lockhart"),
+        EntityAlias(entity_id=lockhart.id, alias="Commissioner Lockhart"),
+        EntityAlias(entity_id=peterson.id, alias="Councilmember Peterson"),
+        EntityMention(entity_id=site.id, meeting_id=pc.id, agenda_item_id=pc_item.id, role="subject"),
+        EntityMention(entity_id=site.id, meeting_id=cc.id, agenda_item_id=cc_item.id, role="subject"),
+        # the same application under its other name: one matter, not two
+        EntityMention(entity_id=alias_topic.id, meeting_id=pc.id, agenda_item_id=pc_item.id, role="subject"),
+        EntityMention(entity_id=alias_topic.id, meeting_id=cc.id, agenda_item_id=cc_item.id, role="subject"),
+        EntityProfile(entity_id=site.id, summary="s", member_commentary=[
+            {"member": "Vice-Chair Lockhart", "slug": "kirsten-lockhart",
+             "summary": "Found the proposal out of conformance with the Comprehensive Plan."},
+            {"member": "Councilmember Peterson", "slug": "thomas-peterson",
+             "summary": "Voted against all three approval motions."}]),
+    ])
+    db.commit()
+
+
+def test_nicknames_and_misspellings_find_the_member(db):
+    _seed_candidates(db)
+    for name, slug in [("tom peterson", "thomas-peterson"), ("Kristen Lockhart", "kirsten-lockhart"),
+                       ("Councilmember Tom Peterson", "thomas-peterson")]:
+        person, _others = ask_tools.match_member(db, name)
+        assert person and person["entity"].canonical_slug == slug, name
+    assert ask_tools.match_member(db, "Zed Nobody") == (None, [])
+
+
+def test_members_of_different_bodies_compare_on_shared_matters(db):
+    _seed_candidates(db)
+    sources = ask_tools.Sources()
+    nums, header = ask_tools.compare_members(db, sources, ["Tom Peterson", "Kristen Lockhart"])
+    assert header.startswith("Comparing Thomas Peterson, Kirsten Lockhart")
+    by_kind = {}
+    for n in nums:
+        by_kind.setdefault(sources.get(n)["kind"], []).append(sources.get(n))
+    comparison = by_kind["comparison"][0]["text"]
+    assert "compared on the matters both acted on" in comparison
+    assert "both acted on 1 matter(s)" in comparison
+    assert len(by_kind["shared_topic"]) == 1
+    shared = by_kind["shared_topic"][0]
+    assert shared["title"] in ("Thomas Peterson and Kirsten Lockhart on 4131 Chain Bridge Road / Davies Property",
+                               "Thomas Peterson and Kirsten Lockhart on Davies Property / 4131 Chain Bridge Road")
+    # each one's vote at their own stage, and what each said
+    assert "Thomas Peterson (City Council, 2025-07-22, item 9a): voted no on 'Approve the rezoning and GDP'; failed 1-2." in shared["text"]
+    assert "Kirsten Lockhart (Planning Commission, 2025-06-23, item 5a): voted yes on 'Recommend denial of the rezoning'; passed 2-1." in shared["text"]
+    assert "out of conformance with the Comprehensive Plan" in shared["text"]
+    # and both seats: one elected, one appointed and running for Mayor
+    terms_ = " ".join(t["text"] for t in by_kind["term"])
+    assert "Running for Mayor rather than reelection to Council." in terms_
+    assert "Also a candidate for Mayor on November 3 2026." in terms_
+
+
+def test_tendencies_read_the_same_on_either_body(db):
+    _seed_candidates(db)
+    sources = ask_tools.Sources()
+    ask_tools.compare_members(db, sources, ["Peterson", "Lockhart"])
+    records = {s["title"].split(":")[0]: s["text"] for s in sources.items if s["kind"] == "member"}
+    # a yes on a denial motion opposes the application, as a no on an approval does
+    assert "opposed 1 of 1 roll calls where they took a side (as recommendations; " in records["Kirsten Lockhart"]
+    assert "Land-use applications" in records["Thomas Peterson"] and "opposed 1 of 1" in records["Thomas Peterson"]
+    assert "Absent for 0 of 1 roll calls (0%)." in records["Thomas Peterson"]
