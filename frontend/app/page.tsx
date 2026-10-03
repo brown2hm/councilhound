@@ -389,7 +389,7 @@ const ASK_SUGGESTIONS = [
 
 function AskBand() {
   return (
-    <section aria-labelledby="ask-band" className="rounded-xl bg-ink px-4 py-5 text-white sm:px-6 sm:py-6">
+    <section aria-labelledby="ask-band" className="rounded-xl bg-pine px-4 py-5 text-white sm:px-6 sm:py-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-8">
         <div className="md:w-[300px] md:shrink-0">
           <div className="mb-1.5 flex items-center gap-2">
@@ -414,7 +414,7 @@ function AskBand() {
               placeholder="What has the council decided about affordable housing?"
               className="min-w-0 flex-1 bg-transparent py-1.5 text-[15px] text-ink outline-none placeholder:text-muted-soft"
             />
-            <button className="shrink-0 rounded-md bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-ink-active">
+            <button className="shrink-0 rounded-md bg-pine px-4 py-2 text-sm font-semibold text-white hover:bg-teal">
               Ask
             </button>
           </form>
