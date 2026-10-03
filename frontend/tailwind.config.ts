@@ -23,6 +23,7 @@ const config: Config = {
         "hairline-soft": "#f0f0f0",
         teal: "#1a3a3a",
         mint: "#a4d4c5",
+        pine: "#14453a", // deep green behind the front-page Ask band; same hue as tint-mint-text
         ochre: "#e8b94a",
         hound: "#c65a32", // burnt orange from the hound mark, darkened for legibility
         // body identity dots for the boards added Sep 2026 (see BodyTag)
