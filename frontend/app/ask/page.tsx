@@ -7,7 +7,7 @@ import { useSearchParams } from "next/navigation";
 import FollowTopic from "@/components/FollowTopic";
 import Markdown from "@/components/Markdown";
 import StatusBadge from "@/components/StatusBadge";
-import { formatDate, type AskResponse, type Citation } from "@/lib/api";
+import { formatDate, type AskMember, type AskResponse, type AskStreamEvent, type Citation } from "@/lib/api";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -43,14 +43,37 @@ function splitAnswer(answer: string): { lead: string; rest: string } {
   return { lead: first, rest: lines.slice(1).join("\n").trim() };
 }
 
+// what the link under each source opens, by kind of source
+const LINK_LABEL: Record<string, string> = {
+  transcript: "Watch this moment",
+  agenda_item: "Open the meeting record",
+  vote: "Open the roll call",
+  timeline: "Open the meeting record",
+  document: "Open the document",
+  profile: "Full history",
+  wiki: "Read the wiki page",
+  project: "Official project page",
+  impact: "Impact analysis",
+  member: "Member record",
+  comparison: "All members",
+  commentary: "Topic history",
+  term: "Official term schedule",
+  roster: "Official roster",
+  upcoming: "Open the agenda",
+};
+
+// sources that are records or summaries, not words someone said or wrote
+const NOT_QUOTED = new Set(["member", "comparison", "term", "roster", "profile", "project", "impact", "vote", "timeline"]);
+
 function SourceRow({ c }: { c: Citation }) {
   const where = [
-    c.meeting_title,
-    c.agenda_item_label ? `item ${c.agenda_item_label}` : null,
+    c.title || c.meeting_title,
     c.kind === "transcript" && c.start_seconds != null ? `at ${fmtTime(c.start_seconds)}` : null,
   ]
     .filter(Boolean)
     .join(" · ");
+  const excerpt = c.excerpt.trim().replace(/[.,;]+$/, "");
+  const label = LINK_LABEL[c.kind] ?? "Open the source";
   return (
     <li id={`source-${c.index}`} className="grid scroll-mt-24 grid-cols-[26px_minmax(0,1fr)] gap-2 border-t border-hairline py-2.5 transition-colors duration-500 target:bg-callout">
       <span className="mt-0.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-md bg-card px-1.5 text-[11px] font-bold text-tint-ochre-text">
@@ -58,18 +81,41 @@ function SourceRow({ c }: { c: Citation }) {
       </span>
       <div className="min-w-0">
         <div className="text-[13px]">
-          <span className="font-semibold tabular-nums">{formatDate(c.date)}</span>
-          <span className="text-muted"> · {where}</span>
+          {c.date && <span className="font-semibold tabular-nums">{formatDate(c.date)} · </span>}
+          <span className="text-muted">{where}</span>
         </div>
-        <p className="mt-0.5 text-[12px] leading-[1.45] text-muted">“{c.excerpt.trim().replace(/[.,;]+$/, "")}…”</p>
-        {c.link && (
-          <a href={c.link} target="_blank" className="text-[12px] font-semibold text-muted underline underline-offset-2 hover:text-ink">
-            {c.kind === "transcript" ? "Watch this moment" : "Open the document"}
-          </a>
-        )}
+        <p className="mt-0.5 whitespace-pre-line text-[12px] leading-[1.45] text-muted">
+          {NOT_QUOTED.has(c.kind) ? `${excerpt}…` : `“${excerpt}…”`}
+        </p>
+        {c.link &&
+          (c.link.startsWith("/") ? (
+            <Link href={c.link} className="text-[12px] font-semibold text-muted underline underline-offset-2 hover:text-ink">
+              {label}
+            </Link>
+          ) : (
+            <a href={c.link} target="_blank" className="text-[12px] font-semibold text-muted underline underline-offset-2 hover:text-ink">
+              {label}
+            </a>
+          ))}
       </div>
     </li>
   );
+}
+
+/** "On the Nov 3, 2026 ballot" / "Appointed · term ends Dec 31, 2027". */
+function seatLine(m: AskMember): string | null {
+  const t = m.term;
+  if (!t) return null;
+  if (t.selection === "appointed") {
+    return `Appointed${t.appointed_by ? ` by the ${t.appointed_by}` : ""}${t.term_ends ? ` · term ends ${formatDate(t.term_ends)}` : ""}`;
+  }
+  if (t.next_election) {
+    const when = formatDate(t.next_election);
+    if (t.on_ballot === true) return `On the ${when} ballot`;
+    if (t.on_ballot === false) return `Not on the ${when} ballot`;
+    return `Seat up ${when}`;
+  }
+  return t.term_ends ? `Term ends ${formatDate(t.term_ends)}` : null;
 }
 
 function AskInner() {
@@ -78,6 +124,7 @@ function AskInner() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AskResponse | null>(null);
+  const [steps, setSteps] = useState<string[]>([]);
   const autoSubmitted = useRef(false);
 
   async function submit(q: string) {
@@ -85,14 +132,45 @@ function AskInner() {
     setLoading(true);
     setError(null);
     setResult(null);
+    setSteps([]);
     try {
-      const resp = await fetch(`${API}/ask/`, {
+      // newline-delimited JSON: a line per lookup the hound makes, then the answer
+      const resp = await fetch(`${API}/ask/stream`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: q }),
       });
-      if (!resp.ok) throw new Error(`The hound hit a snag (error ${resp.status}). Try again in a minute.`);
-      setResult(await resp.json());
+      if (!resp.ok || !resp.body) {
+        let detail = "";
+        try {
+          detail = (await resp.json()).detail ?? "";
+        } catch {}
+        throw new Error(detail || `The hound hit a snag (error ${resp.status}). Try again in a minute.`);
+      }
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffered = "";
+      let finished = false;
+      const handle = (line: string) => {
+        if (!line.trim()) return;
+        const event = JSON.parse(line) as AskStreamEvent;
+        if (event.type === "step") setSteps((s) => (s.includes(event.label) ? s : [...s, event.label]));
+        else if (event.type === "error") throw new Error(event.message);
+        else {
+          finished = true;
+          setResult(event);
+        }
+      };
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffered += decoder.decode(value, { stream: true });
+        const lines = buffered.split("\n");
+        buffered = lines.pop() ?? "";
+        lines.forEach(handle);
+      }
+      handle(buffered);
+      if (!finished) throw new Error("The answer was cut off. Try again in a minute.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
@@ -110,18 +188,22 @@ function AskInner() {
   }, []);
 
   const indexes = new Set(result?.citations.map((c) => c.index) ?? []);
-  const sources = [...(result?.citations ?? [])].sort((a, b) => a.date.localeCompare(b.date) || a.index - b.index);
+  // dated sources in date order, then the undated records (rosters, member summaries)
+  const sources = [...(result?.citations ?? [])].sort(
+    (a, b) => (a.date ? 0 : 1) - (b.date ? 0 : 1) || (a.date ?? "").localeCompare(b.date ?? "") || a.index - b.index,
+  );
   const cited = result ? Array.from(result.answer.matchAll(/\[(\d+(?:\s*,\s*\d+)*)\]/g), (m) => m[1]) : [];
   const missing = new Set(cited.flatMap((list) => list.split(",").map((n: string) => Number(n.trim()))).filter((n) => !indexes.has(n))).size;
   const { lead, rest } = result ? splitAnswer(result.answer) : { lead: "", rest: "" };
   const topics = result?.topics ?? [];
+  const members = result?.members ?? [];
 
   const form = (
     <>
       <div className="mb-2 flex flex-wrap items-center gap-x-2.5 gap-y-1">
         <Image src="/brand/hound.png" alt="" width={34} height={30} className="h-[30px] w-auto" />
         <h1 className="text-lg font-semibold tracking-[-0.3px]">Ask the hound</h1>
-        <span className="text-[13px] text-muted">Answers only from the meeting record, with sources you can check.</span>
+        <span className="text-[13px] text-muted">Answers only from the public record, with sources you can check.</span>
       </div>
       <form
         onSubmit={(e) => {
@@ -148,9 +230,20 @@ function AskInner() {
           answer is being fetched, and told when it fails */}
       <div role="status" aria-live="polite" className="mt-4">
         {loading && (
-          <div className="flex items-center gap-2.5 text-sm text-muted">
-            <Image src="/brand/hound.png" alt="" width={32} height={28} className="h-7 w-auto" />
-            Sniffing through the record…
+          <div className="text-sm text-muted">
+            <div className="flex items-center gap-2.5">
+              <Image src="/brand/hound.png" alt="" width={32} height={28} className="h-7 w-auto" />
+              Sniffing through the record…
+            </div>
+            {steps.length > 0 && (
+              <ol className="ml-[42px] mt-1.5 space-y-0.5 text-[13px]">
+                {steps.map((s, i) => (
+                  <li key={s} className={i === steps.length - 1 ? "text-body" : "text-muted-soft"}>
+                    {s}
+                  </li>
+                ))}
+              </ol>
+            )}
           </div>
         )}
         {error && <p className="text-sm text-tint-coral-text">{error}</p>}
@@ -230,6 +323,33 @@ function AskInner() {
                   Full history
                 </Link>
               </div>
+            </div>
+          )}
+
+          {members.length > 0 && (
+            <div className="mt-3 rounded-2xl bg-card px-[18px] py-3.5">
+              <div className="text-[11px] font-semibold uppercase tracking-[1px] text-muted">
+                About {members.length === 1 ? "this member" : "these members"}
+              </div>
+              <ul className="mt-1 grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
+                {members.map((m) => {
+                  const seat = seatLine(m);
+                  return (
+                    <li key={m.slug} className="min-w-0">
+                      <Link href={`/members/${m.slug}`} className="text-base font-semibold underline underline-offset-2 hover:text-ink">
+                        {m.name}
+                      </Link>
+                      <span className="text-[13px] text-muted"> · {m.roles.join(", ")}</span>
+                      {seat && <div className="text-[12px] text-body">{seat}</div>}
+                    </li>
+                  );
+                })}
+              </ul>
+              {members.some((m) => m.term) && (
+                <div className="mt-1.5 text-[11px] text-muted">
+                  Term dates checked {formatDate(members.find((m) => m.term)!.term!.verified)} against official sources.
+                </div>
+              )}
             </div>
           )}
 
