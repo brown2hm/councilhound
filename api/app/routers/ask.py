@@ -43,7 +43,7 @@ from app.routers import members as members_router
 log = logging.getLogger(__name__)
 router = APIRouter()
 
-ASK_MODEL = os.environ.get("ASK_MODEL", "claude-opus-5-5")
+ASK_MODEL = os.environ.get("ASK_MODEL", "claude-sonnet-5-5")
 ASK_EFFORT = os.environ.get("ASK_EFFORT", "medium")
 MAX_TOOL_ROUNDS = 5
 FIRST_SEARCH_LIMIT = 8
