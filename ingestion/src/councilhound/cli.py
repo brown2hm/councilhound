@@ -171,19 +171,26 @@ def retranscribe(bodies, since, until, limit, clip_id, min_coverage, dry_run):
     """Re-transcribe already-transcribed meetings with speaker labels, newest
     first. Resumable; local only (needs Granicus audio + pyannote)."""
     import tempfile
+    import time
 
     from councilhound.db.session import get_session, stage_lock
     from councilhound.extraction.retranscribe import LOG_PATH, candidates, retranscribe_meeting
+
+    def hm(seconds: float) -> str:
+        return f"{int(seconds // 3600)}h{int(seconds % 3600 // 60):02d}m"
 
     log = logging.getLogger(__name__)
     with get_session() as session:
         meetings = candidates(session, bodies=bodies, since=since, until=until,
                               clip_id=clip_id, limit=limit)
-        click.echo(f"{len(meetings)} meeting(s) to re-transcribe; log: {LOG_PATH}")
+        audio_left = sum(m.duration_seconds or 0 for m in meetings)
+        click.echo(f"{len(meetings)} meeting(s), {hm(audio_left)} of audio, to re-transcribe; "
+                   f"log: {LOG_PATH}")
         tally: dict[str, int] = {}
         failures_in_a_row = 0
+        started, audio_done = time.monotonic(), 0
         with tempfile.TemporaryDirectory(prefix="retranscribe-") as workdir:
-            for meeting in meetings:
+            for n, meeting in enumerate(meetings, 1):
                 # per meeting, so the overnight routine can interleave
                 with stage_lock("transcribe") as held:
                     if not held:
@@ -191,6 +198,8 @@ def retranscribe(bodies, since, until, limit, clip_id, min_coverage, dry_run):
                         click.echo("stopping; re-run to resume")
                         break
                     label = f"{meeting.meeting_date} {meeting.body} (clip {meeting.granicus_clip_id})"
+                    click.echo(f"[{n}/{len(meetings)}] {label}, {hm(meeting.duration_seconds or 0)} "
+                               f"of audio — started {time.strftime('%H:%M')}")
                     try:
                         r = retranscribe_meeting(session, meeting, workdir,
                                                  min_coverage=min_coverage, dry_run=dry_run)
@@ -209,6 +218,13 @@ def retranscribe(bodies, since, until, limit, clip_id, min_coverage, dry_run):
                     click.echo(f"{label}: {r['status']} — {r['old_chunks']}→{r['new_chunks']} chunks, "
                                f"{r['speakers']} speakers, coverage {r['coverage']:.0%}, "
                                f"loops {r['old_loop_chunks']}→{r['new_loop_chunks']}, {r['seconds']}s")
+                    # ETA from compute time per hour of audio so far
+                    audio_done += meeting.duration_seconds or 0
+                    audio_left -= meeting.duration_seconds or 0
+                    if audio_done:
+                        eta = (time.monotonic() - started) / audio_done * audio_left
+                        click.echo(f"    {n}/{len(meetings)} done; {hm(audio_left)} of audio left, "
+                                   f"about {hm(eta)} to go (≈{time.strftime('%a %H:%M', time.localtime(time.time() + eta))})")
         click.echo(tally)
 
 
