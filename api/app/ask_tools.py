@@ -655,11 +655,14 @@ def list_members(session: Session, sources: Sources, body: str | None = None) ->
                 bits.append(f"term ends {t['term_ends']}")
             if t and t["on_ballot"] is not None:
                 bits.append("on the ballot" if t["on_ballot"] else "not on the ballot")
+            seat_note = t["note"] if t and t["on_ballot"] is not None else None
+            if seat_note:
+                bits.append(seat_note.rstrip("."))
             lines.append(f"- {p['entity'].name} ({'; '.join(bits)})")
         if sched:
             lines.append(terms.describe(sched))
-            if sched["candidates"]:
-                lines.append("Official candidate list for that election: " + ", ".join(sched["candidates"]) + ".")
+            for c in sched["candidates"]:
+                lines.append(f"On the official ballot for {c['contest']}: " + ", ".join(c["names"]) + ".")
         else:
             lines.append("No term or election schedule is on file for this body.")
         out.append(sources.add(("roster", key), kind="roster", title=f"{_body_label(key)}: current members",

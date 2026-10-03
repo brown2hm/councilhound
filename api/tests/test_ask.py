@@ -178,8 +178,12 @@ def test_list_members_carries_the_ballot(db):
     sources = ask_tools.Sources()
     nums = ask_tools.list_members(db, sources, "city_council")
     text = sources.get(nums[0])["text"]
-    assert "Catherine Read (Mayor; term ends 2026-12-31; not on the ballot)" in text
-    assert "Official candidate list" in text and "Kirsten Sides Lockhart (Mayor)" in text
+    assert ("Catherine Read (Mayor; term ends 2026-12-31; not on the ballot; "
+            "Not seeking a third term as Mayor)") in text
+    assert "Stacy Hall (Councilmember; term ends 2026-12-31; on the ballot; Running for reelection to Council)" in text
+    # each contest names its own candidates, so council and mayoral runs never blur
+    assert "On the official ballot for Mayor (vote for one): Kirsten Sides Lockhart, " in text
+    assert "On the official ballot for City Council (vote for not more than six): Stacy R. Hall, " in text
 
 
 def test_sources_are_numbered_once(db):
