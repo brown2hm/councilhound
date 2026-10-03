@@ -8,13 +8,13 @@ description: The applicant is proposing to replace approximately 21,566 square f
 resource: https://councilhound.net/development/The-Highlands-at-Mantua
 tags:
 - private-development
-- in-progress
+- approved
 generated:
   by: councilhound-curator/claude-sonnet-4-6
-  at: '2026-07-27T00:00:00Z'
-timestamp: '2026-07-27'
-stale_after: '2026-09-22T23:00:00Z'
-project_status: in_progress
+  at: '2026-09-22T00:00:00Z'
+timestamp: '2026-09-22'
+stale_after: '2026-10-06T20:00:00Z'
+project_status: approved
 source: official
 address: 9495 Silver King Court, Fairfax, VA 22030
 applicant: RJL Associates, Inc.  David S. Houston, Attorney Bean Kinney & Korman, PC 2311
@@ -66,6 +66,7 @@ The applicant is proposing to replace approximately 21,566 square feet of existi
 - **(2025-02-25 City Council)** RJL Associates, Inc. presented the redevelopment proposal during a City Council work session (Agenda Item 12b). No formal council action was taken.
 - **(2025-03-24 Planning Commission)** Staff reported to the Planning Commission that the Mantua townhouse proposal had been the subject of the February 25, 2025 City Council work session.
 - **(2026-07-27 Planning Commission)** A public hearing on the Highlands at Mantua application was scheduled before the Planning Commission (Agenda Item 6a); no minutes or actions report is available.
+- **(2026-09-22 City Council)** Public hearing held on the 9495 Silver King Court redevelopment (Agenda Item 8a). The Comprehensive Plan Amendment was approved unanimously. The Rezoning (Z-24-00236) and General Development Plan Amendment were approved 4-2 (Hall and McQuillen opposed). The Certificate of Appropriateness was approved 4-2 (Hall and McQuillen opposed), with conditions relating to plan conformance, required permits, and landscaping.
 
 <!-- curator:off -->
 

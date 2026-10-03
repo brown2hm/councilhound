@@ -11,7 +11,7 @@ generated:
   by: process:councilhound-okf
   at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
-stale_after: '2026-09-22T23:00:00Z'
+stale_after: '2026-10-06T20:00:00Z'
 project_status: in_progress
 source: official
 address: Fairfax Blvd. and Draper Drive, 22030

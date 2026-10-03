@@ -5,10 +5,10 @@ description: Recorded member positions and unresolved questions on Blenheim Boul
   Improvements.
 resource: https://councilhound.net/development/Blenheim-Blvd-Multimodal-Improvements
 generated:
-  by: process:councilhound-okf
-  at: '2026-06-23T00:00:00Z'
-timestamp: '2026-06-23'
-stale_after: '2026-09-22T23:00:00Z'
+  by: councilhound-curator/claude-sonnet-4-6
+  at: '2026-09-14T00:00:00Z'
+timestamp: '2026-09-14'
+stale_after: '2026-10-05T22:30:00Z'
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
@@ -17,6 +17,7 @@ stale_after: '2026-09-22T23:00:00Z'
 
 - Final approval of the construction contract by the Virginia Department of Transportation (VDOT) was noted as a condition at the time of the April 28, 2026 award — confirmation of that approval has not been recorded in the material.
 - Future CIP or budget requests may be needed to study and fund the extension of the project beyond its current limits (Blenheim Hall Drive to Ridge Avenue) into Old Town and through Fairfax Circle, per the November 2025 discussion, but no formal action has been taken on those extensions.
+- The School Board was presented with a plan including a proposed amphitheater on school grounds in front of Fairfax High School (2026-09-14 School Board Regular Meeting); the board has not yet made a recommendation to City Council on this element.
 
 ## Member commentary
 
