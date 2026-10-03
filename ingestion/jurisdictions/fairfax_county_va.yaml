@@ -116,6 +116,16 @@ bodies:
       roles:
         chairman: {title: Chairman, aliases: [Chairman, Chair]}
         supervisor: {title: Supervisor, aliases: [Supervisor]}
+    terms:
+      # Chairman at-large and nine district supervisors, elected together
+      # to four-year terms; no 2027 candidates had filed when checked
+      selection: elected
+      term_years: 4
+      term_ends: 2027-12-31
+      next_election: 2027-11-02
+      seats_up: Chairman and all nine district seats
+      source: https://www.fairfaxcounty.gov/boardofsupervisors/members-and-districts
+      verified: 2026-10-03
   - key: planning_commission
     label: Planning Commission
     short: commission
@@ -163,6 +173,30 @@ bodies:
         chair: {title: Commission Chair, aliases: [Commission Chair], also: [commissioner]}
         vice_chair: {title: Commission Vice Chair, aliases: [Commission Vice Chair, Vice Chair], also: [commissioner]}
         commissioner: {title: Commissioner, aliases: [Commissioner]}
+    terms:
+      # appointed by the Board to staggered four-year terms running calendar
+      # year to calendar year; each member's page gives month and year of
+      # expiry (read as the month's end). Paul D. Thomas took the Hunter
+      # Mill seat in August 2026 (the static roster above predates it).
+      selection: appointed
+      appointed_by: Board of Supervisors
+      term_years: 4
+      staggered: true
+      members:
+        - {name: Phillip A. Niedzielski-Eichner, term_ends: 2027-12-31}
+        - {name: Evelyn S. Spain, term_ends: 2027-12-31}
+        - {name: Jeremy Hancock, term_ends: 2028-12-31}
+        - {name: Candice Bennett, term_ends: 2028-12-31}
+        - {name: Alyssa Batchelor-Causey, term_ends: 2028-12-31}
+        - {name: Paul D. Thomas, term_ends: 2029-12-31, note: Appointed August 2026 to the Hunter Mill seat.}
+        - {name: Walter C. Clarke, term_ends: 2029-12-31}
+        - {name: Mary D. Cortina, term_ends: 2027-12-31}
+        - {name: Chris Landgraf, term_ends: 2027-12-31}
+        - {name: Timothy J. Sargeant, term_ends: 2026-12-31}
+        - {name: James Thomas, term_ends: 2026-12-31}
+        - {name: Alis Wang, term_ends: 2026-12-31}
+      source: https://www.fairfaxcounty.gov/planningcommission/faqs
+      verified: 2026-10-03
 
 projects:
   # Fairfax County's zoning applications (rezonings, plan amendments, special

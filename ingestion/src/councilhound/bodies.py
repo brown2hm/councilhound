@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from councilhound.jurisdiction import JurisdictionConfig, Roster, current
+from councilhound.jurisdiction import JurisdictionConfig, Roster, Terms, current
 
 
 @dataclass(frozen=True)
@@ -46,6 +46,7 @@ class Body:
     agenda_has_outcomes: bool = False   # the agenda doc carries official outcomes
     agenda_url_template: str | None = None   # strftime template when rows link no agenda
     roster: Roster | None = field(default=None, compare=False, hash=False)
+    terms: Terms | None = field(default=None, compare=False, hash=False)
 
     def seed_titles(self, role_key: str) -> list[str]:
         """Title aliases seeded for a person in this role: the role's own
@@ -73,6 +74,7 @@ def _body_from_config(b) -> Body:
         color=b.color if b.color is not None else 0,
         hot=b.hot, recommends=b.recommends, agenda_has_outcomes=b.agenda_has_outcomes,
         agenda_url_template=b.agenda_url_template, roster=b.roster,
+        terms=b.terms,
     )
 
 

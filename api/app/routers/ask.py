@@ -1,178 +1,361 @@
 """
-Phase 4: RAG query endpoint.
+Ask: questions answered from everything CouncilHound knows, with citations.
 
-Pipeline: embed the question (local bge model) -> cosine search over
-transcript_chunks and agenda_items (pgvector HNSW) -> hand the retrieved,
-numbered sources to Claude with answer-from-context-only instructions ->
-return the answer plus the source list, each with links back to the
-original Granicus clip timestamp or document.
+Claude works as a small agent over the tools in app.ask_tools: the meeting
+record (transcripts, agenda items with roll calls, documents), the tracked
+topics built from it (profiles, timelines, wiki pages, official project
+records, impact analyses), and the members (voting records, head-to-head
+comparisons, and when each seat is next decided). The first turn already
+carries a search of the record for the question and the topics and
+members the question names, so a simple question needs no tool calls.
 
-Grounding contract: every source given to the model carries an index; the
-model cites [n]. Sources the model didn't receive can't be cited, and if
-retrieval comes back empty we say so instead of calling the model.
+Grounding contract: every tool result is a list of numbered sources from
+one registry per question; the model cites [n], and the citation list is
+built only from sources the model was shown. If the model cites a number
+it never received, that marker comes back unlinked.
 """
+import json
+import logging
 import os
+import queue
 import re
+import threading
 
 from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from councilhound.config import ANTHROPIC_API_KEY
-from councilhound.db.models import (
-    AgendaItem, CityProject, Entity, EntityMention, EntityUpdate, Meeting, TranscriptChunk,
-)
-from councilhound.embeddings.embed import embed_query
-
-from app.db import db_session
-from app.links import clip_link
-from app.ratelimit import check_ask_rate
 from councilhound.bodies import REGISTRY
-from councilhound.config import JURISDICTION
+from councilhound.config import ANTHROPIC_API_KEY, JURISDICTION
+from councilhound.db.models import (
+    CityProject, Entity, EntityMention, EntityUpdate, Meeting,
+)
+from councilhound.db.session import get_session
+from councilhound.embeddings.embed import embed_query  # noqa: F401  (tests patch it here)
 
+from app import ask_tools, terms
+from app.db import db_session
+from app.ratelimit import check_ask_rate
+from app.routers import members as members_router
+
+log = logging.getLogger(__name__)
 router = APIRouter()
 
-ASK_MODEL = os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-6")
-TOP_K = 8
+ASK_MODEL = os.environ.get("ASK_MODEL", "claude-opus-5-5")
+ASK_EFFORT = os.environ.get("ASK_EFFORT", "medium")
+MAX_TOOL_ROUNDS = 5
+FIRST_SEARCH_LIMIT = 8
 
-_BODY_NAMES = ", ".join(b.label for b in REGISTRY.bodies.values() if b.hot) \
-    or ", ".join(b.label for b in REGISTRY.bodies.values()) or "council and commission"
+_BODY_KEYS = list(REGISTRY.bodies)
+_BODY_LIST = "; ".join(f"{b.key} = {b.label}" for b in REGISTRY.bodies.values())
+_PLACE = JURISDICTION.identity.short_name
+
 ANSWER_SYSTEM = f"""\
-You answer questions about {_BODY_NAMES} activity in {JURISDICTION.identity.short_name} \
-using ONLY the numbered sources provided. Rules:
-- Every factual claim must cite its source(s) inline as [n].
-- If the sources don't contain the answer, say so plainly — never fill gaps \
-from general knowledge.
-- Prefer agenda-item sources for outcomes/votes and transcript sources for \
-what was said. Dates matter: make clear when each cited event happened.
-- Format the answer as Markdown (the frontend renders it): short paragraphs, \
-**bold** for key outcomes, bullet lists where they aid scanning. No headings \
-unless the answer genuinely has multiple sections."""
+You answer residents' questions about local government in {_PLACE} \
+using CouncilHound's record: meeting transcripts, agenda items and their \
+roll-call votes, minutes and staff documents, the tracked-topic histories \
+and wiki pages built from them, official project records, impact analyses, \
+and the member roster with term and election dates. Bodies: {_BODY_LIST}.
+
+Working:
+- The first message already holds a search of the record for the question. \
+If it settles the question, answer directly. Otherwise call tools, several \
+at once when they are independent.
+- A named project, place, ordinance or issue: get_topic. One member: \
+get_member. Two or more members, or "who votes with whom": compare_members. \
+Who sits on a body, or whose seat is up and when: list_members. What is \
+coming up: get_upcoming. Wording inside staff reports or minutes: \
+search_documents. Anything else, or a narrower slice by body or date: \
+search_record.
+- Each tool result lists numbered sources [n]. The numbers are shared \
+across the whole conversation; cite only numbers you have been shown.
+
+Rules:
+- Every factual claim cites its source(s) inline as [n].
+- If the sources don't contain the answer, say so plainly — never fill \
+gaps from general knowledge, including about members or elections.
+- Outcomes and votes come from agenda-item, vote and timeline sources; \
+what people said comes from transcripts. Make clear when each cited event \
+happened, and keep timelines in date order.
+- Comparing members: describe how they voted and what they said, with \
+counts and how many roll calls a figure rests on. Do not rate or rank \
+members as better or worse, and do not guess motives. Note that the \
+record covers only the meetings CouncilHound has indexed.
+- Terms and elections: state them only from term or roster sources, \
+with the date the schedule was checked. Appointed members are not elected; \
+say when their appointment expires instead.
+- Wiki pages marked unverified or stale, and impact analyses (modelled \
+estimates), are secondary to the meeting record; say so when you lean on \
+them.
+- Format as Markdown (the page renders it): open with a one-sentence \
+answer, then short paragraphs, **bold** for key outcomes, bullet lists or \
+a small table where they help comparison. No headings unless the answer \
+genuinely has several sections."""
+
+_BODY_PROP = {"type": "string", "enum": _BODY_KEYS,
+              "description": "Limit to one body (key)."}
+TOOLS = [
+    {"name": "search_record",
+     "description": "Search meeting transcripts and agenda items (with their roll calls) by "
+                    "exact phrase and by meaning. Use a short keyword-style query.",
+     "input_schema": {"type": "object", "properties": {
+         "query": {"type": "string"},
+         "body": _BODY_PROP,
+         "since": {"type": "string", "description": "ISO date, inclusive."},
+         "until": {"type": "string", "description": "ISO date, inclusive."}},
+         "required": ["query"], "additionalProperties": False}},
+    {"name": "search_documents",
+     "description": "Search the text of agendas, minutes and staff reports for an exact phrase; "
+                    "returns the passage around each hit.",
+     "input_schema": {"type": "object", "properties": {
+         "query": {"type": "string"}, "body": _BODY_PROP},
+         "required": ["query"], "additionalProperties": False}},
+    {"name": "get_topic",
+     "description": "Everything tracked about one project, place, ordinance, case or issue: "
+                    "summary and open questions, members' positions, wiki pages, the dated "
+                    "timeline of what each meeting did, the official project record, the impact "
+                    "analysis, and roll calls on its agenda items.",
+     "input_schema": {"type": "object", "properties": {
+         "name": {"type": "string", "description": "Name or part of the name."}},
+         "required": ["name"], "additionalProperties": False}},
+    {"name": "get_member",
+     "description": "One member's voting record (counts, contested and losing-side votes, "
+                    "agreement with colleagues, matters voted on), their stated positions on "
+                    "topics, notable roll calls, and their seat's term or next election.",
+     "input_schema": {"type": "object", "properties": {
+         "name": {"type": "string", "description": "Full or last name."}},
+         "required": ["name"], "additionalProperties": False}},
+    {"name": "compare_members",
+     "description": "Compare two to six members: each one's record and term or election date, "
+                    "how often each pair voted the same way on shared roll calls, and the "
+                    "contested roll calls where they split.",
+     "input_schema": {"type": "object", "properties": {
+         "names": {"type": "array", "items": {"type": "string"}, "minItems": 2, "maxItems": 6}},
+         "required": ["names"], "additionalProperties": False}},
+    {"name": "list_members",
+     "description": "Sitting members of each body with roles, each seat's term end and ballot "
+                    "status, the body's next election, and the official candidate list.",
+     "input_schema": {"type": "object", "properties": {"body": _BODY_PROP},
+                      "additionalProperties": False}},
+    {"name": "get_upcoming",
+     "description": "Upcoming meetings and the text of their posted agendas.",
+     "input_schema": {"type": "object", "properties": {"body": _BODY_PROP},
+                      "additionalProperties": False}},
+]
+_TOOL_NAMES = {t["name"] for t in TOOLS}
 
 
 class AskRequest(BaseModel):
     question: str = Field(min_length=3, max_length=500)
 
 
-def _retrieve(session: Session, vec: list[float]) -> list[dict]:
-    sources = []
+# ---------------------------------------------------------------- tools
 
-    chunk_rows = session.execute(
-        select(TranscriptChunk, Meeting,
-               TranscriptChunk.embedding.cosine_distance(vec).label("d"))
-        .join(Meeting, TranscriptChunk.meeting_id == Meeting.id)
-        .where(TranscriptChunk.embedding.isnot(None))
-        .order_by("d")
-        .limit(TOP_K)
-    ).all()
-    for chunk, meeting, dist in chunk_rows:
-        sources.append({
-            "kind": "transcript",
-            "distance": float(dist),
-            "meeting_id": meeting.id,
-            "meeting_title": meeting.title,
-            "date": meeting.meeting_date.isoformat(),
-            "text": chunk.text,
-            "start_seconds": float(chunk.start_seconds) if chunk.start_seconds is not None else None,
-            "link": clip_link(meeting.granicus_view_id, meeting.granicus_clip_id,
-                              float(chunk.start_seconds or 0)),
-        })
-
-    item_rows = session.execute(
-        select(AgendaItem, Meeting,
-               AgendaItem.embedding.cosine_distance(vec).label("d"))
-        .join(Meeting, AgendaItem.meeting_id == Meeting.id)
-        .where(AgendaItem.embedding.isnot(None))
-        .order_by("d")
-        .limit(TOP_K)
-    ).all()
-    for item, meeting, dist in item_rows:
-        text = ". ".join(p for p in (item.title, item.description, item.outcome) if p)
-        sources.append({
-            "kind": "agenda_item",
-            "distance": float(dist),
-            "meeting_id": meeting.id,
-            "meeting_title": meeting.title,
-            "date": meeting.meeting_date.isoformat(),
-            "agenda_item_label": item.label,
-            "agenda_item_id": item.id,
-            "text": text,
-            "link": meeting.minutes_url or meeting.agenda_url,
-        })
-
-    sources.sort(key=lambda s: s["distance"])
-    return sources[:TOP_K + 4]
+def _step_label(name: str, args: dict) -> str:
+    if name == "search_record":
+        return f"Searching the record for “{args.get('query', '')}”"
+    if name == "search_documents":
+        return f"Searching documents for “{args.get('query', '')}”"
+    if name == "get_topic":
+        return f"Reading the record on {args.get('name', '')}"
+    if name == "get_member":
+        return f"Pulling {args.get('name', '')}'s voting record"
+    if name == "compare_members":
+        return "Comparing " + " and ".join(args.get("names") or [])
+    if name == "list_members":
+        return "Checking the roster and election dates"
+    if name == "get_upcoming":
+        return "Checking upcoming agendas"
+    return "Looking something up"
 
 
-def _answer(question: str, sources: list[dict]) -> str:
+def _run_tool(session: Session, sources: ask_tools.Sources, name: str, args: dict) -> str:
+    if name == "search_record":
+        nums = ask_tools.search_record(session, sources, str(args.get("query", "")),
+                                       args.get("body"), args.get("since"), args.get("until"))
+        return ask_tools._render(sources, nums)
+    if name == "search_documents":
+        nums = ask_tools.search_documents(session, sources, str(args.get("query", "")), args.get("body"))
+        return ask_tools._render(sources, nums)
+    if name == "get_topic":
+        nums, header, _ = ask_tools.get_topic(session, sources, str(args.get("name", "")))
+        return ask_tools._render(sources, nums, header)
+    if name == "get_member":
+        nums, header, _ = ask_tools.get_member(session, sources, str(args.get("name", "")))
+        return ask_tools._render(sources, nums, header)
+    if name == "compare_members":
+        names = [str(n) for n in (args.get("names") or []) if str(n).strip()]
+        nums, header = ask_tools.compare_members(session, sources, names)
+        return ask_tools._render(sources, nums, header)
+    if name == "list_members":
+        return ask_tools._render(sources, ask_tools.list_members(session, sources, args.get("body")))
+    if name == "get_upcoming":
+        return ask_tools._render(sources, ask_tools.get_upcoming(session, sources, args.get("body")))
+    raise ValueError(f"unknown tool {name}")
+
+
+def _coverage(session: Session) -> str:
+    first, last = session.execute(select(func.min(Meeting.meeting_date), func.max(Meeting.meeting_date))).one()
+    if not first:
+        return "The record holds no meetings yet."
+    return f"The indexed record covers meetings from {first.isoformat()} to {last.isoformat()}."
+
+
+def _opening(session: Session, sources: ask_tools.Sources, question: str) -> str:
+    today = ask_tools._today()
+    linked = ask_tools.link_question(session, question)
+    nums = ask_tools.search_record(session, sources, question, limit=FIRST_SEARCH_LIMIT)
+    lines = [f"Today is {today.isoformat()}. {_coverage(session)}"]
+    if linked["topics"]:
+        lines.append("Tracked topics the question names: " + "; ".join(linked["topics"]) + ".")
+    if linked["members"]:
+        lines.append("Members the question names: " + "; ".join(linked["members"]) + ".")
+    lines.append("")
+    lines.append(ask_tools._render(sources, nums, "Search of the record for the question:"))
+    lines.append("")
+    lines.append(f"Question: {question}")
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------------- the loop
+
+def _client():
     import anthropic
+    return anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
-    numbered = []
-    for i, s in enumerate(sources, 1):
-        prefix = (f"[{i}] ({s['kind']}, {s['date']}, {s['meeting_title']}"
-                  + (f", item {s['agenda_item_label']}" if s.get("agenda_item_label") else "")
-                  + ")")
-        numbered.append(f"{prefix}\n{s['text']}")
-    prompt = (f"Question: {question}\n\nSources:\n\n" + "\n\n".join(numbered))
 
-    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-    response = client.messages.create(
+def _create(client, messages: list, final: bool):
+    return client.beta.messages.create(
         model=ASK_MODEL,
-        max_tokens=1500,
-        system=ANSWER_SYSTEM,
-        messages=[{"role": "user", "content": prompt}],
+        max_tokens=16000,
+        system=[{"type": "text", "text": ANSWER_SYSTEM, "cache_control": {"type": "ephemeral"}}],
+        tools=TOOLS,
+        tool_choice={"type": "none"} if final else {"type": "auto"},
+        output_config={"effort": ASK_EFFORT},
+        betas=["server-side-fallback-2026-07-01"],
+        fallbacks="default",
+        messages=messages,
     )
-    return "".join(b.text for b in response.content if b.type == "text")
+
+
+def run_ask(session: Session, question: str, on_step=None) -> dict:
+    step = on_step or (lambda label: None)
+    sources = ask_tools.Sources()
+    messages = [{"role": "user", "content": _opening(session, sources, question)}]
+    client = _client()
+    answer = ""
+    for round_no in range(MAX_TOOL_ROUNDS + 1):
+        response = _create(client, messages, final=round_no == MAX_TOOL_ROUNDS)
+        if response.stop_reason == "refusal":
+            answer = "The hound can't answer that question from the record."
+            break
+        uses = [b for b in response.content if b.type == "tool_use"]
+        if response.stop_reason != "tool_use" or not uses:
+            answer = "".join(b.text for b in response.content if b.type == "text").strip()
+            break
+        messages.append({"role": "assistant", "content": response.content})
+        results = []
+        for use in uses:
+            args = use.input if isinstance(use.input, dict) else {}
+            step(_step_label(use.name, args))
+            try:
+                if use.name not in _TOOL_NAMES:
+                    raise ValueError(f"unknown tool {use.name}")
+                content, is_error = _run_tool(session, sources, use.name, args), False
+            except Exception as exc:  # a bad lookup should not sink the answer
+                log.exception("ask tool %s failed", use.name)
+                session.rollback()
+                content, is_error = f"Lookup failed: {exc}", True
+            results.append({"type": "tool_result", "tool_use_id": use.id,
+                            "content": content, "is_error": is_error})
+        messages.append({"role": "user", "content": results})
+    if not answer:
+        answer = "The hound couldn't put an answer together from the record."
+    return _package(session, answer, sources)
+
+
+def _package(session: Session, answer: str, sources: ask_tools.Sources) -> dict:
+    cited_numbers = sorted({int(n) for group in re.findall(r"\[(\d+(?:\s*,\s*\d+)*)\]", answer)
+                            for n in group.split(",")})
+    cited = [(n, sources.get(n)) for n in cited_numbers if sources.get(n)]
+    citations = [{
+        "index": n,
+        "kind": s["kind"],
+        "title": s["title"],
+        "date": s["date"],
+        "meeting_id": s.get("meeting_id"),
+        "meeting_title": s["title"],
+        "agenda_item_label": s.get("agenda_item_label"),
+        "start_seconds": s.get("start_seconds"),
+        "link": s["link"],
+        "excerpt": s["text"][:300],
+    } for n, s in cited]
+    cited_sources = [s for _, s in cited]
+    return {"answer": answer, "citations": citations,
+            "topics": _topics(session, cited_sources),
+            "members": _members(session, cited_sources)}
 
 
 @router.post("/", dependencies=[Depends(check_ask_rate)])
 def ask(req: AskRequest, session: Session = Depends(db_session)):
-    vec = embed_query(req.question)
-    sources = _retrieve(session, vec)
-    if not sources:
-        return {"answer": "No indexed meeting content matched this question yet.",
-                "citations": []}
+    return run_ask(session, req.question)
 
-    answer = _answer(req.question, sources)
 
-    cited_indexes = {int(n) for n in re.findall(r"\[(\d+)\]", answer)}
-    citations = [
-        {
-            "index": i,
-            "kind": s["kind"],
-            "date": s["date"],
-            "meeting_id": s["meeting_id"],
-            "meeting_title": s["meeting_title"],
-            "agenda_item_label": s.get("agenda_item_label"),
-            "start_seconds": s.get("start_seconds"),
-            "link": s["link"],
-            "excerpt": s["text"][:300],
-        }
-        for i, s in enumerate(sources, 1)
-        if i in cited_indexes
-    ]
-    cited = [s for i, s in enumerate(sources, 1) if i in cited_indexes]
-    return {"answer": answer, "citations": citations, "topics": _topics(session, cited)}
+@router.post("/stream", dependencies=[Depends(check_ask_rate)])
+def ask_stream(req: AskRequest):
+    """The same answer as POST /ask/, as newline-delimited JSON: a
+    {"type": "step", "label"} line per lookup while the agent works, then
+    {"type": "answer", ...} (or {"type": "error", "message"})."""
+    events: queue.Queue = queue.Queue()
 
+    def work():
+        session = get_session()
+        try:
+            result = run_ask(session, req.question,
+                             on_step=lambda label: events.put({"type": "step", "label": label}))
+            events.put({"type": "answer", **result})
+        except Exception:
+            log.exception("ask failed")
+            events.put({"type": "error",
+                        "message": "The hound hit a snag. Try again in a minute."})
+        finally:
+            session.close()
+            events.put(None)
+
+    threading.Thread(target=work, daemon=True).start()
+
+    def lines():
+        while (event := events.get()) is not None:
+            yield json.dumps(event) + "\n"
+
+    return StreamingResponse(lines(), media_type="application/x-ndjson",
+                             headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
+
+
+# ---------------------------------------------------------------- cards
 
 def _topics(session: Session, cited: list[dict], limit: int = 3) -> list[dict]:
-    """The tracked records an answer is about: entities on the cited agenda
-    items, and failing that, entities updated at the cited meetings —
-    ranked by how many cited sources touch them. Lets the page link an
+    """The tracked records an answer is about: topics whose own record was
+    cited count most, then entities on the cited agenda items, and failing
+    those, entities updated at the cited meetings. Lets the page link an
     answer to the topic's history and Follow button."""
-    item_ids = {s["agenda_item_id"] for s in cited if s.get("agenda_item_id")}
-    meeting_ids = {s["meeting_id"] for s in cited}
-    if not meeting_ids:
-        return []
     scores: dict[int, int] = {}
+    direct: set[int] = set()
+    for s in cited:
+        if s.get("entity_id") and s["kind"] in ("profile", "wiki", "timeline", "project", "impact"):
+            scores[s["entity_id"]] = scores.get(s["entity_id"], 0) + 3
+            direct.add(s["entity_id"])
+    item_ids = {s["agenda_item_id"] for s in cited if s.get("agenda_item_id")}
+    meeting_ids = {s["meeting_id"] for s in cited if s.get("meeting_id")}
     if item_ids:
         for model in (EntityUpdate, EntityMention):
             for eid, n in session.execute(
                 select(model.entity_id, func.count()).where(model.agenda_item_id.in_(item_ids))
                 .group_by(model.entity_id)):
                 scores[eid] = scores.get(eid, 0) + n
-    if not scores:
+    if not scores and meeting_ids:
         for eid, n in session.execute(
             select(EntityUpdate.entity_id, func.count()).where(EntityUpdate.meeting_id.in_(meeting_ids))
             .group_by(EntityUpdate.entity_id)):
@@ -191,9 +374,36 @@ def _topics(session: Session, cited: list[dict], limit: int = 3) -> list[dict]:
         e = ents.get(eid)
         if e is None or e.entity_type == "person":
             continue
+        # instrument numbers ride along on votes; a card for one only when
+        # the answer drew on its own record
+        if e.entity_type in ("ordinance", "resolution", "case_number") and eid not in direct:
+            continue
         out.append({"slug": e.canonical_slug, "name": e.name, "entity_type": e.entity_type,
                     "current_status": e.current_status, "update_count": counts.get(eid, 0),
                     "official_slug": official.get(eid)})
         if len(out) == limit:
             break
+    return out
+
+
+def _members(session: Session, cited: list[dict], limit: int = 6) -> list[dict]:
+    """Members whose record or seat the answer cites, with the date their
+    seat is next decided, for the page's member cards."""
+    ids = []
+    for s in cited:
+        if s["kind"] in ("member", "term") and s.get("entity_id") and s["entity_id"] not in ids:
+            ids.append(s["entity_id"])
+    if not ids:
+        return []
+    roster = members_router._roster(session)
+    out = []
+    for eid in ids[:limit]:
+        m = roster.get(eid)
+        if m is None:
+            continue
+        roles = members_router._sorted_roles(m["roles"])
+        body = members_router._body_for(roles, {})
+        out.append({"slug": m["entity"].canonical_slug, "name": m["entity"].name,
+                    "roles": roles, "body": body,
+                    "term": terms.term_for(body, m["entity"].name, ask_tools._today())})
     return out

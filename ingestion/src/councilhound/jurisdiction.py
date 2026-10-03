@@ -20,6 +20,7 @@ untouched; councilhound.impact.jurisdiction re-exports the models.
 from __future__ import annotations
 
 import functools
+from datetime import date
 import os
 from pathlib import Path
 from typing import Any, Literal
@@ -217,6 +218,34 @@ class Roster(BaseModel):
     district_title: str | None = None
 
 
+class TermSeat(BaseModel):
+    """One seat's term where it differs from the body's (staggered or
+    appointed seats), keyed by the member's name as the roster has it."""
+    name: str
+    term_ends: date | None = None
+    on_ballot: bool | None = None          # running at Terms.next_election
+    note: str | None = None
+
+
+class Terms(BaseModel):
+    """How a body's members get and keep their seats, pinned from an
+    official source like every other jurisdiction fact. Lets the members
+    pages and /ask say when a member is next up for election (or
+    reappointment) instead of guessing from general knowledge."""
+    selection: Literal["elected", "appointed"]
+    appointed_by: str | None = None        # "City Council"
+    term_years: int | None = None
+    staggered: bool = False
+    term_ends: date | None = None          # when every seat's term ends together
+    next_election: date | None = None
+    seats_up: str | None = None            # "Mayor and all six council seats"
+    candidates: list[str] = Field(default_factory=list)  # official ballot for next_election
+    members: list[TermSeat] = Field(default_factory=list)
+    note: str | None = None
+    source: str                            # URL the schedule was read from
+    verified: date                         # when it was last checked
+
+
 class BodyConfig(BaseModel):
     key: str
     label: str
@@ -235,6 +264,7 @@ class BodyConfig(BaseModel):
     default_meeting_type: str | None = None
     upcoming: UpcomingRule = Field(default_factory=UpcomingRule)
     roster: Roster | None = None
+    terms: Terms | None = None
 
 
 class Projects(BaseModel):

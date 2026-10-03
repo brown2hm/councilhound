@@ -27,6 +27,7 @@ from councilhound.seed import parse_roster
 
 from app.db import db_session
 from app.links import clip_link
+from app.terms import term_for
 
 router = APIRouter()
 
@@ -201,6 +202,7 @@ def list_members(session: Session = Depends(db_session)):
             "with_outcome_pct": (round(100 * with_outcome[key] / decided[key])
                                  if decided.get(key) else None),
             "last_no": last_no.get(key),
+            "term": term_for(_body_for(roles, Counter()), e.name),
         })
     out.sort(key=lambda r: (not r["is_current"],
                             _ROLE_ORDER.get(r["roles"][0], 9) if r["roles"] else 9,
@@ -489,4 +491,5 @@ def get_member(slug: str, session: Session = Depends(db_session)):
         "splits": splits,
         "commentary": commentary,
         "upcoming": _upcoming_for_body(session, body),
+        "term": term_for(body, entity.name),
     }

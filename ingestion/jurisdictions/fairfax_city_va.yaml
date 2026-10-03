@@ -149,6 +149,40 @@ bodies:
       roles:
         mayor: {title: Mayor, aliases: [Mayor]}
         member: {title: Councilmember, aliases: [Councilmember, Council Member, Councilwoman, Councilman]}
+    terms:
+      # Charter §3.1: Mayor and all six at-large seats elected together every
+      # two years at the November general election, terms from January 1.
+      # Candidates as printed on the City's official sample ballot:
+      # https://www.fairfaxva.gov/files/assets/city/v/1/elections/documents/sample-ballots/sample-ballot-nov2026-full.pdf
+      selection: elected
+      term_years: 2
+      term_ends: 2026-12-31
+      next_election: 2026-11-03
+      seats_up: Mayor and all six council seats
+      candidates:
+        - Kirsten Sides Lockhart (Mayor)
+        - Thomas D. "Tom" Peterson (Mayor)
+        - Stacy R. Hall
+        - Rachel M McQuillen
+        - Anthony T. Amos
+        - Sandi W. Slappey Brown
+        - Kelly M. O'Brien
+        - Russell A. Jones
+        - Stephen S. Kim
+        - Susan Hartley Kuiler
+        - María José Padmore
+        - Steve S Chang
+        - Jessica L. Lough
+      members:
+        - {name: Catherine S. Read, on_ballot: false, note: Not seeking a third term as Mayor.}
+        - {name: Billy M. Bates, on_ballot: false, note: Not seeking reelection.}
+        - {name: Stacey D. Hardy-Chandler, on_ballot: false, note: Not seeking reelection.}
+        - {name: Thomas D. Peterson, on_ballot: true, note: Running for Mayor rather than reelection to Council.}
+        - {name: Stacy R. Hall, on_ballot: true}
+        - {name: Rachel M. McQuillen, on_ballot: true}
+        - {name: Anthony T. Amos, on_ballot: true}
+      source: https://www.fairfaxva.gov/Government/Council/Mayor-and-Council-Members
+      verified: 2026-10-03
   - key: planning_commission
     label: Planning Commission
     short: commission
@@ -166,6 +200,23 @@ bodies:
         chair: {title: Chair, aliases: [Chair, Chairman], also: [commissioner]}
         vice_chair: {title: Vice-Chair, aliases: [Vice-Chair, Vice Chair], also: [commissioner]}
         commissioner: {title: Commissioner, aliases: [Commissioner]}
+    terms:
+      # seven seats appointed by Council to staggered four-year terms;
+      # expirations from the City's boards and commissions roster
+      selection: appointed
+      appointed_by: City Council
+      term_years: 4
+      staggered: true
+      members:
+        - {name: James E. Feather, term_ends: 2027-04-09}
+        - {name: Kirsten S. Lockhart, term_ends: 2029-12-21, note: Also a candidate for Mayor on November 3 2026.}
+        - {name: Tassos G. McCarthy, term_ends: 2026-12-31}
+        - {name: Paul Cunningham, term_ends: 2027-12-31}
+        - {name: Matthew T. Rice, term_ends: 2028-02-11}
+        - {name: Daniel F. Drummond, term_ends: 2028-04-09, note: Appointed September 22 2026.}
+      note: One of the seven seats was vacant when checked.
+      source: https://fairfax.granicus.com/boards/w/85f2b8dc41dad80d/boards/17650
+      verified: 2026-10-03
   - key: school_board
     label: School Board
     short: school board
@@ -189,6 +240,16 @@ bodies:
       roles:
         chair: {title: School Board Chair, aliases: [School Board Chair]}
         member: {title: School Board Member, aliases: [School Board Member]}
+    terms:
+      # all five seats are on the November 3 2026 ballot ("vote for not more
+      # than five"), candidates as printed on the official sample ballot;
+      # term length not yet pinned
+      selection: elected
+      next_election: 2026-11-03
+      seats_up: all five School Board seats
+      candidates: [Carolyn S. Pitches, Amit Sarah Hickman, Kristina M. Cecere, Sarah M. Kelsey, Lauren A. Bartelme]
+      source: https://www.fairfaxva.gov/files/assets/city/v/1/elections/documents/sample-ballots/sample-ballot-nov2026-full.pdf
+      verified: 2026-10-03
   - key: prab
     label: Parks and Recreation Advisory Board
     short: parks board
