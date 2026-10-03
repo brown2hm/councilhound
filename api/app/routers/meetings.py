@@ -576,7 +576,8 @@ def get_transcript(meeting_id: int, session: Session = Depends(db_session)):
                 "start_seconds": float(c.start_seconds) if c.start_seconds is not None else None,
                 "end_seconds": float(c.end_seconds) if c.end_seconds is not None else None,
                 "text": c.text,
-                # populated once the diarization pass runs; null until then
+                # anonymous per-meeting diarization label ("SPEAKER_05"); null
+                # for meetings transcribed before diarization (Oct 2026)
                 "speaker_label": c.speaker_label,
                 "watch_url": link(c.start_seconds),
             }

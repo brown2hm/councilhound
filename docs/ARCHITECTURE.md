@@ -100,6 +100,14 @@ machine. Granicus caption files exist but are empty, so transcription is
 mandatory, and canceled-meeting clips are skipped (title-card music makes
 Whisper hallucinate).
 
+Speaker diarization (on by default, `DIARIZE=0` to skip): pyannote
+community-1 runs after Whisper on the dev Mac's GPU, each word goes to the
+speaker turn it overlaps, and chunks break at every speaker change and
+carry an anonymous per-meeting `speaker_label` (`SPEAKER_05`, shown as
+"Speaker 6"). Local-only dependency (`ingestion/requirements-diarize.txt`)
+plus a Hugging Face token for the gated model; without them chunks are
+unlabelled. Naming the speakers (`speaker_entity_id`) is a later step.
+
 ## Data model
 
 ```mermaid
@@ -117,7 +125,7 @@ erDiagram
     MEETINGS ||--o{ ENTITY_UPDATES : at
     MEETINGS ||--o{ ENTITY_MENTIONS : at
     AGENDA_ITEMS ||--o{ ENTITY_UPDATES : "via agenda item"
-    TRANSCRIPT_CHUNKS }o--o| ENTITIES : "speaker_entity_id (future diarization)"
+    TRANSCRIPT_CHUNKS }o--o| ENTITIES : "speaker_entity_id (future speaker naming)"
 
     MEETINGS {
         string granicus_clip_id UK "with view_id"

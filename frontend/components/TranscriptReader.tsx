@@ -12,6 +12,13 @@ function fmtTime(s: number): string {
     : `${m}:${String(sec).padStart(2, "0")}`;
 }
 
+/** Diarization labels are anonymous and per meeting ('SPEAKER_05'); show
+ * them 1-based as "Speaker 6". Anything else (a resolved name) passes through. */
+function speakerName(label: string): string {
+  const m = /^SPEAKER_(\d+)$/.exec(label);
+  return m ? `Speaker ${Number(m[1]) + 1}` : label;
+}
+
 /** Case-insensitive highlight. Split rather than innerHTML so transcript
  * text is never interpreted as markup. */
 function Highlight({ text, query }: { text: string; query: string }) {
@@ -188,7 +195,7 @@ export default function TranscriptReader({
             </div>
           )}
           <div className="space-y-3">
-            {section.segments.map((seg) => (
+            {section.segments.map((seg, i) => (
               <div key={seg.id} className="flex gap-3 sm:gap-4">
                 <div className="w-[52px] shrink-0 pt-0.5 text-right sm:w-[64px]">
                   {seg.watch_url && seg.start_seconds !== null ? (
@@ -207,9 +214,11 @@ export default function TranscriptReader({
                   )}
                 </div>
                 <p className="min-w-0 flex-1 text-[15px] leading-[1.65] text-body">
-                  {seg.speaker_label && (
-                    <span className="mr-2 font-semibold text-ink">{seg.speaker_label}</span>
-                  )}
+                  {/* name the speaker only where the voice changes */}
+                  {seg.speaker_label &&
+                    (i === 0 || section.segments[i - 1].speaker_label !== seg.speaker_label) && (
+                      <span className="mr-2 font-semibold text-ink">{speakerName(seg.speaker_label)}</span>
+                    )}
                   <Highlight text={seg.text} query={q} />
                 </p>
               </div>

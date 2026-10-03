@@ -1,5 +1,26 @@
 # Changelog
 
+## Unreleased — speaker separation in transcripts (October 2026)
+
+Transcripts were one voice: Whisper emits text without speakers, so the
+reader showed each meeting as unbroken ~700-character blocks.
+
+- **Diarization by default.** `councilhound.extraction.diarize` runs
+  pyannote's community-1 pipeline (Apple GPU via MPS) after Whisper. Each
+  word goes to the speaker turn it overlaps most; chunks now break at every
+  speaker change and store `speaker_label`. On the Sep 22, 2026 Council
+  meeting (4 h, ~11 min to diarize) it found 33 speakers, gave each public
+  commenter their own label and split motions from seconds. One-word
+  roll-call answers still fold into the roll-caller's turn.
+- **Fewer invented words.** Whisper now runs with word timestamps,
+  `hallucination_silence_threshold` and `condition_on_previous_text=False`,
+  which stops the looping "She She She…" output over opening music.
+- **Reader** shows "Speaker 6" where the voice changes.
+- **Local-only.** `pip install -r ingestion/requirements-diarize.txt` and
+  `hf auth login` with an account that accepted the model's terms. Without
+  them transcription still runs, unlabelled. `DIARIZE=0` turns it off.
+  Meetings already transcribed keep their unlabelled chunks.
+
 ## Unreleased — extractor guards: no votes without a record, no bodies as topics (September 2026)
 
 Two things the two-year advisory-board backfill surfaced.
