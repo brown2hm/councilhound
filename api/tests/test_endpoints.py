@@ -1,6 +1,5 @@
 """Endpoint tests against a scratch database with realistic Phase 1-4 rows.
-The /ask test mocks the embedding + Claude calls — it exercises retrieval
-SQL and citation wiring, not the models."""
+/ask has its own file (test_ask.py)."""
 import datetime
 
 from councilhound.db.models import (
@@ -204,26 +203,6 @@ def test_hot_topics_endpoint(client, db):
     # seeded transcript chunk mentions 'the trail' but not the entity name;
     # shape is what matters here (scoring logic is unit-tested in ingestion)
     assert "meetings" in data and "topics" in data
-
-
-def test_ask_with_mocked_llm(client, db, monkeypatch):
-    _seed(db)
-    monkeypatch.setattr("app.routers.ask.embed_query", lambda q: [0.1] * 768)
-    monkeypatch.setattr("app.routers.ask._answer",
-                        lambda q, sources: "The contract was approved [1].")
-
-    resp = client.post("/ask/", json={"question": "What happened with the trail?"})
-    assert resp.status_code == 200
-    data = resp.json()
-    assert "[1]" in data["answer"]
-    assert len(data["citations"]) == 1
-    cite = data["citations"][0]
-    assert cite["index"] == 1
-    assert cite["link"]  # every citation must link back to a source
-    # the answer is about the topic on the cited item
-    assert [t["slug"] for t in data["topics"]] == ["george-snyder-trail"]
-    assert data["topics"][0]["current_status"] == "completed"
-    assert data["topics"][0]["update_count"] == 2
 
 
 def test_upcoming_endpoint_and_topic_flag(client, db):
