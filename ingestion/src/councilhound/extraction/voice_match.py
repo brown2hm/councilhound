@@ -34,6 +34,7 @@ from collections import Counter, defaultdict
 from sqlalchemy import and_, select
 from sqlalchemy.orm import Session
 
+from councilhound.bodies import REGISTRY
 from councilhound.db.models import Entity, Meeting, MeetingSpeaker, SpeakerVoice
 from councilhound.extraction.speaker_names import is_public, link_chunks
 
@@ -44,7 +45,9 @@ MIN_MARGIN = 0.25
 MIN_SPEECH = 20.0
 MIN_PRINT_MEETINGS = 2
 DISAGREE_SCORE = 0.75
-VOICE_BODIES = {"city_council", "school_board", "planning_commission"}
+# bodies with a roster of members to learn voices for (the City's Council,
+# Planning Commission and School Board; the County's Board and Commission)
+VOICE_BODIES = {b.key for b in REGISTRY.bodies.values() if b.roster}
 
 
 class Voiceprints:
@@ -171,8 +174,10 @@ def match_pending(session: Session, bodies=(), since=None) -> dict:
     return {"meetings": len(meetings), "voice_named": named, "withdrawn": withdrawn, "failed": failed}
 
 
-def disagreements(session: Session, body: str = "city_council") -> list[dict]:
-    """Transcript-public members whose voice strongly says someone else."""
+def disagreements(session: Session, body: str | None = None) -> list[dict]:
+    """Transcript-public members whose voice strongly says someone else
+    (default: the jurisdiction's first body with a roster)."""
+    body = body or next(b.key for b in REGISTRY.bodies.values() if b.roster)
     vp = Voiceprints(session, body)
     out = []
     q = (select(SpeakerVoice, MeetingSpeaker, Meeting)
