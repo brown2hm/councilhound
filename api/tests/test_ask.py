@@ -129,6 +129,36 @@ def test_failed_tool_comes_back_as_an_error_result(client, db, monkeypatch):
     assert ask.run_ask(db, "anything")["answer"] == "Not in the record."
 
 
+def test_follow_up_carries_the_conversation(client, db, monkeypatch):
+    _seed(db)
+
+    def answer(messages):
+        # earlier turns come first, their stale [n] markers dropped
+        assert [m["role"] for m in messages] == ["user", "assistant", "user"]
+        assert messages[0]["content"] == "What happened with the trail design contract?"
+        assert messages[1]["content"] == "It was approved."
+        # the opening search reads the follow-up with the question before it
+        opening = messages[2]["content"]
+        assert "Question: Who voted for it?" in opening
+        n = _number(opening, "item 7a")
+        return "end_turn", [_text(f"The roll call is on the item [{n}].")]
+
+    _install(monkeypatch, [answer])
+    data = client.post("/ask/", json={
+        "question": "Who voted for it?",
+        "history": [{"question": "What happened with the trail design contract?",
+                     "answer": "It was approved [1, 2]."}],
+    }).json()
+    # numbering restarts each turn: the citation is this turn's source
+    assert [c["kind"] for c in data["citations"]] == ["agenda_item"]
+
+
+def test_history_is_capped(client):
+    turns = [{"question": "q?", "answer": "a."}] * (ask.MAX_HISTORY_TURNS + 1)
+    resp = client.post("/ask/", json={"question": "and then?", "history": turns})
+    assert resp.status_code == 422
+
+
 def test_stream_sends_steps_then_the_answer(client, db, monkeypatch):
     _seed(db)
     monkeypatch.setattr(ask, "get_session", lambda: db)
