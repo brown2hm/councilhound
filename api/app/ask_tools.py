@@ -351,7 +351,8 @@ def _naming_coverage(session: Session, body: str | None) -> str:
     rule = ("A passage is quoted only where its speaker was named with high confidence, so some "
             "remarks stay unattributed.")
     if total and named >= total:
-        return f"Speakers have been named in all {total}{where} meetings with transcripts. {rule}"
+        scope = (f"the one{where} meeting" if total == 1 else f"all {total}{where} meetings")
+        return f"Speakers have been named in {scope} with transcripts. {rule}"
     return (f"Speakers have been named in {named} of {total}{where} meetings with transcripts so far. "
             f"{rule} Missing remarks may simply not be attributed yet.")
 
