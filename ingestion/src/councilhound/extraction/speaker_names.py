@@ -31,6 +31,7 @@ from sqlalchemy import and_, delete, exists, or_, select, update
 from sqlalchemy.orm import Session
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
+from councilhound.bodies import REGISTRY
 from councilhound.config import ANTHROPIC_API_KEY
 from councilhound.db.models import (
     AgendaItem,
@@ -62,18 +63,72 @@ _STUDENT = re.compile(  # a self-description, in the label's own turns or cue
 # "our student representative" is said BY the chair introducing them, so it
 # only marks the label whose cue quote it is, never one whose own turns say it
 _STUDENT_INTRO = re.compile(r"\bstudent (representative|rep|member)\b", re.I)
-_TITLE = re.compile(r"^(mayor|council ?(member|woman|man)|commissioner|chair|vice[- ]chair|"
-                    r"school board|board member|trustee|superintendent)\b", re.I)
-# titles that mark someone as a member of a given body — the roster for a
-# meeting with no recorded votes yet (a Planning Commission meeting before
-# its minutes) comes from these
-BODY_TITLES = {
-    "city_council": re.compile(r"^(mayor|council ?(member|woman|man))\b", re.I),
-    "planning_commission": re.compile(r"^commissioner\b", re.I),
-    "school_board": re.compile(r"^school board (member|chair|vice[- ]chair)\b", re.I),
-}
-_HONORIFIC = {"mr", "mrs", "ms", "miss", "dr", "chief", "mayor", "chair", "councilmember",
-              "commissioner", "madam", "sir", "jr", "sr", "ii", "iii"}
+# Titles come from the jurisdiction's roster config (bodies[].roster.roles
+# aliases), so the County's "Supervisor Lusk" and "Sully District
+# Supervisor" are titles just as the City's "Councilmember Hall" is.
+_GENERIC_TITLES = ("chair", "vice chair", "vice-chair", "school board", "board member",
+                   "trustee", "superintendent")
+
+
+def _alternatives(aliases) -> list[str]:
+    return sorted({re.escape(a.lower()) for a in aliases}, key=lambda a: (-len(a), a))
+
+
+def _district_alternative(body) -> str | None:
+    """'<District> District <noun>', the alias seeding gives a district seat."""
+    noun = body.roster.district_title if body.roster else None
+    return rf"[\w'.]+(?: [\w'.]+)* district {re.escape(noun.lower())}" if noun else None
+
+
+def body_titles(registry) -> dict[str, re.Pattern]:
+    """body key -> the titles that mark someone as a member of that body;
+    the roster for a meeting with no recorded votes yet (a Planning
+    Commission meeting before its minutes) comes from these."""
+    out = {}
+    for b in registry.bodies.values():
+        if not b.roster:
+            continue
+        alts = _alternatives(a for role in b.roster.roles.values() for a in role.aliases)
+        district = _district_alternative(b)
+        if district:
+            alts.append(district)
+        if alts:
+            out[b.key] = re.compile(r"^(" + "|".join(alts) + r")\b", re.I)
+    return out
+
+
+def any_title(registry) -> re.Pattern:
+    """Any official title in this jurisdiction, plus the generic ones."""
+    alts = _alternatives([*_GENERIC_TITLES, *(a for b in registry.bodies.values() if b.roster
+                                            for role in b.roster.roles.values() for a in role.aliases)])
+    alts += [d for d in (_district_alternative(b) for b in registry.bodies.values()) if d]
+    return re.compile(r"^(" + "|".join(alts) + r")\b", re.I)
+
+
+def honorifics(registry) -> set[str]:
+    """Words that are not part of anyone's name: courtesy titles, plus the
+    jurisdiction's one-word titles ("supervisor", "councilwoman")."""
+    words = {"mr", "mrs", "ms", "miss", "dr", "chief", "mayor", "chair", "councilmember",
+             "commissioner", "madam", "sir", "jr", "sr", "ii", "iii"}
+    words |= {a.lower() for b in registry.bodies.values() if b.roster
+              for role in b.roster.roles.values() for a in role.aliases if " " not in a and "-" not in a}
+    return words
+
+
+def example_title(registry) -> str:
+    """The title a member of the jurisdiction's first rostered body is
+    called on by ("Councilmember", "Supervisor"), for the prompt's example."""
+    for b in registry.bodies.values():
+        if b.roster and b.roster.roles:
+            aliases = list(b.roster.roles.values())[-1].aliases
+            if aliases:
+                return aliases[0]
+    return "Councilmember"
+
+
+_TITLE = any_title(REGISTRY)
+BODY_TITLES = body_titles(REGISTRY)
+_HONORIFIC = honorifics(REGISTRY)
 
 SYSTEM = """You identify who is speaking in a public meeting transcript. The transcript was split \
 into anonymous speaker labels (SPEAKER_00, ...) by an automatic voice-separation model; labels are \
@@ -81,7 +136,7 @@ consistent within this meeting only.
 
 Assign a name to a label ONLY from evidence in the transcript itself:
 - self-identification ("My name is ...", "I'm ... with ...")
-- being called on immediately before speaking ("Councilmember Hall?" / "Ms. Ritter, please come up" \
+- being called on immediately before speaking (\"""" + example_title(REGISTRY) + """ Hall?" / "Ms. Ritter, please come up" \
 followed by that label's turn)
 - being addressed by name in a reply immediately after speaking ("Thank you, Mr. Peterson")
 - the presiding officer's own conduct of the meeting combined with a name given elsewhere
