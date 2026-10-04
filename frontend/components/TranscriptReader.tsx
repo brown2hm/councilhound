@@ -46,6 +46,14 @@ function Speaker({ seg }: { seg: TranscriptSegment }) {
         <span className="font-semibold text-ink">{seg.speaker_name}</span>
       )}
       {note && <span className="ml-1.5 text-[13px] text-muted-soft">{note}</span>}
+      {seg.speaker_basis === "voice" && (
+        <span
+          className="ml-1.5 text-[13px] text-muted-soft"
+          title="Nobody said this speaker's name here; identified by matching their voice to earlier meetings"
+        >
+          by voice
+        </span>
+      )}
     </span>
   );
 }

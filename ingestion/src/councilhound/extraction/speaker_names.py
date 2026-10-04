@@ -354,8 +354,9 @@ def name_meeting(session: Session, meeting: Meeting) -> dict:
 
     manual = set(session.scalars(select(MeetingSpeaker.speaker_label).where(
         MeetingSpeaker.meeting_id == meeting.id, MeetingSpeaker.source == "manual")))
+    # voice names are rebuilt by voice_match after naming
     session.execute(delete(MeetingSpeaker).where(MeetingSpeaker.meeting_id == meeting.id,
-                                                 MeetingSpeaker.source == "model"))
+                                                 MeetingSpeaker.source.in_(("model", "voice"))))
     counts = {"high": 0, "medium": 0, "low": 0, "public": 0, "downgraded": 0, "unattested": 0}
     transcript_words = set(re.findall(r"[a-z]+", " ".join(c.text for c in chunks).lower()))
     seen = set()

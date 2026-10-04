@@ -1,5 +1,28 @@
 # Changelog
 
+## Unreleased — speakers named by voice (October 2026)
+
+Transcript cues name most speakers, but staff are often addressed only as
+"Ms. Shinneberry", or not at all, and plenty of members speak in meetings
+where nobody says their name.
+
+- **Fingerprints.** `speaker_voices` holds a 256-d voice fingerprint per
+  diarization label (pyannote's own speaker-embedding model, up to six 10 s
+  windows of the label's longest speech). `transcribe` fingerprints new
+  meetings; `fingerprint-voices` backfills old ones from Granicus audio.
+- **`voice-match`** names a label the transcript didn't when its fingerprint
+  matches one person's voiceprint (built only from transcript-named or
+  hand-set labels in other meetings): similarity >= 0.65, 0.25 ahead of the
+  next voice, >= 20 s of speech, voiceprint from >= 2 meetings. It never
+  overrides a transcript name, a hand correction, a student or a mixed label;
+  `--disagreements` lists transcript names a strong voice match contradicts.
+- **Measured first.** Pilot on 20 City Council meetings, one meeting held out
+  at a time: at similarity >= 0.55 no member or staff label was matched to the
+  wrong person (149/179 recovered) and none of 223 named outsiders matched
+  someone else. Enabled for City Council; other bodies after their own check.
+- The reader marks voice-identified speakers "by voice"; the API exposes
+  `speaker_basis`.
+
 ## Unreleased — named speakers (October 2026)
 
 Diarized transcripts said "Speaker 6"; meetings say who is talking out loud.

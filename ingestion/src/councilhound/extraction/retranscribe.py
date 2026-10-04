@@ -25,12 +25,12 @@ import re
 import time
 from datetime import date, datetime
 
-from sqlalchemy import exists, select
+from sqlalchemy import delete, exists, select
 from sqlalchemy.orm import Session
 
 from councilhound import http
 from councilhound.config import DATA_DIR
-from councilhound.db.models import Meeting, TranscriptChunk
+from councilhound.db.models import Meeting, SpeakerVoice, TranscriptChunk
 from councilhound.extraction.diarize import diarize
 from councilhound.extraction.transcript import assign_speakers, merge_segments, transcribe_audio
 
@@ -122,6 +122,8 @@ def retranscribe_meeting(session: Session, meeting: Meeting, workdir: str,
         vectors = embed_texts([c["text"] for c in chunks])
         for row in old:
             session.delete(row)
+        # labels change with the chunks: old fingerprints no longer apply
+        session.execute(delete(SpeakerVoice).where(SpeakerVoice.meeting_id == meeting.id))
         session.flush()
         session.add_all(
             TranscriptChunk(meeting_id=meeting.id, start_seconds=c["start"],
