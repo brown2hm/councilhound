@@ -255,6 +255,73 @@ def name_speakers(bodies, limit, clip_id):
                 click.echo(name_pending(session, bodies=bodies, limit=limit))
 
 
+@cli.command("fingerprint-voices")
+@body_option
+@limit_option
+def fingerprint_voices(bodies, limit):
+    """Backfill voice fingerprints for labelled meetings that have none.
+    Local only: fetches Granicus audio and runs pyannote's embedding model."""
+    from councilhound.db.session import get_session, stage_lock
+    from councilhound.extraction.voices import fingerprint_pending
+
+    with stage_lock("transcribe") as held:  # same GPU + audio as transcription
+        if not held:
+            _skipped("transcribe")
+            return
+        with get_session() as session:
+            click.echo(fingerprint_pending(session, bodies=bodies, limit=limit))
+
+
+@cli.command("voice-match")
+@body_option
+@click.option("--clip-id", default=None, help="one meeting by Granicus clip_id")
+@click.option("--disagreements", is_flag=True,
+              help="list transcript names a strong voice match contradicts; change nothing")
+def voice_match_cmd(bodies, clip_id, disagreements):
+    """Name speakers the transcript didn't, by matching voice fingerprints to
+    members' and staff voiceprints. No model calls."""
+    from sqlalchemy import select
+
+    from councilhound.db.models import Meeting
+    from councilhound.db.session import get_session
+    from councilhound.extraction import voice_match as vm
+
+    with get_session() as session:
+        if disagreements:
+            for body in bodies or sorted(vm.VOICE_BODIES):
+                for d in vm.disagreements(session, body):
+                    click.echo(d)
+            return
+        if clip_id:
+            meeting = session.scalar(select(Meeting).where(Meeting.granicus_clip_id == clip_id))
+            if not meeting:
+                raise click.ClickException(f"no meeting with clip_id={clip_id}")
+            click.echo(vm.match_meeting(session, meeting))
+        else:
+            click.echo(vm.match_pending(session, bodies=bodies))
+
+
+@cli.command("mark-students")
+def mark_students_cmd():
+    """Re-check every named meeting for speakers who are students (shown as
+    "Student", never named). No LLM calls; safe to re-run."""
+    from sqlalchemy import select
+
+    from councilhound.db.models import MeetingSpeaker
+    from councilhound.db.session import get_session
+    from councilhound.extraction.speaker_names import link_chunks, mark_students
+
+    with get_session() as session:
+        total = 0
+        for meeting_id in session.scalars(select(MeetingSpeaker.meeting_id).distinct()).all():
+            n = mark_students(session, meeting_id)
+            if n:
+                link_chunks(session, meeting_id)
+            total += n
+        session.commit()
+        click.echo(f"{total} speaker(s) marked as students")
+
+
 @cli.command("set-speaker")
 @click.argument("clip_id")
 @click.argument("label")
@@ -491,6 +558,7 @@ def daily(days):
     from councilhound.extraction.entity_profile import profile_pending
     from councilhound.extraction.llm_structure import structure_pending
     from councilhound.extraction.speaker_names import name_pending
+    from councilhound.extraction.voice_match import match_pending
     from councilhound.extraction.pdf_text import extract_pending
     from councilhound.extraction.transcript import transcribe_pending
     from councilhound.seed import seed_people
@@ -512,6 +580,7 @@ def daily(days):
         _run_stage("transcribe", "transcribe:", lambda: transcribe_pending(session))
         _run_stage("structure", "structure:", lambda: structure_pending(session))
         _run_stage("name_speakers", "speakers:", lambda: name_pending(session, since=since))
+        _run_stage("voice_match", "voices:", lambda: match_pending(session, since=since))
         click.echo(f"index-points: {pipeline.link_index_points_pending(session)}")
         click.echo(f"seed:         {seed_people(session)}")
         from councilhound.dedupe import dedupe_pass
@@ -548,6 +617,7 @@ def catchup(days):
     from councilhound.embeddings.embed import embed_pending
     from councilhound.extraction.llm_structure import structure_pending
     from councilhound.extraction.speaker_names import name_pending
+    from councilhound.extraction.voice_match import match_pending
     from councilhound.extraction.pdf_text import extract_pending
     from councilhound.seed import seed_people
 
@@ -567,6 +637,7 @@ def catchup(days):
         click.echo(f"extract-text: {extract_pending(session)}")
         _run_stage("structure", "structure:", lambda: structure_pending(session))
         _run_stage("name_speakers", "speakers:", lambda: name_pending(session, since=since))
+        _run_stage("voice_match", "voices:", lambda: match_pending(session, since=since))
         click.echo(f"index-points: {pipeline.link_index_points_pending(session)}")
         click.echo(f"seed:         {seed_people(session)}")
         _run_stage("embed", "embed:", lambda: embed_pending(session))

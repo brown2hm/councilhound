@@ -76,6 +76,7 @@ STAGE_LOCK_KEYS = {
     "embed": 4,
     "profile": 5,
     "name_speakers": 6,
+    "voice_match": 7,
 }
 
 

@@ -12,7 +12,7 @@ from councilhound.db.models import (
     EntityUpdate, Meeting, MeetingSpeaker, ProjectEvaluation, TranscriptChunk, UpcomingMeeting,
     Vote,
 )
-from councilhound.extraction.speaker_names import is_public
+from councilhound.extraction.speaker_names import is_public, is_student
 from councilhound.hot_topics import MIN_VARIANT_LEN
 
 from app.db import db_session
@@ -560,15 +560,18 @@ def get_transcript(meeting_id: int, session: Session = Depends(db_session)):
         .order_by(AgendaItem.start_seconds)
     ).all()
 
-    # public speakers only (high confidence, not mixed); the rest stay "Speaker N"
-    speakers = {
-        row.speaker_label: {"name": row.name, "role": row.role, "slug": slug}
-        for row, slug in session.execute(
+    # public speakers only (high confidence, not mixed); the rest stay "Speaker N".
+    # Students are identified by role but never named.
+    speakers = {}
+    for row, slug in session.execute(
             select(MeetingSpeaker, Entity.canonical_slug)
             .outerjoin(Entity, MeetingSpeaker.entity_id == Entity.id)
-            .where(MeetingSpeaker.meeting_id == meeting.id))
-        if is_public(row)
-    }
+            .where(MeetingSpeaker.meeting_id == meeting.id)):
+        if is_public(row):
+            speakers[row.speaker_label] = {"name": row.name, "role": row.role, "slug": slug,
+                                           "basis": "voice" if row.source == "voice" else "transcript"}
+        elif is_student(row):
+            speakers[row.speaker_label] = {"name": None, "role": "student", "slug": None, "basis": None}
 
     def link(seconds) -> str | None:
         if seconds is None:
@@ -595,6 +598,9 @@ def get_transcript(meeting_id: int, session: Session = Depends(db_session)):
                 "speaker_name": speakers.get(c.speaker_label, {}).get("name"),
                 "speaker_role": speakers.get(c.speaker_label, {}).get("role"),
                 "speaker_slug": speakers.get(c.speaker_label, {}).get("slug"),
+                # how the name was established: "transcript" (a spoken cue or a
+                # hand correction) or "voice" (matched to earlier meetings)
+                "speaker_basis": speakers.get(c.speaker_label, {}).get("basis"),
                 "watch_url": link(c.start_seconds),
             }
             for c in chunks

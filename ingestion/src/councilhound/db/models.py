@@ -138,8 +138,25 @@ class MeetingSpeaker(Base):
     confidence = Column(String, nullable=False)  # high|medium|low
     mixed = Column(Boolean, nullable=False, default=False)  # label holds several people
     evidence = Column(JSON)  # [{"time": "1:54:42", "quote": "..."}] — verified against the transcript
-    source = Column(String, nullable=False, default="model")  # model|manual
+    source = Column(String, nullable=False, default="model")  # model|manual|voice
     model = Column(String)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class SpeakerVoice(Base):
+    """A voice fingerprint per diarization label: the mean of the speaker-
+    embedding model's vectors over up to VOICE_WINDOWS of the label's longest
+    speech. Kept apart from meeting_speakers so naming re-runs never lose
+    them; replaced whenever a meeting's chunks are."""
+    __tablename__ = "speaker_voices"
+    __table_args__ = (UniqueConstraint("meeting_id", "speaker_label"),)
+
+    id = Column(Integer, primary_key=True)
+    meeting_id = Column(Integer, ForeignKey("meetings.id", ondelete="CASCADE"), nullable=False,
+                        index=True)
+    speaker_label = Column(String, nullable=False)
+    embedding = Column(Vector(256), nullable=False)  # L2-normalized
+    speech_seconds = Column(Numeric, nullable=False)  # audio the fingerprint was taken from
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class Entity(Base):

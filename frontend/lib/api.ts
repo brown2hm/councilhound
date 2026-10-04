@@ -795,6 +795,8 @@ export interface TranscriptSegment {
   speaker_name: string | null;
   speaker_role: string | null;
   speaker_slug: string | null;
+  /** "voice" when the name came from matching the voice to earlier meetings. */
+  speaker_basis: "transcript" | "voice" | null;
   watch_url: string | null;
 }
 

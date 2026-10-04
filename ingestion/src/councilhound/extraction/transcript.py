@@ -214,6 +214,14 @@ def transcribe_meeting(session: Session, meeting: Meeting, force: bool = False) 
             )
         )
     session.commit()
+    if turns:  # labels exist: fingerprint them while the audio is here
+        try:
+            from councilhound.extraction.voices import fingerprint_meeting
+            fingerprint_meeting(session, meeting, meeting.audio_local_path)
+        except Exception:
+            session.rollback()
+            log.warning("voice fingerprinting failed for meeting %s; `fingerprint-voices` "
+                        "will retry", meeting.id, exc_info=True)
     elapsed = time.monotonic() - started
     log.info(
         "meeting %s (clip %s): %d chunks from %d segments, %d speakers in %.0fs (%.1fx realtime)",

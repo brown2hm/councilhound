@@ -27,7 +27,7 @@ import logging
 import re
 from datetime import timedelta
 
-from sqlalchemy import and_, delete, exists, select, update
+from sqlalchemy import and_, delete, exists, or_, select, update
 from sqlalchemy.orm import Session
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
@@ -50,9 +50,30 @@ PROMPT_VERSION = "speakers-v1"
 EVIDENCE_WINDOW = 90  # seconds either side of a quoted timestamp
 ROSTER_DAYS = 90  # members who voted in the same body this close to the meeting
 ROLES = ["presiding officer", "member", "staff", "applicant", "public commenter",
-         "clerk", "other", "unknown"]
-_TITLE = re.compile(r"^(mayor|council ?(member|woman|man)|commissioner|chair|vice chair|"
-                    r"board member|trustee|superintendent)\b", re.I)
+         "student", "clerk", "other", "unknown"]
+# Students are never named publicly (decided 2026-10-04: many are minors);
+# they show as "Student". A self-description in the label's own turns or a
+# cue quote marks one even when the model said "public commenter". The grade
+# word must be followed by at/in/from so "a senior planner" doesn't match.
+_STUDENT = re.compile(  # a self-description, in the label's own turns or cue
+    r"\b(i am|i'm|im)\s+(a\s+|an\s+)?((high school|middle school|elementary|college)\s+)?"
+    r"(freshman|sophomore|junior|senior|student|\w+(st|nd|rd|th)\s+grader)\s+(at|in|from)\b"
+    r"|\b(i am|i'm|im)\s+in\s+(the\s+)?\w+(st|nd|rd|th)?\s+grade\b", re.I)
+# "our student representative" is said BY the chair introducing them, so it
+# only marks the label whose cue quote it is, never one whose own turns say it
+_STUDENT_INTRO = re.compile(r"\bstudent (representative|rep|member)\b", re.I)
+_TITLE = re.compile(r"^(mayor|council ?(member|woman|man)|commissioner|chair|vice[- ]chair|"
+                    r"school board|board member|trustee|superintendent)\b", re.I)
+# titles that mark someone as a member of a given body — the roster for a
+# meeting with no recorded votes yet (a Planning Commission meeting before
+# its minutes) comes from these
+BODY_TITLES = {
+    "city_council": re.compile(r"^(mayor|council ?(member|woman|man))\b", re.I),
+    "planning_commission": re.compile(r"^commissioner\b", re.I),
+    "school_board": re.compile(r"^school board (member|chair|vice[- ]chair)\b", re.I),
+}
+_HONORIFIC = {"mr", "mrs", "ms", "miss", "dr", "chief", "mayor", "chair", "councilmember",
+              "commissioner", "madam", "sir", "jr", "sr", "ii", "iii"}
 
 SYSTEM = """You identify who is speaking in a public meeting transcript. The transcript was split \
 into anonymous speaker labels (SPEAKER_00, ...) by an automatic voice-separation model; labels are \
@@ -76,7 +97,8 @@ Confidence: "high" = at least one direct, unambiguous cue (self-identification, 
 and responds); "medium" = consistent indirect cues only; "low" = a guess. If there is no cue, set \
 name to null. Use roster slugs only for people on the roster; for anyone else (public commenters, \
 staff, applicants) give the name as spoken and slug null. Give 1-3 evidence items per named label, \
-each with the timestamp shown in the transcript and a short verbatim quote of the cue."""
+each with the timestamp shown in the transcript and a short verbatim quote of the cue. Use role \
+"student" for anyone who is a student or introduced as one (including a student representative)."""
 
 SCHEMA = {
     "type": "object", "additionalProperties": False, "required": ["speakers"],
@@ -98,8 +120,15 @@ SCHEMA = {
 
 
 def is_public(row: MeetingSpeaker) -> bool:
-    """The publication rule: shown on the site, in the API and to /ask."""
-    return bool(row.name) and row.confidence == "high" and not row.mixed
+    """The publication rule: named on the site, in the API and to /ask.
+    Students are identified ("Student") but never named."""
+    return (bool(row.name) and row.confidence == "high" and not row.mixed
+            and row.role != "student")
+
+
+def is_student(row: MeetingSpeaker) -> bool:
+    """Shown as "Student": a confident, unmixed label we know is a student."""
+    return row.role == "student" and row.confidence == "high" and not row.mixed
 
 
 def public_speaker_join():
@@ -109,7 +138,8 @@ def public_speaker_join():
                 MeetingSpeaker.speaker_label == TranscriptChunk.speaker_label,
                 MeetingSpeaker.confidence == "high",
                 MeetingSpeaker.mixed.is_(False),
-                MeetingSpeaker.name.isnot(None))
+                MeetingSpeaker.name.isnot(None),
+                or_(MeetingSpeaker.role.is_(None), MeetingSpeaker.role != "student"))
 
 
 def _hms(seconds: float) -> str:
@@ -140,8 +170,8 @@ def _last(name: str) -> str:
 def roster(session: Session, meeting: Meeting) -> dict[str, dict]:
     """slug -> {name, entity_id, note} for the people this meeting can link:
     members who voted in this body within ROSTER_DAYS (keyed by surname in
-    vote breakdowns), the presiding officer by title, and people the
-    structured record names for this meeting."""
+    vote breakdowns), anyone holding this body's title (BODY_TITLES), and
+    people the structured record names for this meeting."""
     lo, hi = meeting.meeting_date - timedelta(days=ROSTER_DAYS), meeting.meeting_date + timedelta(days=ROSTER_DAYS)
     breakdowns = session.scalars(
         select(Vote.vote_breakdown).join(AgendaItem, Vote.agenda_item_id == AgendaItem.id)
@@ -169,10 +199,13 @@ def roster(session: Session, meeting: Meeting) -> dict[str, dict]:
         for p in matches:
             out[p.canonical_slug] = {"name": p.name, "entity_id": p.id,
                                      "note": "member; titles: " + ", ".join(sorted(titles.get(p.id, []))[:3])}
-    if meeting.body == "city_council":  # the mayor presides and rarely votes
+    body_title = BODY_TITLES.get(meeting.body)
+    if body_title:  # titled members of this body, current or former (the mayor rarely votes)
         for p in people:
-            if any(a.lower().startswith("mayor") for a in titles.get(p.id, [])):
-                out[p.canonical_slug] = {"name": p.name, "entity_id": p.id, "note": "mayor"}
+            held = [a for a in titles.get(p.id, []) if body_title.match(a)]
+            if held and p.canonical_slug not in out:
+                out[p.canonical_slug] = {"name": p.name, "entity_id": p.id,
+                                         "note": "titled: " + ", ".join(sorted(held)[:3])}
     for p, role in session.execute(
             select(Entity, EntityMention.role).join(EntityMention, EntityMention.entity_id == Entity.id)
             .where(EntityMention.meeting_id == meeting.id, Entity.entity_type == "person")):
@@ -245,6 +278,51 @@ def verify_evidence(label: str, evidence: list[dict], chunks: list[TranscriptChu
     return kept
 
 
+def name_attested(name: str, transcript_words: set[str]) -> bool:
+    """Every word of a name (honorifics aside) is in the transcript, allowing
+    small spelling drift. Stops the model writing a name it knows from
+    elsewhere ("Brian Lubkin") over the one that was spoken ("Lovegerman")."""
+    import difflib
+
+    words = [w for w in re.findall(r"[a-z]+", name.lower()) if w not in _HONORIFIC and len(w) >= 3]
+    if not words:
+        return False
+    return all(w in transcript_words or difflib.get_close_matches(w, transcript_words, n=1, cutoff=0.8)
+               for w in words)
+
+
+def _introduced_as_student(row: MeetingSpeaker, chunks: list[TranscriptChunk]) -> bool:
+    """A cue quote naming a student representative, spoken by someone else
+    (the chair introducing them) — not the chair's own words about them."""
+    for e in row.evidence or []:
+        quote, t = e.get("quote", ""), _seconds(e.get("time", ""))
+        if t is None or not _STUDENT_INTRO.search(quote):
+            continue
+        head = " ".join(_norm(quote).split()[:8])
+        for c in chunks:
+            if abs(float(c.start_seconds or 0) - t) <= EVIDENCE_WINDOW and head in _norm(c.text):
+                if c.speaker_label != row.speaker_label:
+                    return True
+    return False
+
+
+def mark_students(session: Session, meeting_id: int) -> int:
+    """Set role 'student' on model rows whose own turns or cue quotes say the
+    speaker is a student. Hand corrections are left alone. Returns rows changed."""
+    changed = 0
+    chunks = session.scalars(select(TranscriptChunk).where(TranscriptChunk.meeting_id == meeting_id)).all()
+    rows = session.scalars(select(MeetingSpeaker).where(
+        MeetingSpeaker.meeting_id == meeting_id, MeetingSpeaker.source == "model",
+        MeetingSpeaker.role != "student")).all()
+    for row in rows:
+        own = [c.text for c in chunks if c.speaker_label == row.speaker_label]
+        cues = [e.get("quote", "") for e in row.evidence or []]
+        if any(_STUDENT.search(t) for t in [*own, *cues]) or _introduced_as_student(row, chunks):
+            row.role = "student"
+            changed += 1
+    return changed
+
+
 def link_chunks(session: Session, meeting_id: int) -> int:
     """Point each chunk at its speaker's entity when the speaker is public and
     on the roster; clear the link otherwise. Returns chunks linked."""
@@ -276,9 +354,11 @@ def name_meeting(session: Session, meeting: Meeting) -> dict:
 
     manual = set(session.scalars(select(MeetingSpeaker.speaker_label).where(
         MeetingSpeaker.meeting_id == meeting.id, MeetingSpeaker.source == "manual")))
+    # voice names are rebuilt by voice_match after naming
     session.execute(delete(MeetingSpeaker).where(MeetingSpeaker.meeting_id == meeting.id,
-                                                 MeetingSpeaker.source == "model"))
-    counts = {"high": 0, "medium": 0, "low": 0, "public": 0, "downgraded": 0}
+                                                 MeetingSpeaker.source.in_(("model", "voice"))))
+    counts = {"high": 0, "medium": 0, "low": 0, "public": 0, "downgraded": 0, "unattested": 0}
+    transcript_words = set(re.findall(r"[a-z]+", " ".join(c.text for c in chunks).lower()))
     seen = set()
     for s in speakers:
         label = s["label"]
@@ -291,6 +371,10 @@ def name_meeting(session: Session, meeting: Meeting) -> dict:
             confidence = "medium"
             counts["downgraded"] += 1
         person = people.get(s["slug"] or "")
+        # roster names are trusted spellings; anyone else must be named as spoken
+        if confidence == "high" and not person and not name_attested(s["name"] or "", transcript_words):
+            confidence = "medium"
+            counts["unattested"] += 1
         row = MeetingSpeaker(
             meeting_id=meeting.id, speaker_label=label, name=s["name"],
             entity_id=person["entity_id"] if person else None,
@@ -305,6 +389,9 @@ def name_meeting(session: Session, meeting: Meeting) -> dict:
                                    model=f"{model}/{PROMPT_VERSION}"))
         counts["low"] += 1
     session.flush()
+    counts["students"] = mark_students(session, meeting.id)
+    counts["public"] = sum(is_public(r) for r in session.scalars(
+        select(MeetingSpeaker).where(MeetingSpeaker.meeting_id == meeting.id)))
     counts["linked_chunks"] = link_chunks(session, meeting.id)
     session.commit()
     result = {"meeting_id": meeting.id, "status": "named", "labels": len(labels), **counts}
