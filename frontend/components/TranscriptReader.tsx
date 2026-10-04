@@ -14,8 +14,12 @@ function fmtTime(s: number): string {
 }
 
 /** Diarization labels are anonymous and per meeting ('SPEAKER_05'); show
- * them 1-based as "Speaker 6". Anything else (a resolved name) passes through. */
+ * them 1-based as "Speaker 6". Caption turns ('TURN_0012') are one stretch
+ * of speech each, not one person, so an unnamed turn is just "Speaker" — a
+ * number would suggest the same person across turns. Anything else (a
+ * resolved name) passes through. */
 function speakerName(label: string): string {
+  if (/^TURN_\d+$/.test(label)) return "Speaker";
   const m = /^SPEAKER_(\d+)$/.exec(label);
   return m ? `Speaker ${Number(m[1]) + 1}` : label;
 }

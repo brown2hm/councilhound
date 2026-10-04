@@ -41,8 +41,8 @@ WIKI_PAGE_CHARS = 3500
 REPORT_CHARS = 3000
 AGENDA_CHARS = 2500
 DOC_SNIPPET_CHARS = 800
-# pipeline placeholder labels ("SPEAKER_01") name no one
-_ANON_SPEAKER = re.compile(r"^speaker[_ ]?\d+$", re.I)
+# pipeline placeholder labels ("SPEAKER_01", "TURN_0012") name no one
+_ANON_SPEAKER = re.compile(r"^(speaker[_ ]?\d+|turn_\d+)$", re.I)  # voice clusters, caption turns
 
 
 def _clip(text: str | None, n: int) -> str:
