@@ -109,7 +109,16 @@ when the opening search doesn't cover it.
 - Format as Markdown (the page renders it): open with a one-sentence \
 answer, then short paragraphs, **bold** for key outcomes, bullet lists or \
 a small table where they help comparison. No headings unless the answer \
-genuinely has several sections."""
+genuinely has several sections.
+- After the answer, suggest up to three short follow-up questions a \
+resident might ask next, each one the record you were shown could likely \
+answer (a named member's vote, the next step for a project, what was said \
+at a cited meeting). Never suggest what your answer says the record \
+lacks, and never ask for motives: not "Why did Hall vote no?" but \
+"What did Hall say before voting no?". \
+Write them as the resident would, under 90 \
+characters, one per line inside <follow_ups></follow_ups> at the very end. \
+Leave the block out when nothing useful follows."""
 
 _BODY_PROP = {"type": "string", "enum": _BODY_KEYS,
               "description": "Limit to one body (key)."}
@@ -302,6 +311,23 @@ def _history_messages(history) -> list[dict]:
     return messages
 
 
+_FOLLOW_UPS = re.compile(r"<follow_ups>(.*?)(?:</follow_ups>|$)", re.S)
+
+
+def _split_follow_ups(answer: str) -> tuple[str, list[str]]:
+    """The answer without its trailing <follow_ups> block, and the
+    suggested questions from it."""
+    match = _FOLLOW_UPS.search(answer)
+    if not match:
+        return answer, []
+    questions = []
+    for line in match.group(1).splitlines():
+        q = re.sub(r"^\s*(?:[-*•]|\d+[.)])\s*", "", line).strip()
+        if 3 <= len(q) <= 200 and q not in questions:
+            questions.append(q)
+    return (answer[:match.start()] + answer[match.end():]).strip(), questions[:3]
+
+
 def run_ask(session: Session, question: str, on_step=None, history=()) -> dict:
     step = on_step or (lambda label: None)
     sources = ask_tools.Sources()
@@ -335,9 +361,10 @@ def run_ask(session: Session, question: str, on_step=None, history=()) -> dict:
             results.append({"type": "tool_result", "tool_use_id": use.id,
                             "content": content, "is_error": is_error})
         messages.append({"role": "user", "content": results})
+    answer, follow_ups = _split_follow_ups(answer)
     if not answer:
-        answer = "The hound couldn't put an answer together from the record."
-    return _package(session, answer, sources)
+        answer, follow_ups = "The hound couldn't put an answer together from the record.", []
+    return {**_package(session, answer, sources), "follow_ups": follow_ups}
 
 
 def _package(session: Session, answer: str, sources: ask_tools.Sources) -> dict:

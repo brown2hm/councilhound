@@ -777,6 +777,8 @@ export interface AskResponse {
   citations: Citation[];
   topics?: AskTopic[];
   members?: AskMember[];
+  /** questions the hound suggests asking next */
+  follow_ups?: string[];
 }
 
 /** One line of POST /ask/stream. */
