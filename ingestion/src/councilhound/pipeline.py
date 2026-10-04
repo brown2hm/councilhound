@@ -436,15 +436,7 @@ def fetch_media(session: Session, meeting: Meeting) -> str | None:
             path = os.path.join(_meeting_dir(meeting), "audio.mp3")
             http.download(meeting.audio_url, path, timeout=600)
         elif source == "mp4_audio_extract":
-            if not meeting.video_url:
-                continue
-            video = os.path.join(_meeting_dir(meeting), "video.mp4")
-            path = os.path.join(_meeting_dir(meeting), "audio.m4a")
-            if not (os.path.exists(path) and os.path.getsize(path) > 0):
-                http.download(meeting.video_url, video, timeout=3600)
-                extract_audio_track(video, path)
-                if not media.keep_video:
-                    os.remove(video)
+            path = _mp4_audio(meeting)
         if path:
             break
     if not path:
@@ -453,7 +445,41 @@ def fetch_media(session: Session, meeting: Meeting) -> str | None:
         return None
     meeting.audio_local_path = path
     session.commit()
+    if path.endswith(".vtt"):
+        try:
+            fetch_caption_audio(meeting)
+        except Exception:  # the captions alone still make a transcript
+            log.warning("meeting %s: audio for diarizing its captions failed", meeting.id, exc_info=True)
     return path
+
+
+def _mp4_audio(meeting: Meeting) -> str | None:
+    """Download the clip's MP4 and keep only its audio track (audio.m4a)."""
+    if not meeting.video_url:
+        return None
+    video = os.path.join(_meeting_dir(meeting), "video.mp4")
+    path = os.path.join(_meeting_dir(meeting), "audio.m4a")
+    if not (os.path.exists(path) and os.path.getsize(path) > 0):
+        os.makedirs(_meeting_dir(meeting), exist_ok=True)
+        http.download(meeting.video_url, video, timeout=3600)
+        extract_audio_track(video, path)
+        if not JURISDICTION.granicus.media.keep_video:
+            os.remove(video)
+    return path
+
+
+def fetch_caption_audio(meeting: Meeting) -> str | None:
+    """For a body in granicus.media.caption_diarize_bodies whose captions
+    carry no speaker-change marks, fetch the audio track next to them so
+    transcription can take the speakers from it. None when not needed."""
+    from councilhound.extraction.transcript import captions_have_speakers
+
+    captions = meeting.audio_local_path
+    if (meeting.body not in JURISDICTION.granicus.media.caption_diarize_bodies
+            or not captions or not captions.endswith(".vtt") or not os.path.exists(captions)
+            or captions_have_speakers(captions)):
+        return None
+    return _mp4_audio(meeting)  # lands at caption_audio_path(captions)
 
 
 def run_ingest(

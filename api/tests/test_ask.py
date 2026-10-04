@@ -298,7 +298,7 @@ def test_statements_are_the_members_own_identified_words(db):
     assert not any("smaller building" in t for t in texts)  # unidentified speaker
     assert sources.get(nums[0])["link"].endswith("starttime=3600&entrytime=3600")
     # coverage is stated, so silence is not read as "never said"
-    assert "Speakers have been named in all 1 Planning Commission meetings with transcripts." in header
+    assert "Speakers have been named in the one Planning Commission meeting with transcripts." in header
 
     nums, header = ask_tools.get_statements(db, sources, "Peterson")  # no topic: most recent
     assert [sources.get(n)["text"][:30] for n in nums] == ["Thomas Peterson: My concern wi"]

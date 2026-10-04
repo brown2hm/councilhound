@@ -83,6 +83,10 @@ granicus:
     # only (8.5 GB for a Board meeting), so audio extraction is the fallback
     sources: [captions, mp4_audio_extract]
     keep_video: false
+    # Planning Commission captions arrive without '>>' speaker marks (they
+    # read as automatic captions; checked on the 2026-09-16 meeting), so
+    # the Commission's audio is diarized and its labels put on the captions
+    caption_diarize_bodies: [planning_commission]
   canary: {min_meetings: 100, min_recent_agendas: 5, min_recent_audio: 0, min_upcoming: 1, expect_mp3: false}
 
 bodies:
