@@ -194,3 +194,75 @@ def disagreements(session: Session, body: str = "city_council") -> list[dict]:
                         "voice_says": session.get(Entity, entity_id).name, "score": round(score, 2)})
     return out
 
+
+
+def _same_person(a: str | None, b: str | None) -> bool:
+    """Loose surname match, for telling spelling variants (Napty / Nabti,
+    Ito / Eto) apart from genuinely different people in evaluate()."""
+    import difflib
+    import re
+
+    wa = re.findall(r"[a-z]+", (a or "").lower())
+    wb = re.findall(r"[a-z]+", (b or "").lower())
+    if not wa or not wb:
+        return False
+    if len(wa) == 1 and wa[0] == wb[0]:  # "Melanie" for Melanie Zipp
+        return True
+    return difflib.SequenceMatcher(None, wa[-1], wb[-1]).ratio() >= 0.5
+
+
+def evaluate(session: Session, body: str, min_score: float = MIN_SCORE) -> dict:
+    """Leave-one-meeting-out check of the rule on stored fingerprints, for
+    any body (enabled or not). Run it before changing thresholds or adding a
+    body: this is how the 0.65 -> 0.80 change and the duplicate entities were
+    found. Read-only.
+
+    - known: publicly named, entity-linked labels; would the rule, ignoring
+      their own meeting, give each the right person?
+    - outsiders: publicly named people with no entity (commenters, most
+      applicants) have no voiceprint, so any rule-passing match is the error
+      voice naming could make on an unnamed outsider. Matches whose names look
+      like spelling variants of the same person are counted apart.
+    - would_name: labels the rule names (already voice-named, or new on the
+      next run)."""
+    vp = Voiceprints(session, body)
+    rows = session.execute(
+        select(SpeakerVoice, MeetingSpeaker, Meeting)
+        .join(MeetingSpeaker, and_(MeetingSpeaker.meeting_id == SpeakerVoice.meeting_id,
+                                   MeetingSpeaker.speaker_label == SpeakerVoice.speaker_label))
+        .join(Meeting, Meeting.id == SpeakerVoice.meeting_id)
+        .where(Meeting.body == body)).all()
+    prints: dict[int, dict] = {}
+    names: dict[int, str] = {}
+    out = {"body": body, "min_score": min_score, "meetings": len({m.id for _, _, m in rows}),
+           "known": 0, "matched": 0, "correct": 0, "wrong": [],
+           "outsiders": 0, "outsider_same_person": 0, "outsider_different": [], "would_name": 0}
+    for voice, row, meeting in rows:
+        if meeting.id not in prints:
+            prints[meeting.id] = vp.prints(meeting.id)
+        entity_id, score, second, _ = vp.best(voice.embedding, prints[meeting.id])
+        passes = (entity_id is not None and score >= min_score and score - second >= MIN_MARGIN
+                  and float(voice.speech_seconds) >= MIN_SPEECH)
+        if passes and entity_id not in names:
+            names[entity_id] = session.get(Entity, entity_id).name
+        where = {"clip": meeting.granicus_clip_id, "date": meeting.meeting_date.isoformat(),
+                 "label": row.speaker_label, "score": round(score, 2)}
+        if is_public(row) and row.entity_id and row.source in ("model", "manual"):
+            out["known"] += 1
+            if passes:
+                out["matched"] += 1
+                if entity_id == row.entity_id:
+                    out["correct"] += 1
+                else:
+                    out["wrong"].append({**where, "name": row.name, "voice": names[entity_id]})
+        elif is_public(row) and not row.entity_id:
+            out["outsiders"] += 1
+            if passes:
+                if _same_person(row.name, names[entity_id]):
+                    out["outsider_same_person"] += 1
+                else:
+                    out["outsider_different"].append({**where, "name": row.name, "role": row.role,
+                                                      "voice": names[entity_id]})
+        elif passes and _eligible(row):
+            out["would_name"] += 1
+    return out

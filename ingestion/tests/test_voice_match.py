@@ -150,3 +150,23 @@ def test_compute_voices_uses_the_longest_spans():
     assert len(vec) == 256 and abs(np.linalg.norm(vec) - 1) < 1e-6
     assert sec == pytest.approx(15.0)  # a 10 s window from (10, 40) + all 5 s of (50, 55)
     assert calls == [(2, 1, 160000)]
+
+
+def test_evaluate_counts_known_outsiders_and_candidates(world):
+    s, (a, b, c), amos, bates, label = world
+    # third meeting: both members named again, so each voiceprint survives holding one meeting out
+    label(c, "SPEAKER_00", _unit(0, 0.02, 21), name="Anthony Amos", entity_id=amos.id, role="member")
+    label(c, "SPEAKER_01", _unit(1, 0.02, 22), name="Billy Bates", entity_id=bates.id, role="member")
+    # an outsider who happens to sound like Amos (the error voice naming could make)
+    label(c, "SPEAKER_02", _unit(0, 0.02, 23), name="Eli Goldman", role="applicant")
+    # a spelling variant of a known person is not an error
+    label(c, "SPEAKER_03", _unit(1, 0.02, 24), name="Billy Bate", role="staff")
+    # an unnamed label the rule would name
+    label(c, "SPEAKER_04", _unit(0, 0.02, 25), name=None, confidence="low", role="unknown")
+    s.commit()
+    r = vm.evaluate(s, "city_council")
+    assert (r["meetings"], r["known"], r["matched"], r["correct"], r["wrong"]) == (3, 6, 6, 6, [])
+    assert r["outsiders"] == 2 and r["outsider_same_person"] == 1
+    assert [(o["name"], o["voice"]) for o in r["outsider_different"]] == [("Eli Goldman", "Anthony Amos")]
+    assert r["would_name"] == 1
+    assert vm.evaluate(s, "city_council", min_score=0.999)["matched"] == 0
