@@ -153,6 +153,27 @@ def test_follow_up_carries_the_conversation(client, db, monkeypatch):
     assert [c["kind"] for c in data["citations"]] == ["agenda_item"]
 
 
+def test_suggested_follow_ups_come_off_the_answer(client, db, monkeypatch):
+    _seed(db)
+
+    def answer(messages):
+        n = _number(messages[0]["content"], "item 7a")
+        return "end_turn", [_text(
+            f"The contract was approved [{n}].\n\n<follow_ups>\n- Who voted for it?\n"
+            "2. What does the trail design cost?\nWho voted for it?\n</follow_ups>")]
+
+    _install(monkeypatch, [answer])
+    data = client.post("/ask/", json={"question": "What happened with the trail design contract?"}).json()
+    assert "follow_ups" not in data["answer"] and data["answer"].endswith("].")
+    assert data["follow_ups"] == ["Who voted for it?", "What does the trail design cost?"]
+
+
+def test_split_follow_ups_edge_cases():
+    assert ask._split_follow_ups("Plain answer.") == ("Plain answer.", [])
+    # cut off before the closing tag
+    assert ask._split_follow_ups("A.\n<follow_ups>\n- Next?") == ("A.", ["Next?"])
+
+
 def test_history_is_capped(client):
     turns = [{"question": "q?", "answer": "a."}] * (ask.MAX_HISTORY_TURNS + 1)
     resp = client.post("/ask/", json={"question": "and then?", "history": turns})
