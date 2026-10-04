@@ -31,3 +31,8 @@
 ## 2026-09-19
 
 - Meeting history updated through 2026-06-23.
+
+## 2026-10-04
+
+- Meeting history updated through 2026-09-14.
+- Added September 14, 2026 School Board presentation of the Fairfax High School grounds improvements (walking/biking path, benches, amphitheater) to overview; added open question about pending School Board recommendation to City Council. (curator: claude-sonnet-4-6, through 2026-09-14)
