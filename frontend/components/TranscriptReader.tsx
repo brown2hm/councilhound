@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { MeetingTranscript, TranscriptSegment } from "@/lib/api";
 
@@ -10,6 +11,51 @@ function fmtTime(s: number): string {
   return h > 0
     ? `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`
     : `${m}:${String(sec).padStart(2, "0")}`;
+}
+
+/** Diarization labels are anonymous and per meeting ('SPEAKER_05'); show
+ * them 1-based as "Speaker 6". Anything else (a resolved name) passes through. */
+function speakerName(label: string): string {
+  const m = /^SPEAKER_(\d+)$/.exec(label);
+  return m ? `Speaker ${Number(m[1]) + 1}` : label;
+}
+
+/** Roles worth a word next to the name; members get a link instead. */
+const ROLE_NOTE: Record<string, string> = {
+  staff: "staff",
+  applicant: "applicant",
+  "public commenter": "public comment",
+  clerk: "clerk",
+};
+
+function Speaker({ seg }: { seg: TranscriptSegment }) {
+  if (!seg.speaker_name) {
+    // students are identified but never named
+    const label = seg.speaker_role === "student" ? "Student" : speakerName(seg.speaker_label ?? "");
+    return <span className="mr-2 font-semibold text-ink">{label}</span>;
+  }
+  const isMember = seg.speaker_role === "member" || seg.speaker_role === "presiding officer";
+  const note = seg.speaker_role ? ROLE_NOTE[seg.speaker_role] : undefined;
+  return (
+    <span className="mr-2">
+      {isMember && seg.speaker_slug ? (
+        <Link href={`/members/${seg.speaker_slug}`} className="font-semibold text-ink underline-offset-2 hover:underline">
+          {seg.speaker_name}
+        </Link>
+      ) : (
+        <span className="font-semibold text-ink">{seg.speaker_name}</span>
+      )}
+      {note && <span className="ml-1.5 text-[13px] text-muted-soft">{note}</span>}
+      {seg.speaker_basis === "voice" && (
+        <span
+          className="ml-1.5 text-[13px] text-muted-soft"
+          title="Nobody said this speaker's name here; identified by matching their voice to earlier meetings"
+        >
+          by voice
+        </span>
+      )}
+    </span>
+  );
 }
 
 /** Case-insensitive highlight. Split rather than innerHTML so transcript
@@ -188,7 +234,7 @@ export default function TranscriptReader({
             </div>
           )}
           <div className="space-y-3">
-            {section.segments.map((seg) => (
+            {section.segments.map((seg, i) => (
               <div key={seg.id} className="flex gap-3 sm:gap-4">
                 <div className="w-[52px] shrink-0 pt-0.5 text-right sm:w-[64px]">
                   {seg.watch_url && seg.start_seconds !== null ? (
@@ -207,9 +253,11 @@ export default function TranscriptReader({
                   )}
                 </div>
                 <p className="min-w-0 flex-1 text-[15px] leading-[1.65] text-body">
-                  {seg.speaker_label && (
-                    <span className="mr-2 font-semibold text-ink">{seg.speaker_label}</span>
-                  )}
+                  {/* name the speaker only where the voice changes */}
+                  {seg.speaker_label &&
+                    (i === 0 || section.segments[i - 1].speaker_label !== seg.speaker_label) && (
+                      <Speaker seg={seg} />
+                    )}
                   <Highlight text={seg.text} query={q} />
                 </p>
               </div>

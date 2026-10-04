@@ -2,7 +2,7 @@
 import datetime
 
 from councilhound.db.models import (
-    AgendaItem, Entity, IngestRun, Meeting, TranscriptChunk, UpcomingMeeting,
+    AgendaItem, Entity, IngestRun, Meeting, MeetingSpeaker, TranscriptChunk, UpcomingMeeting,
 )
 
 
@@ -139,3 +139,46 @@ def test_entities_list_pages_with_offset(client, db):
     assert len(second) == 1
     # no row appears on both pages
     assert not {e["slug"] for e in first} & {e["slug"] for e in second}
+
+
+def test_transcript_names_only_high_confidence_unmixed_speakers(client, db):
+    m = _meeting(db)
+    amos = Entity(entity_type="person", name="Anthony Amos", canonical_slug="anthony-amos")
+    db.add(amos)
+    db.flush()
+    db.add_all([
+        TranscriptChunk(meeting_id=m.id, start_seconds=0, end_seconds=5, text="Councilmember Amos.",
+                        speaker_label="SPEAKER_05"),
+        TranscriptChunk(meeting_id=m.id, start_seconds=5, end_seconds=9, text="Thank you.",
+                        speaker_label="SPEAKER_16"),
+        TranscriptChunk(meeting_id=m.id, start_seconds=9, end_seconds=12, text="My name is Joan.",
+                        speaker_label="SPEAKER_25"),
+        TranscriptChunk(meeting_id=m.id, start_seconds=12, end_seconds=14, text="Big smile.",
+                        speaker_label="SPEAKER_19"),
+        MeetingSpeaker(meeting_id=m.id, speaker_label="SPEAKER_16", name="Anthony Amos",
+                       entity_id=amos.id, role="member", confidence="high", mixed=False),
+        MeetingSpeaker(meeting_id=m.id, speaker_label="SPEAKER_25", name="Joan Goodman",
+                       role="public commenter", confidence="medium", mixed=False),
+        MeetingSpeaker(meeting_id=m.id, speaker_label="SPEAKER_19", name="Someone",
+                       role="other", confidence="high", mixed=True),
+    ])
+    db.commit()
+    segs = {s["speaker_label"]: s for s in client.get(f"/meetings/{m.id}/transcript").json()["segments"]}
+    assert (segs["SPEAKER_16"]["speaker_name"], segs["SPEAKER_16"]["speaker_role"],
+            segs["SPEAKER_16"]["speaker_slug"]) == ("Anthony Amos", "member", "anthony-amos")
+    assert segs["SPEAKER_25"]["speaker_name"] is None  # medium stays anonymous
+    assert segs["SPEAKER_19"]["speaker_name"] is None  # mixed stays anonymous
+    assert segs["SPEAKER_05"]["speaker_name"] is None  # never named
+
+
+def test_transcript_identifies_students_without_naming_them(client, db):
+    m = _meeting(db)
+    db.add_all([
+        TranscriptChunk(meeting_id=m.id, start_seconds=0, end_seconds=5,
+                        text="I'm Veronica, a junior at Fairfax High.", speaker_label="SPEAKER_01"),
+        MeetingSpeaker(meeting_id=m.id, speaker_label="SPEAKER_01", name="Veronica",
+                       role="student", confidence="high", mixed=False),
+    ])
+    db.commit()
+    seg = client.get(f"/meetings/{m.id}/transcript").json()["segments"][0]
+    assert (seg["speaker_name"], seg["speaker_role"], seg["speaker_slug"]) == (None, "student", None)

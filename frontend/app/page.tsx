@@ -380,26 +380,65 @@ function Masthead({ latest }: { latest: string }) {
       <div className="text-xs font-semibold uppercase tracking-[1.5px] text-muted">
         The briefing · Week of {latest} · {place}
       </div>
-      <div className="flex min-w-0 flex-1 items-center justify-end gap-3 sm:flex-none">
-        <form
-          action="/ask"
-          method="get"
-          aria-label="Ask the hound"
-          className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-hairline bg-canvas py-1 pl-2.5 pr-1 sm:w-[380px] sm:flex-none"
-        >
-          <Image src="/brand/hound.png" alt="" width={34} height={30} className="h-5 w-auto shrink-0" />
-          <input
-            name="q"
-            placeholder={j?.display.ask_placeholder || "What has the council decided about affordable housing?"}
-            className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none placeholder:text-muted-soft"
-          />
-          <button className="shrink-0 rounded-md bg-ink px-3 py-1.5 text-xs font-semibold text-white hover:bg-ink-active">
-            Ask
-          </button>
-        </form>
+      <div className="flex items-center justify-end gap-3">
         <FollowButton target={{ kind: "briefing" }} label="Get this weekly" size="sm" />
       </div>
     </div>
+  );
+}
+
+const FALLBACK_ASK_SUGGESTIONS = [
+  "What has the council decided about affordable housing this year?",
+  "What did the council decide about accessory dwelling units?",
+];
+
+function AskBand() {
+  const j = jurisdiction();
+  const suggestions = j?.display.ask_suggestions.length ? j.display.ask_suggestions : FALLBACK_ASK_SUGGESTIONS;
+  return (
+    <section aria-labelledby="ask-band" className="rounded-xl bg-pine px-4 py-5 text-white sm:px-6 sm:py-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-8">
+        <div className="md:w-[300px] md:shrink-0">
+          <div className="mb-1.5 flex items-center gap-2">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-canvas">
+              <Image src="/brand/hound.png" alt="" width={34} height={30} className="h-5 w-auto" />
+            </span>
+            <span className="rounded-full bg-mint px-2 py-[2px] text-[10px] font-bold uppercase tracking-[1px] text-ink">New</span>
+          </div>
+          <h2 id="ask-band" className="font-display text-[22px] font-medium leading-tight tracking-[-0.2px]">
+            Ask the hound anything about the {j?.identity.noun ?? "city"}.
+          </h2>
+          <p className="mt-1.5 text-[13px] leading-snug text-white/70">
+            It reads votes, transcripts, the project wiki, member records and election dates, and cites every answer.
+          </p>
+        </div>
+        <div className="min-w-0 flex-1">
+          <form action="/ask" method="get" className="flex items-center gap-2 rounded-lg bg-canvas p-1.5 pl-3.5">
+            <input
+              name="q"
+              required
+              aria-label="Your question"
+              placeholder={j?.display.ask_placeholder || "What has the council decided about affordable housing?"}
+              className="min-w-0 flex-1 bg-transparent py-1.5 text-[15px] text-ink outline-none placeholder:text-muted-soft"
+            />
+            <button className="shrink-0 rounded-md bg-pine px-4 py-2 text-sm font-semibold text-white hover:bg-teal">
+              Ask
+            </button>
+          </form>
+          <div className="mt-2.5 flex flex-wrap gap-2">
+            {suggestions.map((q) => (
+              <Link
+                key={q}
+                href={`/ask?q=${encodeURIComponent(q)}`}
+                className="rounded-full border border-white/25 px-3 py-1 text-[12px] leading-snug text-white/85 hover:border-mint hover:text-white"
+              >
+                {q}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -861,6 +900,9 @@ export default async function Briefing() {
       <Masthead latest={latest} />
       <div className="mb-8">
         <LedeBlock lede={lede} />
+      </div>
+      <div className="mb-10">
+        <AskBand />
       </div>
       <div className="flex flex-col gap-10">
         <Docket entries={docket} advisory={advisory} today={today} />

@@ -1,0 +1,8 @@
+# Optional deps for speaker diarization (councilhound.extraction.diarize).
+# LOCAL-RUN ONLY, like requirements-impact.txt: transcription happens on the
+# dev Mac (Granicus blocks cloud IPs from the audio), and torch-heavy
+# pyannote would bloat the Fly images. The import is lazy; without it,
+# transcription runs and chunks are just unlabelled.
+# The model is gated: run `hf auth login` with an account that has accepted
+# huggingface.co/pyannote/speaker-diarization-community-1.
+pyannote.audio>=4.0
