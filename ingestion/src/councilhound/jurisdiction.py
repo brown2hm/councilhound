@@ -165,6 +165,10 @@ class GranicusMedia(BaseModel):
     sources: list[Literal["captions", "mp3", "mp4_audio_extract"]] = Field(
         default_factory=lambda: ["mp3"])
     keep_video: bool = False
+    # bodies whose captions can arrive with no speaker-change marks ('>>'):
+    # for them the MP4's audio track is fetched too and diarized, and its
+    # speaker labels are put on the caption text (which is kept)
+    caption_diarize_bodies: list[str] = Field(default_factory=list)
 
 
 class Canary(BaseModel):
@@ -382,6 +386,9 @@ class JurisdictionConfig(BaseModel):
                         if other not in b.roster.roles:
                             raise ValueError(
                                 f"{b.key}.roster.roles.{role_key}.also names unknown role {other!r}")
+        for body in self.granicus.media.caption_diarize_bodies:
+            if body not in keys:
+                raise ValueError(f"granicus.media.caption_diarize_bodies: unknown body {body!r}")
         for view in self.granicus.views:
             if view.layout == "single":
                 if not view.body:

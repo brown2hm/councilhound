@@ -255,6 +255,60 @@ def name_speakers(bodies, limit, clip_id):
                 click.echo(name_pending(session, bodies=bodies, limit=limit))
 
 
+@cli.command("diarize-captions")
+@limit_option
+@click.option("--clip-id", default=None, help="one meeting by Granicus clip_id")
+def diarize_captions(limit, clip_id):
+    """Give caption meetings without speaker marks their speakers from the
+    meeting audio, for the bodies in granicus.media.caption_diarize_bodies:
+    fetch the MP4's audio track next to the captions, then re-transcribe
+    (caption text kept, speaker labels from diarization, voices
+    fingerprinted). Residential IP only (Granicus's CDN blocks the cloud).
+    Run `embed` and `name-speakers` afterwards."""
+    from sqlalchemy import exists, select
+
+    from councilhound.config import JURISDICTION
+    from councilhound.db.models import Meeting, TranscriptChunk
+    from councilhound.db.session import get_session, stage_lock
+    from councilhound.extraction.transcript import captions_have_speakers, transcribe_meeting
+    from councilhound.pipeline import fetch_caption_audio
+
+    bodies = JURISDICTION.granicus.media.caption_diarize_bodies
+    if not bodies and not clip_id:
+        raise click.ClickException("no granicus.media.caption_diarize_bodies in this jurisdiction")
+    with stage_lock("transcribe") as held:
+        if not held:
+            _skipped("diarize-captions")
+            return
+        with get_session() as session:
+            q = select(Meeting).where(Meeting.audio_local_path.like("%.vtt"))
+            if clip_id:
+                q = q.where(Meeting.granicus_clip_id == clip_id)
+            else:
+                labelled = exists().where(TranscriptChunk.meeting_id == Meeting.id,
+                                          TranscriptChunk.speaker_label.isnot(None))
+                q = q.where(Meeting.body.in_(bodies), ~labelled)
+            meetings = list(session.scalars(q.order_by(Meeting.meeting_date.desc())))[:limit]
+            done = skipped = failed = 0
+            for m in meetings:
+                if captions_have_speakers(m.audio_local_path):
+                    skipped += 1  # the captioner marked the speakers already
+                    continue
+                try:
+                    if not fetch_caption_audio(m):
+                        skipped += 1
+                        continue
+                    n = transcribe_meeting(session, m, force=True)
+                    click.echo(f"clip {m.granicus_clip_id} ({m.meeting_date}): {n} chunks")
+                    done += 1
+                except Exception as exc:
+                    session.rollback()
+                    click.echo(f"clip {m.granicus_clip_id}: failed: {exc}")
+                    failed += 1
+            click.echo({"diarized": done, "skipped": skipped, "failed": failed,
+                        "candidates": len(meetings)})
+
+
 @cli.command("fingerprint-voices")
 @body_option
 @limit_option
