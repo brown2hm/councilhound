@@ -155,6 +155,41 @@ staff, applicants) give the name as spoken and slug null. Give 1-3 evidence item
 each with the timestamp shown in the transcript and a short verbatim quote of the cue. Use role \
 "student" for anyone who is a student or introduced as one (including a student representative)."""
 
+
+# Caption meetings (the County's): the labels are the captioner's speaker
+# turns, not voice clusters, so one person speaks under many labels and
+# naming happens turn by turn.
+CAPTION_PROMPT_VERSION = "speakers-captions-v1"
+CAPTION_SYSTEM = """You identify who is speaking in a public meeting transcript made from the \
+meeting's live closed captions. The captioner marks every change of speaker, and each uninterrupted \
+turn has its own label (TURN_0001, TURN_0002, ...). A label is ONE TURN, not one person: the same \
+person speaks under many labels, and consecutive labels are different speakers.
+
+Name a turn ONLY from evidence in the transcript itself:
+- self-identification within the turn ("My name is ...", "I'm ... with ...")
+- being called on in the turn immediately before (\"""" + example_title(REGISTRY) + """ Lusk?", \
+"The chair recognizes ...", "Ms. Ritter, please come up") and then speaking
+- being thanked or answered by name in the turn immediately after ("Thank you, Mr. Storck")
+Never infer a name from opinions, topics or speaking style alone. Votes are recorded elsewhere; do \
+not use them as evidence. Captions are typed live, so names may be misspelled; match them to the \
+roster when the cue is otherwise clear.
+
+Confidence: "high" = a direct cue tied to THIS turn (self-identification in it, called on in the \
+turn just before, or named in the reply just after); "medium" = consistent indirect cues only (for \
+example the presiding officer's continued conduct of the meeting); "low" = a guess. List ONLY the \
+turns you can name with at least medium confidence and omit the rest; omitted turns are recorded as \
+unidentified. Set mixed=true only if a turn clearly holds two people (a missed speaker-change mark). \
+Use roster slugs only for people on the roster; for anyone else (public commenters, staff, \
+applicants) give the name as spoken and slug null. Give 1-2 evidence items per named turn, each with \
+the timestamp shown in the transcript and a short verbatim quote of the cue. Use role "student" for \
+anyone who is a student or introduced as one (including a student representative)."""
+CAPTION_MAX_TOKENS = 64000
+
+
+def is_caption_turns(labels) -> bool:
+    from councilhound.extraction.captions import TURN_PREFIX
+    return bool(labels) and all(lb.startswith(TURN_PREFIX) for lb in labels)
+
 SCHEMA = {
     "type": "object", "additionalProperties": False, "required": ["speakers"],
     "properties": {"speakers": {"type": "array", "items": {
@@ -274,7 +309,11 @@ def _prompt(meeting: Meeting, people: dict[str, dict], items: list[AgendaItem],
              "=== ROSTER (slug: name — note) ==="]
     lines += [f"{slug}: {p['name']} — {p['note']}" for slug, p in sorted(people.items())] or ["(none)"]
     lines += ["", "=== AGENDA ==="] + [f"{it.label} {it.title or ''}" for it in items]
-    lines += ["", "=== SPEAKER LABELS TO IDENTIFY ===", ", ".join(labels), "", "=== TRANSCRIPT ==="]
+    if is_caption_turns(labels):
+        lines += ["", "=== TURNS ===", f"{len(labels)} caption turns, {labels[0]} to {labels[-1]}; "
+                  "name only those you can.", "", "=== TRANSCRIPT ==="]
+    else:
+        lines += ["", "=== SPEAKER LABELS TO IDENTIFY ===", ", ".join(labels), "", "=== TRANSCRIPT ==="]
     lines += [f"[{_hms(float(c.start_seconds or 0))}] {c.speaker_label}: {c.text}" for c in chunks]
     return "\n".join(lines)
 
@@ -290,11 +329,11 @@ def _needs_retry(exc: BaseException) -> bool:
 
 @retry(retry=retry_if_exception(_needs_retry), stop=stop_after_attempt(5),
        wait=wait_exponential(multiplier=5, max=120), reraise=True)
-def _call_claude(prompt: str) -> tuple[list[dict], str]:
+def _call_claude(prompt: str, captions: bool = False) -> tuple[list[dict], str]:
     import anthropic
 
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-    response = client.beta.messages.create(
+    params = dict(
         model=MODEL,
         max_tokens=16000,
         system=SYSTEM,
@@ -305,6 +344,14 @@ def _call_claude(prompt: str) -> tuple[list[dict], str]:
                        "format": {"type": "json_schema", "schema": SCHEMA}},
         messages=[{"role": "user", "content": prompt}],
     )
+    if captions:
+        # hundreds of turns in an 8-hour meeting: more room, streamed so a
+        # long answer doesn't hit the HTTP timeout
+        params.update(system=CAPTION_SYSTEM, max_tokens=CAPTION_MAX_TOKENS)
+        with client.beta.messages.stream(**params) as stream:
+            response = stream.get_final_message()
+    else:
+        response = client.beta.messages.create(**params)
     if response.stop_reason == "refusal":
         raise RuntimeError(f"speaker naming declined: {response.stop_details}")
     if response.stop_reason == "max_tokens":
@@ -405,7 +452,10 @@ def name_meeting(session: Session, meeting: Meeting) -> dict:
     people = roster(session, meeting)
     items = session.scalars(select(AgendaItem).where(AgendaItem.meeting_id == meeting.id)
                             .order_by(AgendaItem.id)).all()
-    speakers, model = _call_claude(_prompt(meeting, people, items, chunks, labels))
+    captions = is_caption_turns(labels)
+    version = CAPTION_PROMPT_VERSION if captions else PROMPT_VERSION
+    prompt = _prompt(meeting, people, items, chunks, labels)
+    speakers, model = _call_claude(prompt, captions=True) if captions else _call_claude(prompt)
 
     manual = set(session.scalars(select(MeetingSpeaker.speaker_label).where(
         MeetingSpeaker.meeting_id == meeting.id, MeetingSpeaker.source == "manual")))
@@ -434,14 +484,14 @@ def name_meeting(session: Session, meeting: Meeting) -> dict:
             meeting_id=meeting.id, speaker_label=label, name=s["name"],
             entity_id=person["entity_id"] if person else None,
             role=s["role"], confidence=confidence, mixed=s["mixed"], evidence=evidence,
-            source="model", model=f"{model}/{PROMPT_VERSION}")
+            source="model", model=f"{model}/{version}")
         session.add(row)
         counts[confidence] += 1
         counts["public"] += is_public(row)
     for label in set(labels) - seen - manual:  # the model skipped it: record as unknown
         session.add(MeetingSpeaker(meeting_id=meeting.id, speaker_label=label, confidence="low",
                                    role="unknown", mixed=False, evidence=[], source="model",
-                                   model=f"{model}/{PROMPT_VERSION}"))
+                                   model=f"{model}/{version}"))
         counts["low"] += 1
     session.flush()
     counts["students"] = mark_students(session, meeting.id)
