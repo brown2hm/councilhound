@@ -277,7 +277,12 @@ def fingerprint_voices(bodies, limit):
 @click.option("--clip-id", default=None, help="one meeting by Granicus clip_id")
 @click.option("--disagreements", is_flag=True,
               help="list transcript names a strong voice match contradicts; change nothing")
-def voice_match_cmd(bodies, clip_id, disagreements):
+@click.option("--evaluate", is_flag=True,
+              help="leave-one-meeting-out accuracy of the rule on stored fingerprints; change "
+                   "nothing. Run before changing thresholds or enabling a body")
+@click.option("--min-score", type=float, default=None,
+              help="with --evaluate: try a different similarity bar")
+def voice_match_cmd(bodies, clip_id, disagreements, evaluate, min_score):
     """Name speakers the transcript didn't, by matching voice fingerprints to
     members' and staff voiceprints. No model calls."""
     from sqlalchemy import select
@@ -287,6 +292,22 @@ def voice_match_cmd(bodies, clip_id, disagreements):
     from councilhound.extraction import voice_match as vm
 
     with get_session() as session:
+        if evaluate:
+            for body in bodies or sorted(vm.VOICE_BODIES):
+                r = vm.evaluate(session, body, min_score if min_score is not None else vm.MIN_SCORE)
+                click.echo(f"{body} (bar {r['min_score']}): {r['meetings']} meetings")
+                click.echo(f"  known speakers held out: {r['known']}; matched {r['matched']}, "
+                           f"correct {r['correct']}, wrong {len(r['wrong'])}")
+                for w in r["wrong"]:
+                    click.echo(f"    WRONG {w}")
+                click.echo(f"  named outsiders: {r['outsiders']}; matched to a voiceprint: "
+                           f"{r['outsider_same_person']} same person (spelling), "
+                           f"{len(r['outsider_different'])} different")
+                for o in r["outsider_different"]:
+                    click.echo(f"    CHECK {o}")
+                click.echo(f"  voice-named (now or on the next run): {r['would_name']}")
+            session.rollback()
+            return
         if disagreements:
             for body in bodies or sorted(vm.VOICE_BODIES):
                 for d in vm.disagreements(session, body):
