@@ -9,8 +9,10 @@ from sqlalchemy.orm import Session
 
 from councilhound.db.models import (
     AgendaItem, CityProject, Document, Entity, EntityAlias, EntityMention,
-    EntityUpdate, Meeting, ProjectEvaluation, TranscriptChunk, UpcomingMeeting, Vote,
+    EntityUpdate, Meeting, MeetingSpeaker, ProjectEvaluation, TranscriptChunk, UpcomingMeeting,
+    Vote,
 )
+from councilhound.extraction.speaker_names import is_public
 from councilhound.hot_topics import MIN_VARIANT_LEN
 
 from app.db import db_session
@@ -558,6 +560,16 @@ def get_transcript(meeting_id: int, session: Session = Depends(db_session)):
         .order_by(AgendaItem.start_seconds)
     ).all()
 
+    # public speakers only (high confidence, not mixed); the rest stay "Speaker N"
+    speakers = {
+        row.speaker_label: {"name": row.name, "role": row.role, "slug": slug}
+        for row, slug in session.execute(
+            select(MeetingSpeaker, Entity.canonical_slug)
+            .outerjoin(Entity, MeetingSpeaker.entity_id == Entity.id)
+            .where(MeetingSpeaker.meeting_id == meeting.id))
+        if is_public(row)
+    }
+
     def link(seconds) -> str | None:
         if seconds is None:
             return None
@@ -579,6 +591,10 @@ def get_transcript(meeting_id: int, session: Session = Depends(db_session)):
                 # anonymous per-meeting diarization label ("SPEAKER_05"); null
                 # for meetings transcribed before diarization (Oct 2026)
                 "speaker_label": c.speaker_label,
+                # who it is, when named with high confidence; else null
+                "speaker_name": speakers.get(c.speaker_label, {}).get("name"),
+                "speaker_role": speakers.get(c.speaker_label, {}).get("role"),
+                "speaker_slug": speakers.get(c.speaker_label, {}).get("slug"),
                 "watch_url": link(c.start_seconds),
             }
             for c in chunks

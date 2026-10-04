@@ -106,7 +106,9 @@ speaker turn it overlaps, and chunks break at every speaker change and
 carry an anonymous per-meeting `speaker_label` (`SPEAKER_05`, shown as
 "Speaker 6"). Local-only dependency (`ingestion/requirements-diarize.txt`)
 plus a Hugging Face token for the gated model; without them chunks are
-unlabelled. Naming the speakers (`speaker_entity_id`) is a later step.
+unlabelled. `name-speakers` then names labels from cues in the transcript (Claude, one call
+per meeting) into `meeting_speakers`; only high-confidence, unmixed names are shown, and
+public members are linked on chunks via `speaker_entity_id`.
 
 ## Data model
 
@@ -125,7 +127,7 @@ erDiagram
     MEETINGS ||--o{ ENTITY_UPDATES : at
     MEETINGS ||--o{ ENTITY_MENTIONS : at
     AGENDA_ITEMS ||--o{ ENTITY_UPDATES : "via agenda item"
-    TRANSCRIPT_CHUNKS }o--o| ENTITIES : "speaker_entity_id (future speaker naming)"
+    TRANSCRIPT_CHUNKS }o--o| ENTITIES : "speaker_entity_id (named members)"
 
     MEETINGS {
         string granicus_clip_id UK "with view_id"

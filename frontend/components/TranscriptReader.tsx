@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { MeetingTranscript, TranscriptSegment } from "@/lib/api";
 
@@ -17,6 +18,34 @@ function fmtTime(s: number): string {
 function speakerName(label: string): string {
   const m = /^SPEAKER_(\d+)$/.exec(label);
   return m ? `Speaker ${Number(m[1]) + 1}` : label;
+}
+
+/** Roles worth a word next to the name; members get a link instead. */
+const ROLE_NOTE: Record<string, string> = {
+  staff: "staff",
+  applicant: "applicant",
+  "public commenter": "public comment",
+  clerk: "clerk",
+};
+
+function Speaker({ seg }: { seg: TranscriptSegment }) {
+  if (!seg.speaker_name) {
+    return <span className="mr-2 font-semibold text-ink">{speakerName(seg.speaker_label ?? "")}</span>;
+  }
+  const isMember = seg.speaker_role === "member" || seg.speaker_role === "presiding officer";
+  const note = seg.speaker_role ? ROLE_NOTE[seg.speaker_role] : undefined;
+  return (
+    <span className="mr-2">
+      {isMember && seg.speaker_slug ? (
+        <Link href={`/members/${seg.speaker_slug}`} className="font-semibold text-ink underline-offset-2 hover:underline">
+          {seg.speaker_name}
+        </Link>
+      ) : (
+        <span className="font-semibold text-ink">{seg.speaker_name}</span>
+      )}
+      {note && <span className="ml-1.5 text-[13px] text-muted-soft">{note}</span>}
+    </span>
+  );
 }
 
 /** Case-insensitive highlight. Split rather than innerHTML so transcript
@@ -217,7 +246,7 @@ export default function TranscriptReader({
                   {/* name the speaker only where the voice changes */}
                   {seg.speaker_label &&
                     (i === 0 || section.segments[i - 1].speaker_label !== seg.speaker_label) && (
-                      <span className="mr-2 font-semibold text-ink">{speakerName(seg.speaker_label)}</span>
+                      <Speaker seg={seg} />
                     )}
                   <Highlight text={seg.text} query={q} />
                 </p>

@@ -791,6 +791,10 @@ export interface TranscriptSegment {
   end_seconds: number | null;
   text: string;
   speaker_label: string | null;
+  /** Set only when the speaker was named with high confidence. */
+  speaker_name: string | null;
+  speaker_role: string | null;
+  speaker_slug: string | null;
   watch_url: string | null;
 }
 

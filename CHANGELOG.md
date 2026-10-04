@@ -1,5 +1,29 @@
 # Changelog
 
+## Unreleased — named speakers (October 2026)
+
+Diarized transcripts said "Speaker 6"; meetings say who is talking out loud.
+
+- **`name-speakers`** sends each meeting's labelled transcript, with a
+  roster (members who voted in that body within 90 days, the mayor, people
+  named in the record), to Claude Opus 5.5 in one structured-output call. It
+  maps each label to a name, role and confidence, quoting the cue it used.
+- **Shown only when sure.** A name is public only at high confidence (a
+  self-introduction, or called on by name and then speaking) on a label that
+  isn't mixed. One such cue names the label for the whole meeting. Quotes
+  are checked against the transcript; a "high" whose quotes don't check out
+  is downgraded. Medium/low stay "Speaker N" and are kept for review.
+- **`meeting_speakers`** table (migration `c5d6e7f8a9b0`); public members
+  are also linked on chunks (`speaker_entity_id`). `set-speaker` records a
+  hand correction that re-runs never overwrite.
+- **Reader, API and /ask** show names: members link to their page, staff,
+  applicants and public commenters are labelled by role. Public commenters
+  are named as they introduced themselves.
+- **Pipeline.** `daily` and `catchup` name newly transcribed meetings in
+  their look-back window; older meetings are a deliberate `name-speakers`
+  backfill. Prototype on the Sep 22, 2026 Council meeting: 52 s, ~$0.41,
+  21 of 33 labels high confidence, every member naming backed by a cue.
+
 ## Unreleased — speaker separation in transcripts (October 2026)
 
 Transcripts were one voice: Whisper emits text without speakers, so the

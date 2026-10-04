@@ -75,6 +75,7 @@ STAGE_LOCK_KEYS = {
     "transcribe": 3,
     "embed": 4,
     "profile": 5,
+    "name_speakers": 6,
 }
 
 

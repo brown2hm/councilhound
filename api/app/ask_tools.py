@@ -21,9 +21,11 @@ from zoneinfo import ZoneInfo
 from councilhound.bodies import BODIES, label as body_label
 from councilhound.db.models import (
     AgendaItem, CityProject, Document, Entity, EntityAlias, EntityMention, EntityProfile,
-    EntityUpdate, Meeting, ProjectEvaluation, TranscriptChunk, UpcomingMeeting, Vote, WikiPage,
+    EntityUpdate, Meeting, MeetingSpeaker, ProjectEvaluation, TranscriptChunk, UpcomingMeeting,
+    Vote, WikiPage,
 )
 from councilhound.embeddings.embed import embed_query
+from councilhound.extraction.speaker_names import public_speaker_join
 
 from app import terms
 from app.links import clip_link
@@ -201,9 +203,10 @@ def search_record(session: Session, sources: Sources, query: str, body: str | No
           .order_by(Meeting.meeting_date.desc()).limit(limit))
     for item, meeting in session.execute(_record_filters(iq, body, since_d, until_d)):
         hits.append(("item", item, meeting, None))
-    cq = (select(TranscriptChunk, Meeting, Entity.name)
+    # named only when the speaker is public (high confidence, not mixed)
+    cq = (select(TranscriptChunk, Meeting, MeetingSpeaker.name)
           .join(Meeting, TranscriptChunk.meeting_id == Meeting.id)
-          .outerjoin(Entity, TranscriptChunk.speaker_entity_id == Entity.id)
+          .outerjoin(MeetingSpeaker, public_speaker_join())
           .where(func.lower(TranscriptChunk.text).contains(needle, autoescape=True))
           .order_by(Meeting.meeting_date.desc()).limit(limit))
     for chunk, meeting, speaker in session.execute(_record_filters(cq, body, since_d, until_d)):
@@ -212,10 +215,10 @@ def search_record(session: Session, sources: Sources, query: str, body: str | No
 
     vec = embed_query(query)
     semantic: list[tuple] = []
-    sq = (select(TranscriptChunk, Meeting, Entity.name,
+    sq = (select(TranscriptChunk, Meeting, MeetingSpeaker.name,
                  TranscriptChunk.embedding.cosine_distance(vec).label("d"))
           .join(Meeting, TranscriptChunk.meeting_id == Meeting.id)
-          .outerjoin(Entity, TranscriptChunk.speaker_entity_id == Entity.id)
+          .outerjoin(MeetingSpeaker, public_speaker_join())
           .where(TranscriptChunk.embedding.isnot(None)).order_by("d").limit(limit))
     for chunk, meeting, speaker, d in session.execute(_record_filters(sq, body, since_d, until_d)):
         if float(d) <= SEMANTIC_MAX_DISTANCE:
