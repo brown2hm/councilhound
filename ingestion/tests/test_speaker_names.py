@@ -169,7 +169,7 @@ def test_unattested_non_roster_names_are_not_public(db_session, council, monkeyp
     ("Hello, my name is Veronica, and I'm a junior at Fairfax High School.", True),
     ("Hi, I'm Leanne. I am a sophomore at Fairfax High School", True),
     ("I'm a student at George Mason", True),
-    ("our student representative for his first report, Mr. Kevin Murray", True),
+    ("our student representative for his first report, Mr. Kevin Murray", False),  # cue-only rule
     ("I'm in the 8th grade", True),
     ("I'm a senior planner with the City of Fairfax", False),
     ("I'm a senior at heart and I've lived here 40 years", True),  # rare false positive: hidden, not misnamed
@@ -191,3 +191,26 @@ def test_mark_students_hides_names_but_keeps_them(db_session, council, monkeypat
     assert r["students"] == 1 and r["public"] == 0
     row = db_session.scalar(select(MeetingSpeaker).where(MeetingSpeaker.speaker_label == "SPEAKER_30"))
     assert (row.name, row.role, sn.is_public(row), sn.is_student(row)) == ("Olivia", "student", False, True)
+
+
+def test_chair_introducing_the_student_rep_is_not_a_student(db_session, council, monkeypatch):
+    m, *_ = council
+    _chunks(db_session, m, [
+        (7000, "SPEAKER_06", "Next we'll hear from our student representative, Mr. Kevin Murray."),
+        (7010, "SPEAKER_17", "Thank you. This month at Fairfax High we held homecoming."),
+    ])
+    db_session.commit()
+    answer = [
+        {"label": "SPEAKER_06", "name": "Carolyn Pitches", "slug": None, "role": "presiding officer",
+         "confidence": "high", "mixed": False,
+         "evidence": [{"time": "1:56:40", "quote": "Next we'll hear from our student representative"}]},
+        {"label": "SPEAKER_17", "name": "Kevin Murray", "slug": None, "role": "other",
+         "confidence": "high", "mixed": False,
+         "evidence": [{"time": "1:56:40", "quote": "our student representative, Mr. Kevin Murray"}]},
+    ]
+    monkeypatch.setattr(sn, "_call_claude", lambda prompt: (answer, "claude-opus-5-5"))
+    sn.name_meeting(db_session, m)
+    roles = dict(db_session.execute(select(MeetingSpeaker.speaker_label, MeetingSpeaker.role)).all())
+    # both cue quotes contain the phrase; only the one spoken by someone else counts
+    assert roles["SPEAKER_17"] == "student"
+    assert roles["SPEAKER_06"] == "presiding officer"

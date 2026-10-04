@@ -55,11 +55,13 @@ ROLES = ["presiding officer", "member", "staff", "applicant", "public commenter"
 # they show as "Student". A self-description in the label's own turns or a
 # cue quote marks one even when the model said "public commenter". The grade
 # word must be followed by at/in/from so "a senior planner" doesn't match.
-_STUDENT = re.compile(
+_STUDENT = re.compile(  # a self-description, in the label's own turns or cue
     r"\b(i am|i'm|im)\s+(a\s+|an\s+)?((high school|middle school|elementary|college)\s+)?"
     r"(freshman|sophomore|junior|senior|student|\w+(st|nd|rd|th)\s+grader)\s+(at|in|from)\b"
-    r"|\bstudent (representative|rep|member)\b"
     r"|\b(i am|i'm|im)\s+in\s+(the\s+)?\w+(st|nd|rd|th)?\s+grade\b", re.I)
+# "our student representative" is said BY the chair introducing them, so it
+# only marks the label whose cue quote it is, never one whose own turns say it
+_STUDENT_INTRO = re.compile(r"\bstudent (representative|rep|member)\b", re.I)
 _TITLE = re.compile(r"^(mayor|council ?(member|woman|man)|commissioner|chair|vice[- ]chair|"
                     r"school board|board member|trustee|superintendent)\b", re.I)
 # titles that mark someone as a member of a given body — the roster for a
@@ -289,19 +291,33 @@ def name_attested(name: str, transcript_words: set[str]) -> bool:
                for w in words)
 
 
+def _introduced_as_student(row: MeetingSpeaker, chunks: list[TranscriptChunk]) -> bool:
+    """A cue quote naming a student representative, spoken by someone else
+    (the chair introducing them) — not the chair's own words about them."""
+    for e in row.evidence or []:
+        quote, t = e.get("quote", ""), _seconds(e.get("time", ""))
+        if t is None or not _STUDENT_INTRO.search(quote):
+            continue
+        head = " ".join(_norm(quote).split()[:8])
+        for c in chunks:
+            if abs(float(c.start_seconds or 0) - t) <= EVIDENCE_WINDOW and head in _norm(c.text):
+                if c.speaker_label != row.speaker_label:
+                    return True
+    return False
+
+
 def mark_students(session: Session, meeting_id: int) -> int:
     """Set role 'student' on model rows whose own turns or cue quotes say the
     speaker is a student. Hand corrections are left alone. Returns rows changed."""
     changed = 0
+    chunks = session.scalars(select(TranscriptChunk).where(TranscriptChunk.meeting_id == meeting_id)).all()
     rows = session.scalars(select(MeetingSpeaker).where(
         MeetingSpeaker.meeting_id == meeting_id, MeetingSpeaker.source == "model",
         MeetingSpeaker.role != "student")).all()
     for row in rows:
-        own = session.scalars(select(TranscriptChunk.text).where(
-            TranscriptChunk.meeting_id == meeting_id,
-            TranscriptChunk.speaker_label == row.speaker_label)).all()
+        own = [c.text for c in chunks if c.speaker_label == row.speaker_label]
         cues = [e.get("quote", "") for e in row.evidence or []]
-        if any(_STUDENT.search(t) for t in [*own, *cues]):
+        if any(_STUDENT.search(t) for t in [*own, *cues]) or _introduced_as_student(row, chunks):
             row.role = "student"
             changed += 1
     return changed
