@@ -112,12 +112,35 @@ class TranscriptChunk(Base):
     text = Column(Text, nullable=False)
     # Raw diarization label ('SPEAKER_00'); kept even after attribution.
     speaker_label = Column(String)
-    # Set only on confident attribution (Phase 3) — never guessed.
+    # Set only on confident attribution (meeting_speakers, high) — never guessed.
     speaker_entity_id = Column(Integer, ForeignKey("entities.id"))
     # 768 = bge-base-en-v1.5 (local sentence-transformers, the Phase 4
     # provider decision). Changing providers means a migration + re-embed.
     embedding = Column(Vector(768))
 
+
+
+class MeetingSpeaker(Base):
+    """Who a diarization label is, per meeting. One row per (meeting, label),
+    written by the speaker-naming stage (source 'model') or by hand
+    ('manual', never overwritten by a re-run). Only confidence 'high' and
+    not mixed is shown publicly; the rest is kept for review."""
+    __tablename__ = "meeting_speakers"
+    __table_args__ = (UniqueConstraint("meeting_id", "speaker_label"),)
+
+    id = Column(Integer, primary_key=True)
+    meeting_id = Column(Integer, ForeignKey("meetings.id", ondelete="CASCADE"), nullable=False,
+                        index=True)
+    speaker_label = Column(String, nullable=False)  # 'SPEAKER_05'
+    name = Column(Text)  # as spoken / the roster name; NULL = unidentified
+    entity_id = Column(Integer, ForeignKey("entities.id", ondelete="SET NULL"))  # roster members only
+    role = Column(String)  # presiding officer|member|staff|applicant|public commenter|clerk|other|unknown
+    confidence = Column(String, nullable=False)  # high|medium|low
+    mixed = Column(Boolean, nullable=False, default=False)  # label holds several people
+    evidence = Column(JSON)  # [{"time": "1:54:42", "quote": "..."}] — verified against the transcript
+    source = Column(String, nullable=False, default="model")  # model|manual
+    model = Column(String)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class Entity(Base):
     __tablename__ = "entities"

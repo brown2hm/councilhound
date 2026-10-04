@@ -228,6 +228,59 @@ def retranscribe(bodies, since, until, limit, clip_id, min_coverage, dry_run):
         click.echo(tally)
 
 
+@cli.command("name-speakers")
+@body_option
+@limit_option
+@click.option("--clip-id", default=None, help="one meeting by Granicus clip_id (re-runs it)")
+def name_speakers(bodies, limit, clip_id):
+    """Name each meeting's diarized speakers from cues in the transcript
+    (one Claude call per meeting). Only high-confidence names are shown."""
+    from sqlalchemy import select
+
+    from councilhound.db.models import Meeting
+    from councilhound.db.session import get_session, stage_lock
+    from councilhound.extraction.speaker_names import name_meeting, name_pending
+
+    with stage_lock("name_speakers") as held:
+        if not held:
+            _skipped("name_speakers")
+            return
+        with get_session() as session:
+            if clip_id:
+                meeting = session.scalar(select(Meeting).where(Meeting.granicus_clip_id == clip_id))
+                if not meeting:
+                    raise click.ClickException(f"no meeting with clip_id={clip_id}")
+                click.echo(name_meeting(session, meeting))
+            else:
+                click.echo(name_pending(session, bodies=bodies, limit=limit))
+
+
+@cli.command("set-speaker")
+@click.argument("clip_id")
+@click.argument("label")
+@click.option("--name", default=None, help="name as spoken (omit with --slug to use the entity name)")
+@click.option("--slug", default=None, help="link to a person entity by canonical slug")
+@click.option("--role", default="other", show_default=True)
+@click.option("--unnamed", is_flag=True, help="mark the label deliberately unnamed")
+def set_speaker_cmd(clip_id, label, name, slug, role, unnamed):
+    """Correct one speaker by hand, e.g. set-speaker 4655 SPEAKER_03 --name "Melanie Shinneberry"
+    --role clerk. Hand corrections are public and survive re-runs."""
+    from sqlalchemy import select
+
+    from councilhound.db.models import Meeting
+    from councilhound.db.session import get_session
+    from councilhound.extraction.speaker_names import set_speaker
+
+    if not (name or slug or unnamed):
+        raise click.UsageError("give --name, --slug or --unnamed")
+    with get_session() as session:
+        meeting = session.scalar(select(Meeting).where(Meeting.granicus_clip_id == clip_id))
+        if not meeting:
+            raise click.ClickException(f"no meeting with clip_id={clip_id}")
+        row = set_speaker(session, meeting, label, None if unnamed else name, slug=slug, role=role)
+        click.echo(f"{label} -> {row.name or '(unnamed)'} [{row.role}]")
+
+
 @cli.command("seed-entities")
 def seed_entities():
     """Phase 3 setup: seed person entities + aliases from agenda headers."""
@@ -437,6 +490,7 @@ def daily(days):
     from councilhound.embeddings.embed import embed_pending
     from councilhound.extraction.entity_profile import profile_pending
     from councilhound.extraction.llm_structure import structure_pending
+    from councilhound.extraction.speaker_names import name_pending
     from councilhound.extraction.pdf_text import extract_pending
     from councilhound.extraction.transcript import transcribe_pending
     from councilhound.seed import seed_people
@@ -457,6 +511,7 @@ def daily(days):
         click.echo(f"extract-text: {extract_pending(session)}")
         _run_stage("transcribe", "transcribe:", lambda: transcribe_pending(session))
         _run_stage("structure", "structure:", lambda: structure_pending(session))
+        _run_stage("name_speakers", "speakers:", lambda: name_pending(session, since=since))
         click.echo(f"index-points: {pipeline.link_index_points_pending(session)}")
         click.echo(f"seed:         {seed_people(session)}")
         from councilhound.dedupe import dedupe_pass
@@ -492,6 +547,7 @@ def catchup(days):
     from councilhound.db.session import get_session, stage_lock
     from councilhound.embeddings.embed import embed_pending
     from councilhound.extraction.llm_structure import structure_pending
+    from councilhound.extraction.speaker_names import name_pending
     from councilhound.extraction.pdf_text import extract_pending
     from councilhound.seed import seed_people
 
@@ -510,6 +566,7 @@ def catchup(days):
                 click.echo(f"projects:     {pipeline.sync_projects(session)}")
         click.echo(f"extract-text: {extract_pending(session)}")
         _run_stage("structure", "structure:", lambda: structure_pending(session))
+        _run_stage("name_speakers", "speakers:", lambda: name_pending(session, since=since))
         click.echo(f"index-points: {pipeline.link_index_points_pending(session)}")
         click.echo(f"seed:         {seed_people(session)}")
         _run_stage("embed", "embed:", lambda: embed_pending(session))
