@@ -276,6 +276,91 @@ def search_documents(session: Session, sources: Sources, query: str,
     return out
 
 
+# ---------------------------------------------------------------- statements
+
+STATEMENT_LIMIT = 8
+STATEMENT_MIN_CHARS = 80  # "Second." and "Aye." are not statements
+
+
+def _statement_query(entity_id: int, meeting_ids=None):
+    q = (select(TranscriptChunk, Meeting)
+         .join(Meeting, TranscriptChunk.meeting_id == Meeting.id)
+         .where(TranscriptChunk.speaker_entity_id == entity_id,
+                func.length(TranscriptChunk.text) >= STATEMENT_MIN_CHARS))
+    if meeting_ids is not None:
+        q = q.where(TranscriptChunk.meeting_id.in_(meeting_ids))
+    return q
+
+
+def member_statements(session: Session, sources: Sources, entity: Entity, topic: str | None = None,
+                      meeting_ids=None, limit: int = STATEMENT_LIMIT) -> list[int]:
+    """Passages this member spoke, from transcripts whose speaker was named
+    with high confidence and linked to the roster (the speaker-naming
+    stage sets speaker_entity_id only then). With a topic: exact-phrase
+    hits first, then the closest in meaning within the search page's
+    distance; without one, the most recent. Limited to meeting_ids when
+    given (the meetings where a matter came up)."""
+    if meeting_ids is not None and not meeting_ids:
+        return []
+    picked: list[tuple] = []
+    if topic:
+        needle = topic.strip().lower()
+        kq = (_statement_query(entity.id, meeting_ids)
+              .where(func.lower(TranscriptChunk.text).contains(needle, autoescape=True))
+              .order_by(Meeting.meeting_date.desc()).limit(limit))
+        picked += list(session.execute(kq))
+        vec = embed_query(topic)
+        sq = (_statement_query(entity.id, meeting_ids)
+              .where(TranscriptChunk.embedding.isnot(None))
+              .add_columns(TranscriptChunk.embedding.cosine_distance(vec).label("d"))
+              .order_by("d").limit(limit))
+        picked += [(c, m) for c, m, d in session.execute(sq) if float(d) <= SEMANTIC_MAX_DISTANCE]
+    else:
+        picked += list(session.execute(_statement_query(entity.id, meeting_ids)
+                                       .order_by(Meeting.meeting_date.desc(),
+                                                 TranscriptChunk.start_seconds).limit(limit)))
+    out, seen = [], set()
+    for chunk, meeting in picked:
+        if chunk.id in seen:
+            continue
+        seen.add(chunk.id)
+        out.append(_add_chunk(sources, chunk, meeting, entity.name))
+        if len(out) == limit:
+            break
+    return out
+
+
+def _naming_coverage(session: Session, body: str | None) -> str:
+    """How much of the body's transcript record has its speakers named, so
+    an answer can say when silence means 'not yet named' rather than
+    'never said'."""
+    with_text = (select(TranscriptChunk.meeting_id).distinct().subquery())
+    q_total = select(func.count()).select_from(Meeting).where(Meeting.id.in_(select(with_text.c.meeting_id)))
+    q_named = select(func.count(func.distinct(MeetingSpeaker.meeting_id))).join(
+        Meeting, MeetingSpeaker.meeting_id == Meeting.id)
+    if body:
+        q_total = q_total.where(Meeting.body == body)
+        q_named = q_named.where(Meeting.body == body)
+    total, named = session.scalar(q_total) or 0, session.scalar(q_named) or 0
+    where = f" {_body_label(body)}" if body else ""
+    return (f"Speakers have been identified in {named} of {total}{where} meetings with transcripts; "
+            "only passages where this member was identified with high confidence are quoted, so "
+            "missing remarks may simply not be attributed yet.")
+
+
+def get_statements(session: Session, sources: Sources, name: str,
+                   topic: str | None = None) -> tuple[list[int], str]:
+    person, others = match_member(session, name)
+    if person is None:
+        return [], f"No current or former member matches {name!r}."
+    e = person["entity"]
+    nums = member_statements(session, sources, e, topic or None)
+    header = (f"What {e.name} said" + (f" about {topic!r}" if topic else " most recently") + ". "
+              + _naming_coverage(session, person["body"])
+              + (f" Other people matching {name!r}: {', '.join(others)}." if others else ""))
+    return nums, header
+
+
 # ---------------------------------------------------------------- topics
 
 def _update_counts_subquery():
@@ -670,7 +755,22 @@ def _act_lines(name: str, body: str | None, act: dict | None) -> list[str]:
     return lines
 
 
-def _shared_topics(sources: Sources, a: dict, da: dict, b: dict, db: dict) -> tuple[list[int], str]:
+SHARED_QUOTES = 2  # per member per matter
+
+
+def _matter_quotes(session: Session, sources: Sources, person: dict, act: dict | None,
+                   label: str) -> list[int]:
+    """What this member said about a matter: at the meetings where they
+    voted on it, else anywhere in their identified remarks."""
+    if act is None:
+        return []
+    meetings = {v["meeting_id"] for v in act["votes"]}
+    return member_statements(session, sources, person["entity"], label,
+                             meeting_ids=meetings or None, limit=SHARED_QUOTES)
+
+
+def _shared_topics(session: Session, sources: Sources, a: dict, da: dict,
+                   b: dict, db: dict) -> tuple[list[int], str]:
     """Members who never cast a vote together can still be compared where
     the same matter passed through both of them: a land-use case the
     Planning Commission recommends on and Council then decides, a plan both
@@ -710,9 +810,16 @@ def _shared_topics(sources: Sources, a: dict, da: dict, b: dict, db: dict) -> tu
         slugs.sort(key=lambda s_: -(len(acts_a[s_]["votes"]) + len(acts_b[s_]["votes"])))
         lead = slugs[0]
         label = " / ".join(acts_a[s_]["name"] for s_ in slugs)
+        quotes_a = _matter_quotes(session, sources, a, acts_a[lead], label)
+        quotes_b = _matter_quotes(session, sources, b, acts_b[lead], label)
+        out += quotes_a + quotes_b
         lines = [f"Matter: {label}."]
         lines += _act_lines(an, a["body"], acts_a[lead])
+        if quotes_a:
+            lines.append(f"{an}'s own words on it: sources " + ", ".join(f"[{n}]" for n in quotes_a) + ".")
         lines += _act_lines(bn, b["body"], acts_b[lead])
+        if quotes_b:
+            lines.append(f"{bn}'s own words on it: sources " + ", ".join(f"[{n}]" for n in quotes_b) + ".")
         dates = [v["date"] for v in acts_a[lead]["votes"] + acts_b[lead]["votes"]]
         out.append(sources.add(
             ("shared", a["entity"].id, b["entity"].id, lead), kind="shared_topic",
@@ -781,7 +888,7 @@ def compare_members(session: Session, sources: Sources, names: list[str]) -> tup
             an, bn = a["entity"].name, b["entity"].name
             db_ = details[b["entity"].id]
             if a["body"] != b["body"] and db_:
-                nums, summary = _shared_topics(sources, a, da, b, db_)
+                nums, summary = _shared_topics(session, sources, a, da, b, db_)
                 shared_out.extend(nums)
                 lines.append(f"{an} sits on the {_body_label(a['body'])} and {bn} on the "
                              f"{_body_label(b['body'])}, so they are compared on the matters both acted on, "

@@ -66,7 +66,9 @@ at once when they are independent.
 - A named project, place, ordinance or issue: get_topic. One member: \
 get_member. Two or more members or candidates (including members of \
 different bodies), or "who votes with whom": compare_members. \
-Who sits on a body, or whose seat is up and when: list_members. What is \
+What a member said, in their own words: get_statements (with a \
+topic when there is one). Who sits on a body, or whose seat is up and \
+when: list_members. What is \
 coming up: get_upcoming. Wording inside staff reports or minutes: \
 search_documents. Anything else, or a narrower slice by body or date: \
 search_record.
@@ -88,6 +90,10 @@ Planning Commission vote is a recommendation that comes before Council's \
 decision; say so, and never treat the two as the same kind of vote. Do not rate or rank \
 members as better or worse, and do not guess motives. Note that the \
 record covers only the meetings CouncilHound has indexed.
+- Quotes: attribute words to a member only from transcript sources that \
+name them as the speaker. Speaker naming is still being filled in; when \
+a tool reports partial coverage, say that missing remarks may not be \
+attributed yet rather than that the member said nothing.
 - Terms and elections: state them only from term or roster sources, \
 with the date the schedule was checked. Appointed members are not elected; \
 say when their appointment expires instead.
@@ -132,6 +138,14 @@ TOOLS = [
      "input_schema": {"type": "object", "properties": {
          "name": {"type": "string", "description": "Full or last name."}},
          "required": ["name"], "additionalProperties": False}},
+    {"name": "get_statements",
+     "description": "Passages a member spoke in meetings (only where the transcript's speaker "
+                    "was identified with high confidence), on a topic when given, else their "
+                    "most recent remarks; with how much of the record has speakers named.",
+     "input_schema": {"type": "object", "properties": {
+         "name": {"type": "string", "description": "Full or last name."},
+         "topic": {"type": "string", "description": "Optional subject to find remarks on."}},
+         "required": ["name"], "additionalProperties": False}},
     {"name": "compare_members",
      "description": "Compare two to six members: each one's record and term or election date, "
                     "how often each pair voted the same way on shared roll calls, and the "
@@ -167,6 +181,9 @@ def _step_label(name: str, args: dict) -> str:
         return f"Reading the record on {args.get('name', '')}"
     if name == "get_member":
         return f"Pulling {args.get('name', '')}'s voting record"
+    if name == "get_statements":
+        return (f"Finding what {args.get('name', '')} said"
+                + (f" about {args['topic']}" if args.get("topic") else ""))
     if name == "compare_members":
         return "Comparing " + " and ".join(args.get("names") or [])
     if name == "list_members":
@@ -189,6 +206,10 @@ def _run_tool(session: Session, sources: ask_tools.Sources, name: str, args: dic
         return ask_tools._render(sources, nums, header)
     if name == "get_member":
         nums, header, _ = ask_tools.get_member(session, sources, str(args.get("name", "")))
+        return ask_tools._render(sources, nums, header)
+    if name == "get_statements":
+        nums, header = ask_tools.get_statements(session, sources, str(args.get("name", "")),
+                                                str(args.get("topic") or "") or None)
         return ask_tools._render(sources, nums, header)
     if name == "compare_members":
         names = [str(n) for n in (args.get("names") or []) if str(n).strip()]

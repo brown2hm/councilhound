@@ -3,6 +3,7 @@ seeded rows, and the term schedule read from the jurisdiction config.
 Exercises retrieval SQL, source numbering and citation wiring, not the
 models."""
 import json
+import re
 from types import SimpleNamespace
 
 import pytest
@@ -258,7 +259,66 @@ def _seed_candidates(db):
             {"member": "Councilmember Peterson", "slug": "thomas-peterson",
              "summary": "Voted against all three approval motions."}]),
     ])
+    db.flush()
+    # what each said, as the speaker-naming stage leaves it: a public name
+    # in meeting_speakers and the roster link on that label's chunks
+    from councilhound.db.models import MeetingSpeaker, TranscriptChunk
+    db.add_all([
+        MeetingSpeaker(meeting_id=pc.id, speaker_label="SPEAKER_03", name="Kirsten Lockhart",
+                       entity_id=lockhart.id, role="member", confidence="high"),
+        MeetingSpeaker(meeting_id=cc.id, speaker_label="SPEAKER_07", name="Thomas Peterson",
+                       entity_id=peterson.id, role="member", confidence="high"),
+        TranscriptChunk(meeting_id=pc.id, start_seconds=3600, end_seconds=3660, speaker_label="SPEAKER_03",
+                        speaker_entity_id=lockhart.id, embedding=[0.1] * 768,
+                        text="I cannot find this rezoning in conformance with the Comprehensive Plan; "
+                             "the density is well beyond what the Old Town transition calls for."),
+        TranscriptChunk(meeting_id=pc.id, start_seconds=3700, end_seconds=3702, speaker_label="SPEAKER_03",
+                        speaker_entity_id=lockhart.id, embedding=[0.1] * 768, text="Second."),
+        TranscriptChunk(meeting_id=cc.id, start_seconds=5400, end_seconds=5460, speaker_label="SPEAKER_07",
+                        speaker_entity_id=peterson.id, embedding=[0.1] * 768,
+                        text="My concern with this rezoning is the traffic on Chain Bridge Road and the "
+                             "scale next to the historic district, so I will not support it tonight."),
+        # an unidentified speaker saying much the same is never attributed
+        TranscriptChunk(meeting_id=cc.id, start_seconds=5500, end_seconds=5560, speaker_label="SPEAKER_09",
+                        embedding=[0.1] * 768,
+                        text="I also have concerns with this rezoning and the Comprehensive Plan, and "
+                             "would ask the applicant to come back with a smaller building."),
+    ])
     db.commit()
+
+
+def test_statements_are_the_members_own_identified_words(db):
+    _seed_candidates(db)
+    sources = ask_tools.Sources()
+    nums, header = ask_tools.get_statements(db, sources, "Kristen Lockhart", "rezoning")
+    texts = [sources.get(n)["text"] for n in nums]
+    assert texts and all(t.startswith("Kirsten Lockhart: ") for t in texts)
+    assert any("conformance with the Comprehensive Plan" in t for t in texts)
+    assert not any(t.endswith("Second.") for t in texts)  # too short to be a statement
+    assert not any("smaller building" in t for t in texts)  # unidentified speaker
+    assert sources.get(nums[0])["link"].endswith("starttime=3600&entrytime=3600")
+    # coverage is stated, so silence is not read as "never said"
+    assert "Speakers have been identified in 1 of 1 Planning Commission meetings" in header
+
+    nums, header = ask_tools.get_statements(db, sources, "Peterson")  # no topic: most recent
+    assert [sources.get(n)["text"][:30] for n in nums] == ["Thomas Peterson: My concern wi"]
+
+
+def test_shared_matters_quote_each_member(db):
+    _seed_candidates(db)
+    sources = ask_tools.Sources()
+    nums, _ = ask_tools.compare_members(db, sources, ["Tom Peterson", "Kristen Lockhart"])
+    shared = next(sources.get(n) for n in nums if sources.get(n)["kind"] == "shared_topic")
+    quoted = {}
+    for line in shared["text"].splitlines():
+        if "'s own words on it: sources" in line:
+            who = line.split("'s own words")[0]
+            quoted[who] = [int(x) for x in re.findall(r"\[(\d+)\]", line)]
+    assert set(quoted) == {"Thomas Peterson", "Kirsten Lockhart"}
+    assert "traffic on Chain Bridge Road" in sources.get(quoted["Thomas Peterson"][0])["text"]
+    assert "Comprehensive Plan" in sources.get(quoted["Kirsten Lockhart"][0])["text"]
+    # the quoted passages come back as citable transcript sources too
+    assert all(n in nums for ns in quoted.values() for n in ns)
 
 
 def test_nicknames_and_misspellings_find_the_member(db):
