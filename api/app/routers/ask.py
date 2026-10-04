@@ -91,9 +91,10 @@ decision; say so, and never treat the two as the same kind of vote. Do not rate 
 members as better or worse, and do not guess motives. Note that the \
 record covers only the meetings CouncilHound has indexed.
 - Quotes: attribute words to a member only from transcript sources that \
-name them as the speaker. Speaker naming is still being filled in; when \
-a tool reports partial coverage, say that missing remarks may not be \
-attributed yet rather than that the member said nothing.
+name them as the speaker, and prefer quoting a short phrase to \
+characterizing someone's style. Not every passage has a named speaker, \
+so never conclude a member said nothing about a subject; say the \
+attributed record doesn't show it.
 - Terms and elections: state them only from term or roster sources, \
 with the date the schedule was checked. Appointed members are not elected; \
 say when their appointment expires instead.
@@ -320,7 +321,10 @@ def _package(session: Session, answer: str, sources: ask_tools.Sources) -> dict:
     } for n, s in cited]
     cited_sources = [s for _, s in cited]
     return {"answer": answer, "citations": citations,
-            "topics": _topics(session, cited_sources),
+            "topics": _topics(session, cited_sources,
+                              meeting_fallback=not any(s["kind"] in ("member", "term")
+                                                       or s.get("speaker_entity_id")
+                                                       for s in cited_sources)),
             "members": _members(session, cited_sources)}
 
 
@@ -362,7 +366,8 @@ def ask_stream(req: AskRequest):
 
 # ---------------------------------------------------------------- cards
 
-def _topics(session: Session, cited: list[dict], limit: int = 3) -> list[dict]:
+def _topics(session: Session, cited: list[dict], limit: int = 3,
+            meeting_fallback: bool = True) -> list[dict]:
     """The tracked records an answer is about: topics whose own record was
     cited count most, then entities on the cited agenda items, and failing
     those, entities updated at the cited meetings. Lets the page link an
@@ -381,7 +386,9 @@ def _topics(session: Session, cited: list[dict], limit: int = 3) -> list[dict]:
                 select(model.entity_id, func.count()).where(model.agenda_item_id.in_(item_ids))
                 .group_by(model.entity_id)):
                 scores[eid] = scores.get(eid, 0) + n
-    if not scores and meeting_ids:
+    # an answer about members cites the meetings they spoke at, and those
+    # meetings' other business is not what the answer is about
+    if not scores and meeting_ids and meeting_fallback:
         for eid, n in session.execute(
             select(EntityUpdate.entity_id, func.count()).where(EntityUpdate.meeting_id.in_(meeting_ids))
             .group_by(EntityUpdate.entity_id)):
@@ -417,8 +424,10 @@ def _members(session: Session, cited: list[dict], limit: int = 6) -> list[dict]:
     seat is next decided, for the page's member cards."""
     ids = []
     for s in cited:
-        if s["kind"] in ("member", "term") and s.get("entity_id") and s["entity_id"] not in ids:
-            ids.append(s["entity_id"])
+        eid = (s.get("entity_id") if s["kind"] in ("member", "term")
+               else s.get("speaker_entity_id"))  # a member quoted in their own words
+        if eid and eid not in ids:
+            ids.append(eid)
     if not ids:
         return []
     roster = members_router._roster(session)

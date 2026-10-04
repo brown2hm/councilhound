@@ -58,7 +58,7 @@ def _today() -> datetime.date:
 
 class Sources:
     """The numbered sources for one question. Adding the same record twice
-    returns its existing number."""
+    returns its existing number (filling in any details it lacked)."""
 
     def __init__(self):
         self.items: list[dict] = []
@@ -67,7 +67,13 @@ class Sources:
     def add(self, key: tuple, *, kind: str, title: str, text: str,
             date: str | None = None, link: str | None = None, **meta) -> int:
         if key in self._by_key:
-            return self._by_key[key]
+            n = self._by_key[key]
+            # a later lookup may know more about the same record (who spoke it)
+            item = self.items[n - 1]
+            for k, v in meta.items():
+                if v is not None and item.get(k) is None:
+                    item[k] = v
+            return n
         self.items.append({"kind": kind, "title": title, "text": text,
                            "date": date, "link": link, **meta})
         n = len(self.items)
@@ -149,7 +155,7 @@ def _votes_by_item(session: Session, item_ids: set[int]) -> dict[int, list[Vote]
 # ---------------------------------------------------------------- record search
 
 def _add_chunk(sources: Sources, chunk: TranscriptChunk, meeting: Meeting,
-               speaker: str | None) -> int:
+               speaker: str | None, speaker_entity_id: int | None = None) -> int:
     who = speaker if speaker and not _ANON_SPEAKER.match(speaker) else None
     text = (f"{who}: " if who else "") + chunk.text
     start = float(chunk.start_seconds) if chunk.start_seconds is not None else None
@@ -157,7 +163,8 @@ def _add_chunk(sources: Sources, chunk: TranscriptChunk, meeting: Meeting,
                        title=f"{_body_label(meeting.body)}: {meeting.title}",
                        text=text, date=meeting.meeting_date.isoformat(),
                        link=clip_link(meeting.granicus_view_id, meeting.granicus_clip_id, start or 0),
-                       meeting_id=meeting.id, start_seconds=start)
+                       meeting_id=meeting.id, start_seconds=start,
+                       speaker_entity_id=speaker_entity_id)
 
 
 def _add_item(sources: Sources, item: AgendaItem, meeting: Meeting, votes: list[Vote]) -> int:
@@ -324,7 +331,7 @@ def member_statements(session: Session, sources: Sources, entity: Entity, topic:
         if chunk.id in seen:
             continue
         seen.add(chunk.id)
-        out.append(_add_chunk(sources, chunk, meeting, entity.name))
+        out.append(_add_chunk(sources, chunk, meeting, entity.name, entity.id))
         if len(out) == limit:
             break
     return out
@@ -343,9 +350,12 @@ def _naming_coverage(session: Session, body: str | None) -> str:
         q_named = q_named.where(Meeting.body == body)
     total, named = session.scalar(q_total) or 0, session.scalar(q_named) or 0
     where = f" {_body_label(body)}" if body else ""
-    return (f"Speakers have been identified in {named} of {total}{where} meetings with transcripts; "
-            "only passages where this member was identified with high confidence are quoted, so "
-            "missing remarks may simply not be attributed yet.")
+    rule = ("A passage is quoted only where its speaker was named with high confidence, so some "
+            "remarks stay unattributed.")
+    if total and named >= total:
+        return f"Speakers have been named in all {total}{where} meetings with transcripts. {rule}"
+    return (f"Speakers have been named in {named} of {total}{where} meetings with transcripts so far. "
+            f"{rule} Missing remarks may simply not be attributed yet.")
 
 
 def get_statements(session: Session, sources: Sources, name: str,

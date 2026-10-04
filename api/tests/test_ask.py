@@ -298,7 +298,7 @@ def test_statements_are_the_members_own_identified_words(db):
     assert not any("smaller building" in t for t in texts)  # unidentified speaker
     assert sources.get(nums[0])["link"].endswith("starttime=3600&entrytime=3600")
     # coverage is stated, so silence is not read as "never said"
-    assert "Speakers have been identified in 1 of 1 Planning Commission meetings" in header
+    assert "Speakers have been named in all 1 Planning Commission meetings with transcripts." in header
 
     nums, header = ask_tools.get_statements(db, sources, "Peterson")  # no topic: most recent
     assert [sources.get(n)["text"][:30] for n in nums] == ["Thomas Peterson: My concern wi"]
@@ -364,3 +364,37 @@ def test_tendencies_read_the_same_on_either_body(db):
     assert "opposed 1 of 1 roll calls where they took a side (as recommendations; " in records["Kirsten Lockhart"]
     assert "Land-use applications" in records["Thomas Peterson"] and "opposed 1 of 1" in records["Thomas Peterson"]
     assert "Absent for 0 of 1 roll calls (0%)." in records["Thomas Peterson"]
+
+
+def test_quoted_member_gets_the_card_not_the_meetings_topics(client, db, monkeypatch):
+    _seed_candidates(db)
+
+    def call(messages):
+        return "tool_use", [_tool("t1", "get_statements", name="Lockhart", topic="rezoning")]
+
+    def answer(messages):
+        n = _number(messages[-1]["content"][0]["content"], "Planning Commission Regular Meeting")
+        return "end_turn", [_text(f"She found it out of conformance [{n}].")]
+
+    _install(monkeypatch, [call, answer])
+    result = ask.run_ask(db, "What has Lockhart said about the rezoning?")
+    assert [m["slug"] for m in result["members"]] == ["kirsten-lockhart"]
+    assert result["topics"] == []
+
+
+def test_coverage_says_when_naming_is_partial(db):
+    import datetime
+
+    from councilhound.db.models import Meeting, TranscriptChunk
+    _seed_candidates(db)
+    later = Meeting(granicus_clip_id="402", granicus_view_id="13", body="planning_commission",
+                    meeting_type="planning_commission", meeting_date=datetime.date(2025, 9, 8),
+                    title="Planning Commission Regular Meeting", status="extracted")
+    db.add(later)
+    db.flush()
+    db.add(TranscriptChunk(meeting_id=later.id, start_seconds=0, end_seconds=60, speaker_label="SPEAKER_01",
+                           text="An unnamed meeting's transcript."))
+    db.commit()
+    _nums, header = ask_tools.get_statements(db, ask_tools.Sources(), "Lockhart")
+    assert "Speakers have been named in 1 of 2 Planning Commission meetings with transcripts so far." in header
+    assert "may simply not be attributed yet" in header
