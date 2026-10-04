@@ -27,7 +27,7 @@ import logging
 import re
 from datetime import timedelta
 
-from sqlalchemy import and_, delete, exists, select, update
+from sqlalchemy import and_, delete, exists, or_, select, update
 from sqlalchemy.orm import Session
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
@@ -50,7 +50,16 @@ PROMPT_VERSION = "speakers-v1"
 EVIDENCE_WINDOW = 90  # seconds either side of a quoted timestamp
 ROSTER_DAYS = 90  # members who voted in the same body this close to the meeting
 ROLES = ["presiding officer", "member", "staff", "applicant", "public commenter",
-         "clerk", "other", "unknown"]
+         "student", "clerk", "other", "unknown"]
+# Students are never named publicly (decided 2026-10-04: many are minors);
+# they show as "Student". A self-description in the label's own turns or a
+# cue quote marks one even when the model said "public commenter". The grade
+# word must be followed by at/in/from so "a senior planner" doesn't match.
+_STUDENT = re.compile(
+    r"\b(i am|i'm|im)\s+(a\s+|an\s+)?((high school|middle school|elementary|college)\s+)?"
+    r"(freshman|sophomore|junior|senior|student|\w+(st|nd|rd|th)\s+grader)\s+(at|in|from)\b"
+    r"|\bstudent (representative|rep|member)\b"
+    r"|\b(i am|i'm|im)\s+in\s+(the\s+)?\w+(st|nd|rd|th)?\s+grade\b", re.I)
 _TITLE = re.compile(r"^(mayor|council ?(member|woman|man)|commissioner|chair|vice[- ]chair|"
                     r"school board|board member|trustee|superintendent)\b", re.I)
 # titles that mark someone as a member of a given body — the roster for a
@@ -86,7 +95,8 @@ Confidence: "high" = at least one direct, unambiguous cue (self-identification, 
 and responds); "medium" = consistent indirect cues only; "low" = a guess. If there is no cue, set \
 name to null. Use roster slugs only for people on the roster; for anyone else (public commenters, \
 staff, applicants) give the name as spoken and slug null. Give 1-3 evidence items per named label, \
-each with the timestamp shown in the transcript and a short verbatim quote of the cue."""
+each with the timestamp shown in the transcript and a short verbatim quote of the cue. Use role \
+"student" for anyone who is a student or introduced as one (including a student representative)."""
 
 SCHEMA = {
     "type": "object", "additionalProperties": False, "required": ["speakers"],
@@ -108,8 +118,15 @@ SCHEMA = {
 
 
 def is_public(row: MeetingSpeaker) -> bool:
-    """The publication rule: shown on the site, in the API and to /ask."""
-    return bool(row.name) and row.confidence == "high" and not row.mixed
+    """The publication rule: named on the site, in the API and to /ask.
+    Students are identified ("Student") but never named."""
+    return (bool(row.name) and row.confidence == "high" and not row.mixed
+            and row.role != "student")
+
+
+def is_student(row: MeetingSpeaker) -> bool:
+    """Shown as "Student": a confident, unmixed label we know is a student."""
+    return row.role == "student" and row.confidence == "high" and not row.mixed
 
 
 def public_speaker_join():
@@ -119,7 +136,8 @@ def public_speaker_join():
                 MeetingSpeaker.speaker_label == TranscriptChunk.speaker_label,
                 MeetingSpeaker.confidence == "high",
                 MeetingSpeaker.mixed.is_(False),
-                MeetingSpeaker.name.isnot(None))
+                MeetingSpeaker.name.isnot(None),
+                or_(MeetingSpeaker.role.is_(None), MeetingSpeaker.role != "student"))
 
 
 def _hms(seconds: float) -> str:
@@ -271,6 +289,24 @@ def name_attested(name: str, transcript_words: set[str]) -> bool:
                for w in words)
 
 
+def mark_students(session: Session, meeting_id: int) -> int:
+    """Set role 'student' on model rows whose own turns or cue quotes say the
+    speaker is a student. Hand corrections are left alone. Returns rows changed."""
+    changed = 0
+    rows = session.scalars(select(MeetingSpeaker).where(
+        MeetingSpeaker.meeting_id == meeting_id, MeetingSpeaker.source == "model",
+        MeetingSpeaker.role != "student")).all()
+    for row in rows:
+        own = session.scalars(select(TranscriptChunk.text).where(
+            TranscriptChunk.meeting_id == meeting_id,
+            TranscriptChunk.speaker_label == row.speaker_label)).all()
+        cues = [e.get("quote", "") for e in row.evidence or []]
+        if any(_STUDENT.search(t) for t in [*own, *cues]):
+            row.role = "student"
+            changed += 1
+    return changed
+
+
 def link_chunks(session: Session, meeting_id: int) -> int:
     """Point each chunk at its speaker's entity when the speaker is public and
     on the roster; clear the link otherwise. Returns chunks linked."""
@@ -336,6 +372,9 @@ def name_meeting(session: Session, meeting: Meeting) -> dict:
                                    model=f"{model}/{PROMPT_VERSION}"))
         counts["low"] += 1
     session.flush()
+    counts["students"] = mark_students(session, meeting.id)
+    counts["public"] = sum(is_public(r) for r in session.scalars(
+        select(MeetingSpeaker).where(MeetingSpeaker.meeting_id == meeting.id)))
     counts["linked_chunks"] = link_chunks(session, meeting.id)
     session.commit()
     result = {"meeting_id": meeting.id, "status": "named", "labels": len(labels), **counts}

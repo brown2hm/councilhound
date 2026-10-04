@@ -30,7 +30,9 @@ const ROLE_NOTE: Record<string, string> = {
 
 function Speaker({ seg }: { seg: TranscriptSegment }) {
   if (!seg.speaker_name) {
-    return <span className="mr-2 font-semibold text-ink">{speakerName(seg.speaker_label ?? "")}</span>;
+    // students are identified but never named
+    const label = seg.speaker_role === "student" ? "Student" : speakerName(seg.speaker_label ?? "");
+    return <span className="mr-2 font-semibold text-ink">{label}</span>;
   }
   const isMember = seg.speaker_role === "member" || seg.speaker_role === "presiding officer";
   const note = seg.speaker_role ? ROLE_NOTE[seg.speaker_role] : undefined;
