@@ -51,8 +51,18 @@ EVIDENCE_WINDOW = 90  # seconds either side of a quoted timestamp
 ROSTER_DAYS = 90  # members who voted in the same body this close to the meeting
 ROLES = ["presiding officer", "member", "staff", "applicant", "public commenter",
          "clerk", "other", "unknown"]
-_TITLE = re.compile(r"^(mayor|council ?(member|woman|man)|commissioner|chair|vice chair|"
-                    r"board member|trustee|superintendent)\b", re.I)
+_TITLE = re.compile(r"^(mayor|council ?(member|woman|man)|commissioner|chair|vice[- ]chair|"
+                    r"school board|board member|trustee|superintendent)\b", re.I)
+# titles that mark someone as a member of a given body — the roster for a
+# meeting with no recorded votes yet (a Planning Commission meeting before
+# its minutes) comes from these
+BODY_TITLES = {
+    "city_council": re.compile(r"^(mayor|council ?(member|woman|man))\b", re.I),
+    "planning_commission": re.compile(r"^commissioner\b", re.I),
+    "school_board": re.compile(r"^school board (member|chair|vice[- ]chair)\b", re.I),
+}
+_HONORIFIC = {"mr", "mrs", "ms", "miss", "dr", "chief", "mayor", "chair", "councilmember",
+              "commissioner", "madam", "sir", "jr", "sr", "ii", "iii"}
 
 SYSTEM = """You identify who is speaking in a public meeting transcript. The transcript was split \
 into anonymous speaker labels (SPEAKER_00, ...) by an automatic voice-separation model; labels are \
@@ -140,8 +150,8 @@ def _last(name: str) -> str:
 def roster(session: Session, meeting: Meeting) -> dict[str, dict]:
     """slug -> {name, entity_id, note} for the people this meeting can link:
     members who voted in this body within ROSTER_DAYS (keyed by surname in
-    vote breakdowns), the presiding officer by title, and people the
-    structured record names for this meeting."""
+    vote breakdowns), anyone holding this body's title (BODY_TITLES), and
+    people the structured record names for this meeting."""
     lo, hi = meeting.meeting_date - timedelta(days=ROSTER_DAYS), meeting.meeting_date + timedelta(days=ROSTER_DAYS)
     breakdowns = session.scalars(
         select(Vote.vote_breakdown).join(AgendaItem, Vote.agenda_item_id == AgendaItem.id)
@@ -169,10 +179,13 @@ def roster(session: Session, meeting: Meeting) -> dict[str, dict]:
         for p in matches:
             out[p.canonical_slug] = {"name": p.name, "entity_id": p.id,
                                      "note": "member; titles: " + ", ".join(sorted(titles.get(p.id, []))[:3])}
-    if meeting.body == "city_council":  # the mayor presides and rarely votes
+    body_title = BODY_TITLES.get(meeting.body)
+    if body_title:  # titled members of this body, current or former (the mayor rarely votes)
         for p in people:
-            if any(a.lower().startswith("mayor") for a in titles.get(p.id, [])):
-                out[p.canonical_slug] = {"name": p.name, "entity_id": p.id, "note": "mayor"}
+            held = [a for a in titles.get(p.id, []) if body_title.match(a)]
+            if held and p.canonical_slug not in out:
+                out[p.canonical_slug] = {"name": p.name, "entity_id": p.id,
+                                         "note": "titled: " + ", ".join(sorted(held)[:3])}
     for p, role in session.execute(
             select(Entity, EntityMention.role).join(EntityMention, EntityMention.entity_id == Entity.id)
             .where(EntityMention.meeting_id == meeting.id, Entity.entity_type == "person")):
@@ -245,6 +258,19 @@ def verify_evidence(label: str, evidence: list[dict], chunks: list[TranscriptChu
     return kept
 
 
+def name_attested(name: str, transcript_words: set[str]) -> bool:
+    """Every word of a name (honorifics aside) is in the transcript, allowing
+    small spelling drift. Stops the model writing a name it knows from
+    elsewhere ("Brian Lubkin") over the one that was spoken ("Lovegerman")."""
+    import difflib
+
+    words = [w for w in re.findall(r"[a-z]+", name.lower()) if w not in _HONORIFIC and len(w) >= 3]
+    if not words:
+        return False
+    return all(w in transcript_words or difflib.get_close_matches(w, transcript_words, n=1, cutoff=0.8)
+               for w in words)
+
+
 def link_chunks(session: Session, meeting_id: int) -> int:
     """Point each chunk at its speaker's entity when the speaker is public and
     on the roster; clear the link otherwise. Returns chunks linked."""
@@ -278,7 +304,8 @@ def name_meeting(session: Session, meeting: Meeting) -> dict:
         MeetingSpeaker.meeting_id == meeting.id, MeetingSpeaker.source == "manual")))
     session.execute(delete(MeetingSpeaker).where(MeetingSpeaker.meeting_id == meeting.id,
                                                  MeetingSpeaker.source == "model"))
-    counts = {"high": 0, "medium": 0, "low": 0, "public": 0, "downgraded": 0}
+    counts = {"high": 0, "medium": 0, "low": 0, "public": 0, "downgraded": 0, "unattested": 0}
+    transcript_words = set(re.findall(r"[a-z]+", " ".join(c.text for c in chunks).lower()))
     seen = set()
     for s in speakers:
         label = s["label"]
@@ -291,6 +318,10 @@ def name_meeting(session: Session, meeting: Meeting) -> dict:
             confidence = "medium"
             counts["downgraded"] += 1
         person = people.get(s["slug"] or "")
+        # roster names are trusted spellings; anyone else must be named as spoken
+        if confidence == "high" and not person and not name_attested(s["name"] or "", transcript_words):
+            confidence = "medium"
+            counts["unattested"] += 1
         row = MeetingSpeaker(
             meeting_id=meeting.id, speaker_label=label, name=s["name"],
             entity_id=person["entity_id"] if person else None,
