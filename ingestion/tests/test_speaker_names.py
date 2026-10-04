@@ -134,3 +134,32 @@ def test_pending_respects_the_lookback_window(db_session, council):
     db_session.commit()
     assert [x.id for x in sn.pending(db_session)] == [m.id, old.id]
     assert [x.id for x in sn.pending(db_session, since=datetime.date(2026, 9, 15))] == [m.id]
+
+
+def test_roster_falls_back_to_body_titles_without_votes(db_session):
+    """A Planning Commission meeting before its minutes has no votes."""
+    m = _meeting(db_session, body="planning_commission", clip="4649")
+    feather = _person(db_session, "James Feather", "james-feather", "Commissioner Feather", "Chair Feather")
+    _person(db_session, "Billy Bates", "billy-bates", "Councilmember Bates")  # other body
+    db_session.commit()
+    assert set(sn.roster(db_session, m)) == {"james-feather"}
+    assert sn.roster(db_session, m)["james-feather"]["entity_id"] == feather.id
+
+
+def test_name_attested_requires_the_spoken_name():
+    words = set("i am going to recognize brian lovegerman our city attorney ms shinneberry".split())
+    assert sn.name_attested("Brian Lovegerman", words)
+    assert sn.name_attested("Melanie Shinneberry", words) is False  # first name never spoken
+    assert sn.name_attested("Ms. Shineberry", words)  # small spelling drift is fine
+    assert sn.name_attested("Brian Lubkin", words) is False  # outside knowledge, not the transcript
+    assert sn.name_attested("Dr. A", words) is False
+
+
+def test_unattested_non_roster_names_are_not_public(db_session, council, monkeypatch):
+    m, *_ = council
+    answer = [{"label": "SPEAKER_25", "name": "Joan Goodwin-Smith", "slug": None,
+               "role": "public commenter", "confidence": "high", "mixed": False,
+               "evidence": [{"time": "1:50:00", "quote": "My name is Joan Goodman."}]}]
+    monkeypatch.setattr(sn, "_call_claude", lambda prompt: (answer, "claude-opus-5-5"))
+    r = sn.name_meeting(db_session, m)
+    assert r["unattested"] == 1 and r["public"] == 0
