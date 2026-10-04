@@ -1,5 +1,73 @@
 # Changelog
 
+## Unreleased — speakers named by voice (October 2026)
+
+Transcript cues name most speakers, but staff are often addressed only as
+"Ms. Shinneberry", or not at all, and plenty of members speak in meetings
+where nobody says their name.
+
+- **Fingerprints.** `speaker_voices` holds a 256-d voice fingerprint per
+  diarization label (pyannote's own speaker-embedding model, up to six 10 s
+  windows of the label's longest speech). `transcribe` fingerprints new
+  meetings; `fingerprint-voices` backfills old ones from Granicus audio.
+- **`voice-match`** names a label the transcript didn't when its fingerprint
+  matches one person's voiceprint (built only from transcript-named or
+  hand-set labels in other meetings): similarity >= 0.65, 0.25 ahead of the
+  next voice, >= 20 s of speech, voiceprint from >= 2 meetings. It never
+  overrides a transcript name, a hand correction, a student or a mixed label;
+  `--disagreements` lists transcript names a strong voice match contradicts.
+- **Measured first.** Pilot on 20 City Council meetings, one meeting held out
+  at a time: at similarity >= 0.55 no member or staff label was matched to the
+  wrong person (149/179 recovered) and none of 223 named outsiders matched
+  someone else. Enabled for City Council; other bodies after their own check.
+- The reader marks voice-identified speakers "by voice"; the API exposes
+  `speaker_basis`.
+
+## Unreleased — named speakers (October 2026)
+
+Diarized transcripts said "Speaker 6"; meetings say who is talking out loud.
+
+- **`name-speakers`** sends each meeting's labelled transcript, with a
+  roster (members who voted in that body within 90 days, the mayor, people
+  named in the record), to Claude Opus 5.5 in one structured-output call. It
+  maps each label to a name, role and confidence, quoting the cue it used.
+- **Shown only when sure.** A name is public only at high confidence (a
+  self-introduction, or called on by name and then speaking) on a label that
+  isn't mixed. One such cue names the label for the whole meeting. Quotes
+  are checked against the transcript; a "high" whose quotes don't check out
+  is downgraded. Medium/low stay "Speaker N" and are kept for review.
+- **`meeting_speakers`** table (migration `c5d6e7f8a9b0`); public members
+  are also linked on chunks (`speaker_entity_id`). `set-speaker` records a
+  hand correction that re-runs never overwrite.
+- **Reader, API and /ask** show names: members link to their page, staff,
+  applicants and public commenters are labelled by role. Public commenters
+  are named as they introduced themselves.
+- **Pipeline.** `daily` and `catchup` name newly transcribed meetings in
+  their look-back window; older meetings are a deliberate `name-speakers`
+  backfill. Prototype on the Sep 22, 2026 Council meeting: 52 s, ~$0.41,
+  21 of 33 labels high confidence, every member naming backed by a cue.
+
+## Unreleased — speaker separation in transcripts (October 2026)
+
+Transcripts were one voice: Whisper emits text without speakers, so the
+reader showed each meeting as unbroken ~700-character blocks.
+
+- **Diarization by default.** `councilhound.extraction.diarize` runs
+  pyannote's community-1 pipeline (Apple GPU via MPS) after Whisper. Each
+  word goes to the speaker turn it overlaps most; chunks now break at every
+  speaker change and store `speaker_label`. On the Sep 22, 2026 Council
+  meeting (4 h, ~11 min to diarize) it found 33 speakers, gave each public
+  commenter their own label and split motions from seconds. One-word
+  roll-call answers still fold into the roll-caller's turn.
+- **Fewer invented words.** Whisper now runs with word timestamps,
+  `hallucination_silence_threshold` and `condition_on_previous_text=False`,
+  which stops the looping "She She She…" output over opening music.
+- **Reader** shows "Speaker 6" where the voice changes.
+- **Local-only.** `pip install -r ingestion/requirements-diarize.txt` and
+  `hf auth login` with an account that accepted the model's terms. Without
+  them transcription still runs, unlabelled. `DIARIZE=0` turns it off.
+  Meetings already transcribed keep their unlabelled chunks.
+
 ## Unreleased — one codebase, many jurisdictions: Fairfax County as the second (September 2026)
 
 CouncilHound was written against the City of Fairfax, with the City's Granicus

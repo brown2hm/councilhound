@@ -1,7 +1,7 @@
 """Pure text-processing helpers: transcript chunk merging and PDF text
 sanitization (the NUL-byte crash class that hit production extraction once)."""
 from councilhound.extraction.pdf_text import _sanitize
-from councilhound.extraction.transcript import merge_segments
+from councilhound.extraction.transcript import assign_speakers, merge_segments
 
 
 def test_merge_segments_respects_target_and_timestamps():
@@ -18,6 +18,51 @@ def test_merge_segments_respects_target_and_timestamps():
 
 def test_merge_segments_empty():
     assert merge_segments([]) == []
+
+
+def _w(start, end, word):
+    return {"start": start, "end": end, "word": word}
+
+
+def test_assign_speakers_splits_a_segment_at_the_speaker_change():
+    # "...a roll call vote. Second." spoken by two people inside one segment
+    segments = [{"start": 0.0, "end": 3.0, "text": "a roll call vote second",
+                 "words": [_w(0.0, 0.4, " a"), _w(0.4, 0.8, " roll"), _w(0.8, 1.2, " call"),
+                           _w(1.2, 1.8, " vote"), _w(2.2, 2.9, " second")]}]
+    turns = [{"start": 0.0, "end": 2.0, "speaker": "SPEAKER_05"},
+             {"start": 2.1, "end": 3.0, "speaker": "SPEAKER_21"}]
+    pieces = assign_speakers(segments, turns)
+    assert [(p["speaker"], p["text"]) for p in pieces] == [
+        ("SPEAKER_05", "a roll call vote"), ("SPEAKER_21", "second")]
+    assert pieces[1]["start"] == 2.2 and pieces[1]["end"] == 2.9
+
+
+def test_assign_speakers_gap_word_goes_to_nearest_turn():
+    segments = [{"start": 5.0, "end": 5.3, "text": "aye", "words": [_w(5.0, 5.3, " aye")]}]
+    turns = [{"start": 0.0, "end": 4.0, "speaker": "SPEAKER_00"},
+             {"start": 5.5, "end": 9.0, "speaker": "SPEAKER_01"}]
+    assert assign_speakers(segments, turns)[0]["speaker"] == "SPEAKER_01"
+
+
+def test_assign_speakers_without_turns_keeps_segments_unlabelled():
+    segments = [{"start": 0, "end": 1, "text": "hello"}]
+    assert assign_speakers(segments, []) == [{"start": 0, "end": 1, "text": "hello", "speaker": None}]
+
+
+def test_merge_segments_breaks_chunks_at_speaker_changes():
+    pieces = [
+        {"start": 0, "end": 2, "text": "is there a second", "speaker": "SPEAKER_05"},
+        {"start": 2, "end": 3, "text": "second", "speaker": "SPEAKER_21"},
+        {"start": 3, "end": 6, "text": "the motion has been made", "speaker": "SPEAKER_05"},
+        {"start": 6, "end": 8, "text": "and seconded", "speaker": "SPEAKER_05"},
+    ]
+    chunks = merge_segments(pieces, target_chars=700)
+    assert [(c["speaker"], c["text"]) for c in chunks] == [
+        ("SPEAKER_05", "is there a second"),
+        ("SPEAKER_21", "second"),
+        ("SPEAKER_05", "the motion has been made and seconded"),
+    ]
+    assert chunks[2]["start"] == 3 and chunks[2]["end"] == 8
 
 
 def test_sanitize_strips_nul_and_control_chars():

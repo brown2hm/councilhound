@@ -22,7 +22,7 @@ from sqlalchemy.orm import Session
 
 from councilhound.db.models import (
     AgendaItem, CityProject, Entity, EntityAlias, EntityGeocode, EntityMention,
-    EntityProfile, EntityUpdate, Meeting, TopicSubscription, TranscriptChunk,
+    EntityProfile, MeetingSpeaker, EntityUpdate, Meeting, TopicSubscription, TranscriptChunk,
     WikiPage,
 )
 
@@ -138,7 +138,7 @@ def merge_entities(session: Session, source_slug: str, target_slug: str,
             f"type mismatch ({source.entity_type} -> {target.entity_type}); "
             "pass force_cross_type to merge anyway")
 
-    moved = {"mentions": 0, "updates": 0, "aliases": 0, "speaker_chunks": 0}
+    moved = {"mentions": 0, "updates": 0, "aliases": 0, "speaker_chunks": 0, "speakers": 0}
 
     # mentions: reassign unless the target already has the identical row
     target_mention_keys = {
@@ -175,6 +175,10 @@ def merge_entities(session: Session, source_slug: str, target_slug: str,
     moved["speaker_chunks"] = session.execute(
         update(TranscriptChunk).where(TranscriptChunk.speaker_entity_id == source.id)
         .values(speaker_entity_id=target.id)).rowcount
+    # named speakers (and the voiceprints built from them) follow the person
+    moved["speakers"] = session.execute(
+        update(MeetingSpeaker).where(MeetingSpeaker.entity_id == source.id)
+        .values(entity_id=target.id)).rowcount
 
     # source profile dies; the target's goes stale via through_meeting_id
     # once newer mentions arrive, and the nightly profile pass regenerates it

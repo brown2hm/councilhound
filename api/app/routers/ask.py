@@ -64,8 +64,11 @@ Working:
 If it settles the question, answer directly. Otherwise call tools, several \
 at once when they are independent.
 - A named project, place, ordinance or issue: get_topic. One member: \
-get_member. Two or more members, or "who votes with whom": compare_members. \
-Who sits on a body, or whose seat is up and when: list_members. What is \
+get_member. Two or more members or candidates (including members of \
+different bodies), or "who votes with whom": compare_members. \
+What a member said, in their own words: get_statements (with a \
+topic when there is one). Who sits on a body, or whose seat is up and \
+when: list_members. What is \
 coming up: get_upcoming. Wording inside staff reports or minutes: \
 search_documents. Anything else, or a narrower slice by body or date: \
 search_record.
@@ -80,9 +83,18 @@ gaps from general knowledge, including about members or elections.
 what people said comes from transcripts. Make clear when each cited event \
 happened, and keep timelines in date order.
 - Comparing members: describe how they voted and what they said, with \
-counts and how many roll calls a figure rests on. Do not rate or rank \
+counts and how many roll calls a figure rests on. Members of different \
+bodies (a commissioner and a councilmember) are compared through \
+shared-topic sources: what each did when the same matter reached them. A \
+Planning Commission vote is a recommendation that comes before Council's \
+decision; say so, and never treat the two as the same kind of vote. Do not rate or rank \
 members as better or worse, and do not guess motives. Note that the \
 record covers only the meetings CouncilHound has indexed.
+- Quotes: attribute words to a member only from transcript sources that \
+name them as the speaker, and prefer quoting a short phrase to \
+characterizing someone's style. Not every passage has a named speaker, \
+so never conclude a member said nothing about a subject; say the \
+attributed record doesn't show it.
 - Terms and elections: state them only from term or roster sources, \
 with the date the schedule was checked. Appointed members are not elected; \
 say when their appointment expires instead.
@@ -127,6 +139,14 @@ TOOLS = [
      "input_schema": {"type": "object", "properties": {
          "name": {"type": "string", "description": "Full or last name."}},
          "required": ["name"], "additionalProperties": False}},
+    {"name": "get_statements",
+     "description": "Passages a member spoke in meetings (only where the transcript's speaker "
+                    "was identified with high confidence), on a topic when given, else their "
+                    "most recent remarks; with how much of the record has speakers named.",
+     "input_schema": {"type": "object", "properties": {
+         "name": {"type": "string", "description": "Full or last name."},
+         "topic": {"type": "string", "description": "Optional subject to find remarks on."}},
+         "required": ["name"], "additionalProperties": False}},
     {"name": "compare_members",
      "description": "Compare two to six members: each one's record and term or election date, "
                     "how often each pair voted the same way on shared roll calls, and the "
@@ -162,6 +182,9 @@ def _step_label(name: str, args: dict) -> str:
         return f"Reading the record on {args.get('name', '')}"
     if name == "get_member":
         return f"Pulling {args.get('name', '')}'s voting record"
+    if name == "get_statements":
+        return (f"Finding what {args.get('name', '')} said"
+                + (f" about {args['topic']}" if args.get("topic") else ""))
     if name == "compare_members":
         return "Comparing " + " and ".join(args.get("names") or [])
     if name == "list_members":
@@ -184,6 +207,10 @@ def _run_tool(session: Session, sources: ask_tools.Sources, name: str, args: dic
         return ask_tools._render(sources, nums, header)
     if name == "get_member":
         nums, header, _ = ask_tools.get_member(session, sources, str(args.get("name", "")))
+        return ask_tools._render(sources, nums, header)
+    if name == "get_statements":
+        nums, header = ask_tools.get_statements(session, sources, str(args.get("name", "")),
+                                                str(args.get("topic") or "") or None)
         return ask_tools._render(sources, nums, header)
     if name == "compare_members":
         names = [str(n) for n in (args.get("names") or []) if str(n).strip()]
@@ -294,7 +321,10 @@ def _package(session: Session, answer: str, sources: ask_tools.Sources) -> dict:
     } for n, s in cited]
     cited_sources = [s for _, s in cited]
     return {"answer": answer, "citations": citations,
-            "topics": _topics(session, cited_sources),
+            "topics": _topics(session, cited_sources,
+                              meeting_fallback=not any(s["kind"] in ("member", "term")
+                                                       or s.get("speaker_entity_id")
+                                                       for s in cited_sources)),
             "members": _members(session, cited_sources)}
 
 
@@ -336,7 +366,8 @@ def ask_stream(req: AskRequest):
 
 # ---------------------------------------------------------------- cards
 
-def _topics(session: Session, cited: list[dict], limit: int = 3) -> list[dict]:
+def _topics(session: Session, cited: list[dict], limit: int = 3,
+            meeting_fallback: bool = True) -> list[dict]:
     """The tracked records an answer is about: topics whose own record was
     cited count most, then entities on the cited agenda items, and failing
     those, entities updated at the cited meetings. Lets the page link an
@@ -355,7 +386,9 @@ def _topics(session: Session, cited: list[dict], limit: int = 3) -> list[dict]:
                 select(model.entity_id, func.count()).where(model.agenda_item_id.in_(item_ids))
                 .group_by(model.entity_id)):
                 scores[eid] = scores.get(eid, 0) + n
-    if not scores and meeting_ids:
+    # an answer about members cites the meetings they spoke at, and those
+    # meetings' other business is not what the answer is about
+    if not scores and meeting_ids and meeting_fallback:
         for eid, n in session.execute(
             select(EntityUpdate.entity_id, func.count()).where(EntityUpdate.meeting_id.in_(meeting_ids))
             .group_by(EntityUpdate.entity_id)):
@@ -391,8 +424,10 @@ def _members(session: Session, cited: list[dict], limit: int = 6) -> list[dict]:
     seat is next decided, for the page's member cards."""
     ids = []
     for s in cited:
-        if s["kind"] in ("member", "term") and s.get("entity_id") and s["entity_id"] not in ids:
-            ids.append(s["entity_id"])
+        eid = (s.get("entity_id") if s["kind"] in ("member", "term")
+               else s.get("speaker_entity_id"))  # a member quoted in their own words
+        if eid and eid not in ids:
+            ids.append(eid)
     if not ids:
         return []
     roster = members_router._roster(session)

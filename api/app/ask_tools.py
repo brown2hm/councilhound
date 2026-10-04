@@ -20,9 +20,11 @@ from councilhound.bodies import REGISTRY
 from councilhound.config import LOCAL_TZ
 from councilhound.db.models import (
     AgendaItem, CityProject, Document, Entity, EntityAlias, EntityMention, EntityProfile,
-    EntityUpdate, Meeting, ProjectEvaluation, TranscriptChunk, UpcomingMeeting, Vote, WikiPage,
+    EntityUpdate, Meeting, MeetingSpeaker, ProjectEvaluation, TranscriptChunk, UpcomingMeeting,
+    Vote, WikiPage,
 )
 from councilhound.embeddings.embed import embed_query
+from councilhound.extraction.speaker_names import public_speaker_join
 
 from app import terms
 from app.links import clip_link
@@ -54,7 +56,7 @@ def _today() -> datetime.date:
 
 class Sources:
     """The numbered sources for one question. Adding the same record twice
-    returns its existing number."""
+    returns its existing number (filling in any details it lacked)."""
 
     def __init__(self):
         self.items: list[dict] = []
@@ -63,7 +65,13 @@ class Sources:
     def add(self, key: tuple, *, kind: str, title: str, text: str,
             date: str | None = None, link: str | None = None, **meta) -> int:
         if key in self._by_key:
-            return self._by_key[key]
+            n = self._by_key[key]
+            # a later lookup may know more about the same record (who spoke it)
+            item = self.items[n - 1]
+            for k, v in meta.items():
+                if v is not None and item.get(k) is None:
+                    item[k] = v
+            return n
         self.items.append({"kind": kind, "title": title, "text": text,
                            "date": date, "link": link, **meta})
         n = len(self.items)
@@ -145,7 +153,7 @@ def _votes_by_item(session: Session, item_ids: set[int]) -> dict[int, list[Vote]
 # ---------------------------------------------------------------- record search
 
 def _add_chunk(sources: Sources, chunk: TranscriptChunk, meeting: Meeting,
-               speaker: str | None) -> int:
+               speaker: str | None, speaker_entity_id: int | None = None) -> int:
     who = speaker if speaker and not _ANON_SPEAKER.match(speaker) else None
     text = (f"{who}: " if who else "") + chunk.text
     start = float(chunk.start_seconds) if chunk.start_seconds is not None else None
@@ -153,7 +161,8 @@ def _add_chunk(sources: Sources, chunk: TranscriptChunk, meeting: Meeting,
                        title=f"{_body_label(meeting.body)}: {meeting.title}",
                        text=text, date=meeting.meeting_date.isoformat(),
                        link=clip_link(meeting.granicus_view_id, meeting.granicus_clip_id, start or 0),
-                       meeting_id=meeting.id, start_seconds=start)
+                       meeting_id=meeting.id, start_seconds=start,
+                       speaker_entity_id=speaker_entity_id)
 
 
 def _add_item(sources: Sources, item: AgendaItem, meeting: Meeting, votes: list[Vote]) -> int:
@@ -199,9 +208,10 @@ def search_record(session: Session, sources: Sources, query: str, body: str | No
           .order_by(Meeting.meeting_date.desc()).limit(limit))
     for item, meeting in session.execute(_record_filters(iq, body, since_d, until_d)):
         hits.append(("item", item, meeting, None))
-    cq = (select(TranscriptChunk, Meeting, Entity.name)
+    # named only when the speaker is public (high confidence, not mixed)
+    cq = (select(TranscriptChunk, Meeting, MeetingSpeaker.name)
           .join(Meeting, TranscriptChunk.meeting_id == Meeting.id)
-          .outerjoin(Entity, TranscriptChunk.speaker_entity_id == Entity.id)
+          .outerjoin(MeetingSpeaker, public_speaker_join())
           .where(func.lower(TranscriptChunk.text).contains(needle, autoescape=True))
           .order_by(Meeting.meeting_date.desc()).limit(limit))
     for chunk, meeting, speaker in session.execute(_record_filters(cq, body, since_d, until_d)):
@@ -210,10 +220,10 @@ def search_record(session: Session, sources: Sources, query: str, body: str | No
 
     vec = embed_query(query)
     semantic: list[tuple] = []
-    sq = (select(TranscriptChunk, Meeting, Entity.name,
+    sq = (select(TranscriptChunk, Meeting, MeetingSpeaker.name,
                  TranscriptChunk.embedding.cosine_distance(vec).label("d"))
           .join(Meeting, TranscriptChunk.meeting_id == Meeting.id)
-          .outerjoin(Entity, TranscriptChunk.speaker_entity_id == Entity.id)
+          .outerjoin(MeetingSpeaker, public_speaker_join())
           .where(TranscriptChunk.embedding.isnot(None)).order_by("d").limit(limit))
     for chunk, meeting, speaker, d in session.execute(_record_filters(sq, body, since_d, until_d)):
         if float(d) <= SEMANTIC_MAX_DISTANCE:
@@ -269,6 +279,94 @@ def search_documents(session: Session, sources: Sources, query: str,
             text=re.sub(r"\s+", " ", snippet), date=meeting.meeting_date.isoformat(),
             link=doc.source_url, meeting_id=meeting.id))
     return out
+
+
+# ---------------------------------------------------------------- statements
+
+STATEMENT_LIMIT = 8
+STATEMENT_MIN_CHARS = 80  # "Second." and "Aye." are not statements
+
+
+def _statement_query(entity_id: int, meeting_ids=None):
+    q = (select(TranscriptChunk, Meeting)
+         .join(Meeting, TranscriptChunk.meeting_id == Meeting.id)
+         .where(TranscriptChunk.speaker_entity_id == entity_id,
+                func.length(TranscriptChunk.text) >= STATEMENT_MIN_CHARS))
+    if meeting_ids is not None:
+        q = q.where(TranscriptChunk.meeting_id.in_(meeting_ids))
+    return q
+
+
+def member_statements(session: Session, sources: Sources, entity: Entity, topic: str | None = None,
+                      meeting_ids=None, limit: int = STATEMENT_LIMIT) -> list[int]:
+    """Passages this member spoke, from transcripts whose speaker was named
+    with high confidence and linked to the roster (the speaker-naming
+    stage sets speaker_entity_id only then). With a topic: exact-phrase
+    hits first, then the closest in meaning within the search page's
+    distance; without one, the most recent. Limited to meeting_ids when
+    given (the meetings where a matter came up)."""
+    if meeting_ids is not None and not meeting_ids:
+        return []
+    picked: list[tuple] = []
+    if topic:
+        needle = topic.strip().lower()
+        kq = (_statement_query(entity.id, meeting_ids)
+              .where(func.lower(TranscriptChunk.text).contains(needle, autoescape=True))
+              .order_by(Meeting.meeting_date.desc()).limit(limit))
+        picked += list(session.execute(kq))
+        vec = embed_query(topic)
+        sq = (_statement_query(entity.id, meeting_ids)
+              .where(TranscriptChunk.embedding.isnot(None))
+              .add_columns(TranscriptChunk.embedding.cosine_distance(vec).label("d"))
+              .order_by("d").limit(limit))
+        picked += [(c, m) for c, m, d in session.execute(sq) if float(d) <= SEMANTIC_MAX_DISTANCE]
+    else:
+        picked += list(session.execute(_statement_query(entity.id, meeting_ids)
+                                       .order_by(Meeting.meeting_date.desc(),
+                                                 TranscriptChunk.start_seconds).limit(limit)))
+    out, seen = [], set()
+    for chunk, meeting in picked:
+        if chunk.id in seen:
+            continue
+        seen.add(chunk.id)
+        out.append(_add_chunk(sources, chunk, meeting, entity.name, entity.id))
+        if len(out) == limit:
+            break
+    return out
+
+
+def _naming_coverage(session: Session, body: str | None) -> str:
+    """How much of the body's transcript record has its speakers named, so
+    an answer can say when silence means 'not yet named' rather than
+    'never said'."""
+    with_text = (select(TranscriptChunk.meeting_id).distinct().subquery())
+    q_total = select(func.count()).select_from(Meeting).where(Meeting.id.in_(select(with_text.c.meeting_id)))
+    q_named = select(func.count(func.distinct(MeetingSpeaker.meeting_id))).join(
+        Meeting, MeetingSpeaker.meeting_id == Meeting.id)
+    if body:
+        q_total = q_total.where(Meeting.body == body)
+        q_named = q_named.where(Meeting.body == body)
+    total, named = session.scalar(q_total) or 0, session.scalar(q_named) or 0
+    where = f" {_body_label(body)}" if body else ""
+    rule = ("A passage is quoted only where its speaker was named with high confidence, so some "
+            "remarks stay unattributed.")
+    if total and named >= total:
+        return f"Speakers have been named in all {total}{where} meetings with transcripts. {rule}"
+    return (f"Speakers have been named in {named} of {total}{where} meetings with transcripts so far. "
+            f"{rule} Missing remarks may simply not be attributed yet.")
+
+
+def get_statements(session: Session, sources: Sources, name: str,
+                   topic: str | None = None) -> tuple[list[int], str]:
+    person, others = match_member(session, name)
+    if person is None:
+        return [], f"No current or former member matches {name!r}."
+    e = person["entity"]
+    nums = member_statements(session, sources, e, topic or None)
+    header = (f"What {e.name} said" + (f" about {topic!r}" if topic else " most recently") + ". "
+              + _naming_coverage(session, person["body"])
+              + (f" Other people matching {name!r}: {', '.join(others)}." if others else ""))
+    return nums, header
 
 
 # ---------------------------------------------------------------- topics
@@ -453,10 +551,28 @@ def match_member(session: Session, name: str) -> tuple[dict | None, list[str]]:
     scored = sorted(((score(p), p["is_current"], p) for p in people if score(p)),
                     key=lambda t: (-t[0], not t[1], t[2]["entity"].name))
     if not scored:
+        scored = _fallback_by_last_name(people, needle)
+    if not scored:
         return None, []
     best = scored[0]
     others = [p["entity"].name for s, cur, p in scored[1:] if s == best[0]]
     return best[2], others
+
+
+def _fallback_by_last_name(people: list[dict], needle: str) -> list[tuple]:
+    """For a nickname or a misspelt first name ("Tom Peterson", "Kristen
+    Lockhart"): match the last word as the last name; when several people
+    share it, keep those whose first name starts with the same letter."""
+    words = needle.replace(",", " ").split()
+    if not words:
+        return []
+    last = words[-1]
+    hits = [p for p in people if members_router.last_name(p["entity"].name).lower() == last]
+    if len(hits) > 1 and len(words) > 1:
+        initial = [p for p in hits if p["entity"].name.lower().startswith(words[0][0])]
+        hits = initial or hits
+    return sorted(((1, p["is_current"], p) for p in hits),
+                  key=lambda t: (not t[1], t[2]["entity"].name))
 
 
 def _member_term(person: dict) -> dict | None:
@@ -510,7 +626,54 @@ def _member_summary_text(person: dict, d: dict) -> str:
             for m in d["matters"][:8]) + ".")
     if d["record"]["absent_meetings"]:
         lines.append(f"Absent for every roll call at {len(d['record']['absent_meetings'])} meetings.")
+    lines += _tendency_lines(d)
     return "\n".join(lines)
+
+
+# land-use actions: what a Planning Commission recommends on and a Council decides
+_LAND_USE = re.compile(
+    r"rezon|special (exception|use)|\bgdp\b|general development plan|site plan|subdivision|"
+    r"certificate of appropriateness|zoning map|comprehensive plan amendment|"
+    r"recommend (approval|denial)|\bvariance\b", re.I)
+_DENIAL = re.compile(r"\bden(y|ial)\b", re.I)
+
+
+def _against_application(v: dict) -> bool | None:
+    """Did this cast oppose the application? A no on an approval motion, or
+    a yes on a denial motion; None when the cast took no side."""
+    if v["vote"] not in ("yes", "no"):
+        return None
+    denial = bool(_DENIAL.search(v["description"] or ""))
+    return (v["vote"] == "no") != denial
+
+
+def _tendency_lines(d: dict) -> list[str]:
+    """Rates that mean the same thing whichever body the member sits on,
+    so a commissioner and a councilmember can be set side by side: how
+    often they opposed a land-use application, how often they were on the
+    losing side, and how often they missed a roll call. Each carries its
+    count, and the advisory nature of a recommending body is stated."""
+    votes = d["votes"]
+    if not votes:
+        return []
+    out = []
+    land = [v for v in votes if _LAND_USE.search(f"{v['item_title'] or ''} {v['description'] or ''}")]
+    sided = [v for v in land if _against_application(v) is not None]
+    if sided:
+        against = sum(_against_application(v) for v in sided)
+        out.append(f"Land-use applications (rezonings, special exceptions, site plans and the like): "
+                   f"opposed {against} of {len(sided)} roll calls where they took a side"
+                   + (" (as recommendations; the Planning Commission advises and Council decides)"
+                      if d["body"] == "planning_commission" else "") + ".")
+    cast = [v for v in votes if v["vote"] in ("yes", "no")]
+    if cast:
+        losing = sum(v["in_minority"] for v in cast)
+        out.append(f"On the losing side of {losing} of {len(cast)} yes/no votes "
+                   f"({round(100 * losing / len(cast))}%); {sum(v['contested'] for v in votes)} of "
+                   f"{len(votes)} roll calls they sat for had at least one no vote.")
+    absent = sum(v["vote"] == "absent" for v in votes)
+    out.append(f"Absent for {absent} of {len(votes)} roll calls ({round(100 * absent / len(votes))}%).")
+    return out
 
 
 def _add_member_record(sources: Sources, person: dict, d: dict) -> int:
@@ -565,6 +728,123 @@ def get_member(session: Session, sources: Sources, name: str) -> tuple[list[int]
     return out, header, person["entity"].id
 
 
+SHARED_TOPIC_LIMIT = 10
+_INSTRUMENTS = ("ordinance", "resolution")
+
+
+def _acts_by_topic(d: dict) -> dict[str, dict]:
+    """slug -> {name, slug, votes, said} for every topic a member voted on
+    or spoke to, from their member record."""
+    acts: dict[str, dict] = {}
+    for v in d["votes"]:
+        for t in v["topics"]:
+            if t["entity_type"] in _INSTRUMENTS:
+                continue
+            acts.setdefault(t["slug"], {"name": t["name"], "slug": t["slug"], "votes": [], "said": None})["votes"].append(v)
+    for c in d["commentary"]:
+        acts.setdefault(c["topic_slug"], {"name": c["topic_name"], "slug": c["topic_slug"], "votes": [], "said": None})["said"] = c["summary"]
+    return acts
+
+
+def _act_lines(name: str, body: str | None, act: dict | None) -> list[str]:
+    if act is None:
+        return [f"{name}: no recorded vote or remark."]
+    lines = []
+    for v in sorted(act["votes"], key=lambda v: v["date"])[:4]:
+        t = v["tally"]
+        lines.append(f"{name} ({_body_label(v['body'])}, {v['date']}"
+                     + (f", item {v['item_label']}" if v["item_label"] else "") + f"): voted {v['vote']} on "
+                     f"{(v['description'] or v['item_title'] or 'the motion')!r}; "
+                     f"{v['motion_result'] or 'result not recorded'} {t.get('yes', 0)}-{t.get('no', 0)}.")
+    if len(act["votes"]) > 4:
+        lines.append(f"{name}: {len(act['votes']) - 4} more roll calls on this topic.")
+    if act["said"]:
+        lines.append(f"{name}, from the topic's summary of the record: {act['said']}")
+    return lines
+
+
+SHARED_QUOTES = 2  # per member per matter
+
+
+def _matter_quotes(session: Session, sources: Sources, person: dict, act: dict | None,
+                   label: str) -> list[int]:
+    """What this member said about a matter: at the meetings where they
+    voted on it, else anywhere in their identified remarks."""
+    if act is None:
+        return []
+    meetings = {v["meeting_id"] for v in act["votes"]}
+    return member_statements(session, sources, person["entity"], label,
+                             meeting_ids=meetings or None, limit=SHARED_QUOTES)
+
+
+def _shared_topics(session: Session, sources: Sources, a: dict, da: dict,
+                   b: dict, db: dict) -> tuple[list[int], str]:
+    """Members who never cast a vote together can still be compared where
+    the same matter passed through both of them: a land-use case the
+    Planning Commission recommends on and Council then decides, a plan both
+    bodies review. One source per matter (topics naming the same agenda
+    items are merged), each member's votes and stated position in date
+    order; plus the matters only one of them acted on."""
+    acts_a, acts_b = _acts_by_topic(da), _acts_by_topic(db)
+    shared = set(acts_a) & set(acts_b)
+
+    def item_keys(act):
+        return frozenset((v["meeting_id"], v["item_label"]) for v in act["votes"])
+
+    # topics that name overlapping agenda items on both sides are one matter
+    # ("Accessory Dwelling Units" and "Detached Accessory Dwelling Units")
+    merged: list[dict] = []
+    for slug in sorted(shared):
+        ka, kb = item_keys(acts_a[slug]), item_keys(acts_b[slug])
+        home = next((g for g in merged if ka and kb and g["ka"] & ka and g["kb"] & kb), None)
+        if home is None:
+            merged.append({"ka": set(ka), "kb": set(kb), "slugs": [slug]})
+        else:
+            home["ka"] |= ka
+            home["kb"] |= kb
+            home["slugs"].append(slug)
+    groups = {i: g["slugs"] for i, g in enumerate(merged)}
+
+    def rank(slugs):
+        x, y = acts_a[slugs[0]], acts_b[slugs[0]]
+        both_said = bool(x["said"]) and bool(y["said"])
+        both_voted = bool(x["votes"]) and bool(y["votes"])
+        latest = max([v["date"] for v in x["votes"] + y["votes"]] or [""])
+        return (not both_said, not both_voted, -(len(x["votes"]) + len(y["votes"])), latest)
+
+    an, bn = a["entity"].name, b["entity"].name
+    out = []
+    for slugs in sorted(groups.values(), key=rank)[:SHARED_TOPIC_LIMIT]:
+        slugs.sort(key=lambda s_: -(len(acts_a[s_]["votes"]) + len(acts_b[s_]["votes"])))
+        lead = slugs[0]
+        label = " / ".join(acts_a[s_]["name"] for s_ in slugs)
+        quotes_a = _matter_quotes(session, sources, a, acts_a[lead], label)
+        quotes_b = _matter_quotes(session, sources, b, acts_b[lead], label)
+        out += quotes_a + quotes_b
+        lines = [f"Matter: {label}."]
+        lines += _act_lines(an, a["body"], acts_a[lead])
+        if quotes_a:
+            lines.append(f"{an}'s own words on it: sources " + ", ".join(f"[{n}]" for n in quotes_a) + ".")
+        lines += _act_lines(bn, b["body"], acts_b[lead])
+        if quotes_b:
+            lines.append(f"{bn}'s own words on it: sources " + ", ".join(f"[{n}]" for n in quotes_b) + ".")
+        dates = [v["date"] for v in acts_a[lead]["votes"] + acts_b[lead]["votes"]]
+        out.append(sources.add(
+            ("shared", a["entity"].id, b["entity"].id, lead), kind="shared_topic",
+            title=f"{an} and {bn} on {label}", text="\n".join(lines),
+            date=max(dates) if dates else None, link=f"/topics/{lead}"))
+
+    def only(acts, other):
+        rows = sorted((x for k, x in acts.items() if k not in other),
+                      key=lambda x: -(len(x["votes"]) + (2 if x["said"] else 0)))[:8]
+        return ", ".join(f"{x['name']} ({len(x['votes'])} votes{', remarks' if x['said'] else ''})" for x in rows)
+
+    summary = (f"{an} and {bn} both acted on {len(groups)} matter(s) in the indexed record."
+               + (f" Only {an}: {only(acts_a, acts_b)}." if set(acts_a) - shared else "")
+               + (f" Only {bn}: {only(acts_b, acts_a)}." if set(acts_b) - shared else ""))
+    return out, summary
+
+
 def compare_members(session: Session, sources: Sources, names: list[str]) -> tuple[list[int], str]:
     people, notes = [], []
     for name in names[:6]:
@@ -591,8 +871,10 @@ def compare_members(session: Session, sources: Sources, names: list[str]) -> tup
         elif p["body"]:
             notes.append(f"No term or election schedule is on file for the {_body_label(p['body'])}.")
 
-    # head to head: every roll call both cast yes/no on, contested or not
+    # head to head: every roll call both cast yes/no on, contested or not;
+    # members on different bodies are compared on the matters both touched
     lines = []
+    shared_out: list[int] = []
     split_keys: set[tuple] = set()
     for i, a in enumerate(people):
         for b in people[i + 1:]:
@@ -612,19 +894,27 @@ def compare_members(session: Session, sources: Sources, names: list[str]) -> tup
                     if theirs != v["vote"]:
                         split_keys.add((v["meeting_id"], v["item_label"], v["description"]))
             an, bn = a["entity"].name, b["entity"].name
+            db_ = details[b["entity"].id]
+            if a["body"] != b["body"] and db_:
+                nums, summary = _shared_topics(session, sources, a, da, b, db_)
+                shared_out.extend(nums)
+                lines.append(f"{an} sits on the {_body_label(a['body'])} and {bn} on the "
+                             f"{_body_label(b['body'])}, so they are compared on the matters both acted on, "
+                             f"not on shared roll calls. " + summary)
+                if both == 0:
+                    continue
             if both == 0:
-                lines.append(f"{an} and {bn}: no roll calls in common"
-                             + (f" ({an} sits on the {_body_label(a['body'])}, {bn} on the {_body_label(b['body'])})."
-                                if a["body"] != b["body"] else "."))
+                lines.append(f"{an} and {bn}: no roll calls in common.")
             else:
                 lines.append(f"{an} and {bn}: voted the same way on {agree} of {both} shared roll calls; "
                              f"on contested ones, {c_agree} of {c_both}"
                              + (f" ({round(100 * c_agree / c_both)}%)." if c_both else "."))
     if lines:
         out.append(sources.add(("compare", tuple(sorted(p["entity"].id for p in people))), kind="comparison",
-                               title="Head-to-head on shared roll calls (computed from the minutes)",
+                               title="Head-to-head (computed from the minutes and topic records)",
                                text="\n".join(lines), link="/members",
                                date=max((d["record"]["last_vote"] or "" for d in details.values() if d), default=None) or None))
+    out.extend(shared_out)
     first = details[people[0]["entity"].id]
     if first and split_keys:
         for v, m, it in _vote_rows_for(session, first, SPLIT_LIMIT,

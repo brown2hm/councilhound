@@ -158,6 +158,217 @@ def transcribe(limit, clip_id):
                 click.echo(transcribe_pending(session, limit=limit))
 
 
+@cli.command()
+@body_option
+@since_option
+@until_option
+@limit_option
+@click.option("--clip-id", default=None, help="one meeting by Granicus clip_id")
+@click.option("--min-coverage", type=float, default=0.9, show_default=True,
+              help="keep the old transcript if the new one has fewer of its words")
+@click.option("--dry-run", is_flag=True, help="transcribe and report, change nothing")
+def retranscribe(bodies, since, until, limit, clip_id, min_coverage, dry_run):
+    """Re-transcribe already-transcribed meetings with speaker labels, newest
+    first. Resumable; local only (needs Granicus audio + pyannote)."""
+    import tempfile
+    import time
+
+    from councilhound.db.session import get_session, stage_lock
+    from councilhound.extraction.retranscribe import LOG_PATH, candidates, retranscribe_meeting
+
+    def hm(seconds: float) -> str:
+        return f"{int(seconds // 3600)}h{int(seconds % 3600 // 60):02d}m"
+
+    log = logging.getLogger(__name__)
+    with get_session() as session:
+        meetings = candidates(session, bodies=bodies, since=since, until=until,
+                              clip_id=clip_id, limit=limit)
+        audio_left = sum(m.duration_seconds or 0 for m in meetings)
+        click.echo(f"{len(meetings)} meeting(s), {hm(audio_left)} of audio, to re-transcribe; "
+                   f"log: {LOG_PATH}")
+        tally: dict[str, int] = {}
+        failures_in_a_row = 0
+        started, audio_done = time.monotonic(), 0
+        with tempfile.TemporaryDirectory(prefix="retranscribe-") as workdir:
+            for n, meeting in enumerate(meetings, 1):
+                # per meeting, so the overnight routine can interleave
+                with stage_lock("transcribe") as held:
+                    if not held:
+                        _skipped("transcribe")
+                        click.echo("stopping; re-run to resume")
+                        break
+                    label = f"{meeting.meeting_date} {meeting.body} (clip {meeting.granicus_clip_id})"
+                    click.echo(f"[{n}/{len(meetings)}] {label}, {hm(meeting.duration_seconds or 0)} "
+                               f"of audio — started {time.strftime('%H:%M')}")
+                    try:
+                        r = retranscribe_meeting(session, meeting, workdir,
+                                                 min_coverage=min_coverage, dry_run=dry_run)
+                    except Exception as exc:
+                        session.rollback()
+                        log.exception("retranscribe failed for meeting %s", meeting.id)
+                        click.echo(f"{label}: FAILED {exc}")
+                        tally["failed"] = tally.get("failed", 0) + 1
+                        failures_in_a_row += 1
+                        if failures_in_a_row >= 2:
+                            click.echo("two failures in a row; stopping")
+                            break
+                        continue
+                    failures_in_a_row = 0
+                    tally[r["status"]] = tally.get(r["status"], 0) + 1
+                    click.echo(f"{label}: {r['status']} — {r['old_chunks']}→{r['new_chunks']} chunks, "
+                               f"{r['speakers']} speakers, coverage {r['coverage']:.0%}, "
+                               f"loops {r['old_loop_chunks']}→{r['new_loop_chunks']}, {r['seconds']}s")
+                    # ETA from compute time per hour of audio so far
+                    audio_done += meeting.duration_seconds or 0
+                    audio_left -= meeting.duration_seconds or 0
+                    if audio_done:
+                        eta = (time.monotonic() - started) / audio_done * audio_left
+                        click.echo(f"    {n}/{len(meetings)} done; {hm(audio_left)} of audio left, "
+                                   f"about {hm(eta)} to go (≈{time.strftime('%a %H:%M', time.localtime(time.time() + eta))})")
+        click.echo(tally)
+
+
+@cli.command("name-speakers")
+@body_option
+@limit_option
+@click.option("--clip-id", default=None, help="one meeting by Granicus clip_id (re-runs it)")
+def name_speakers(bodies, limit, clip_id):
+    """Name each meeting's diarized speakers from cues in the transcript
+    (one Claude call per meeting). Only high-confidence names are shown."""
+    from sqlalchemy import select
+
+    from councilhound.db.models import Meeting
+    from councilhound.db.session import get_session, stage_lock
+    from councilhound.extraction.speaker_names import name_meeting, name_pending
+
+    with stage_lock("name_speakers") as held:
+        if not held:
+            _skipped("name_speakers")
+            return
+        with get_session() as session:
+            if clip_id:
+                meeting = session.scalar(select(Meeting).where(Meeting.granicus_clip_id == clip_id))
+                if not meeting:
+                    raise click.ClickException(f"no meeting with clip_id={clip_id}")
+                click.echo(name_meeting(session, meeting))
+            else:
+                click.echo(name_pending(session, bodies=bodies, limit=limit))
+
+
+@cli.command("fingerprint-voices")
+@body_option
+@limit_option
+def fingerprint_voices(bodies, limit):
+    """Backfill voice fingerprints for labelled meetings that have none.
+    Local only: fetches Granicus audio and runs pyannote's embedding model."""
+    from councilhound.db.session import get_session, stage_lock
+    from councilhound.extraction.voices import fingerprint_pending
+
+    with stage_lock("transcribe") as held:  # same GPU + audio as transcription
+        if not held:
+            _skipped("transcribe")
+            return
+        with get_session() as session:
+            click.echo(fingerprint_pending(session, bodies=bodies, limit=limit))
+
+
+@cli.command("voice-match")
+@body_option
+@click.option("--clip-id", default=None, help="one meeting by Granicus clip_id")
+@click.option("--disagreements", is_flag=True,
+              help="list transcript names a strong voice match contradicts; change nothing")
+@click.option("--evaluate", is_flag=True,
+              help="leave-one-meeting-out accuracy of the rule on stored fingerprints; change "
+                   "nothing. Run before changing thresholds or enabling a body")
+@click.option("--min-score", type=float, default=None,
+              help="with --evaluate: try a different similarity bar")
+def voice_match_cmd(bodies, clip_id, disagreements, evaluate, min_score):
+    """Name speakers the transcript didn't, by matching voice fingerprints to
+    members' and staff voiceprints. No model calls."""
+    from sqlalchemy import select
+
+    from councilhound.db.models import Meeting
+    from councilhound.db.session import get_session
+    from councilhound.extraction import voice_match as vm
+
+    with get_session() as session:
+        if evaluate:
+            for body in bodies or sorted(vm.VOICE_BODIES):
+                r = vm.evaluate(session, body, min_score if min_score is not None else vm.MIN_SCORE)
+                click.echo(f"{body} (bar {r['min_score']}): {r['meetings']} meetings")
+                click.echo(f"  known speakers held out: {r['known']}; matched {r['matched']}, "
+                           f"correct {r['correct']}, wrong {len(r['wrong'])}")
+                for w in r["wrong"]:
+                    click.echo(f"    WRONG {w}")
+                click.echo(f"  named outsiders: {r['outsiders']}; matched to a voiceprint: "
+                           f"{r['outsider_same_person']} same person (spelling), "
+                           f"{len(r['outsider_different'])} different")
+                for o in r["outsider_different"]:
+                    click.echo(f"    CHECK {o}")
+                click.echo(f"  voice-named (now or on the next run): {r['would_name']}")
+            session.rollback()
+            return
+        if disagreements:
+            for body in bodies or sorted(vm.VOICE_BODIES):
+                for d in vm.disagreements(session, body):
+                    click.echo(d)
+            return
+        if clip_id:
+            meeting = session.scalar(select(Meeting).where(Meeting.granicus_clip_id == clip_id))
+            if not meeting:
+                raise click.ClickException(f"no meeting with clip_id={clip_id}")
+            click.echo(vm.match_meeting(session, meeting))
+        else:
+            click.echo(vm.match_pending(session, bodies=bodies))
+
+
+@cli.command("mark-students")
+def mark_students_cmd():
+    """Re-check every named meeting for speakers who are students (shown as
+    "Student", never named). No LLM calls; safe to re-run."""
+    from sqlalchemy import select
+
+    from councilhound.db.models import MeetingSpeaker
+    from councilhound.db.session import get_session
+    from councilhound.extraction.speaker_names import link_chunks, mark_students
+
+    with get_session() as session:
+        total = 0
+        for meeting_id in session.scalars(select(MeetingSpeaker.meeting_id).distinct()).all():
+            n = mark_students(session, meeting_id)
+            if n:
+                link_chunks(session, meeting_id)
+            total += n
+        session.commit()
+        click.echo(f"{total} speaker(s) marked as students")
+
+
+@cli.command("set-speaker")
+@click.argument("clip_id")
+@click.argument("label")
+@click.option("--name", default=None, help="name as spoken (omit with --slug to use the entity name)")
+@click.option("--slug", default=None, help="link to a person entity by canonical slug")
+@click.option("--role", default="other", show_default=True)
+@click.option("--unnamed", is_flag=True, help="mark the label deliberately unnamed")
+def set_speaker_cmd(clip_id, label, name, slug, role, unnamed):
+    """Correct one speaker by hand, e.g. set-speaker 4655 SPEAKER_03 --name "Melanie Shinneberry"
+    --role clerk. Hand corrections are public and survive re-runs."""
+    from sqlalchemy import select
+
+    from councilhound.db.models import Meeting
+    from councilhound.db.session import get_session
+    from councilhound.extraction.speaker_names import set_speaker
+
+    if not (name or slug or unnamed):
+        raise click.UsageError("give --name, --slug or --unnamed")
+    with get_session() as session:
+        meeting = session.scalar(select(Meeting).where(Meeting.granicus_clip_id == clip_id))
+        if not meeting:
+            raise click.ClickException(f"no meeting with clip_id={clip_id}")
+        row = set_speaker(session, meeting, label, None if unnamed else name, slug=slug, role=role)
+        click.echo(f"{label} -> {row.name or '(unnamed)'} [{row.role}]")
+
+
 @cli.command("seed-entities")
 def seed_entities():
     """Phase 3 setup: seed person entities + aliases from agenda headers."""
@@ -367,6 +578,8 @@ def daily(days):
     from councilhound.embeddings.embed import embed_pending
     from councilhound.extraction.entity_profile import profile_pending
     from councilhound.extraction.llm_structure import structure_pending
+    from councilhound.extraction.speaker_names import name_pending
+    from councilhound.extraction.voice_match import match_pending
     from councilhound.extraction.pdf_text import extract_pending
     from councilhound.extraction.transcript import transcribe_pending
     from councilhound.seed import seed_people
@@ -387,6 +600,8 @@ def daily(days):
         click.echo(f"extract-text: {extract_pending(session)}")
         _run_stage("transcribe", "transcribe:", lambda: transcribe_pending(session))
         _run_stage("structure", "structure:", lambda: structure_pending(session))
+        _run_stage("name_speakers", "speakers:", lambda: name_pending(session, since=since))
+        _run_stage("voice_match", "voices:", lambda: match_pending(session, since=since))
         click.echo(f"index-points: {pipeline.link_index_points_pending(session)}")
         click.echo(f"seed:         {seed_people(session)}")
         from councilhound.dedupe import dedupe_pass
@@ -422,6 +637,8 @@ def catchup(days):
     from councilhound.db.session import get_session, stage_lock
     from councilhound.embeddings.embed import embed_pending
     from councilhound.extraction.llm_structure import structure_pending
+    from councilhound.extraction.speaker_names import name_pending
+    from councilhound.extraction.voice_match import match_pending
     from councilhound.extraction.pdf_text import extract_pending
     from councilhound.seed import seed_people
 
@@ -440,6 +657,8 @@ def catchup(days):
                 click.echo(f"projects:     {pipeline.sync_projects(session)}")
         click.echo(f"extract-text: {extract_pending(session)}")
         _run_stage("structure", "structure:", lambda: structure_pending(session))
+        _run_stage("name_speakers", "speakers:", lambda: name_pending(session, since=since))
+        _run_stage("voice_match", "voices:", lambda: match_pending(session, since=since))
         click.echo(f"index-points: {pipeline.link_index_points_pending(session)}")
         click.echo(f"seed:         {seed_people(session)}")
         _run_stage("embed", "embed:", lambda: embed_pending(session))
