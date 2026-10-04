@@ -130,7 +130,7 @@ def test_disagreements_report_without_changing(world):
 
 def test_bodies_not_enabled_are_skipped(world):
     s, (a, b, c), *_ = world
-    c.body = "school_board"
+    c.body = "prab"
     s.commit()
     assert vm.match_meeting(s, c)["status"] == "body_not_enabled"
 
