@@ -101,6 +101,11 @@ say when their appointment expires instead.
 - Wiki pages marked unverified or stale, and impact analyses (modelled \
 estimates), are secondary to the meeting record; say so when you lean on \
 them.
+- Follow-ups: earlier turns of the conversation come first, with their \
+citation markers removed. Read a follow-up in their light (who "she" is, \
+which project "it" means), but earlier answers are not sources: anything \
+you state again must cite a source shown in this turn, so look it up again \
+when the opening search doesn't cover it.
 - Format as Markdown (the page renders it): open with a one-sentence \
 answer, then short paragraphs, **bold** for key outcomes, bullet lists or \
 a small table where they help comparison. No headings unless the answer \
@@ -167,8 +172,18 @@ TOOLS = [
 _TOOL_NAMES = {t["name"] for t in TOOLS}
 
 
+MAX_HISTORY_TURNS = 4
+
+
+class AskTurn(BaseModel):
+    question: str = Field(min_length=1, max_length=500)
+    answer: str = Field(max_length=8000)
+
+
 class AskRequest(BaseModel):
     question: str = Field(min_length=3, max_length=500)
+    # earlier turns, oldest first, so a follow-up can lean on them
+    history: list[AskTurn] = Field(default_factory=list, max_length=MAX_HISTORY_TURNS)
 
 
 # ---------------------------------------------------------------- tools
@@ -230,10 +245,14 @@ def _coverage(session: Session) -> str:
     return f"The indexed record covers meetings from {first.isoformat()} to {last.isoformat()}."
 
 
-def _opening(session: Session, sources: ask_tools.Sources, question: str) -> str:
+def _opening(session: Session, sources: ask_tools.Sources, question: str,
+             previous: str | None = None) -> str:
     today = ask_tools._today()
-    linked = ask_tools.link_question(session, question)
-    nums = ask_tools.search_record(session, sources, question, limit=FIRST_SEARCH_LIMIT)
+    # a follow-up ("how did she vote on it?") names little by itself, so the
+    # opening lookups read it together with the question before it
+    query = f"{previous} {question}" if previous else question
+    linked = ask_tools.link_question(session, query)
+    nums = ask_tools.search_record(session, sources, query, limit=FIRST_SEARCH_LIMIT)
     lines = [f"Today is {today.isoformat()}. {_coverage(session)}"]
     if linked["topics"]:
         lines.append("Tracked topics the question names: " + "; ".join(linked["topics"]) + ".")
@@ -267,10 +286,28 @@ def _create(client, messages: list, final: bool):
     )
 
 
-def run_ask(session: Session, question: str, on_step=None) -> dict:
+_MARKER = re.compile(r"\s?\[\d+(?:\s*,\s*\d+)*\]")
+
+
+def _history_messages(history) -> list[dict]:
+    """Earlier turns as plain conversation. Their [n] markers point into
+    registries that no longer exist, so they are dropped: every turn's
+    citations come only from the sources shown in that turn."""
+    messages = []
+    for turn in history[-MAX_HISTORY_TURNS:]:
+        answer = _MARKER.sub("", turn.answer).strip()
+        if turn.question.strip() and answer:
+            messages += [{"role": "user", "content": turn.question.strip()},
+                         {"role": "assistant", "content": answer}]
+    return messages
+
+
+def run_ask(session: Session, question: str, on_step=None, history=()) -> dict:
     step = on_step or (lambda label: None)
     sources = ask_tools.Sources()
-    messages = [{"role": "user", "content": _opening(session, sources, question)}]
+    messages = _history_messages(history)
+    previous = messages[-2]["content"] if messages else None
+    messages.append({"role": "user", "content": _opening(session, sources, question, previous)})
     client = _client()
     answer = ""
     for round_no in range(MAX_TOOL_ROUNDS + 1):
@@ -330,7 +367,7 @@ def _package(session: Session, answer: str, sources: ask_tools.Sources) -> dict:
 
 @router.post("/", dependencies=[Depends(check_ask_rate)])
 def ask(req: AskRequest, session: Session = Depends(db_session)):
-    return run_ask(session, req.question)
+    return run_ask(session, req.question, history=req.history)
 
 
 @router.post("/stream", dependencies=[Depends(check_ask_rate)])
@@ -343,7 +380,7 @@ def ask_stream(req: AskRequest):
     def work():
         session = get_session()
         try:
-            result = run_ask(session, req.question,
+            result = run_ask(session, req.question, history=req.history,
                              on_step=lambda label: events.put({"type": "step", "label": label}))
             events.put({"type": "answer", **result})
         except Exception:
