@@ -255,6 +255,27 @@ def name_speakers(bodies, limit, clip_id):
                 click.echo(name_pending(session, bodies=bodies, limit=limit))
 
 
+@cli.command("mark-students")
+def mark_students_cmd():
+    """Re-check every named meeting for speakers who are students (shown as
+    "Student", never named). No LLM calls; safe to re-run."""
+    from sqlalchemy import select
+
+    from councilhound.db.models import MeetingSpeaker
+    from councilhound.db.session import get_session
+    from councilhound.extraction.speaker_names import link_chunks, mark_students
+
+    with get_session() as session:
+        total = 0
+        for meeting_id in session.scalars(select(MeetingSpeaker.meeting_id).distinct()).all():
+            n = mark_students(session, meeting_id)
+            if n:
+                link_chunks(session, meeting_id)
+            total += n
+        session.commit()
+        click.echo(f"{total} speaker(s) marked as students")
+
+
 @cli.command("set-speaker")
 @click.argument("clip_id")
 @click.argument("label")

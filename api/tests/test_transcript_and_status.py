@@ -169,3 +169,16 @@ def test_transcript_names_only_high_confidence_unmixed_speakers(client, db):
     assert segs["SPEAKER_25"]["speaker_name"] is None  # medium stays anonymous
     assert segs["SPEAKER_19"]["speaker_name"] is None  # mixed stays anonymous
     assert segs["SPEAKER_05"]["speaker_name"] is None  # never named
+
+
+def test_transcript_identifies_students_without_naming_them(client, db):
+    m = _meeting(db)
+    db.add_all([
+        TranscriptChunk(meeting_id=m.id, start_seconds=0, end_seconds=5,
+                        text="I'm Veronica, a junior at Fairfax High.", speaker_label="SPEAKER_01"),
+        MeetingSpeaker(meeting_id=m.id, speaker_label="SPEAKER_01", name="Veronica",
+                       role="student", confidence="high", mixed=False),
+    ])
+    db.commit()
+    seg = client.get(f"/meetings/{m.id}/transcript").json()["segments"][0]
+    assert (seg["speaker_name"], seg["speaker_role"], seg["speaker_slug"]) == (None, "student", None)
