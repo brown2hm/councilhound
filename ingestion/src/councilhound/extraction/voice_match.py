@@ -17,7 +17,13 @@ short labels where every miss happened:
   >= MIN_SPEECH seconds of fingerprinted speech, voiceprint from
   >= MIN_PRINT_MEETINGS other meetings.
 
-Only bodies in VOICE_BODIES are matched until each is evaluated. Voice never
+Re-checked on all stored production fingerprints (Oct 4 2026, 129 meetings):
+the only genuine false matches were an outside engineer scoring 0.75
+against a Planning Commissioner and a mixed staff/commissioner label at
+0.76, so MIN_SCORE was raised from 0.65 to 0.80; correct matches cluster at
+0.85-0.97. Other apparent errors were duplicate person entities (merged).
+All three recorded bodies are enabled; add a body only after
+re-running that evaluation on it. Voice never
 overrides a transcript-public name, a hand correction, a student or a mixed
 label. Where a transcript-public member and a strong voice match disagree,
 `disagreements()` reports it for review and changes nothing.
@@ -33,12 +39,12 @@ from councilhound.extraction.speaker_names import is_public, link_chunks
 
 log = logging.getLogger(__name__)
 
-MIN_SCORE = 0.65
+MIN_SCORE = 0.80
 MIN_MARGIN = 0.25
 MIN_SPEECH = 20.0
 MIN_PRINT_MEETINGS = 2
 DISAGREE_SCORE = 0.75
-VOICE_BODIES = {"city_council"}
+VOICE_BODIES = {"city_council", "school_board", "planning_commission"}
 
 
 class Voiceprints:

@@ -339,3 +339,21 @@ def test_purge_entity_removes_it_with_its_rows_and_clears_speaker_links(db_sessi
     assert db_session.scalar(select(func.count(EntityMention.id))) == 0
     assert db_session.scalar(select(TranscriptChunk.speaker_entity_id)) is None
     assert db_session.get(Entity, park.id) is not None
+
+
+def test_merge_moves_named_speakers(db_session):
+    from councilhound.db.models import MeetingSpeaker
+    from councilhound.dedupe import merge_entities
+    s = db_session
+    m = _meeting(s, 3)
+    a = Entity(entity_type="person", name="Eric Foreman", canonical_slug="eric-foreman")
+    b = Entity(entity_type="person", name="Eric Forman", canonical_slug="eric-forman")
+    s.add_all([a, b])
+    s.flush()
+    s.add(MeetingSpeaker(meeting_id=m.id, speaker_label="SPEAKER_03", name="Eric Foreman",
+                         entity_id=a.id, role="staff", confidence="high", mixed=False, source="model"))
+    s.commit()
+    moved = merge_entities(s, "eric-foreman", "eric-forman")
+    s.commit()
+    assert moved["speakers"] == 1
+    assert s.scalar(select(MeetingSpeaker.entity_id)) == b.id
