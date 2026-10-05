@@ -65,11 +65,16 @@ CONTESTS = {
 # the office, in a sentence ("running for City Council")
 CONTEST_NAME = {"mayor": "Mayor", "city_council": "City Council", "school_board": "School Board"}
 
+# when every not_found list was last swept (the daily update routine bumps
+# it); each source keeps its own date, the day its facts were verified
 CHECKED = _D(2026, 10, 5)
+# the day the first set of sources was verified page by page
+_FIRST_VERIFIED = _D(2026, 10, 5)
 
 
 def _s(url: str, publisher: str, kind: str, title: str, *facts: str,
-       published: datetime.date | None = None, checked: datetime.date = CHECKED) -> CandidateSource:
+       published: datetime.date | None = None,
+       checked: datetime.date = _FIRST_VERIFIED) -> CandidateSource:
     return CandidateSource(url, publisher, kind, title, checked, facts, published)
 
 
