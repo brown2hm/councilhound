@@ -6,7 +6,6 @@ resource: https://councilhound.net/topics/inova-site-demolition
 generated:
   by: process:councilhound-okf
   at: '2025-05-12T00:00:00Z'
-timestamp: '2025-05-12'
 stale_after: '2026-09-28T23:00:00Z'
 ---
 

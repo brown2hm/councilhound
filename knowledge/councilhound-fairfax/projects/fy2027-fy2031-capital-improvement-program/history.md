@@ -7,7 +7,6 @@ resource: https://councilhound.net/topics/fy2027-fy2031-capital-improvement-prog
 generated:
   by: process:councilhound-okf
   at: '2026-05-05T00:00:00Z'
-timestamp: '2026-05-05'
 stale_after: '2026-09-22T23:00:00Z'
 ---
 

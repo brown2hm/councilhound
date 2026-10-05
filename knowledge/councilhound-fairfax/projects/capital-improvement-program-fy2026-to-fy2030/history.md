@@ -7,7 +7,6 @@ resource: https://councilhound.net/topics/capital-improvement-program-fy2026-to-
 generated:
   by: process:councilhound-okf
   at: '2025-05-06T00:00:00Z'
-timestamp: '2025-05-06'
 stale_after: '2026-09-22T23:00:00Z'
 ---
 

@@ -192,8 +192,10 @@ actor convention (`process:councilhound-okf` for the deterministic pipeline,
 `councilhound-curator/<model>` for the LLM curator) and the ISO 8601 instant
 of the last meaningful change — the meeting date a page is current through,
 so re-running the pipeline on unchanged data stays a no-op. The v0.1
-`timestamp` is written alongside for one release while readers move to
-`generated.at`. Because v0.2 reserves `status` for lifecycle
+`timestamp` key is retired: nothing writes it, `okf-refresh` strips it from
+older pages, and lint flags any that still carry it (the API still falls
+back to it for a page pushed before the migration, as §13.1 allows).
+Because v0.2 reserves `status` for lifecycle
 (draft/stable/deprecated), the city's project status lives under
 `project_status`. `okf-refresh` migrates pages written under v0.1 in place.
 Two more v0.2 signals drive the badges on the wiki tab: `stale_after` is

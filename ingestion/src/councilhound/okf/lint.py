@@ -56,6 +56,9 @@ def _trust_problems(rel: str, fm: dict) -> list[str]:
     elif not is_iso_datetime(gen.get("at")):
         problems.append(f"{rel}: `generated.at` is not an ISO 8601 datetime "
                         "with an explicit offset")
+    if gen is not None and "timestamp" in fm:
+        problems.append(f"{rel}: retired v0.1 `timestamp` key alongside "
+                        "`generated` (okf-refresh removes it)")
     raw_verified = fm.get("verified")
     if raw_verified is not None:
         events = raw_verified if isinstance(raw_verified, list) else [raw_verified]

@@ -88,16 +88,17 @@ def _sync_keys(fm: dict, fresh: dict, keys: set[str]) -> None:
 
 def _write_tracked(bundle_dir: str, rel: str, fm: dict, body: str) -> bool:
     """Write the page, but report a change only when something other than
-    `stale_after` moved. The staleness horizon advances every time a meeting
-    passes; that alone earns neither a log line per project nor a place in
-    the refresh count, though the file is still written for the commit."""
+    `stale_after` (or the retired `timestamp`) moved. The staleness horizon
+    advances every time a meeting passes, and the legacy key leaves every
+    page once; neither earns a log line per project or a place in the
+    refresh count, though the file is still written for the commit."""
     existing = read_page(os.path.join(bundle_dir, rel))
     wrote = write_page(bundle_dir, rel, fm, body)
     if not wrote or existing is None or existing[0] is None:
         return wrote
 
     def material(d: dict) -> dict:
-        return {k: v for k, v in d.items() if k != "stale_after"}
+        return {k: v for k, v in d.items() if k not in ("stale_after", "timestamp")}
     return (existing[1].strip() != body.strip()
             or material(existing[0]) != material(fm))
 # the curator's log line, from which a page written before `generated`
@@ -106,13 +107,11 @@ _CURATOR_LOG_RE = re.compile(r"\(curator: ([^,)]+),")
 
 
 def _stamp_fields(by: str, at) -> dict:
-    """`generated` (v0.2 §5.2) plus the v0.1 `timestamp` it superseded. The
-    legacy key stays for one release so an API still reading it keeps its
-    dates while the bundle rolls forward; readers prefer `generated.at`."""
+    """`generated` (v0.2 §5.2). The v0.1 `timestamp` it superseded is no
+    longer written; refresh strips it from pages that still carry it."""
     if at in (None, ""):
         return {}
-    gen = generated(by, at)
-    return {"generated": gen, "timestamp": gen["at"][:10]}
+    return {"generated": generated(by, at)}
 
 
 def _legacy_actor(bundle_dir: str, slug: str) -> str:
@@ -129,12 +128,15 @@ def _legacy_actor(bundle_dir: str, slug: str) -> str:
 
 def _migrate_frontmatter(fm: dict, legacy_by: str) -> bool:
     """Bring a page written under v0.1 up to v0.2 in place: `timestamp`
-    gains a `generated` sibling, and a city project status squatting on the
-    reserved lifecycle `status` key moves to `project_status`. Idempotent;
-    returns whether anything changed."""
+    becomes `generated` (and is dropped once it has), and a city project
+    status squatting on the reserved lifecycle `status` key moves to
+    `project_status`. Idempotent; returns whether anything changed."""
     changed = False
     if "generated" not in fm and generated_at(fm):
         fm["generated"] = generated(legacy_by, generated_at(fm))
+        changed = True
+    if "timestamp" in fm and "generated" in fm:
+        del fm["timestamp"]
         changed = True
     status = fm.get("status")
     if status is not None and status not in LIFECYCLE_STATUSES:
@@ -694,7 +696,7 @@ def _write_documents(bundle_dir: str, entity: Entity, ctx: dict) -> bool:
         # still gets its `generated` (dated by that stamp, not today)
         fm = dict(existing[0] or {})
         if _migrate_frontmatter(fm, PIPELINE_ACTOR):
-            return write_page(bundle_dir, rel, fm, existing[1])
+            return _write_tracked(bundle_dir, rel, fm, existing[1])
         return False
     n = len(ctx["city"].documents or [])
     return write_page(bundle_dir, rel, {
@@ -748,7 +750,7 @@ def _migrate_stranded_pages(bundle_dir: str, entity: Entity) -> bool:
             continue
         fm, body = parsed
         if _migrate_frontmatter(fm, PIPELINE_ACTOR):
-            changed = write_page(bundle_dir, rel, fm, body) or changed
+            changed = _write_tracked(bundle_dir, rel, fm, body) or changed
     return changed
 
 
