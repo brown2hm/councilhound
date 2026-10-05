@@ -133,3 +133,62 @@ def test_seed_people_seeds_both_county_bodies(db_session, monkeypatch):
     assert "Chairman McKay" in aliases("Jeffrey McKay")
     people = db_session.query(Entity).filter_by(entity_type="person").count()
     assert people == 4 + 12  # the four Board members the agenda names, the full Commission
+
+
+def county_pc():
+    cfg = JurisdictionConfig.load("fairfax_county_va")
+    return Registry.from_config(cfg).bodies["planning_commission"]
+
+
+def test_hunter_mill_seat_is_paul_d_thomas():
+    names = {m.name: m.district for m in county_pc().roster.static}
+    assert names["Paul D. Thomas"] == "Hunter Mill" and names["James Thomas"] == "Springfield"
+    assert "John A. Carter" not in names and len(names) == 12
+
+
+def test_two_thomases_get_no_surname_alias(db_session):
+    from sqlalchemy import select
+
+    from councilhound.db.models import Entity, EntityAlias
+    from councilhound.seed import _seed_person, drop_ambiguous_surname_aliases, shared_surnames
+
+    body = county_pc()
+    assert shared_surnames(body) == {"thomas"}
+    titles = body.seed_titles("commissioner")
+    # James was seeded before the shared surname existed: he holds the aliases
+    _seed_person(db_session, "James Thomas", titles, None, ("Springfield District Commissioner",))
+    # Paul is seeded with the rule in force
+    _seed_person(db_session, "Paul D. Thomas", titles, None, ("Hunter Mill District Commissioner",),
+                 skip_surnames=shared_surnames(body))
+    db_session.commit()
+    assert drop_ambiguous_surname_aliases(db_session, body) == 2  # "Thomas", "Commissioner Thomas"
+    db_session.commit()
+
+    def aliases(name):
+        e = db_session.scalar(select(Entity).where(Entity.name == name))
+        return {a.alias for a in db_session.scalars(select(EntityAlias).where(EntityAlias.entity_id == e.id))}
+
+    james, paul = aliases("James Thomas"), aliases("Paul Thomas")
+    assert "Springfield District Commissioner" in james and "Hunter Mill District Commissioner" in paul
+    assert not {"Thomas", "Commissioner Thomas"} & (james | paul)
+    # nobody answers to the ambiguous forms
+    assert db_session.scalar(select(EntityAlias).where(EntityAlias.alias.in_(["Thomas", "Commissioner Thomas"]))) is None
+
+
+def test_district_alias_follows_the_seat(db_session):
+    from sqlalchemy import select
+
+    from councilhound.db.models import Entity, EntityAlias
+    from councilhound.seed import _seed_person, move_district_aliases
+
+    body = county_pc()
+    titles = body.seed_titles("commissioner")
+    # the seat's previous holder was seeded with its alias
+    _seed_person(db_session, "John A. Carter", titles, None, ("Hunter Mill District Commissioner",))
+    _seed_person(db_session, "Paul D. Thomas", titles, None, ("Hunter Mill District Commissioner",))
+    db_session.commit()
+    move_district_aliases(db_session, body)
+    db_session.commit()
+    row = db_session.scalar(select(EntityAlias).where(EntityAlias.alias == "Hunter Mill District Commissioner"))
+    assert db_session.get(Entity, row.entity_id).name == "Paul Thomas"
+    assert move_district_aliases(db_session, body) == 0  # settled

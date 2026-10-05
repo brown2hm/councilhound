@@ -27,6 +27,7 @@ Ambiguous aliases (shared last names) are skipped by add_alias.
 """
 import logging
 import re
+from collections import Counter
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -158,14 +159,80 @@ def surname_forms(name: str) -> list[str]:
     return forms
 
 
+def shared_surnames(body: Body) -> set[str]:
+    """Surnames (lowercased) that two or more of a body's pinned roster
+    members share, like the County Planning Commission's two Thomases. "Commissioner
+    Thomas" could be either, so neither gets it; their full names and
+    district aliases still tell them apart."""
+    if not body.roster:
+        return set()
+    counts = Counter(f.lower() for m in body.roster.static for f in surname_forms(m.name))
+    return {surname for surname, n in counts.items() if n > 1}
+
+
+def drop_ambiguous_surname_aliases(session: Session, body: Body) -> int:
+    """Remove surname aliases ("Thomas", "Commissioner Thomas") already
+    seeded for roster members whose surname is now shared; the first
+    member seeded would otherwise keep answering to both."""
+    from councilhound.db.models import EntityAlias
+
+    removed = 0
+    titles = {t for role in (body.roster.roles.values() if body.roster else ()) for t in role.aliases}
+    for surname in shared_surnames(body):
+        forms = {surname} | {f"{t} {surname}".lower() for t in titles}
+        for m in body.roster.static:
+            if surname not in {f.lower() for f in surname_forms(m.name)}:
+                continue
+            entity = resolve_entity(session, "person", m.name, create=False)
+            if entity is None:
+                continue
+            for row in session.scalars(select(EntityAlias).where(
+                    EntityAlias.entity_id == entity.id, func.lower(EntityAlias.alias).in_(forms))):
+                session.delete(row)
+                removed += 1
+    if removed:
+        session.flush()
+    return removed
+
+
+def move_district_aliases(session: Session, body: Body) -> int:
+    """A district alias ("Hunter Mill District Commissioner") names a seat,
+    so it follows the seat's current holder in the pinned roster: when a
+    seat turns over (Carter -> Paul D. Thomas, August 2026) the alias moves
+    to the new member. Mentions already extracted keep their entity."""
+    from councilhound.db.models import EntityAlias
+
+    if not body.roster:
+        return 0
+    moved = 0
+    noun = body.roster.district_title
+    for m in body.roster.static:
+        alias = district_alias(m.district, noun)
+        holder = resolve_entity(session, "person", m.name, create=False) if alias else None
+        if holder is None:
+            continue
+        row = session.scalar(select(EntityAlias).where(func.lower(EntityAlias.alias) == alias.lower()))
+        if row is None:
+            session.add(EntityAlias(entity_id=holder.id, alias=alias))
+            moved += 1
+        elif row.entity_id != holder.id:
+            row.entity_id = holder.id
+            moved += 1
+    if moved:
+        session.flush()
+    return moved
+
+
 def _seed_person(session: Session, name: str, title_aliases: list[str], meeting_id: int,
-                 extra_aliases: tuple[str, ...] = ()) -> None:
+                 extra_aliases: tuple[str, ...] = (), skip_surnames: set[str] = frozenset()) -> None:
     if not name or not _looks_like_name(name):
         return
     entity = resolve_entity(session, "person", name, first_seen_meeting_id=meeting_id)
     if entity is None:
         return
     for last in surname_forms(name):
+        if last.lower() in skip_surnames:
+            continue  # shared with another member of the body: ambiguous
         add_alias(session, entity, last)
         for title in title_aliases:
             add_alias(session, entity, f"{title} {last}")
@@ -284,13 +351,18 @@ def seed_people(session: Session) -> dict:
         if body is None or body.roster is None:
             continue
         districts = {m.name: m.district for m in body.roster.static if m.district}
+        shared = shared_surnames(body)
         for role_key, names in parse_roster(doc.raw_text, body).items():
             titles = body.seed_titles(role_key)
             for name in names:
                 alias = district_alias(districts.get(name), body.roster.district_title
                                        or (titles[0] if titles else None))
-                _seed_person(session, name, titles, meeting.id, (alias,) if alias else ())
+                _seed_person(session, name, titles, meeting.id, (alias,) if alias else (),
+                             skip_surnames=shared)
                 seen_names.add(name)
+    for body in REGISTRY.bodies.values():
+        drop_ambiguous_surname_aliases(session, body)
+        move_district_aliases(session, body)
     session.commit()
 
     from councilhound.db.models import Entity, EntityAlias
