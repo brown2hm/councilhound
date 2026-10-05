@@ -1,8 +1,10 @@
 """
 Phase 2: transcription of meeting audio into transcript_chunks.
 
-No captions exist on any Fairfax Granicus clip (verified 2026-07-11), so the
-MP3 downloaded by fetch_media is transcribed locally. Two backends, chosen
+When the Granicus tenant publishes real captions (the County does; the
+City's caption endpoint 404s, verified 2026-07-11), fetch_media saves the
+VTT and this stage parses it instead of running whisper. Otherwise the audio
+fetch_media downloaded is transcribed locally. Two backends, chosen
 automatically:
 
   1. mlx-whisper  — Apple Silicon GPU (Metal); ~5-10x faster than CPU.
@@ -178,6 +180,18 @@ def merge_segments(segments: list[dict], target_chars: int = TARGET_CHUNK_CHARS)
     return chunks
 
 
+def caption_audio_path(captions_path: str) -> str:
+    """Where a caption meeting's audio track is kept when it is fetched for
+    diarization: next to the captions, as the MP4 extract names it."""
+    return os.path.join(os.path.dirname(captions_path), "audio.m4a")
+
+
+def captions_have_speakers(captions_path: str) -> bool:
+    from councilhound.extraction.captions import parse_vtt
+    with open(captions_path, encoding="utf-8", errors="replace") as f:
+        return any(c["speaker"] for c in parse_vtt(f.read()))
+
+
 def transcribe_meeting(session: Session, meeting: Meeting, force: bool = False) -> int:
     """Transcribe one meeting's audio into transcript_chunks. Skips meetings
     that already have chunks unless force=True. Returns chunk count."""
@@ -194,9 +208,30 @@ def transcribe_meeting(session: Session, meeting: Meeting, force: bool = False) 
         )
 
     started = time.monotonic()
-    segments = transcribe_audio(meeting.audio_local_path)
-    turns = diarize(meeting.audio_local_path)
-    chunks = merge_segments(assign_speakers(segments, turns))
+    voice_audio = meeting.audio_local_path  # what the voices are fingerprinted from
+    if meeting.audio_local_path.lower().endswith(".vtt"):
+        # captions (the County's): the captioner's '>>' marks give speaker
+        # turns; captions without them get their speakers from the meeting's
+        # audio when it was fetched alongside (caption_diarize_bodies)
+        from councilhound.extraction.captions import parse_vtt
+        with open(meeting.audio_local_path, encoding="utf-8", errors="replace") as f:
+            segments = parse_vtt(f.read())
+        if not segments:
+            raise ValueError(f"meeting {meeting.id}: captions file has no cues")
+        turns = []
+        voice_audio = caption_audio_path(meeting.audio_local_path)
+        if not any(seg["speaker"] for seg in segments) and os.path.exists(voice_audio):
+            turns = diarize(voice_audio)
+            segments = assign_speakers(segments, turns)  # cues carry no word timing: whole cues
+        chunks = merge_segments(segments)
+    else:
+        segments = transcribe_audio(meeting.audio_local_path)
+        turns = diarize(meeting.audio_local_path)
+        chunks = merge_segments(assign_speakers(segments, turns))
+    if meeting.duration_seconds is None and chunks:
+        # archives without a Duration column (the County's) learn the
+        # meeting length from its transcript
+        meeting.duration_seconds = int(chunks[-1]["end"])
 
     if force and existing:
         for row in session.scalars(
@@ -217,7 +252,7 @@ def transcribe_meeting(session: Session, meeting: Meeting, force: bool = False) 
     if turns:  # labels exist: fingerprint them while the audio is here
         try:
             from councilhound.extraction.voices import fingerprint_meeting
-            fingerprint_meeting(session, meeting, meeting.audio_local_path)
+            fingerprint_meeting(session, meeting, voice_audio)
         except Exception:
             session.rollback()
             log.warning("voice fingerprinting failed for meeting %s; `fingerprint-voices` "

@@ -31,6 +31,7 @@ from sqlalchemy import and_, delete, exists, or_, select, update
 from sqlalchemy.orm import Session
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
+from councilhound.bodies import REGISTRY
 from councilhound.config import ANTHROPIC_API_KEY
 from councilhound.db.models import (
     AgendaItem,
@@ -62,18 +63,72 @@ _STUDENT = re.compile(  # a self-description, in the label's own turns or cue
 # "our student representative" is said BY the chair introducing them, so it
 # only marks the label whose cue quote it is, never one whose own turns say it
 _STUDENT_INTRO = re.compile(r"\bstudent (representative|rep|member)\b", re.I)
-_TITLE = re.compile(r"^(mayor|council ?(member|woman|man)|commissioner|chair|vice[- ]chair|"
-                    r"school board|board member|trustee|superintendent)\b", re.I)
-# titles that mark someone as a member of a given body — the roster for a
-# meeting with no recorded votes yet (a Planning Commission meeting before
-# its minutes) comes from these
-BODY_TITLES = {
-    "city_council": re.compile(r"^(mayor|council ?(member|woman|man))\b", re.I),
-    "planning_commission": re.compile(r"^commissioner\b", re.I),
-    "school_board": re.compile(r"^school board (member|chair|vice[- ]chair)\b", re.I),
-}
-_HONORIFIC = {"mr", "mrs", "ms", "miss", "dr", "chief", "mayor", "chair", "councilmember",
-              "commissioner", "madam", "sir", "jr", "sr", "ii", "iii"}
+# Titles come from the jurisdiction's roster config (bodies[].roster.roles
+# aliases), so the County's "Supervisor Lusk" and "Sully District
+# Supervisor" are titles just as the City's "Councilmember Hall" is.
+_GENERIC_TITLES = ("chair", "vice chair", "vice-chair", "school board", "board member",
+                   "trustee", "superintendent")
+
+
+def _alternatives(aliases) -> list[str]:
+    return sorted({re.escape(a.lower()) for a in aliases}, key=lambda a: (-len(a), a))
+
+
+def _district_alternative(body) -> str | None:
+    """'<District> District <noun>', the alias seeding gives a district seat."""
+    noun = body.roster.district_title if body.roster else None
+    return rf"[\w'.]+(?: [\w'.]+)* district {re.escape(noun.lower())}" if noun else None
+
+
+def body_titles(registry) -> dict[str, re.Pattern]:
+    """body key -> the titles that mark someone as a member of that body;
+    the roster for a meeting with no recorded votes yet (a Planning
+    Commission meeting before its minutes) comes from these."""
+    out = {}
+    for b in registry.bodies.values():
+        if not b.roster:
+            continue
+        alts = _alternatives(a for role in b.roster.roles.values() for a in role.aliases)
+        district = _district_alternative(b)
+        if district:
+            alts.append(district)
+        if alts:
+            out[b.key] = re.compile(r"^(" + "|".join(alts) + r")\b", re.I)
+    return out
+
+
+def any_title(registry) -> re.Pattern:
+    """Any official title in this jurisdiction, plus the generic ones."""
+    alts = _alternatives([*_GENERIC_TITLES, *(a for b in registry.bodies.values() if b.roster
+                                            for role in b.roster.roles.values() for a in role.aliases)])
+    alts += [d for d in (_district_alternative(b) for b in registry.bodies.values()) if d]
+    return re.compile(r"^(" + "|".join(alts) + r")\b", re.I)
+
+
+def honorifics(registry) -> set[str]:
+    """Words that are not part of anyone's name: courtesy titles, plus the
+    jurisdiction's one-word titles ("supervisor", "councilwoman")."""
+    words = {"mr", "mrs", "ms", "miss", "dr", "chief", "mayor", "chair", "councilmember",
+             "commissioner", "madam", "sir", "jr", "sr", "ii", "iii"}
+    words |= {a.lower() for b in registry.bodies.values() if b.roster
+              for role in b.roster.roles.values() for a in role.aliases if " " not in a and "-" not in a}
+    return words
+
+
+def example_title(registry) -> str:
+    """The title a member of the jurisdiction's first rostered body is
+    called on by ("Councilmember", "Supervisor"), for the prompt's example."""
+    for b in registry.bodies.values():
+        if b.roster and b.roster.roles:
+            aliases = list(b.roster.roles.values())[-1].aliases
+            if aliases:
+                return aliases[0]
+    return "Councilmember"
+
+
+_TITLE = any_title(REGISTRY)
+BODY_TITLES = body_titles(REGISTRY)
+_HONORIFIC = honorifics(REGISTRY)
 
 SYSTEM = """You identify who is speaking in a public meeting transcript. The transcript was split \
 into anonymous speaker labels (SPEAKER_00, ...) by an automatic voice-separation model; labels are \
@@ -81,7 +136,7 @@ consistent within this meeting only.
 
 Assign a name to a label ONLY from evidence in the transcript itself:
 - self-identification ("My name is ...", "I'm ... with ...")
-- being called on immediately before speaking ("Councilmember Hall?" / "Ms. Ritter, please come up" \
+- being called on immediately before speaking (\"""" + example_title(REGISTRY) + """ Hall?" / "Ms. Ritter, please come up" \
 followed by that label's turn)
 - being addressed by name in a reply immediately after speaking ("Thank you, Mr. Peterson")
 - the presiding officer's own conduct of the meeting combined with a name given elsewhere
@@ -99,6 +154,41 @@ name to null. Use roster slugs only for people on the roster; for anyone else (p
 staff, applicants) give the name as spoken and slug null. Give 1-3 evidence items per named label, \
 each with the timestamp shown in the transcript and a short verbatim quote of the cue. Use role \
 "student" for anyone who is a student or introduced as one (including a student representative)."""
+
+
+# Caption meetings (the County's): the labels are the captioner's speaker
+# turns, not voice clusters, so one person speaks under many labels and
+# naming happens turn by turn.
+CAPTION_PROMPT_VERSION = "speakers-captions-v1"
+CAPTION_SYSTEM = """You identify who is speaking in a public meeting transcript made from the \
+meeting's live closed captions. The captioner marks every change of speaker, and each uninterrupted \
+turn has its own label (TURN_0001, TURN_0002, ...). A label is ONE TURN, not one person: the same \
+person speaks under many labels, and consecutive labels are different speakers.
+
+Name a turn ONLY from evidence in the transcript itself:
+- self-identification within the turn ("My name is ...", "I'm ... with ...")
+- being called on in the turn immediately before (\"""" + example_title(REGISTRY) + """ Lusk?", \
+"The chair recognizes ...", "Ms. Ritter, please come up") and then speaking
+- being thanked or answered by name in the turn immediately after ("Thank you, Mr. Storck")
+Never infer a name from opinions, topics or speaking style alone. Votes are recorded elsewhere; do \
+not use them as evidence. Captions are typed live, so names may be misspelled; match them to the \
+roster when the cue is otherwise clear.
+
+Confidence: "high" = a direct cue tied to THIS turn (self-identification in it, called on in the \
+turn just before, or named in the reply just after); "medium" = consistent indirect cues only (for \
+example the presiding officer's continued conduct of the meeting); "low" = a guess. List ONLY the \
+turns you can name with at least medium confidence and omit the rest; omitted turns are recorded as \
+unidentified. Set mixed=true only if a turn clearly holds two people (a missed speaker-change mark). \
+Use roster slugs only for people on the roster; for anyone else (public commenters, staff, \
+applicants) give the name as spoken and slug null. Give 1-2 evidence items per named turn, each with \
+the timestamp shown in the transcript and a short verbatim quote of the cue. Use role "student" for \
+anyone who is a student or introduced as one (including a student representative)."""
+CAPTION_MAX_TOKENS = 64000
+
+
+def is_caption_turns(labels) -> bool:
+    from councilhound.extraction.captions import TURN_PREFIX
+    return bool(labels) and all(lb.startswith(TURN_PREFIX) for lb in labels)
 
 SCHEMA = {
     "type": "object", "additionalProperties": False, "required": ["speakers"],
@@ -219,7 +309,11 @@ def _prompt(meeting: Meeting, people: dict[str, dict], items: list[AgendaItem],
              "=== ROSTER (slug: name — note) ==="]
     lines += [f"{slug}: {p['name']} — {p['note']}" for slug, p in sorted(people.items())] or ["(none)"]
     lines += ["", "=== AGENDA ==="] + [f"{it.label} {it.title or ''}" for it in items]
-    lines += ["", "=== SPEAKER LABELS TO IDENTIFY ===", ", ".join(labels), "", "=== TRANSCRIPT ==="]
+    if is_caption_turns(labels):
+        lines += ["", "=== TURNS ===", f"{len(labels)} caption turns, {labels[0]} to {labels[-1]}; "
+                  "name only those you can.", "", "=== TRANSCRIPT ==="]
+    else:
+        lines += ["", "=== SPEAKER LABELS TO IDENTIFY ===", ", ".join(labels), "", "=== TRANSCRIPT ==="]
     lines += [f"[{_hms(float(c.start_seconds or 0))}] {c.speaker_label}: {c.text}" for c in chunks]
     return "\n".join(lines)
 
@@ -235,11 +329,11 @@ def _needs_retry(exc: BaseException) -> bool:
 
 @retry(retry=retry_if_exception(_needs_retry), stop=stop_after_attempt(5),
        wait=wait_exponential(multiplier=5, max=120), reraise=True)
-def _call_claude(prompt: str) -> tuple[list[dict], str]:
+def _call_claude(prompt: str, captions: bool = False) -> tuple[list[dict], str]:
     import anthropic
 
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-    response = client.beta.messages.create(
+    params = dict(
         model=MODEL,
         max_tokens=16000,
         system=SYSTEM,
@@ -250,6 +344,14 @@ def _call_claude(prompt: str) -> tuple[list[dict], str]:
                        "format": {"type": "json_schema", "schema": SCHEMA}},
         messages=[{"role": "user", "content": prompt}],
     )
+    if captions:
+        # hundreds of turns in an 8-hour meeting: more room, streamed so a
+        # long answer doesn't hit the HTTP timeout
+        params.update(system=CAPTION_SYSTEM, max_tokens=CAPTION_MAX_TOKENS)
+        with client.beta.messages.stream(**params) as stream:
+            response = stream.get_final_message()
+    else:
+        response = client.beta.messages.create(**params)
     if response.stop_reason == "refusal":
         raise RuntimeError(f"speaker naming declined: {response.stop_details}")
     if response.stop_reason == "max_tokens":
@@ -350,7 +452,10 @@ def name_meeting(session: Session, meeting: Meeting) -> dict:
     people = roster(session, meeting)
     items = session.scalars(select(AgendaItem).where(AgendaItem.meeting_id == meeting.id)
                             .order_by(AgendaItem.id)).all()
-    speakers, model = _call_claude(_prompt(meeting, people, items, chunks, labels))
+    captions = is_caption_turns(labels)
+    version = CAPTION_PROMPT_VERSION if captions else PROMPT_VERSION
+    prompt = _prompt(meeting, people, items, chunks, labels)
+    speakers, model = _call_claude(prompt, captions=True) if captions else _call_claude(prompt)
 
     manual = set(session.scalars(select(MeetingSpeaker.speaker_label).where(
         MeetingSpeaker.meeting_id == meeting.id, MeetingSpeaker.source == "manual")))
@@ -379,14 +484,14 @@ def name_meeting(session: Session, meeting: Meeting) -> dict:
             meeting_id=meeting.id, speaker_label=label, name=s["name"],
             entity_id=person["entity_id"] if person else None,
             role=s["role"], confidence=confidence, mixed=s["mixed"], evidence=evidence,
-            source="model", model=f"{model}/{PROMPT_VERSION}")
+            source="model", model=f"{model}/{version}")
         session.add(row)
         counts[confidence] += 1
         counts["public"] += is_public(row)
     for label in set(labels) - seen - manual:  # the model skipped it: record as unknown
         session.add(MeetingSpeaker(meeting_id=meeting.id, speaker_label=label, confidence="low",
                                    role="unknown", mixed=False, evidence=[], source="model",
-                                   model=f"{model}/{PROMPT_VERSION}"))
+                                   model=f"{model}/{version}"))
         counts["low"] += 1
     session.flush()
     counts["students"] = mark_students(session, meeting.id)

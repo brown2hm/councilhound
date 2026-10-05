@@ -14,7 +14,8 @@ Meetings", "Community Development and Planning Meetings", ...) followed by a
   - Duration cell: "03h 15m".
   - Links: AgendaViewer.php?view_id&clip_id (redirects to
     GeneratedAgendaViewer.php), MinutesViewer.php?view_id&clip_id&doc_id=<uuid>,
-    direct https://archive-video.granicus.com/fairfax/fairfax_<uuid>.mp3/.mp4.
+    direct https://archive-video.granicus.com/<slug>/<slug>_<uuid>.mp3/.mp4
+    (slug = granicus.media_host_slug in the jurisdiction config).
   - Some rows carry a "Documents..." <select> whose <option value=...> are
     additional MinutesViewer docs, labeled e.g. "Minutes", "Reporter"
     (= "Council Actions" report, official votes/outcomes — not a transcript).
@@ -36,19 +37,18 @@ from datetime import date, datetime
 from bs4 import BeautifulSoup
 
 from councilhound import http
-from councilhound.bodies import BODIES, BODY_KEYS
+from councilhound.bodies import BODIES, BODY_KEYS, REGISTRY, Registry
+from councilhound.config import JURISDICTION
+from councilhound.jurisdiction import JurisdictionConfig
 from councilhound.config import GRANICUS_BASE_URL
 
 log = logging.getLogger(__name__)
 
-# Archive <h3> section header -> body key (from the registry). Planning
-# Commission meetings live in the "Community Development and Planning" section
-# mixed with BAR/BZA rows, so that section maps to a pseudo-key and
-# classify() additionally filters on the row title.
-SECTION_BODIES = {
-    b.archive_section: ("community_development" if k == "planning_commission" else k)
-    for k, b in BODIES.items()
-}
+# Archive <h3> section header -> body key (from the registry), for views laid
+# out in sections. A section shared with other boards (the City files
+# Planning Commission rows under "Community Development and Planning" next
+# to BAR/BZA) is disambiguated by the body's title_must_contain rule.
+SECTION_BODIES = {b.archive_section: k for k, b in BODIES.items() if b.archive_section}
 
 IN_SCOPE_BODIES = BODY_KEYS
 
@@ -95,14 +95,24 @@ def _absolute(url: str) -> str:
     return url
 
 
+_MONTHS = {m: i for i, m in enumerate(
+    ("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"), 1)}
+_DATE_RE = re.compile(r"\b([A-Za-z]{3,9})\.?\s+(\d{1,2}),\s*(\d{4})\b")
+
+
 def _parse_date(text: str) -> date | None:
-    cleaned = re.sub(r"\s+", " ", text).strip()
-    for fmt in ("%b %d, %Y", "%B %d, %Y"):
-        try:
-            return datetime.strptime(cleaned, fmt).date()
-        except ValueError:
-            continue
-    return None
+    """A 'Jul 7, 2026' / 'July 7, 2026' / 'Sept. 15, 2026' date anywhere in
+    the text (the City has a Date column; the County only dates its titles)."""
+    m = _DATE_RE.search(re.sub(r"\s+", " ", text))
+    if not m:
+        return None
+    month = _MONTHS.get(m.group(1)[:3].lower())
+    if not month:
+        return None
+    try:
+        return date(int(m.group(3)), month, int(m.group(2)))
+    except ValueError:
+        return None
 
 
 def _parse_duration(text: str) -> int | None:
@@ -112,83 +122,79 @@ def _parse_duration(text: str) -> int | None:
     return int(m.group(1)) * 3600 + int(m.group(2)) * 60
 
 
-def classify(section_body: str, title: str) -> tuple[str, str] | None:
-    """Map (archive section, row title) -> (body, meeting_type), or None if
-    out of scope (Commission on the Arts, Electoral Board, BAR/BZA, etc.)."""
+def classify(section_body: str, title: str,
+             registry: Registry = REGISTRY) -> tuple[str, str] | None:
+    """Map (body key of the archive section, row title) -> (body,
+    meeting_type) per the body's config rules, or None if out of scope
+    (Commission on the Arts, Electoral Board, BAR/BZA, etc.)."""
+    body = registry.bodies.get(section_body)
+    if body is None:
+        return None
     t = title.lower()
-    if section_body == "city_council":
-        if "retreat" in t:
-            return "city_council", "council_retreat"
-        if "special" in t:
-            return "city_council", "council_special"
-        if "work session" in t:
-            return "city_council", "council_work_session"
-        if "regular" in t:
-            return "city_council", "council_regular"
-        return "city_council", "council_meeting"
-    if section_body == "community_development" and "planning commission" in t:
-        return "planning_commission", "planning_commission"
-    if section_body == "school_board":
-        # Closed meetings are archived as a title card with no substance;
-        # keep them listed (they are part of the record) but typed so the
-        # front end can treat them as such.
-        if "closed" in t:
-            return "school_board", "school_board_closed"
-        if "joint" in t or "swearing" in t:
-            return "school_board", "school_board_meeting"
-        if "retreat" in t:
-            return "school_board", "school_board_retreat"
-        if "special" in t:
-            return "school_board", "school_board_special"
-        if "work session" in t:
-            return "school_board", "school_board_work_session"
-        if "regular" in t:
-            return "school_board", "school_board_regular"
-        return "school_board", "school_board_meeting"
-    if section_body == "prab":
-        return "prab", "prab_meeting"
-    if section_body == "hhcab":
-        # Standing committees (Housing Trust Fund, Home Sharing, ...) meet
-        # under the same board and are archived in its section.
-        if "committee" in t:
-            return "hhcab", "hhcab_committee"
-        return "hhcab", "hhcab_meeting"
-    return None
+    if body.title_must_contain and not any(s in t for s in body.title_must_contain):
+        return None
+    for needle, meeting_type in body.meeting_types:
+        if needle in t:
+            return body.key, meeting_type
+    return body.key, body.default_meeting_type
 
 
-def _classify_doc(label: str) -> str:
+def _classify_doc(label: str, cfg: JurisdictionConfig = JURISDICTION) -> str:
+    """Document type of a MinutesViewer link from its label, per the
+    jurisdiction's granicus.documents rules."""
     l = label.lower()
-    if "reporter" in l or "action" in l:
-        return "actions_report"
-    if "minutes" in l:
-        return "minutes"
-    return "other"
+    docs = cfg.granicus.documents
+    for rule in docs.label_rules:
+        if rule.contains.lower() in l:
+            return rule.type
+    return docs.minutesviewer_default
 
 
-def _parse_row(tr, section_body: str, view_id: str) -> DiscoveredMeeting | None:
-    row_html = str(tr)
-    clip_match = re.search(r"MediaPlayer\.php\?[^\"']*clip_id=(\d+)", row_html)
-    if not clip_match:
+def _select_clip(tr, cfg: JurisdictionConfig = JURISDICTION) -> str | None:
+    """The row's clip id. A row can carry several player links (the County
+    publishes an English-captions clip and a Spanish-captions clip); pick by
+    the jurisdiction's row rules."""
+    row_cfg = cfg.granicus.row
+    found: list[tuple[str, str]] = []  # (clip_id, anchor text)
+    for a in tr.find_all("a"):
+        blob = (a.get("href") or "") + (a.get("onclick") or "")
+        m = re.search(r"MediaPlayer\.php\?[^\"']*clip_id=(\d+)", blob)
+        if m and m.group(1) not in [c for c, _ in found]:
+            found.append((m.group(1), a.get_text(" ", strip=True)))
+    if not found:
+        m = re.search(r"MediaPlayer\.php\?[^\"']*clip_id=(\d+)", str(tr))
+        return m.group(1) if m else None
+    if row_cfg.clip_label_prefer:
+        for clip_id, text in found:
+            if row_cfg.clip_label_prefer.lower() in text.lower():
+                return clip_id
+    return found[-1][0] if row_cfg.clip_select == "last" else found[0][0]
+
+
+def _parse_row(tr, section_body: str, view_id: str, cfg: JurisdictionConfig = JURISDICTION,
+               registry: Registry = REGISTRY) -> DiscoveredMeeting | None:
+    clip_id = _select_clip(tr, cfg)
+    if not clip_id:
         return None  # upcoming/canceled: nothing archived to ingest
 
     name_td = tr.find("td", headers=re.compile(r"^Name"))
     title = name_td.get_text(" ", strip=True) if name_td else tr.get_text(" ", strip=True)[:120]
-    classified = classify(section_body, title)
+    classified = classify(section_body, title, registry)
     if not classified:
         return None
     body, meeting_type = classified
 
     date_td = tr.find("td", headers=re.compile(r"^Date"))
-    meeting_date = _parse_date(date_td.get_text(strip=True)) if date_td else None
+    meeting_date = _parse_date(date_td.get_text(" ", strip=True)) if date_td else _parse_date(title)
     if not meeting_date:
-        log.warning("skipping clip %s (%r): unparseable date", clip_match.group(1), title)
+        log.warning("skipping clip %s (%r): unparseable date", clip_id, title)
         return None
 
     duration_td = tr.find("td", headers=re.compile(r"^Duration"))
     duration = _parse_duration(duration_td.get_text(strip=True)) if duration_td else None
 
     m = DiscoveredMeeting(
-        clip_id=clip_match.group(1),
+        clip_id=clip_id,
         view_id=view_id,
         body=body,
         meeting_type=meeting_type,
@@ -198,7 +204,15 @@ def _parse_row(tr, section_body: str, view_id: str) -> DiscoveredMeeting | None:
     )
 
     # Harvest links from both <a href> and "Documents..." <select><option value>
-    candidates = [(a.get_text(strip=True), a.get("href", "")) for a in tr.find_all("a")]
+    row_cfg = cfg.granicus.row
+    candidates = []
+    for a in tr.find_all("a"):
+        href = a.get("href", "")
+        if (not href or href.startswith("javascript")) and a.get("onclick"):
+            # the County wraps document links in window.open('//host/AgendaViewer.php?...')
+            m_open = re.search(r"window\.open\(['\"]([^'\"]+)['\"]", a["onclick"])
+            href = m_open.group(1) if m_open else href
+        candidates.append((a.get_text(strip=True), href))
     for opt in tr.find_all("option"):
         candidates.append((opt.get_text(strip=True), opt.get("value", "")))
 
@@ -209,32 +223,67 @@ def _parse_row(tr, section_body: str, view_id: str) -> DiscoveredMeeting | None:
         if "AgendaViewer.php" in url and "clip_id" in url:
             m.agenda_url = m.agenda_url or url
         elif "MinutesViewer.php" in url:
-            doc_type = _classify_doc(label)
+            doc_type = _classify_doc(label, cfg)
             if doc_type == "minutes" and not m.minutes_url:
                 m.minutes_url = url
+            elif doc_type == "agenda" and not m.agenda_url:
+                # the County's "minutes" link is its annotated agenda
+                m.agenda_url = url
             else:
                 m.extra_docs.append(DiscoveredDoc(label=label or doc_type, url=url, doc_type=doc_type))
+        elif (row_cfg.external_archive and row_cfg.external_archive.enabled
+              and row_cfg.external_archive.link_text_contains.lower() in (label or "").lower()):
+            m.extra_docs.append(DiscoveredDoc(
+                label=label, url=url, doc_type=row_cfg.external_archive.doc_type))
         elif url.endswith(".mp3"):
             m.audio_url = url
         elif url.endswith(".mp4"):
             m.video_url = url
+    body_cfg = registry.bodies.get(body)
+    if (not m.agenda_url and body_cfg and body_cfg.agenda_url_template
+            and meeting_type == body_cfg.default_meeting_type):
+        # the County's Planning Commission rows link no agenda (the cell is
+        # commented out); its regular-meeting agendas live on the county
+        # site by date. Committees and work sessions have no such file.
+        m.agenda_url = meeting_date.strftime(body_cfg.agenda_url_template)
     return m
 
 
-def parse_archive(html: str, view_id: str) -> list[DiscoveredMeeting]:
-    """Parse the full archive page into in-scope DiscoveredMeetings."""
+def parse_archive(html: str, view_id: str, cfg: JurisdictionConfig = JURISDICTION,
+                  registry: Registry | None = None) -> list[DiscoveredMeeting]:
+    """Parse the full archive page into in-scope DiscoveredMeetings, per the
+    jurisdiction's layout for this view: 'sections' — <h3> headers name the
+    body of the rows that follow (bodies[].archive_section); 'single' — the
+    whole view is one body, every listing row is it."""
+    if registry is None:
+        registry = REGISTRY if cfg is JURISDICTION else Registry.from_config(cfg)
     soup = BeautifulSoup(html, "lxml")
     meetings: list[DiscoveredMeeting] = []
-    section_body: str | None = None
+    view_cfg = cfg.view_for(view_id)
+    layout = view_cfg.layout if view_cfg else "sections"
 
+    if layout == "single":
+        body = view_cfg.body
+        for table in soup.find_all("table", class_="listingTable"):
+            if table.get("id") == "upcoming":
+                continue
+            for tr in table.find_all("tr"):
+                meeting = _parse_row(tr, body, view_id, cfg, registry)
+                if meeting:
+                    meetings.append(meeting)
+        log.info("parsed %d meetings from single-body archive view_id=%s", len(meetings), view_id)
+        return meetings
+
+    sections = {b.archive_section: k for k, b in registry.bodies.items() if b.archive_section}
+    section_body: str | None = None
     for el in soup.find_all(["h3", "table"]):
         if el.name == "h3":
-            section_body = SECTION_BODIES.get(el.get_text(strip=True))
+            section_body = sections.get(el.get_text(strip=True))
             continue
         if section_body is None or "listingTable" not in (el.get("class") or []):
             continue
         for tr in el.find_all("tr"):
-            meeting = _parse_row(tr, section_body, view_id)
+            meeting = _parse_row(tr, section_body, view_id, cfg, registry)
             if meeting:
                 meetings.append(meeting)
 
@@ -251,25 +300,27 @@ def list_meetings(view_id: str) -> list[DiscoveredMeeting]:
     return meetings
 
 
-def classify_upcoming_title(title: str) -> str | None:
+def classify_upcoming_title(title: str, registry: Registry = REGISTRY,
+                            view_id: str | None = None) -> str | None:
     """Body key for an upcoming-events row, from its title alone (the
     upcoming table has no per-body sections). None = a body we don't track,
-    still listed. Joint sessions go to the body named first."""
+    still listed. Bodies are tried in config order, so joint sessions go to
+    the body whose rule matches first; a view that belongs to one body
+    (upcoming.default_for_view) claims its unmatched rows."""
     t = title.lower()
-    if t.startswith("city council"):
-        return "city_council"
-    if t.startswith("planning commission"):
-        return "planning_commission"
-    if "school board" in t:
-        return "school_board"
-    if "prab" in t or "park and recreation" in t or "parks and recreation" in t:
-        return "prab"
-    if "hhcab" in t or "housing and healthy communities" in t:
-        return "hhcab"
+    for body in registry.bodies.values():
+        if any(t.startswith(p) for p in body.upcoming_starts_with):
+            return body.key
+        if any(p in t for p in body.upcoming_contains):
+            return body.key
+    if view_id is not None:
+        for body in registry.bodies.values():
+            if body.upcoming_default_for_view == str(view_id):
+                return body.key
     return None
 
 
-def parse_upcoming(html: str, view_id: str) -> list[UpcomingEvent]:
+def parse_upcoming(html: str, view_id: str, registry: Registry = REGISTRY) -> list[UpcomingEvent]:
     """Parse the 'Upcoming and In Progress Events' table on the same
     ViewPublisher page the archive lives on. Rows carry an event_id (clips
     only exist after the meeting), a date like 'July 14, 2026 - 07:00 PM'
@@ -306,20 +357,29 @@ def parse_upcoming(html: str, view_id: str) -> list[UpcomingEvent]:
             continue
 
         date_td = tr.find("td", headers=re.compile(r"^EventDate"))
+        if date_td is not None:
+            for hidden in date_td.find_all("span", style=re.compile(r"display:\s*none")):
+                hidden.decompose()  # the County hides an epoch for sorting in the cell
         date_text = re.sub(r"\s+", " ", date_td.get_text(" ", strip=True)) if date_td else ""
         starts_at, in_progress = None, "in progress" in date_text.lower()
         if not in_progress:
-            try:
-                starts_at = datetime.strptime(date_text, "%B %d, %Y - %I:%M %p")
-            except ValueError:
-                pass
+            m = re.search(r"([A-Za-z]{3,9})\.?\s+(\d{1,2}),\s*(\d{4})\s*-\s*(\d{1,2}):(\d{2})\s*([AP]M)",
+                          date_text, re.IGNORECASE)
+            if m:
+                month = _MONTHS.get(m.group(1)[:3].lower())
+                hour = int(m.group(4)) % 12 + (12 if m.group(6).upper() == "PM" else 0)
+                if month:
+                    try:
+                        starts_at = datetime(int(m.group(3)), month, int(m.group(2)), hour, int(m.group(5)))
+                    except ValueError:
+                        pass
 
         agenda_a = tr.find("a", href=re.compile(r"AgendaViewer\.php"))
         events.append(UpcomingEvent(
             event_id=event_id,
             view_id=view_id,
             title=title,
-            body=classify_upcoming_title(title),
+            body=classify_upcoming_title(title, registry, view_id=view_id),
             starts_at=starts_at,
             in_progress=in_progress,
             agenda_url=_absolute(agenda_a["href"]) if agenda_a else None,
@@ -373,6 +433,44 @@ def parse_index_points(player_html: str) -> list[dict]:
                 label = (last_number + sub.group(1)).lower()
         points.append({"label": label, "time": int(time_attr), "text": text})
     return points
+
+
+_WORD = re.compile(r"[a-z0-9]+")
+
+
+def _title_key(text: str) -> str:
+    """Lowercased alphanumeric words with a leading item number, a leading
+    clock time ('3:30') and dashes stripped — what an index point and an
+    agenda item share when they describe the same item."""
+    t = text.lower()
+    t = re.sub(r"^\s*(\d{1,2}:\d{2}\s+)?(\d+[a-z]?[.)]\s+)?", "", t)
+    return " ".join(_WORD.findall(t))
+
+
+def match_index_point_by_title(title: str | None, points: list[dict], min_words: int = 4,
+                               min_overlap: float = 0.8) -> int | None:
+    """The time of the index point whose text describes this agenda item,
+    for archives whose item numbering doesn't survive extraction: the item
+    title and the index text share most of their words (containment of the
+    shorter word set in the longer, so a district suffix or a reworded tail
+    doesn't break the match). Short titles are not trusted ('Closed
+    Session' would claim any closed-session marker). None when nothing fits."""
+    if not title:
+        return None
+    words = _title_key(title).split()
+    if len(words) < min_words:
+        return None
+    key = set(words)
+    best: tuple[float, int, int] | None = None  # (overlap, shared, time)
+    for p in points:
+        pw = _title_key(p["text"]).split()
+        if len(pw) < min_words:
+            continue
+        shared = len(key & set(pw))
+        overlap = shared / min(len(key), len(set(pw)))
+        if overlap >= min_overlap and (best is None or (overlap, shared) > best[:2]):
+            best = (overlap, shared, p["time"])
+    return best[2] if best else None
 
 
 def fetch_index_points(clip_id: str, view_id: str) -> list[dict]:

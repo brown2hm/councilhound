@@ -6,8 +6,10 @@ import { Suspense } from "react";
 import "katex/dist/katex.min.css";
 import "./globals.css";
 import NavLinks from "@/components/NavLinks";
+import JurisdictionProvider from "@/components/JurisdictionProvider";
 import RecordFreshness from "@/components/RecordFreshness";
 import { PUBLIC_API_URL } from "@/lib/api";
+import { getJurisdiction } from "@/lib/jurisdiction";
 
 const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
 // the briefing's display face: headlines and section heads read as a paper, not a dashboard
@@ -19,31 +21,35 @@ const newsreader = Newsreader({
   adjustFontFallback: false,
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL("https://councilhound.net"),
-  title: {
-    default: "CouncilHound — City of Fairfax",
-    template: "%s — CouncilHound",
-  },
-  description:
-    "CouncilHound sniffs through City of Fairfax council and planning commission records so you can track projects, votes, and decisions over time.",
-  openGraph: {
-    siteName: "CouncilHound",
-    type: "website",
-    images: ["/brand/hound.png"],
-  },
-  alternates: {
-    types: {
-      "application/atom+xml": `${PUBLIC_API_URL}/entities/changes.atom`,
-      "text/calendar": `${PUBLIC_API_URL}/meetings/upcoming.ics`,
+export async function generateMetadata(): Promise<Metadata> {
+  const j = await getJurisdiction();
+  return {
+    metadataBase: new URL(j.site.site_base_url),
+    title: {
+      default: `CouncilHound — ${j.identity.short_name}`,
+      template: "%s — CouncilHound",
     },
-  },
-};
+    description: `CouncilHound sniffs through ${j.identity.short_name} public meeting records so you can track projects, votes, and decisions over time.`,
+    openGraph: {
+      siteName: "CouncilHound",
+      type: "website",
+      images: ["/brand/hound.png"],
+    },
+    alternates: {
+      types: {
+        "application/atom+xml": `${PUBLIC_API_URL}/entities/changes.atom`,
+        "text/calendar": `${PUBLIC_API_URL}/meetings/upcoming.ics`,
+      },
+    },
+  };
+}
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const j = await getJurisdiction();
   return (
     <html lang="en" className="scroll-smooth">
       <body className={`${inter.className} ${newsreader.variable} flex min-h-screen flex-col bg-canvas text-ink antialiased`}>
+        <JurisdictionProvider value={j}>
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-ink focus:px-4 focus:py-3 focus:text-sm focus:font-semibold focus:text-white"
@@ -73,7 +79,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             />
             <div className="max-w-[520px] space-y-2 text-center">
               <p className="text-[13px] text-body">
-                CouncilHound fetches from public City of Fairfax, VA meeting records on Granicus.
+                CouncilHound fetches from public {j.identity.short_name}, {j.identity.state_abbr} meeting records on Granicus.
                 Summaries are machine-generated — always verify against the linked source documents.
               </p>
               <Suspense fallback={null}>
@@ -108,6 +114,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             />
           </div>
         </footer>
+        </JurisdictionProvider>
       </body>
     </html>
   );

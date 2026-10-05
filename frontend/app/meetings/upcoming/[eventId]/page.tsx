@@ -3,7 +3,8 @@ import { cache } from "react";
 import BodyTag from "@/components/BodyTag";
 import FollowButton from "@/components/FollowButton";
 import StatusBadge from "@/components/StatusBadge";
-import { api, bodyLabel, formatDate } from "@/lib/api";
+import { api, formatDate } from "@/lib/api";
+import { bodyLabel, getJurisdiction, jurisdiction } from "@/lib/jurisdiction";
 import { requireRecord } from "@/lib/not-found";
 
 export const dynamic = "force-dynamic";
@@ -29,6 +30,7 @@ export default async function UpcomingMeetingPage({
 }: {
   params: { eventId: string };
 }) {
+  await getJurisdiction();
   const event = await requireRecord(getUpcoming(params.eventId));
 
   return (
@@ -123,7 +125,7 @@ export default async function UpcomingMeetingPage({
         <p className="rounded-2xl border border-hairline bg-soft p-5 text-sm text-muted">
           {event.has_agenda_text
             ? "No tracked topics matched this agenda — it may be procedural, or cover matters the tracker hasn't seen before."
-            : "The agenda hasn't been posted (or fetched) yet — check back after the city publishes it."}
+            : `The agenda hasn't been posted (or fetched) yet — check back after the ${jurisdiction()?.identity.noun ?? "city"} publishes it.`}
           {event.agenda_url && (
             <>
               {" "}

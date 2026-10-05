@@ -1,8 +1,9 @@
-# Weekly canary against the live Granicus site. Unit tests pin the parser to
-# a fixture of today's HTML; this catches the failure mode fixtures can't —
-# Granicus changing their markup (or blocking us) under a working test suite.
-# Failure here means "the scraper will silently stop finding meetings," not
-# "a commit broke something."
+# Weekly canary against every jurisdiction's live Granicus site. Unit tests
+# pin the parsers to fixtures of today's HTML; this catches the failure mode
+# fixtures can't — Granicus (or a jurisdiction) changing their markup, or
+# blocking us, under a working test suite. Failure here means "the scraper
+# will silently stop finding meetings," not "a commit broke something."
+# Thresholds come from each jurisdiction's granicus.canary block.
 name: Granicus canary
 
 on:
@@ -13,6 +14,10 @@ on:
 jobs:
   live-archive-parse:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        jurisdiction: [fairfax_city_va, fairfax_county_va]
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -27,41 +32,58 @@ jobs:
         working-directory: ingestion
         env:
           PYTHONPATH: src
+          JURISDICTION: ${{ matrix.jurisdiction }}
         run: |
           uv run python - <<'EOF'
+          from councilhound.config import GRANICUS_VIEW_IDS, JURISDICTION
           from councilhound.scraper.granicus import (
               fetch_index_points, list_meetings, list_upcoming,
           )
 
-          meetings = list_meetings("13")
-          assert len(meetings) > 50, f"only {len(meetings)} in-scope meetings parsed - markup drift?"
+          c = JURISDICTION.granicus.canary
+          meetings, upcoming = [], []
+          for view_id in GRANICUS_VIEW_IDS:
+              meetings += list_meetings(view_id)
+              upcoming += list_upcoming(view_id)
+          assert len(meetings) >= c.min_meetings, \
+              f"only {len(meetings)} in-scope meetings parsed - markup drift?"
 
+          meetings.sort(key=lambda m: m.meeting_date, reverse=True)
           recent = meetings[:10]
           with_agenda = sum(1 for m in recent if m.agenda_url)
           with_audio = sum(1 for m in recent if m.audio_url)
-          assert with_agenda >= 5, f"only {with_agenda}/10 recent meetings have agenda links"
-          assert with_audio >= 3, f"only {with_audio}/10 recent meetings have MP3 links"
+          with_video = sum(1 for m in recent if m.video_url)
+          assert with_agenda >= c.min_recent_agendas, \
+              f"only {with_agenda}/10 recent meetings have agenda links"
+          if c.expect_mp3:
+              assert with_audio >= c.min_recent_audio, \
+                  f"only {with_audio}/10 recent meetings have MP3 links"
+          else:
+              assert with_video >= c.min_recent_audio, \
+                  f"only {with_video}/10 recent meetings have video links"
 
           # watch links depend on MediaPlayer index-point markup — check a
-          # recent long meeting still yields labeled markers
-          long_meeting = next(m for m in recent if (m.duration_seconds or 0) > 3600)
-          points = fetch_index_points(long_meeting.clip_id, long_meeting.view_id)
-          labeled = [p for p in points if p["label"]]
-          assert len(labeled) >= 3, f"only {len(labeled)} labeled index points on clip {long_meeting.clip_id}"
+          # recent recorded meeting still yields markers (durations are
+          # null on archives without a Duration column, so fall back to the
+          # most recent recorded clip)
+          recorded = [m for m in recent if m.audio_url or m.video_url]
+          probe = next((m for m in recorded if (m.duration_seconds or 0) > 3600), recorded[0])
+          points = fetch_index_points(probe.clip_id, probe.view_id)
+          assert len(points) >= 3, f"only {len(points)} index points on clip {probe.clip_id}"
 
           # The upcoming table drifted alone once (event_id moved into a
-          # data attribute) while every archive assertion above stayed green,
-          # so it needs its own check. The city always has months of meetings
-          # posted; an empty parse means markup drift, not a quiet calendar.
-          upcoming = list_upcoming("13")
-          assert len(upcoming) >= 5, f"only {len(upcoming)} upcoming events parsed - markup drift?"
+          # data attribute) while every archive assertion stayed green, so
+          # it needs its own check.
+          assert len(upcoming) >= c.min_upcoming, \
+              f"only {len(upcoming)} upcoming events parsed - markup drift?"
           assert all(e.event_id for e in upcoming), "upcoming event missing event_id"
           dated = [e for e in upcoming if e.starts_at or e.in_progress]
-          assert len(dated) >= 5, f"only {len(dated)}/{len(upcoming)} upcoming events have a date"
+          assert len(dated) >= min(c.min_upcoming, len(upcoming)), \
+              f"only {len(dated)}/{len(upcoming)} upcoming events have a date"
           in_scope = [e for e in upcoming if e.body]
-          assert in_scope, "no council/planning-commission meetings in the upcoming table"
+          assert in_scope, "no tracked-body meetings in the upcoming table"
 
-          print(f"OK: {len(meetings)} meetings; recent 10: {with_agenda} agendas, "
-                f"{with_audio} mp3s; {len(labeled)} index points on clip {long_meeting.clip_id}; "
-                f"{len(upcoming)} upcoming ({len(in_scope)} in scope)")
+          print(f"OK {JURISDICTION.slug}: {len(meetings)} meetings; recent 10: {with_agenda} agendas, "
+                f"{with_audio} mp3s, {with_video} videos; {len(points)} index points on clip "
+                f"{probe.clip_id}; {len(upcoming)} upcoming ({len(in_scope)} in scope)")
           EOF

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { GLOSSARY_RE, lookupTerm } from "@/lib/glossary";
+import { glossaryFor } from "@/lib/glossary";
+import { jurisdiction } from "@/lib/jurisdiction";
 
 /**
  * Wraps the first occurrence of each glossary term in a text with a hover
@@ -10,6 +11,7 @@ import { GLOSSARY_RE, lookupTerm } from "@/lib/glossary";
 export default function Jargon({ children }: { children: string }) {
   const text = children;
   if (!text) return null;
+  const { regex: GLOSSARY_RE, lookupTerm } = glossaryFor(jurisdiction());
   const out: React.ReactNode[] = [];
   const used = new Set<string>();
   let last = 0;

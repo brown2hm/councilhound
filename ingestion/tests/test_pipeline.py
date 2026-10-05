@@ -2,6 +2,7 @@
 audio isn't downloadable yet must still reach 'fetched' so it can be
 structured from its agenda/minutes — audio is best-effort, not a gate."""
 import datetime
+import os
 
 from councilhound import pipeline
 from councilhound.db.models import CityProject, Entity, EntityGeocode, Meeting
@@ -67,6 +68,10 @@ def test_rescan_never_downgrades_extracted(db_session, monkeypatch):
 
 
 def test_sync_projects_links_entities_and_geocodes(db_session, monkeypatch):
+    # these exercise the City's OpenCities adapter whatever JURISDICTION the
+    # process runs under (CI also runs this file as the County)
+    from councilhound.jurisdiction import JurisdictionConfig
+    monkeypatch.setattr(pipeline, "JURISDICTION", JurisdictionConfig.load("fairfax_city_va"))
     from councilhound.scraper.fairfax_projects import DiscoveredProject
 
     s = db_session
@@ -98,6 +103,10 @@ def test_sync_projects_links_entities_and_geocodes(db_session, monkeypatch):
 
 
 def test_sync_projects_promotes_linked_location_entity(db_session, monkeypatch):
+    # these exercise the City's OpenCities adapter whatever JURISDICTION the
+    # process runs under (CI also runs this file as the County)
+    from councilhound.jurisdiction import JurisdictionConfig
+    monkeypatch.setattr(pipeline, "JURISDICTION", JurisdictionConfig.load("fairfax_city_va"))
     from councilhound.scraper.fairfax_projects import DiscoveredProject
 
     s = db_session
@@ -124,6 +133,10 @@ def test_sync_projects_promotes_linked_location_entity(db_session, monkeypatch):
 
 
 def test_sync_projects_partial_preserves_seeded_detail(db_session, monkeypatch):
+    # these exercise the City's OpenCities adapter whatever JURISDICTION the
+    # process runs under (CI also runs this file as the County)
+    from councilhound.jurisdiction import JurisdictionConfig
+    monkeypatch.setattr(pipeline, "JURISDICTION", JurisdictionConfig.load("fairfax_city_va"))
     """A partial (ArcGIS-only, html_complete=False) sync must update coords/
     status but neither prune HTML-only rows nor blank their rich detail."""
     from councilhound.scraper.fairfax_projects import DiscoveredProject
@@ -182,3 +195,76 @@ def test_discover_body_filter(db_session, monkeypatch):
     result = pipeline.discover(db_session, "13", bodies=("prab",))
     assert result == {"created": 1, "updated": 0, "total_in_scope": 1}
     assert [m.body for m in db_session.query(Meeting).all()] == ["prab"]
+
+
+def _meeting(db_session, **kw):
+    from councilhound.db.models import Meeting
+    m = Meeting(granicus_clip_id=kw.pop("clip", "1"), granicus_view_id="7", body="board_of_supervisors",
+                meeting_type="bos_meeting", meeting_date=datetime.date(2026, 9, 15), title="Board", **kw)
+    db_session.add(m)
+    db_session.commit()
+    return m
+
+
+class _Resp:
+    def __init__(self, status, text=""):
+        self.status_code, self.text, self.content = status, text, text.encode()
+
+
+def test_fetch_media_prefers_real_captions(db_session, monkeypatch, tmp_path):
+    from councilhound.jurisdiction import JurisdictionConfig
+    county = JurisdictionConfig.load("fairfax_county_va")
+    monkeypatch.setattr(pipeline, "JURISDICTION", county)
+    monkeypatch.setattr(pipeline, "RAW_DATA_DIR", str(tmp_path))
+    vtt = "WEBVTT\n\n" + "\n\n".join(f"00:00:{i:02d}.000 --> 00:00:{i+1:02d}.000\nline {i}" for i in range(30))
+    monkeypatch.setattr(pipeline.http, "get_http_session",
+                        lambda: type("S", (), {"get": lambda self, url, timeout=0: _Resp(200, vtt)})())
+    downloads = []
+    monkeypatch.setattr(pipeline.http, "download", lambda url, dest, timeout=0: downloads.append(url))
+    m = _meeting(db_session, video_url="https://archive-video.granicus.com/fairfaxva/x.mp4")
+    path = pipeline.fetch_media(db_session, m)
+    assert path.endswith("captions.vtt") and m.audio_local_path == path
+    assert downloads == []  # never touched the 8 GB MP4
+
+
+def test_fetch_media_falls_back_to_mp4_audio(db_session, monkeypatch, tmp_path):
+    from councilhound.jurisdiction import JurisdictionConfig
+    county = JurisdictionConfig.load("fairfax_county_va")
+    monkeypatch.setattr(pipeline, "JURISDICTION", county)
+    monkeypatch.setattr(pipeline, "RAW_DATA_DIR", str(tmp_path))
+    monkeypatch.setattr(pipeline.http, "get_http_session",
+                        lambda: type("S", (), {"get": lambda self, url, timeout=0: _Resp(404, "<html>Not Found")})())
+
+    def fake_download(url, dest, timeout=0):
+        with open(dest, "wb") as f:
+            f.write(b"video")
+    monkeypatch.setattr(pipeline.http, "download", fake_download)
+    extracted = []
+
+    def fake_extract(video, audio):
+        extracted.append(video)
+        with open(audio, "wb") as f:
+            f.write(b"audio")
+        return audio
+    monkeypatch.setattr(pipeline, "extract_audio_track", fake_extract)
+    m = _meeting(db_session, clip="2", video_url="https://archive-video.granicus.com/fairfaxva/x.mp4")
+    path = pipeline.fetch_media(db_session, m)
+    assert path.endswith("audio.m4a") and extracted and not os.path.exists(extracted[0])  # video removed
+
+
+def test_fetch_media_city_still_downloads_mp3(db_session, monkeypatch, tmp_path):
+    from councilhound.jurisdiction import JurisdictionConfig
+    monkeypatch.setattr(pipeline, "JURISDICTION", JurisdictionConfig.load("fairfax_city_va"))
+    monkeypatch.setattr(pipeline, "RAW_DATA_DIR", str(tmp_path))
+    downloads = []
+
+    def fake_download(url, dest, timeout=0):
+        downloads.append(url)
+        with open(dest, "wb") as f:
+            f.write(b"mp3")
+    monkeypatch.setattr(pipeline.http, "download", fake_download)
+    m = _meeting(db_session, clip="3", audio_url="https://archive-video.granicus.com/fairfax/x.mp3")
+    m.body = "city_council"
+    db_session.commit()
+    path = pipeline.fetch_media(db_session, m)
+    assert path.endswith("audio.mp3") and downloads == [m.audio_url]

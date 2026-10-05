@@ -1,0 +1,42 @@
+# Fairfax County API: same image as the City's, selected by JURISDICTION.
+# Deploy from the repo root: flyctl deploy -c api/fly.fairfax_county_va.toml
+# CouncilHound API — deploy from the REPO ROOT:
+#   flyctl deploy -c api/fly.toml
+app = "councilhound-fxco-api"
+primary_region = "iad"
+
+[build]
+  # resolved relative to this file; build context is the repo root
+  # (deploy with: flyctl deploy -c api/fly.toml . from the repo root)
+  dockerfile = "Dockerfile"
+
+[env]
+  EMBEDDING_DEVICE = "cpu"
+  JURISDICTION = "fairfax_county_va"
+  JURISDICTIONS_DIR = "/app/jurisdictions"
+  # set ALLOWED_ORIGINS via `fly secrets` or here once the domain is live
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 40
+    hard_limit = 80
+
+[[vm]]
+  size = "shared-cpu-2x"
+  memory = "4gb"  # torch + embedding model; 2gb OOM-cycles under load
+
+[checks]
+  [checks.health]
+    port = 8000
+    type = "http"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "120s"  # model warmup at startup takes ~20-40s on shared CPU
+    path = "/health"

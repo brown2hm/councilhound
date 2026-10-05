@@ -13,7 +13,7 @@ the platform behind hundreds of US city/county "view meetings online" pages —
 into a structured, searchable knowledge base. The pipeline is
 Granicus-generic: point it at a different city's Granicus subdomain and view
 IDs, and map that city's archive section names (see
-[Adapting to your city](#adapting-to-your-city)). `PLAN.md` is the phased
+[Adding a jurisdiction](#adding-a-jurisdiction)). `PLAN.md` is the phased
 build plan written against the reference city;
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) has the system diagrams, data
 model, and ops notes.
@@ -105,6 +105,8 @@ nightly job runs):
 - Each service carries its own `Dockerfile` and `fly.toml`.
 
 ## Configuration
+
+`JURISDICTION` (default `fairfax_city_va`) selects `ingestion/jurisdictions/<slug>.yaml`, which supplies the defaults for everything below; the env vars remain per-deployment overrides.
 
 Everything city-specific is environment config (`.env`, see `.env.example`):
 
@@ -273,25 +275,56 @@ shapes). CI runs both suites against a real pgvector Postgres plus a
 frontend type-check/build. A separate weekly canary parses the live Granicus
 archive to catch markup drift that fixture-pinned tests can't.
 
-## Adapting to your city
+## Adding a jurisdiction
 
-Granicus archive pages share the same skeleton everywhere (`ViewPublisher.php`
-listing tables, `AgendaViewer.php`/`MinutesViewer.php`/`MetaViewer.php`
-documents, `archive-video.granicus.com` MP3/MP4 links), but three things are
-per-city:
+CouncilHound runs one stack per jurisdiction (same images, separate Fly
+apps and database). Everything jurisdiction-specific lives in one YAML,
+`ingestion/jurisdictions/<slug>.yaml`, selected at runtime by the
+`JURISDICTION` env var (default `fairfax_city_va`). `fairfax_county_va.yaml`
+is the second one and the template for the next.
 
-1. **Base URL + view IDs** — set `GRANICUS_BASE_URL` and `GRANICUS_VIEW_IDS`
-   in `.env`.
-2. **Archive section names → bodies** — cities name their archive sections
-   differently ("City Council Meetings", "Board of Supervisors", ...). Edit
-   `SECTION_BODIES` and `classify()` in
-   `ingestion/src/councilhound/scraper/granicus.py` to map your city's section
-   headers and meeting-title patterns to the bodies you want to track.
-3. **Seeded entities** — the LLM pass resolves people against a seeded
-   roster; `seed-entities` parses it from agenda headers, so check its
-   parsers match your city's agenda format (`councilhound/seed.py`).
+1. **Copy a YAML** and fill in `identity` (name, city/county noun, timezone,
+   geocode suffix + bounding box, the jurisdiction's own names that must
+   never become topics), `site` (URLs, mail-from, bundle name), and
+   `display` (map center/bounds, nearby radii, example address, ask
+   suggestions, glossary overrides).
+2. **Describe the Granicus archive.** `granicus.views` lists each
+   ViewPublisher view: `layout: sections` when one view holds every body
+   under `<h3>` headers (the City), `layout: single` when each body has its
+   own view (the County). Per body, `archive_section` or the view,
+   `meeting_types` (title substring → type), `upcoming` rules, and an
+   `agenda_url_template` when rows link no agenda. `granicus.documents`
+   says what a MinutesViewer link is (the County's is its annotated agenda,
+   so `agenda_has_outcomes: true` on the body lets outcomes count as the
+   record). `granicus.media.sources` orders transcript sources: `captions`
+   (a real `/videos/<clip>/captions.vtt`), `mp3`, or `mp4_audio_extract`.
+3. **Rosters.** Each body's `roster.parser` is an id in
+   `councilhound.seed.ROSTER_PARSERS`; `static` pins a roster for bodies
+   whose agendas carry none, and `roles` map role keys to display titles and
+   the aliases seeded for each member ("Supervisor Smith"). Titles must be
+   unique across bodies.
+4. **Official projects.** `projects.adapter` is `fairfaxva_opencities`,
+   `arcgis_feature_layer` (any FeatureServer layer of cases, mapped by
+   `params.fields`; `python -m councilhound.cli projects-discover <url>`
+   prints a layer's fields and sample rows so you can pin them), or `none`.
+5. **Run it locally**: `JURISDICTION=<slug> DATA_DIR=data/<slug>` with the
+   City's `GRANICUS_*` overrides blanked (see
+   `ingestion/.env.fairfax_county_va.example`), then `discover`, `ingest`,
+   `extract-text`, `transcribe`, `structure`, `seed-entities`,
+   `index-points`, `embed`, `projects`. Capture trimmed fixtures of the
+   archive and a player page under `ingestion/tests/fixtures/granicus/<slug>/`
+   and add the jurisdiction to the canary matrix in
+   `.github/workflows/granicus-canary.yml` (thresholds come from
+   `granicus.canary`).
+6. **Deploy**: `api/fly.<slug>.toml`, `frontend/fly.<slug>.toml` and
+   `ingestion/fly.<slug>.toml` with `JURISDICTION` set; `scripts/deploy.sh
+   <slug> api|web` and `scripts/fly_jobs_schedule.sh <slug> <label>`.
 
-Two Granicus behaviors worth knowing, verified against the reference city:
-requests need a browser-ish User-Agent (bare curl gets 403s), and the
-caption endpoint (`/videos/<clip>/captions.vtt`) may exist but be empty —
-CouncilHound transcribes the MP3 audio rather than relying on captions.
+The API serves the display half of the config at `GET /jurisdiction/`; the
+web image is jurisdiction-agnostic and reads it at runtime. Impact analysis
+is per-jurisdiction (`features.impact`); the County runs without it.
+
+Two Granicus behaviors worth knowing: requests need a browser-ish
+User-Agent (bare curl gets 403s), and the caption endpoint
+(`/videos/<clip>/captions.vtt`) is empty for some tenants (the City) and a
+full transcript for others (the County) — the media source order decides.

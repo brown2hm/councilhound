@@ -13,7 +13,7 @@ from datetime import datetime
 import click
 
 from councilhound.bodies import BODY_KEYS
-from councilhound.config import GRANICUS_VIEW_IDS
+from councilhound.config import GRANICUS_VIEW_IDS, JURISDICTION_SLUG
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logging.getLogger("pgserver").setLevel(logging.WARNING)
@@ -253,6 +253,60 @@ def name_speakers(bodies, limit, clip_id):
                 click.echo(name_meeting(session, meeting))
             else:
                 click.echo(name_pending(session, bodies=bodies, limit=limit))
+
+
+@cli.command("diarize-captions")
+@limit_option
+@click.option("--clip-id", default=None, help="one meeting by Granicus clip_id")
+def diarize_captions(limit, clip_id):
+    """Give caption meetings without speaker marks their speakers from the
+    meeting audio, for the bodies in granicus.media.caption_diarize_bodies:
+    fetch the MP4's audio track next to the captions, then re-transcribe
+    (caption text kept, speaker labels from diarization, voices
+    fingerprinted). Residential IP only (Granicus's CDN blocks the cloud).
+    Run `embed` and `name-speakers` afterwards."""
+    from sqlalchemy import exists, select
+
+    from councilhound.config import JURISDICTION
+    from councilhound.db.models import Meeting, TranscriptChunk
+    from councilhound.db.session import get_session, stage_lock
+    from councilhound.extraction.transcript import captions_have_speakers, transcribe_meeting
+    from councilhound.pipeline import fetch_caption_audio
+
+    bodies = JURISDICTION.granicus.media.caption_diarize_bodies
+    if not bodies and not clip_id:
+        raise click.ClickException("no granicus.media.caption_diarize_bodies in this jurisdiction")
+    with stage_lock("transcribe") as held:
+        if not held:
+            _skipped("diarize-captions")
+            return
+        with get_session() as session:
+            q = select(Meeting).where(Meeting.audio_local_path.like("%.vtt"))
+            if clip_id:
+                q = q.where(Meeting.granicus_clip_id == clip_id)
+            else:
+                labelled = exists().where(TranscriptChunk.meeting_id == Meeting.id,
+                                          TranscriptChunk.speaker_label.isnot(None))
+                q = q.where(Meeting.body.in_(bodies), ~labelled)
+            meetings = list(session.scalars(q.order_by(Meeting.meeting_date.desc())))[:limit]
+            done = skipped = failed = 0
+            for m in meetings:
+                if captions_have_speakers(m.audio_local_path):
+                    skipped += 1  # the captioner marked the speakers already
+                    continue
+                try:
+                    if not fetch_caption_audio(m):
+                        skipped += 1
+                        continue
+                    n = transcribe_meeting(session, m, force=True)
+                    click.echo(f"clip {m.granicus_clip_id} ({m.meeting_date}): {n} chunks")
+                    done += 1
+                except Exception as exc:
+                    session.rollback()
+                    click.echo(f"clip {m.granicus_clip_id}: failed: {exc}")
+                    failed += 1
+            click.echo({"diarized": done, "skipped": skipped, "failed": failed,
+                        "candidates": len(meetings)})
 
 
 @cli.command("fingerprint-voices")
@@ -689,12 +743,50 @@ def upcoming(view_id):
 @cli.command()
 @click.option("--skip-details", is_flag=True, help="only use list page + ArcGIS fields")
 def projects(skip_details):
-    """Refresh official City of Fairfax development-project records."""
+    """Refresh the jurisdiction's official development-project records
+    (projects.adapter in its YAML; a no-op when it has none)."""
     from councilhound import pipeline
     from councilhound.db.session import get_session
 
     with get_session() as session:
         click.echo(pipeline.sync_projects(session, fetch_details=not skip_details))
+
+
+@cli.command("normalize-cases")
+@click.option("--apply", is_flag=True, help="make the changes (default: report only)")
+def normalize_cases(apply):
+    """Split entities named after compound case numbers ("RZ-2017-HM-020
+    (RZPA-2025-HM-00031)", "PCA-84-L-020-29/CDPA-84-L-020-10") into the cases
+    they list, so each links to its official record. Needs
+    extraction.case_numbers in the jurisdiction YAML; re-applies stored
+    extractions, no model calls."""
+    import json
+
+    from councilhound.db.session import get_session
+    from councilhound.dedupe import normalize_case_entities
+
+    with get_session() as session:
+        click.echo(json.dumps(normalize_case_entities(session, apply=apply), indent=2))
+
+
+@cli.command("projects-discover")
+@click.argument("url", required=False)
+def projects_discover(url):
+    """Describe an ArcGIS service or layer (fields, record count, sample
+    rows) so an operator can pin projects.params.layer_url / where / fields
+    in the jurisdiction YAML. Defaults to the pinned layer, then to any
+    params.candidates. Never writes the YAML itself."""
+    import json
+
+    from councilhound.config import JURISDICTION
+    from councilhound.scraper.arcgis_projects import describe_layer
+
+    params = JURISDICTION.projects.params
+    targets = [url] if url else [u for u in [params.get("layer_url"), *params.get("candidates", [])] if u]
+    if not targets:
+        raise click.UsageError("no URL given and nothing pinned under projects.params")
+    for target in targets:
+        click.echo(json.dumps(describe_layer(target), indent=2, default=str))
 
 
 @cli.command("index-points")
@@ -754,8 +846,8 @@ def status():
 # IP-blocking keep these out of the cloud `daily`/`catchup` flows.
 
 jurisdiction_option = click.option(
-    "--jurisdiction", default="fairfax_city_va", show_default=True,
-    help="jurisdiction config stem under ingestion/jurisdictions/",
+    "--jurisdiction", default=JURISDICTION_SLUG, show_default=True,
+    help="jurisdiction config stem under ingestion/jurisdictions/ (default: $JURISDICTION)",
 )
 
 

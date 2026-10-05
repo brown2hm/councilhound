@@ -1,8 +1,8 @@
-"""Jurisdiction config (YAML) + lazily-built JurisdictionContext.
+"""Impact-side view of the jurisdiction config + lazily-built JurisdictionContext.
 
 All jurisdiction-specific values — FIPS codes, CRS, data-source URLs, tax and
-budget rates — live in ingestion/jurisdictions/<name>.yaml, never in module
-logic. Rates start as null placeholders; `impact-setup-jurisdiction` pins
+budget rates — live in ingestion/jurisdictions/<name>.yaml (models in
+councilhound.jurisdiction), never in module logic. Rates start as null placeholders; `impact-setup-jurisdiction` pins
 them with provenance (source URL + fiscal year). Anything still null when a
 module needs it fails loudly via require_rate() — a guessed rate is worse
 than no rate.
@@ -14,96 +14,19 @@ in the base (cloud) environment.
 from __future__ import annotations
 
 import functools
-from pathlib import Path
 from typing import Any
 
-import yaml
-from pydantic import BaseModel, Field
-
-JURISDICTIONS_DIR = Path(__file__).resolve().parents[3] / "jurisdictions"
-
-
-class PinnedValue(BaseModel):
-    """A config value that must carry its source. value=None means 'not yet
-    pinned' — usable only after impact-setup-jurisdiction fills it in."""
-    value: float | None = None
-    source: str | None = None  # URL it was read from
-    fy: str | None = None  # fiscal year / vintage
-
-
-class TaxRates(BaseModel):
-    real_estate_rate_per_100: PinnedValue = Field(default_factory=PinnedValue)
-    meals_tax_rate: PinnedValue = Field(default_factory=PinnedValue)
-    sales_tax_local_share: PinnedValue = Field(default_factory=PinnedValue)
-    # per-household budget actuals (preferred) vs. rate-based vehicle estimate
-    # (fallback) — fiscal.py uses whichever is pinned, actuals first
-    personal_property_per_household: PinnedValue = Field(default_factory=PinnedValue)
-    personal_property_rate_per_100: PinnedValue = Field(default_factory=PinnedValue)
-    bpol_retail_rate_per_100: PinnedValue = Field(default_factory=PinnedValue)
-    # BPOL is levied by business class; professional/business-service rates run
-    # several times the retail rate, so office tenants need their own
-    bpol_office_rate_per_100: PinnedValue = Field(default_factory=PinnedValue)
-    # business tangible personal property (furniture, fixtures, equipment)
-    bpp_rate_per_100: PinnedValue = Field(default_factory=PinnedValue)
-
-
-class BudgetFacts(BaseModel):
-    general_fund_expenditure: PinnedValue = Field(default_factory=PinnedValue)
-    population_basis: PinnedValue = Field(default_factory=PinnedValue)
-    # school-split cost model: when both are pinned, service costs become
-    # residents x non-school per-capita + students x per-pupil, so student
-    # generation drives the school component instead of being note-only
-    education_transfer: PinnedValue = Field(default_factory=PinnedValue)
-    school_enrollment: PinnedValue = Field(default_factory=PinnedValue)
-    # state education revenue received by the locality (basic aid + education
-    # sales tax); netted against the transfer so per-pupil cost is LOCAL cost
-    state_school_revenue: PinnedValue = Field(default_factory=PinnedValue)
-
-
-class Fips(BaseModel):
-    state: str
-    county: str
-
-
-class JurisdictionConfig(BaseModel):
-    name: str
-    slug: str  # file stem, e.g. "fairfax_city_va"
-    fips: Fips
-    crs_projected: str  # e.g. "EPSG:2283" — all distance math happens here
-    projects_index_url: str
-    boundary_source: str | None = None  # ArcGIS layer URL — discovered, then pinned
-    parcels_source: str | None = None
-    zoning_source: str | None = None
-    assessment_source: str | None = None
-    development_review_map_source: str | None = None
-    geohub_portal_url: str | None = None
-    tax: TaxRates = Field(default_factory=TaxRates)
-    budget: BudgetFacts = Field(default_factory=BudgetFacts)
-    # assessment land-use codes for comp selection, by product class. Condo
-    # comps are what a for-sale project should be valued against; when the
-    # condo code is unpinned the fiscal module falls back to its screening
-    # default rather than pricing condos off apartment buildings.
-    assessment_lucs: dict[str, str | None] = Field(
-        default_factory=lambda: {"apartment": "352", "condo": None})
-    transit_feeds: list[str] = Field(default_factory=list)
-    fringe_reference_blockgroup: str | None = None  # environmental module (M6 seam)
-    calibration_counts: dict | None = None  # optional pedestrian counts
-
-    @classmethod
-    def load(cls, slug: str) -> "JurisdictionConfig":
-        path = JURISDICTIONS_DIR / f"{slug}.yaml"
-        if not path.exists():
-            raise FileNotFoundError(f"no jurisdiction config at {path}")
-        data = yaml.safe_load(path.read_text()) or {}
-        data["slug"] = slug
-        return cls.model_validate(data)
-
-    def save(self) -> Path:
-        """Write the config back (used by setup to pin discovered values)."""
-        path = JURISDICTIONS_DIR / f"{self.slug}.yaml"
-        data = self.model_dump(exclude={"slug"}, exclude_none=False)
-        path.write_text(yaml.safe_dump(data, sort_keys=False, allow_unicode=True))
-        return path
+# The models and loader live in councilhound.jurisdiction (core); this module
+# keeps the impact-specific helpers and re-exports the names impact code and
+# tests import from here.
+from councilhound.jurisdiction import (  # noqa: F401
+    JURISDICTIONS_DIR,
+    BudgetFacts,
+    Fips,
+    JurisdictionConfig,
+    PinnedValue,
+    TaxRates,
+)
 
 
 class MissingRateError(RuntimeError):

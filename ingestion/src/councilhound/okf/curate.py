@@ -135,9 +135,9 @@ _SUFFIXES = {"jr", "sr", "ii", "iii", "iv"}
 # Title aliases mark the person who actually sits on a body, which is how the
 # members page builds its roster (members.py:_TITLE_ROLES). Used here to break
 # surname ties created by unmerged spelling variants.
-_TITLE_PREFIXES = ("mayor ", "councilmember ", "council member ",
-                   "councilwoman ", "councilman ", "vice-chair ",
-                   "vice chair ", "chairman ", "chair ", "commissioner ")
+from councilhound.bodies import REGISTRY  # noqa: E402
+
+_TITLE_PREFIXES = REGISTRY.title_prefixes()
 
 
 def _last_name(name: str) -> str:

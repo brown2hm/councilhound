@@ -12,8 +12,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src/ ./src/
 COPY alembic.ini ./
 COPY alembic/ ./alembic/
+# per-jurisdiction configs (JURISDICTION selects one at runtime)
+COPY jurisdictions/ ./jurisdictions/
 # curated one-time entity merges (data/ is otherwise runtime-only and ignored)
 COPY data/entity_merges_2026_07.json ./data/
 ENV PYTHONPATH=/app/src
+ENV JURISDICTIONS_DIR=/app/jurisdictions
 
 CMD ["python", "-m", "councilhound.cli", "--help"]

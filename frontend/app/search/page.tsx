@@ -1,15 +1,17 @@
 import Link from "next/link";
-import BodyTag, { BODY_DOTS } from "@/components/BodyTag";
+import BodyTag, { bodyDot } from "@/components/BodyTag";
 import StatusBadge from "@/components/StatusBadge";
-import { api, BODIES as TRACKED_BODIES, bodyLabel, formatDate, type SearchResult } from "@/lib/api";
+import { api, formatDate, type SearchResult } from "@/lib/api";
+import { bodyLabel, getJurisdiction } from "@/lib/jurisdiction";
 
-const BODIES = [{ key: "", label: "All bodies" }, ...TRACKED_BODIES.map((b) => ({ key: b.key, label: b.label }))];
-
-export const metadata = {
-  title: "Search the record",
-  description:
-    "Search every transcribed word and agenda item from City of Fairfax meetings, with links to the moment on video.",
-};
+export async function generateMetadata() {
+  const j = await getJurisdiction();
+  return {
+    title: "Search the record",
+    description:
+      `Search every transcribed word and agenda item from ${j.identity.short_name} meetings, with links to the moment on video.`,
+  };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -93,6 +95,8 @@ export default async function SearchPage({
 }: {
   searchParams: { q?: string; body?: string };
 }) {
+  const j = await getJurisdiction();
+  const BODIES = [{ key: "", label: "All bodies" }, ...j.bodies.map((b) => ({ key: b.key, label: b.label }))];
   const q = (searchParams.q ?? "").trim();
   const body = searchParams.body ?? "";
   const data = q.length >= 2 ? await api.search(q, body || undefined) : null;
@@ -132,7 +136,7 @@ export default async function SearchPage({
               b.key === body ? "bg-ink text-canvas" : "border border-hairline bg-canvas text-muted hover:text-ink"
             }`}
           >
-            {b.key && <span aria-hidden className={`inline-block h-2 w-2 rounded-full ${BODY_DOTS[b.key]}`} />}
+            {b.key && <span aria-hidden className={`inline-block h-2 w-2 rounded-full ${bodyDot(b.key)}`} />}
             {b.label}
           </Link>
         ))}

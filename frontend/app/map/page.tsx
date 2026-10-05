@@ -1,23 +1,26 @@
 import MapClient from "@/components/MapClient";
 import { api } from "@/lib/api";
+import { getJurisdiction } from "@/lib/jurisdiction";
 
-export const metadata = {
-  title: "Around the city",
-  description:
-    "City of Fairfax locations and projects named in council and commission business, mapped and colored by project status, with a lookup for what's near any address.",
-};
+export async function generateMetadata() {
+  const j = await getJurisdiction();
+  return {
+    title: `Around the ${j.identity.noun}`,
+    description: `${j.identity.short_name} locations and projects named in ${j.identity.record_phrase}, mapped and colored by project status, with a lookup for what's near any address.`,
+  };
+}
 
 export const dynamic = "force-dynamic";
 
 export default async function MapPage({ searchParams }: { searchParams: { focus?: string } }) {
-  const locations = await api.mapLocations();
+  const [j, locations] = await Promise.all([getJurisdiction(), api.mapLocations()]);
   return (
     <div className="mx-auto max-w-[1280px] px-4 pb-10 pt-8 sm:px-8">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
         <div>
-          <h1 className="text-[32px] font-medium tracking-[-0.5px]">Around the city</h1>
+          <h1 className="text-[32px] font-medium tracking-[-0.5px]">Around the {j.identity.noun}</h1>
           <p className="mt-1 max-w-[70ch] text-sm text-muted">
-            {locations.length} places and projects named in council and commission business. Pin color follows the
+            {locations.length} places and projects named in {j.identity.record_phrase}. Pin color follows the
             project&apos;s status; open decisions are the loud ones.
           </p>
         </div>
@@ -28,7 +31,7 @@ export default async function MapPage({ searchParams }: { searchParams: { focus?
         >
           <input
             name="q"
-            placeholder="What's near an address? e.g. 10455 Armstrong St"
+            placeholder={`What's near an address? e.g. ${j.display.example_address}`}
             aria-label="What's near an address?"
             className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none placeholder:text-muted-soft"
           />

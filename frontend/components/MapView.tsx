@@ -1,6 +1,7 @@
 "use client";
 
 import "leaflet/dist/leaflet.css";
+import { useJurisdiction } from "@/components/JurisdictionProvider";
 import L from "leaflet";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -60,7 +61,7 @@ function pinIcon(status: string | null, kind: MarkerKind, selected: boolean) {
 }
 
 function classify(loc: MapLocation): { kind: MarkerKind; label: string } {
-  if (loc.is_official_project) return { kind: "official", label: "City project" };
+  if (loc.is_official_project) return { kind: "official", label: "Official project" };
   if (loc.entity_type === "project") return { kind: "project", label: "Project from meetings" };
   return { kind: "mention", label: "Place from meetings" };
 }
@@ -100,6 +101,8 @@ function PinList({
   total: number;
   onPick: (slug: string) => void;
 }) {
+  const { display } = useJurisdiction();
+  const stripRe = new RegExp(display.address_strip_regex || "$^", "i");
   const ordered = [...locations].sort(
     (a, b) => statusRank(a) - statusRank(b) || Number(b.is_official_project) - Number(a.is_official_project) || a.name.localeCompare(b.name),
   );
@@ -125,7 +128,7 @@ function PinList({
                   <span className="block truncate text-sm font-semibold">{loc.name}</span>
                   <span className="block truncate text-[12px] text-muted">
                     {label}
-                    {address ? ` · ${address.split(/, Fairfax/i)[0]}` : ""}
+                    {address ? ` · ${address.split(stripRe)[0]}` : ""}
                   </span>
                 </span>
                 {statusPill(statusOf(loc))}
@@ -220,7 +223,7 @@ function DetailPane({
 }
 
 const KIND_FILTERS: { key: MarkerKind; label: string }[] = [
-  { key: "official", label: "City projects" },
+  { key: "official", label: "Official projects" },
   { key: "project", label: "Projects from meetings" },
   { key: "mention", label: "Places from meetings" },
 ];
@@ -265,6 +268,7 @@ export default function MapView({
   compact?: boolean;
   center?: [number, number];
 }) {
+  const { display } = useJurisdiction();
   const router = useRouter();
   const [selectedSlug, setSelectedSlug] = useState<string | null>(focus ?? null);
   const [status, setStatus] = useState<string>("");
@@ -329,7 +333,7 @@ export default function MapView({
           locations.reduce((s, l) => s + l.lat, 0) / locations.length,
           locations.reduce((s, l) => s + l.lng, 0) / locations.length,
         ]
-      : [38.8462, -77.3064]); // City of Fairfax
+      : display.map_center);
 
   const mapHeight = compact
     ? "h-[420px]"
@@ -396,7 +400,7 @@ export default function MapView({
         )}
         <MapContainer
           center={center}
-          zoom={compact ? 15 : 14}
+          zoom={compact ? display.map_zoom.compact : display.map_zoom.full}
           scrollWheelZoom={!compact}
           className={`${mapHeight} w-full rounded-3xl border border-hairline`}
         >

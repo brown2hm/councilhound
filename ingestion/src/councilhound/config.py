@@ -4,21 +4,31 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# The jurisdiction (JURISDICTION env, default the City) supplies every
+# default below; the env vars remain as per-deployment overrides.
+from councilhound.jurisdiction import current as _current_jurisdiction  # noqa: E402
+
+JURISDICTION = _current_jurisdiction()
+JURISDICTION_SLUG = JURISDICTION.slug
+
 # Empty string -> db/session.py falls back to an embedded dev Postgres
 # (pgserver) under DATA_DIR, so local dev needs no Docker/managed DB.
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
-GRANICUS_BASE_URL = os.environ.get("GRANICUS_BASE_URL", "https://fairfax.granicus.com")
-GRANICUS_VIEW_IDS = [v.strip() for v in os.environ.get("GRANICUS_VIEW_IDS", "13").split(",") if v.strip()]
-FAIRFAX_PROJECTS_URL = os.environ.get(
-    "FAIRFAX_PROJECTS_URL",
-    "https://www.fairfaxva.gov/Property-Business/Development/Projects",
-)
-FAIRFAX_PROJECTS_ARCGIS_URL = os.environ.get(
-    "FAIRFAX_PROJECTS_ARCGIS_URL",
+GRANICUS_BASE_URL = os.environ.get("GRANICUS_BASE_URL") or JURISDICTION.granicus.base_url
+GRANICUS_VIEW_IDS = ([v.strip() for v in os.environ["GRANICUS_VIEW_IDS"].split(",") if v.strip()]
+                     if os.environ.get("GRANICUS_VIEW_IDS")
+                     else [v.view_id for v in JURISDICTION.granicus.views])
+# Official development-projects source (the City's OpenCities index + ArcGIS
+# layer). Read from the jurisdiction's projects adapter params; the env
+# names survive as overrides until the adapter registry lands.
+_projects_params = JURISDICTION.projects.params
+FAIRFAX_PROJECTS_URL = os.environ.get("FAIRFAX_PROJECTS_URL") or _projects_params.get(
+    "index_url", "https://www.fairfaxva.gov/Property-Business/Development/Projects")
+FAIRFAX_PROJECTS_ARCGIS_URL = os.environ.get("FAIRFAX_PROJECTS_ARCGIS_URL") or _projects_params.get(
+    "arcgis_url",
     "https://services2.arcgis.com/DANcyjLcCCpGk8Ri/arcgis/rest/services/"
-    "Major_Developments_Project_Map_v2/FeatureServer/0/query",
-)
+    "Major_Developments_Project_Map_v2/FeatureServer/0/query")
 # Anchor default data dir to the repo root (ingestion/src/councilhound/config.py
 # -> three parents up), so CLI behavior doesn't depend on cwd. Overridden by
 # env in Docker/cloud.
@@ -47,8 +57,12 @@ CENSUS_API_KEY = os.environ.get("CENSUS_API_KEY", "")
 # The default only works from a repo checkout: the ingestion image builds from
 # ingestion/ (so knowledge/ is outside the context) and _REPO_ROOT collapses to
 # "/" there. Anything containerized must mount the bundle and set this env var.
-OKF_BUNDLE_DIR = os.environ.get(
-    "OKF_BUNDLE_DIR", os.path.join(_REPO_ROOT, "knowledge", "councilhound-fairfax"))
+OKF_BUNDLE_DIR = os.environ.get("OKF_BUNDLE_DIR") or os.path.join(
+    _REPO_ROOT, "knowledge", JURISDICTION.site.okf_bundle_name)
 # Public site base used for `resource` frontmatter URIs and cross-links from
 # wiki prose to pages that live outside the bundle (members, analyses).
-SITE_BASE_URL = os.environ.get("SITE_BASE_URL", "https://councilhound.net").rstrip("/")
+SITE_BASE_URL = (os.environ.get("SITE_BASE_URL") or JURISDICTION.site.site_base_url).rstrip("/")
+API_BASE_URL = (os.environ.get("API_BASE_URL") or JURISDICTION.site.api_base_url).rstrip("/")
+MAIL_FROM = os.environ.get("MAIL_FROM") or JURISDICTION.site.mail_from
+GEOCODE_SUFFIX = os.environ.get("GEOCODE_SUFFIX") or JURISDICTION.identity.geocode_suffix
+LOCAL_TZ = JURISDICTION.tz

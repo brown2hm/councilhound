@@ -1,0 +1,31 @@
+# Fairfax County web: flyctl deploy -c frontend/fly.fairfax_county_va.toml (from frontend/)
+# CouncilHound frontend — deploy from the frontend/ directory:
+#   flyctl deploy -c frontend/fly.toml frontend
+app = "councilhound-fxco-web"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+  [build.args]
+    NEXT_PUBLIC_API_URL = "https://api-fairfaxcounty.councilhound.net"
+
+[env]
+  JURISDICTION = "fairfax_county_va"
+  # server-side fetches can use the fly.dev name (no DNS dependency)
+  API_URL = "https://councilhound-fxco-api.fly.dev"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 50
+    hard_limit = 100
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

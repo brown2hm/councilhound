@@ -1,14 +1,15 @@
 import { redirect } from "next/navigation";
+import { getJurisdiction } from "@/lib/jurisdiction";
 import { requireRecord } from "@/lib/not-found";
 import { getProject } from "../project";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const project = await requireRecord(getProject(params.slug));
+  const [project, j] = await Promise.all([requireRecord(getProject(params.slug)), getJurisdiction()]);
   return {
     title: `${project.name} — documents (${project.documents.length})`,
-    description: `Documents the City of Fairfax lists in the official project record for ${project.name}.`,
+    description: `Documents ${j.identity.short_name} lists in the official project record for ${project.name}.`,
   };
 }
 
@@ -17,6 +18,7 @@ export default async function ProjectDocumentsPage({
 }: {
   params: { slug: string };
 }) {
+  const j = await getJurisdiction();
   const project = await requireRecord(getProject(params.slug));
   if (project.documents.length === 0) {
     redirect(`/development/${params.slug}`);
@@ -25,8 +27,8 @@ export default async function ProjectDocumentsPage({
   return (
     <div className="max-w-[880px]">
       <p className="mb-6 text-[13px] text-muted">
-        Documents published in the city&apos;s project record, in the order the
-        city lists them.
+        Documents published in the {j.identity.noun}&apos;s project record, in the order the
+        {j.identity.noun} lists them.
         {project.synced_at && ` Synced ${new Date(project.synced_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}.`}
       </p>
 
@@ -62,7 +64,7 @@ export default async function ProjectDocumentsPage({
           target="_blank"
           className="font-semibold underline underline-offset-2 hover:text-ink"
         >
-          the city&apos;s project page ↗
+          the {j.identity.noun}&apos;s project page ↗
         </a>
       </p>
     </div>

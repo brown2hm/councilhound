@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { getJurisdiction } from "@/lib/jurisdiction";
+import { notFound } from "next/navigation";
 import MetricFormula from "@/components/MetricFormula";
 import { METRIC_METHODS } from "@/lib/metric-methods";
 
@@ -8,7 +10,8 @@ export const metadata = {
     "Formulas, data sources, and assumptions behind CouncilHound's development impact screening estimates.",
 };
 
-export default function MetricMethodsPage() {
+export default async function MetricMethodsPage() {
+  if (!(await getJurisdiction()).features.impact) notFound();
   return (
     <div className="mx-auto max-w-[1180px] px-4 pb-16 pt-8 sm:px-8">
       <Link

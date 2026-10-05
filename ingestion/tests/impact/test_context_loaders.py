@@ -96,9 +96,10 @@ def test_merge_sources_dedups_same_name_within_50m():
 
 
 def test_discovery_pins_layer_urls(monkeypatch, tmp_path):
+    from councilhound import jurisdiction as core
     from councilhound.impact import jurisdiction as jur
 
-    monkeypatch.setattr(jur, "JURISDICTIONS_DIR", tmp_path)
+    monkeypatch.setattr(core, "JURISDICTIONS_DIR", tmp_path)  # load()/save() read the core module's dir
     (tmp_path / "testville.yaml").write_text(
         "name: Testville\n"
         'fips: {state: "51", county: "600"}\n'

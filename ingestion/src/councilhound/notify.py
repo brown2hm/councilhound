@@ -7,14 +7,13 @@ tomorrow)."""
 import datetime
 import logging
 import math
-import os
 from collections import defaultdict
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from councilhound.changes import recent_changes, status_words
-from councilhound.config import GRANICUS_BASE_URL
+from councilhound.config import API_BASE_URL, GRANICUS_BASE_URL, JURISDICTION, LOCAL_TZ, SITE_BASE_URL  # noqa: F401
 from councilhound.db.models import (
     AgendaItem, CityProject, Entity, EntityGeocode, EntityUpdate, Meeting, TopicSubscription,
     UpcomingMeeting, Vote,
@@ -25,8 +24,7 @@ from councilhound.people import vote_cast_by
 
 log = logging.getLogger(__name__)
 
-SITE_BASE_URL = os.environ.get("SITE_BASE_URL", "https://councilhound.net")
-API_BASE_URL = os.environ.get("API_BASE_URL", "https://api.councilhound.net")
+_ID = JURISDICTION.identity
 
 BRIEFING_EVERY = datetime.timedelta(days=7)
 MAX_LINES_PER_SECTION = 40
@@ -49,7 +47,7 @@ def describe(session: Session, sub: TopicSubscription) -> tuple[str, str]:
         return (f"{BODY_LABELS.get(sub.body, sub.body)} meetings",
                 f"{SITE_BASE_URL}/meetings?body={sub.body}")
     if sub.kind == "area":
-        return (sub.label or "an area of the city",
+        return (sub.label or f"an area of the {_ID.noun}",
                 f"{SITE_BASE_URL}/nearby?lat={sub.lat}&lng={sub.lng}&r={sub.radius_m}")
     if sub.kind == "briefing":
         return "the weekly briefing", SITE_BASE_URL
@@ -206,8 +204,9 @@ def _briefing_section(session, sub, now: datetime.datetime) -> _Section | None:
     for u in session.scalars(
         select(UpcomingMeeting)
         .where(UpcomingMeeting.starts_at.isnot(None),
-               UpcomingMeeting.starts_at >= now.replace(tzinfo=None),
-               UpcomingMeeting.starts_at <= (now + BRIEFING_EVERY).replace(tzinfo=None))
+               # starts_at is naive local time; compare in the jurisdiction's zone
+               UpcomingMeeting.starts_at >= now.astimezone(LOCAL_TZ).replace(tzinfo=None),
+               UpcomingMeeting.starts_at <= (now + BRIEFING_EVERY).astimezone(LOCAL_TZ).replace(tzinfo=None))
         .order_by(UpcomingMeeting.starts_at)
     ):
         lines.append((u.starts_at.strftime("%Y-%m-%d"), f"Coming up: {u.title}",
@@ -255,16 +254,16 @@ def _render(sections: list[_Section]) -> tuple[str, str, str]:
 
     kinds = {sec.sub.kind for sec in sections}
     if kinds == {"briefing"}:
-        subject = "CouncilHound: your weekly City of Fairfax briefing"
+        subject = f"CouncilHound: your weekly {_ID.short_name} briefing"
     elif len(sections) == 1:
         subject = f"CouncilHound: news on {sections[0].title}"
     elif kinds == {"topic"}:
         subject = f"CouncilHound: news on {len(sections)} topics you follow"
     else:
         subject = f"CouncilHound: news on {len(sections)} things you follow"
-    intro = ("This week in City of Fairfax council business:"
+    intro = (f"This week in {_ID.short_name} {_ID.record_phrase}:"
              if kinds == {"briefing"} else
-             "Things you follow on CouncilHound had new council activity:")
+             f"Things you follow on CouncilHound had new {_ID.activity_noun} activity:")
     text = (intro + "\n" + "\n".join(text_parts)
             + "\n\nSummaries are machine-generated — verify against the "
               "linked source documents.\n")

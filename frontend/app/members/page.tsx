@@ -1,17 +1,23 @@
 import Link from "next/link";
+import { bodyDot, getJurisdiction, legislativeBody } from "@/lib/jurisdiction";
 import { api, formatDate, type MemberSummary } from "@/lib/api";
 import { subjectOf } from "@/lib/subject";
 
-export const metadata = {
-  title: "Members",
-  description:
-    "City of Fairfax council members, commissioners, and school board members: how each one votes, how often, and where they last said no, parsed from meeting minutes and rosters.",
-};
+export async function generateMetadata() {
+  const j = await getJurisdiction();
+  return {
+    title: "Members",
+    description:
+      `${j.identity.short_name} members of the ${j.identity.legislative_body_label} and its commissions and boards: how each one votes, how often, and where they last said no, parsed from meeting records and rosters.`,
+  };
+}
 
 export const dynamic = "force-dynamic";
 
-const isCouncil = (m: MemberSummary) => m.roles.some((r) => r === "Mayor" || r === "Councilmember");
+// the legislative body's roster roles (Mayor/Councilmember; Chairman/Supervisor)
+const isCouncil = (m: MemberSummary) => m.roles.some((r) => (legislativeBody()?.roles ?? []).includes(r));
 const isSchoolBoard = (m: MemberSummary) => m.roles.some((r) => r.startsWith("School Board"));
+// a City-of-Fairfax fact: the mayor votes only to break a tie
 const isMayor = (m: MemberSummary) => m.roles.includes("Mayor");
 
 function split(m: MemberSummary) {
@@ -129,7 +135,10 @@ function RecordTable({ list, dot }: { list: MemberSummary[]; dot: string }) {
 }
 
 export default async function MembersPage() {
-  const members = await api.members();
+  const [j, members] = await Promise.all([getJurisdiction(), api.members()]);
+  const legislative = j.bodies[0];
+  const others = j.bodies.slice(1).filter((b) => (b.roles ?? []).length && !b.roles.some((r) => r.startsWith("School Board")));
+  const othersTitle = others.length ? `${others[0].label}${others.length > 1 || j.bodies.length > 2 ? " & boards" : ""}` : "Commissions & boards";
   const current = members.filter((m) => m.is_current);
   const council = current.filter(isCouncil);
   const schoolBoard = current.filter((m) => !isCouncil(m) && isSchoolBoard(m));
@@ -147,18 +156,18 @@ export default async function MembersPage() {
       <section className="mb-10">
         <div className="mb-2.5 flex flex-wrap items-baseline justify-between gap-3">
           <h2 className="flex items-center gap-2 text-[22px] font-semibold tracking-[-0.3px]">
-            <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-teal" /> City Council
+            <span aria-hidden className={`h-2.5 w-2.5 rounded-full ${bodyDot(legislative?.key)}`} /> {legislative?.label ?? "Council"}
           </h2>
           <Legend />
         </div>
-        <RecordTable list={council} dot="bg-teal" />
+        <RecordTable list={council} dot={bodyDot(legislative?.key)} />
       </section>
 
       <section className="mb-10">
         <h2 className="mb-2.5 flex items-center gap-2 text-[22px] font-semibold tracking-[-0.3px]">
-          <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-ochre" /> Planning Commission &amp; boards
+          <span aria-hidden className={`h-2.5 w-2.5 rounded-full ${bodyDot(others[0]?.key)}`} /> {othersTitle}
         </h2>
-        <RecordTable list={commission} dot="bg-ochre" />
+        <RecordTable list={commission} dot={bodyDot(others[0]?.key)} />
       </section>
 
       {schoolBoard.length > 0 && (

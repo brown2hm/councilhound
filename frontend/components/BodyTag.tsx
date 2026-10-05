@@ -1,18 +1,9 @@
-import { BODY_LABELS } from "@/lib/api";
+import { bodyDot, bodyLabel } from "@/lib/jurisdiction";
 
-// Body identity colors: City Council = deep teal, Planning Commission =
-// ochre, School Board = plum, Parks board = moss, Housing board = sky.
-// Dots (not filled badges) so they never read as status badges.
-export const BODY_DOTS: Record<string, string> = {
-  city_council: "bg-teal",
-  planning_commission: "bg-ochre",
-  school_board: "bg-plum",
-  prab: "bg-moss",
-  hhcab: "bg-sky",
-};
-
-/** Dot class for a body, grey for anything untracked. */
-export const bodyDot = (body: string | null | undefined): string => (body && BODY_DOTS[body]) || "bg-muted-soft";
+// Body identity dots come from the jurisdiction's palette index
+// (lib/jurisdiction.BODY_PALETTE); re-exported so existing importers keep
+// working.
+export { bodyDot };
 
 export default function BodyTag({
   body,
@@ -23,11 +14,8 @@ export default function BodyTag({
 }) {
   return (
     <span className={`inline-flex items-center gap-1.5 whitespace-nowrap ${className}`}>
-      <span
-        aria-hidden
-        className={`inline-block h-2 w-2 rounded-full ${BODY_DOTS[body] ?? "bg-muted-soft"}`}
-      />
-      {BODY_LABELS[body] ?? body}
+      <span aria-hidden className={`inline-block h-2 w-2 rounded-full ${bodyDot(body)}`} />
+      {bodyLabel(body)}
     </span>
   );
 }

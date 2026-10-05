@@ -3,6 +3,7 @@ import HashScroll from "@/components/HashScroll";
 import Markdown from "@/components/Markdown";
 import WikiTrustBadges from "@/components/WikiTrust";
 import { formatDate, type ImpactMetric, type ProjectWiki } from "@/lib/api";
+import { getJurisdiction } from "@/lib/jurisdiction";
 import { requireRecord } from "@/lib/not-found";
 import { metricsByKey, resolveBody, stripSection, WIKI_PAGE_LABELS } from "@/lib/wiki";
 import { getEvaluation, getProject, getWiki } from "./project";
@@ -36,6 +37,7 @@ export default async function DevelopmentWikiPage({
 }: {
   params: { slug: string };
 }) {
+  const j = await getJurisdiction();
   const project = await requireRecord(getProject(params.slug));
 
   // the wiki carries the narrative; the evaluation is fetched only so
@@ -61,8 +63,8 @@ export default async function DevelopmentWikiPage({
     return (
       <div className="max-w-[880px]">
         <p className="mb-6 rounded-2xl border border-hairline bg-soft p-4 px-5 text-[13px] leading-[1.55] text-muted">
-          No wiki yet for this project — it gets one once council meetings pick
-          it up. Below is the city&apos;s official record.
+          No wiki yet for this project — it gets one once public meetings pick
+          it up. Below is the {j.identity.noun}&apos;s official record.
         </p>
         {project.description && (
           <p className="mb-4 text-sm leading-[1.6] text-body">{project.description}</p>

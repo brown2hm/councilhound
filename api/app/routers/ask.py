@@ -29,8 +29,8 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from councilhound.bodies import BODIES
-from councilhound.config import ANTHROPIC_API_KEY
+from councilhound.bodies import REGISTRY
+from councilhound.config import ANTHROPIC_API_KEY, JURISDICTION
 from councilhound.db.models import (
     CityProject, Entity, EntityMention, EntityUpdate, Meeting,
 )
@@ -50,9 +50,9 @@ ASK_EFFORT = os.environ.get("ASK_EFFORT", "medium")
 MAX_TOOL_ROUNDS = 5
 FIRST_SEARCH_LIMIT = 8
 
-_BODY_KEYS = list(BODIES)
-_BODY_LIST = "; ".join(f"{b.key} = {b.label}" for b in BODIES.values())
-_PLACE = "the City of Fairfax, Virginia"
+_BODY_KEYS = list(REGISTRY.bodies)
+_BODY_LIST = "; ".join(f"{b.key} = {b.label}" for b in REGISTRY.bodies.values())
+_PLACE = JURISDICTION.identity.short_name
 
 ANSWER_SYSTEM = f"""\
 You answer residents' questions about local government in {_PLACE} \

@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from councilhound.config import JURISDICTION
 from councilhound.db.models import CityProject, Entity, ProjectEvaluation, WikiPage
 
 from app.db import db_session
@@ -33,13 +34,14 @@ RETIRED_METRICS = {
     "Net annual fiscal impact (range across both cost methods)",
 }
 
-# words too generic to distinguish one project name from another
+# words too generic to distinguish one project name from another; the
+# jurisdiction adds its own name tokens (projects.generic_name_tokens)
 _GENERIC_TOKENS = {
     "project", "projects", "improvement", "improvements", "development",
     "redevelopment", "application", "proposal", "amendment", "meeting",
-    "phase", "i", "ii", "the", "of", "and", "at", "to", "city", "fairfax",
-    "aka", "va", "llc", "lp",
-}
+    "phase", "i", "ii", "the", "of", "and", "at", "to",
+    "aka", "llc", "lp",
+} | {t.lower() for t in JURISDICTION.projects.generic_name_tokens}
 
 # built-environment vocabulary: private development + physical city works
 _DEVELOPMENT_PATTERNS = re.compile(
@@ -99,10 +101,16 @@ _CORRIDOR_HINTS = (
 )
 
 
+# impact analysis is a per-jurisdiction feature (the County has none yet):
+# when off, no project has an evaluation and no gap needs an explanation
+_IMPACT = JURISDICTION.features.impact
+
+
 def _no_analysis_reason(row: CityProject, eval_status: str | None) -> str | None:
     """Why this official project has no published impact analysis — turns a
-    silent gap into a legible editorial state. None when one is published."""
-    if eval_status == "synthesized":
+    silent gap into a legible editorial state. None when one is published
+    (or when the jurisdiction has no impact analysis at all)."""
+    if not _IMPACT or eval_status == "synthesized":
         return None
     if eval_status is not None:
         return "analysis in preparation"
@@ -172,7 +180,7 @@ def list_development_projects(
         .where(WikiPage.kind == "concept")
         .group_by(WikiPage.entity_id)).all())
     items = [
-        _serialize(row, entity, eval_status == "synthesized",
+        _serialize(row, entity, _IMPACT and eval_status == "synthesized",
                    no_analysis_reason=_no_analysis_reason(row, eval_status),
                    has_wiki=row.entity_id in wiki_by_entity,
                    wiki_pushed_at=wiki_by_entity.get(row.entity_id))
@@ -246,6 +254,8 @@ def get_wiki(slug: str, session: Session = Depends(db_session)):
 
 @router.get("/{slug}/evaluation")
 def get_evaluation(slug: str, session: Session = Depends(db_session)):
+    if not _IMPACT:
+        raise HTTPException(status_code=404, detail="impact analysis is not available for this jurisdiction")
     result = session.execute(
         select(CityProject, ProjectEvaluation)
         .join(ProjectEvaluation, ProjectEvaluation.city_project_id == CityProject.id)
@@ -340,6 +350,6 @@ def get_project(slug: str, session: Session = Depends(db_session)):
         "has_wiki": entity_has_wiki(session, row.entity_id),
         "wiki_pushed_at": wiki_pushed_at.isoformat() if wiki_pushed_at else None,
         "evaluation_status": eval_status,
-        "has_evaluation": eval_status == "synthesized" and bool(has_report),
+        "has_evaluation": _IMPACT and eval_status == "synthesized" and bool(has_report),
         "no_analysis_reason": _no_analysis_reason(row, eval_status),
     }

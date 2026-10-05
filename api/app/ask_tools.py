@@ -18,9 +18,8 @@ from fastapi import HTTPException
 from sqlalchemy import exists, func, or_, select
 from sqlalchemy.orm import Session
 
-from zoneinfo import ZoneInfo
-
-from councilhound.bodies import BODIES, label as body_label
+from councilhound.bodies import REGISTRY
+from councilhound.config import LOCAL_TZ
 from councilhound.db.models import (
     AgendaItem, CityProject, Document, Entity, EntityAlias, EntityMention, EntityProfile,
     EntityUpdate, Meeting, MeetingSpeaker, ProjectEvaluation, TranscriptChunk, UpcomingMeeting,
@@ -44,9 +43,8 @@ WIKI_PAGE_CHARS = 3500
 REPORT_CHARS = 3000
 AGENDA_CHARS = 2500
 DOC_SNIPPET_CHARS = 800
-# pipeline placeholder labels ("SPEAKER_01") name no one
-LOCAL_TZ = ZoneInfo("America/New_York")
-_ANON_SPEAKER = re.compile(r"^speaker[_ ]?\d+$", re.I)
+# pipeline placeholder labels ("SPEAKER_01", "TURN_0012") name no one
+_ANON_SPEAKER = re.compile(r"^(speaker[_ ]?\d+|turn_\d+)$", re.I)  # voice clusters, caption turns
 
 
 def _clip(text: str | None, n: int) -> str:
@@ -102,7 +100,7 @@ def _render(sources: Sources, numbers: list[int], header: str = "") -> str:
 
 
 def _body_label(key: str | None) -> str:
-    return body_label(key) if key else ""
+    return REGISTRY.label(key) if key else ""
 
 
 def _parse_date(value) -> datetime.date | None:
@@ -201,7 +199,7 @@ def search_record(session: Session, sources: Sources, query: str, body: str | No
     if not needle:
         return []
     since_d, until_d = _parse_date(since), _parse_date(until)
-    if body and body not in BODIES:
+    if body and body not in REGISTRY.bodies:
         body = None
     hits: list[tuple] = []  # (kind, row, meeting, speaker)
 
@@ -269,7 +267,7 @@ def search_documents(session: Session, sources: Sources, query: str,
          .where(Document.raw_text.isnot(None),
                 func.lower(Document.raw_text).contains(needle, autoescape=True))
          .order_by(Meeting.meeting_date.desc()).limit(limit))
-    if body and body in BODIES:
+    if body and body in REGISTRY.bodies:
         q = q.where(Meeting.body == body)
     out = []
     for doc, meeting in session.execute(q):
@@ -355,7 +353,8 @@ def _naming_coverage(session: Session, body: str | None) -> str:
     rule = ("A passage is quoted only where its speaker was named with high confidence, so some "
             "remarks stay unattributed.")
     if total and named >= total:
-        return f"Speakers have been named in all {total}{where} meetings with transcripts. {rule}"
+        scope = (f"the one{where} meeting" if total == 1 else f"all {total}{where} meetings")
+        return f"Speakers have been named in {scope} with transcripts. {rule}"
     return (f"Speakers have been named in {named} of {total}{where} meetings with transcripts so far. "
             f"{rule} Missing remarks may simply not be attributed yet.")
 
@@ -933,8 +932,8 @@ def list_members(session: Session, sources: Sources, body: str | None = None) ->
     """Sitting members by body, each with their seat's term, plus the body's
     election schedule and official candidate list."""
     people = [p for p in _roster_people(session) if p["is_current"]]
-    bodies = [body] if body in BODIES else sorted({p["body"] for p in people if p["body"]},
-                                                          key=lambda k: list(BODIES).index(k))
+    bodies = [body] if body in REGISTRY.bodies else sorted({p["body"] for p in people if p["body"]},
+                                                          key=lambda k: list(REGISTRY.bodies).index(k))
     out = []
     for key in bodies:
         seated = sorted((p for p in people if p["body"] == key),
@@ -972,7 +971,7 @@ def get_upcoming(session: Session, sources: Sources, body: str | None = None, li
                 or_(UpcomingMeeting.in_progress.is_(True), UpcomingMeeting.starts_at >= now - datetime.timedelta(hours=6)))
          .order_by(UpcomingMeeting.in_progress.desc(), UpcomingMeeting.starts_at.asc().nulls_last())
          .limit(limit))
-    if body and body in BODIES:
+    if body and body in REGISTRY.bodies:
         q = q.where(UpcomingMeeting.body == body)
     out = []
     for u in session.scalars(q):

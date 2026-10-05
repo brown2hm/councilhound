@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getJurisdiction } from "@/lib/jurisdiction";
 import { cache } from "react";
 import BodyTag from "@/components/BodyTag";
 import DiscussionSparkline from "@/components/DiscussionSparkline";
@@ -24,13 +25,13 @@ const KIND_LABELS: Record<string, string> = {
 };
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const entity = await requireRecord(getEntity(params.slug));
+  const [entity, j] = await Promise.all([requireRecord(getEntity(params.slug)), getJurisdiction()]);
   const summary = entity.profile?.summary;
   return {
     title: entity.name,
     description: summary
       ? `${summary.slice(0, 180)}…`
-      : `Every action, vote, and update on ${entity.name} in City of Fairfax council and commission meetings.`,
+      : `Every action, vote, and update on ${entity.name} in ${j.identity.short_name} public meetings.`,
   };
 }
 
@@ -138,6 +139,7 @@ function Thread({ thread, entity }: { thread: EntityThread; entity: EntityDetail
 }
 
 export default async function TopicDetail({ params }: { params: { slug: string } }) {
+  const j = await getJurisdiction();
   const entity = await requireRecord(getEntity(params.slug));
   const profile = entity.profile;
   const threads = entity.threads ?? [];
@@ -183,7 +185,7 @@ export default async function TopicDetail({ params }: { params: { slug: string }
     <section className="rounded-2xl border border-hairline bg-canvas p-5">
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold">Official city record</h2>
+          <h2 className="text-lg font-semibold">Official {j.identity.noun} record</h2>
           <p className="text-[13px] text-muted">{[entity.official.project_type, entity.official.division].filter(Boolean).join(" · ")}</p>
         </div>
         {entity.official.official_status && (
@@ -223,7 +225,7 @@ export default async function TopicDetail({ params }: { params: { slug: string }
           </Link>
         )}
         <a href={entity.official.detail_url} target="_blank" className="text-sm font-semibold text-muted underline underline-offset-2 hover:text-ink">
-          View city project page
+          View {j.identity.noun} project page
         </a>
       </div>
     </section>

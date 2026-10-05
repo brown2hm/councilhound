@@ -1,7 +1,7 @@
 """Jurisdiction config loading + fail-loudly rate discipline (no heavy deps)."""
 import pytest
 
-from councilhound.impact import jurisdiction as jur
+from councilhound import jurisdiction as jur
 from councilhound.impact.jurisdiction import (
     JurisdictionConfig,
     MissingRateError,

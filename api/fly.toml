@@ -10,6 +10,8 @@ primary_region = "iad"
 
 [env]
   EMBEDDING_DEVICE = "cpu"
+  JURISDICTION = "fairfax_city_va"
+  JURISDICTIONS_DIR = "/app/jurisdictions"
   # set ALLOWED_ORIGINS via `fly secrets` or here once the domain is live
 
 [http_service]

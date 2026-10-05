@@ -349,7 +349,7 @@ def test_statements_are_the_members_own_identified_words(db):
     assert not any("smaller building" in t for t in texts)  # unidentified speaker
     assert sources.get(nums[0])["link"].endswith("starttime=3600&entrytime=3600")
     # coverage is stated, so silence is not read as "never said"
-    assert "Speakers have been named in all 1 Planning Commission meetings with transcripts." in header
+    assert "Speakers have been named in the one Planning Commission meeting with transcripts." in header
 
     nums, header = ask_tools.get_statements(db, sources, "Peterson")  # no topic: most recent
     assert [sources.get(n)["text"][:30] for n in nums] == ["Thomas Peterson: My concern wi"]
@@ -449,3 +449,20 @@ def test_coverage_says_when_naming_is_partial(db):
     _nums, header = ask_tools.get_statements(db, ask_tools.Sources(), "Lockhart")
     assert "Speakers have been named in 1 of 2 Planning Commission meetings with transcripts so far." in header
     assert "may simply not be attributed yet" in header
+
+
+def test_unnamed_caption_turns_are_not_shown_as_speakers(db):
+    import datetime
+
+    from councilhound.db.models import Meeting, TranscriptChunk
+    m = Meeting(granicus_clip_id="4241", granicus_view_id="7", body="planning_commission",
+                meeting_type="planning_commission", meeting_date=datetime.date(2026, 9, 15),
+                title="Commission Meeting", status="extracted")
+    db.add(m)
+    db.flush()
+    db.add(TranscriptChunk(meeting_id=m.id, start_seconds=10, end_seconds=20, speaker_label="TURN_0042",
+                           text="The stormwater easement needs a second look.", embedding=[0.1] * 768))
+    db.commit()
+    sources = ask_tools.Sources()
+    nums = ask_tools.search_record(db, sources, "stormwater easement")
+    assert nums and sources.get(nums[0])["text"] == "The stormwater easement needs a second look."

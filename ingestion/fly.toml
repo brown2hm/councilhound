@@ -18,6 +18,10 @@ primary_region = "iad"
 [processes]
   app = "tail -f /dev/null"
 
+[env]
+  JURISDICTION = "fairfax_city_va"
+  JURISDICTIONS_DIR = "/app/jurisdictions"
+
 [[vm]]
   size = "shared-cpu-4x"
   memory = "4gb"
