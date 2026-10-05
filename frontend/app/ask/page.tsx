@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState, type MouseEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import FollowTopic from "@/components/FollowTopic";
 import Markdown from "@/components/Markdown";
@@ -70,7 +70,10 @@ const OUTSIDE = new Set(["candidate", "web"]);
 // sources that are records or summaries, not words someone said or wrote
 const NOT_QUOTED = new Set(["member", "comparison", "term", "roster", "profile", "project", "impact", "vote", "timeline", "candidate", "web"]);
 
-function SourceRow({ c, turn }: { c: Citation; turn: number }) {
+// sources shown before "Show all" on narrow screens; wide screens scroll the full list
+const SOURCES_PREVIEW = 4;
+
+function SourceRow({ c, turn, folded }: { c: Citation; turn: number; folded?: boolean }) {
   const where = [
     c.title || c.meeting_title,
     c.kind === "transcript" && c.start_seconds != null ? `at ${fmtTime(c.start_seconds)}` : null,
@@ -80,7 +83,7 @@ function SourceRow({ c, turn }: { c: Citation; turn: number }) {
   const excerpt = c.excerpt.trim().replace(/[.,;]+$/, "");
   const label = LINK_LABEL[c.kind] ?? "Open the source";
   return (
-    <li id={`source-${turn}-${c.index}`} className="grid scroll-mt-24 grid-cols-[26px_minmax(0,1fr)] gap-2 border-t border-hairline py-2.5 transition-colors duration-500 target:bg-callout">
+    <li id={`source-${turn}-${c.index}`} className={`${folded ? "max-lg:hidden " : ""}grid scroll-mt-24 grid-cols-[26px_minmax(0,1fr)] gap-2 border-t border-hairline py-2.5 transition-colors duration-500 target:bg-callout`}>
       <span className="mt-0.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-md bg-card px-1.5 text-[11px] font-bold text-tint-ochre-text">
         {c.index}
       </span>
@@ -152,9 +155,31 @@ function Answer({ result, turn }: { result: AskResponse; turn: number }) {
   const { lead, rest } = splitAnswer(result.answer);
   const topics = result.topics ?? [];
   const members = result.members ?? [];
+  const [showAll, setShowAll] = useState(false);
+  const [jumpTo, setJumpTo] = useState<string | null>(null);
+
+  // a citation number whose source is folded away opens the list first,
+  // then jumps once the row is on the page
+  function onCitation(e: MouseEvent) {
+    const link = (e.target as HTMLElement).closest(`a[href^="#source-${turn}-"]`);
+    const id = link?.getAttribute("href")?.slice(1);
+    const row = id ? document.getElementById(id) : null;
+    if (!id || !row || row.offsetParent !== null) return;
+    e.preventDefault();
+    setShowAll(true);
+    setJumpTo(id);
+  }
+
+  useEffect(() => {
+    if (!jumpTo) return;
+    // the hash keeps the :target highlight; setting it alone doesn't scroll here
+    if (location.hash !== `#${jumpTo}`) location.hash = jumpTo;
+    document.getElementById(jumpTo)?.scrollIntoView({ block: "center" });
+    setJumpTo(null);
+  }, [jumpTo]);
 
   return (
-    <div className="grid gap-x-14 gap-y-8 lg:grid-cols-[minmax(0,1fr)_400px]">
+    <div className="grid gap-x-14 gap-y-8 lg:grid-cols-[minmax(0,1fr)_400px]" onClick={onCitation}>
       <div className="min-w-0">
         {lead && (
           <div className="mb-4 text-[26px] font-medium leading-[1.3] tracking-[-0.4px] text-ink [&_a]:no-underline [&_p]:mb-0">
@@ -230,7 +255,9 @@ function Answer({ result, turn }: { result: AskResponse; turn: number }) {
         )}
       </div>
 
-      <aside className="min-w-0 lg:sticky lg:top-6 lg:self-start">
+      {/* on wide screens the list keeps to the viewport and scrolls on its own, so a
+          long one doesn't push the follow-up box far below the answer */}
+      <aside className="min-w-0 lg:sticky lg:top-6 lg:flex lg:max-h-[calc(100dvh-3rem)] lg:flex-col lg:self-start">
         <div className="mb-0.5 flex items-baseline justify-between gap-3">
           <h2 className="text-base font-semibold">Sources</h2>
           <span className="text-[12px] text-muted">{sources.length}, in date order</span>
@@ -239,12 +266,22 @@ function Answer({ result, turn }: { result: AskResponse; turn: number }) {
           Click a number in the answer to jump to it.
           {missing > 0 && ` ${missing} cited source${missing === 1 ? " was" : "s were"} not returned and stay unlinked.`}
         </p>
-        <ul>
-          {sources.map((c) => (
-            <SourceRow key={c.index} c={c} turn={turn} />
+        <ul className="lg:-mr-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain lg:pr-3 lg:[scrollbar-width:thin]">
+          {sources.map((c, i) => (
+            <SourceRow key={c.index} c={c} turn={turn} folded={!showAll && i >= SOURCES_PREVIEW} />
           ))}
           {sources.length === 0 && <li className="border-t border-hairline py-3 text-sm text-muted">No sources were returned for this answer.</li>}
         </ul>
+        {sources.length > SOURCES_PREVIEW && (
+          <button
+            type="button"
+            onClick={() => setShowAll((v) => !v)}
+            aria-expanded={showAll}
+            className="mt-1 w-full border-t border-hairline pt-2.5 text-left text-[13px] font-semibold text-muted underline underline-offset-2 hover:text-ink lg:hidden"
+          >
+            {showAll ? "Show fewer sources" : `Show all ${sources.length} sources`}
+          </button>
+        )}
       </aside>
     </div>
   );
