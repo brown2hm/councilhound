@@ -112,6 +112,8 @@ _EARLY_VOTING = _s(
     "The City ballot includes Mayor, City Council (up to six), School Board (up to five) and a "
     "question on a retail sales tax of up to 1% for school construction or public transportation.",
     published=_D(2026, 9, 17))
+# when and where to vote, for the election page
+VOTING = _EARLY_VOTING
 _FFXNOW_PREVIEW = _s(
     "https://www.ffxnow.com/2026/09/17/what-to-expect-as-early-voting-for-the-2026-election-kicks-off-friday-in-fairfax/",
     "FFXnow", "news", "What to expect as early voting for the 2026 election kicks off",
@@ -396,6 +398,16 @@ CANDIDATES: tuple[Candidate, ...] = (
                "The campaign site lists priorities: affordability and responsible spending; smart, sustainable "
                "growth; resident engagement.",
                "The site shows an endorsement from Moms Demand Action."),
+            _s("https://onyourballot.vote411.org/race-detail.do?id=4143051", _VOTE411, "questionnaire",
+               "Vote411: Fairfax City Council",
+               "She lists as priorities affordability and responsible spending, schools and public safety, the "
+               "local economy, housing and redevelopment, safer transportation and the environment.",
+               "She lists as qualifications small-business ownership, past School Board and current Council "
+               "service, 10 years with the Providence PTA and more than a decade in accounting and finance.",
+               "She names the City becoming more expensive to live in as most urgent, citing the citywide "
+               "efficiency audit she pushed for, a stronger commercial tax base, attainable housing and closer "
+               "scrutiny of major projects' lifetime cost.",
+               checked=_D(2026, 10, 5)),
             _s("https://patch.com/virginia/fairfaxcity/rachel-mcquillen-puts-growth-rising-costs-center-fairfax-city-council",
                _PATCH, "questionnaire", "Rachel McQuillen puts growth, rising costs at center of reelection bid",
                "In Patch's questionnaire she gives her age as 45 and says she has lived in the City since 2010.",
@@ -423,7 +435,7 @@ CANDIDATES: tuple[Candidate, ...] = (
             _s(_COMMON_GROUND.url, _PATCH, "news", _COMMON_GROUND.title,
                "She is a Council candidate in the 'Common Ground' group.", published=_COMMON_GROUND.published),
         ),
-        not_found=(_NO_VOTE411, _NO_FORUM),
+        not_found=(_NO_FORUM,),
     ),
     Candidate(
         "Anthony T. Amos", "city_council",

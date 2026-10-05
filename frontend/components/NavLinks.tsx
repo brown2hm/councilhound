@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import SearchBox from "@/components/SearchBox";
+import { electionAhead } from "@/lib/election";
 
 const NAV = [
   { href: "/", label: "Briefing" },
@@ -11,8 +12,15 @@ const NAV = [
   { href: "/meetings", label: "Meetings" },
   { href: "/members", label: "Members" },
   { href: "/map", label: "Map" },
+  { href: "/election", label: "Election" },
   { href: "/ask", label: "Ask" },
 ];
+
+function localDay(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+const nav = () => NAV.filter((n) => n.href !== "/election" || electionAhead(localDay(new Date())));
 
 // the project pages live under /development; they belong to the directory
 function isActive(href: string, pathname: string) {
@@ -47,7 +55,7 @@ export default function NavLinks() {
     <>
       <div className="hidden min-w-0 flex-1 items-center justify-end gap-3 lg:flex">
         <nav className="flex gap-1">
-          {NAV.map((n) => (
+          {nav().map((n) => (
             <Link key={n.href} href={n.href} className={linkClasses(n.href, pathname)}>
               {n.label}
             </Link>
@@ -75,7 +83,7 @@ export default function NavLinks() {
       {open && (
         <nav className="absolute inset-x-0 top-16 z-20 border-b border-hairline bg-canvas px-4 pb-4 pt-2 shadow-lg lg:hidden">
           <SearchBox className="mb-2" />
-          {NAV.map((n) => (
+          {nav().map((n) => (
             <Link key={n.href} href={n.href} className={linkClasses(n.href, pathname, true)}>
               {n.label}
             </Link>

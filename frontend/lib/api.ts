@@ -829,6 +829,67 @@ export interface RecordStatus {
   counts: { meetings: number; meetings_transcribed: number; topics: number };
 }
 
+/** One outside source about a candidate or a race (api/app/candidates.py). */
+export interface ElectionSource {
+  url: string;
+  publisher: string;
+  kind: string; // campaign | questionnaire | finance | official | news | forum
+  kind_label: string;
+  title: string;
+  facts: string[];
+  checked: string;
+  published: string | null;
+}
+
+export interface ElectionCandidate {
+  ballot_name: string;
+  incumbent: string | null;
+  /** their member page, when they already have a voting record */
+  member: { slug: string; roles: string[] } | null;
+  sources: ElectionSource[];
+  not_found: string[];
+}
+
+/** One candidate's row in a questionnaire; answers are paraphrases, null where left blank. */
+export interface QuestionnaireResponse {
+  candidate: string;
+  responded: boolean;
+  url: string;
+  published: string | null;
+  answers: Record<string, string | null>;
+}
+
+export interface Questionnaire {
+  key: string;
+  contest: string;
+  publisher: string;
+  title: string;
+  url: string;
+  checked: string;
+  note: string | null;
+  questions: { key: string; asked: string }[];
+  responses: QuestionnaireResponse[]; // every candidate in the contest, ballot order
+}
+
+export interface ElectionContest {
+  key: string; // mayor | city_council | school_board
+  name: string;
+  label: string; // as printed on the ballot
+  vote_for: number | null;
+  election_date: string | null;
+  seats_up: string | null;
+  candidates: ElectionCandidate[]; // ballot order
+  race_sources: ElectionSource[];
+  questionnaires: Questionnaire[];
+}
+
+export interface Election {
+  ballot_url: string;
+  checked: string;
+  voting: ElectionSource;
+  contests: ElectionContest[];
+}
+
 /** How long a fetched API payload is reused across requests. The record
  * changes once a night (plus an hourly catch-up), so five minutes of staleness
  * is invisible to readers and turns the briefing's nine API calls per view
@@ -906,6 +967,7 @@ export const api = {
     }),
   member: (slug: string) => get<MemberDetail>(`/members/${encodeURIComponent(slug)}`),
   status: () => get<RecordStatus>("/status/"),
+  election: () => get<Election>("/election/"),
 };
 
 /** The bodies the tracker follows, in display order. Mirrors
