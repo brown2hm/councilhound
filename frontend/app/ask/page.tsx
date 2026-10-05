@@ -60,10 +60,11 @@ const LINK_LABEL: Record<string, string> = {
   term: "Official term schedule",
   roster: "Official roster",
   upcoming: "Open the agenda",
+  candidate: "Open the outside source",
 };
 
 // sources that are records or summaries, not words someone said or wrote
-const NOT_QUOTED = new Set(["member", "comparison", "term", "roster", "profile", "project", "impact", "vote", "timeline"]);
+const NOT_QUOTED = new Set(["member", "comparison", "term", "roster", "profile", "project", "impact", "vote", "timeline", "candidate"]);
 
 function SourceRow({ c, turn }: { c: Citation; turn: number }) {
   const where = [
@@ -81,6 +82,11 @@ function SourceRow({ c, turn }: { c: Citation; turn: number }) {
       </span>
       <div className="min-w-0">
         <div className="text-[13px]">
+          {c.kind === "candidate" && (
+            <span className="mr-1.5 rounded bg-card px-1.5 py-px text-[10px] font-semibold uppercase tracking-[0.6px] text-muted">
+              Outside the record
+            </span>
+          )}
           {c.date && <span className="font-semibold tabular-nums">{formatDate(c.date)} · </span>}
           <span className="text-muted">{where}</span>
         </div>

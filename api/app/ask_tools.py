@@ -1,8 +1,10 @@
 """The knowledge /ask can reach, as tools Claude calls: the meeting record
 (transcripts, agenda items with their roll calls, documents), the tracked
 topic records built from it (profiles, timelines, wiki pages, official
-project data, impact analyses), and the members (voting records, how they
-line up with each other, and when their seats are next decided).
+project data, impact analyses), the members (voting records, how they
+line up with each other, and when their seats are next decided), and the
+candidates on the ballot (campaign, voter-guide, finance, official and
+news sources from outside the record).
 
 Every tool result is a list of numbered sources drawn from one registry
 per question, so the [n] the model cites is the same [n] across tool calls
@@ -27,7 +29,7 @@ from councilhound.db.models import (
 from councilhound.embeddings.embed import embed_query
 from councilhound.extraction.speaker_names import public_speaker_join
 
-from app import terms
+from app import candidates, terms
 from app.links import clip_link
 from app.routers import members as members_router
 from app.routers.search import SEMANTIC_MAX_DISTANCE
@@ -982,6 +984,85 @@ def get_upcoming(session: Session, sources: Sources, body: str | None = None, li
     return out
 
 
+# ---------------------------------------------------------------- candidates
+
+def _candidate_summary(c: candidates.Candidate) -> str:
+    when = candidates.election_date(c.contest)
+    rivals = [o.ballot_name for o in candidates.in_contest(c.contest) if o is not c]
+    lines = [f"{c.ballot_name} is on the City's official sample ballot for "
+             f"{candidates.contest_label(c.contest)}"
+             + (f" on {when.isoformat()}" if when else "") + "."]
+    if c.incumbent:
+        lines.append(f"Currently: {c.incumbent}. Their record in meetings is under get_member.")
+    else:
+        lines.append("Has no voting record in the meetings CouncilHound indexes (any other City "
+                     "board service is in the sources below).")
+    if rivals:
+        lines.append("Also on the ballot for this contest: " + ", ".join(rivals) + ".")
+    kinds = sorted({candidates.KIND_LABEL[s.kind] for s in c.sources})
+    lines.append("Sources on file: " + (", ".join(kinds) if kinds else "none") + ".")
+    if c.not_found:
+        lines.append(f"Looked for and not found as of {candidates.CHECKED.isoformat()}: "
+                     + "; ".join(c.not_found) + ".")
+    return " ".join(lines)
+
+
+def _add_candidate(sources: Sources, c: candidates.Candidate) -> list[int]:
+    out = [sources.add(("candidate", c.ballot_name), kind="candidate",
+                       title=f"{c.ballot_name}: candidate for {candidates.contest_label(c.contest)}",
+                       text=_candidate_summary(c), date=candidates.CHECKED.isoformat(),
+                       link=terms._BALLOT)]
+    for s in c.sources:
+        when = s.published or s.checked
+        text = (f"{s.title}. " + " ".join(s.facts)
+                + f" (Source {'published ' + s.published.isoformat() + ', ' if s.published else ''}"
+                  f"checked {s.checked.isoformat()}.)")
+        out.append(sources.add(("candidate_source", c.ballot_name, s.url), kind="candidate",
+                               title=f"{c.ballot_name}: {s.publisher} ({candidates.KIND_LABEL[s.kind]})",
+                               text=text, date=when.isoformat(), link=s.url))
+    return out
+
+
+def _add_race(sources: Sources, contest: str) -> list[int]:
+    out = []
+    for s in candidates.RACE_SOURCES.get(contest, ()):
+        when = s.published or s.checked
+        out.append(sources.add(("race_source", s.url), kind="candidate",
+                               title=f"{candidates.contest_label(contest)}: {s.publisher} "
+                                     f"({candidates.KIND_LABEL[s.kind]})",
+                               text=f"{s.title}. " + " ".join(s.facts), date=when.isoformat(),
+                               link=s.url))
+    return out
+
+
+def get_candidate(sources: Sources, name: str | None = None,
+                  contest: str | None = None) -> tuple[list[int], str]:
+    """One candidate (by name) or everyone in one contest, with the sources
+    on file for each from outside the record. A whole contest comes back
+    in ballot order with every candidate treated alike."""
+    if contest in candidates.CONTESTS:
+        people = candidates.in_contest(contest)
+        nums = _add_race(sources, contest)
+        for c in people:
+            nums += _add_candidate(sources, c)
+        header = (f"Everyone on the ballot for {candidates.contest_label(contest)}: "
+                  + ", ".join(c.ballot_name for c in people) + ".")
+        return nums, header
+    hits = candidates.match(name or "")
+    if not hits:
+        listed = "; ".join(f"{candidates.contest_label(k)}: "
+                           + ", ".join(c.ballot_name for c in candidates.in_contest(k))
+                           for k in candidates.CONTESTS)
+        return [], (f"No candidate on the City's November ballot matches “{name}”. "
+                    f"On the ballot — {listed}.")
+    if len(hits) > 1:
+        return [], ("Several candidates match “" + (name or "") + "”: "
+                    + "; ".join(f"{c.ballot_name} ({candidates.contest_label(c.contest)})" for c in hits)
+                    + ". Ask for one by full name.")
+    c = hits[0]
+    return _add_candidate(sources, c), ""
+
+
 # ---------------------------------------------------------------- entity linking
 
 def link_question(session: Session, question: str) -> dict:
@@ -1005,4 +1086,6 @@ def link_question(session: Session, question: str) -> dict:
             seen.add(e.id)
             members.append(f"{e.name} ({', '.join(p['roles'])}"
                            + ("" if p["is_current"] else ", former") + ")")
-    return {"topics": topics, "members": members}
+    named = [f"{c.ballot_name} (running for {candidates.CONTEST_NAME[c.contest]})"
+             for c in candidates.named_in(question)]
+    return {"topics": topics, "members": members, "candidates": named}

@@ -722,7 +722,8 @@ export interface HotTopicsResponse {
 export interface Citation {
   index: number;
   /** transcript, agenda_item, vote, document, timeline, profile, wiki,
-   * project, impact, member, comparison, term, roster, commentary, upcoming */
+   * project, impact, member, comparison, term, roster, commentary, upcoming,
+   * candidate (from outside the record: campaigns, voter guides, filings, news) */
   kind: string;
   title: string;
   date: string | null;
