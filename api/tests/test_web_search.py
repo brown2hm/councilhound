@@ -1,6 +1,8 @@
-"""Web search for /ask: only passages the search quoted from allowed pages
-come back, grouped by page and dated from the search index; the agent sees
-them as numbered sources outside the record, at most twice per question."""
+"""Web search for /ask: the search picks allowed pages, the top ones are
+read in full and their passages closest to the query kept verbatim (the
+search's own snippets stand in when a page can't be read), grouped by page
+and dated from the search index; the agent sees them as numbered sources
+outside the record, at most twice per question."""
 import datetime
 from types import SimpleNamespace
 
@@ -49,6 +51,22 @@ def _fresh_cache():
     web_search._cache.clear()
 
 
+NO_FETCH = ("end_turn", [_text("done")])
+
+
+def _fetched(url, text):
+    return SimpleNamespace(type="web_fetch_tool_result", content=SimpleNamespace(
+        type="web_fetch_result", url=url, content=SimpleNamespace(source=SimpleNamespace(data=text))))
+
+
+@pytest.fixture(autouse=True)
+def _keyword_embeddings(monkeypatch):
+    """A stand-in for the embedding model: on-topic means it mentions tax."""
+    monkeypatch.setattr(web_search, "embed_query", lambda q: [1.0, 0.0])
+    monkeypatch.setattr(web_search, "embed_texts",
+                        lambda ts: [[1.0, 0.0] if "tax" in t.lower() else [0.0, 1.0] for t in ts])
+
+
 def _install_search(monkeypatch, *responses):
     fake = FakeSearch(*responses)
     monkeypatch.setattr(web_search, "_client", lambda: fake)
@@ -67,7 +85,7 @@ def _referendum_answer():
 
 
 def test_passages_are_grouped_by_page_and_dated(monkeypatch):
-    fake = _install_search(monkeypatch, _referendum_answer())
+    fake = _install_search(monkeypatch, _referendum_answer(), NO_FETCH)
     pages = web_search.search("Fairfax City sales tax referendum", TODAY)
     assert [p.url for p in pages] == [FFX, PATCH]
     ffx, patch = pages
@@ -80,13 +98,39 @@ def test_passages_are_grouped_by_page_and_dated(monkeypatch):
     (tool,) = fake.calls[0]["tools"]
     assert tool["type"] == "web_search_20250305"
     assert tool["allowed_domains"] == web_search.ALLOWED_DOMAINS
+    # then the most-cited pages are fetched, by hostname-only allowlist
+    (fetch,) = fake.calls[1]["tools"]
+    assert fetch["type"] == "web_fetch_20250910" and "patch.com" in fetch["allowed_domains"]
+    assert fake.calls[1]["messages"][0]["content"] == f"{FFX}\n{PATCH}"
+    # a page that couldn't be read keeps its search snippets
+    assert not ffx.full_text
+
+
+def test_fetched_pages_give_whole_passages_without_menus(monkeypatch):
+    page = (
+        "---\ncanonical: x\nmeta-description: y\n---\n\n"
+        "- [Parking Tickets](https://f/p)\n- [Pay a tax bill](https://f/t)\n\n"
+        "# Sales tax referendum\n\n"
+        "On November 3 voters decide whether to allow a sales tax of up to 1%.\n\n"
+        "The library is open on Sundays.\n\n"
+        "## Meetings\n\n- Thursday, October 8, 7 p.m., Providence ES, on the tax\n\n"
+        "Was this page helpful? A survey about tax pages.\n")
+    _install_search(monkeypatch, _referendum_answer(),
+                    ("end_turn", [_fetched("https://ffxnow.com/2026/09/09/sales-tax-meetings", page)]))
+    ffx, patch = web_search.search("Fairfax City sales tax referendum", TODAY)
+    # matched despite www. and the trailing slash; menus, off-topic lines and the footer drop out
+    assert ffx.full_text
+    assert ffx.passages == ["Sales tax referendum On November 3 voters decide whether to allow a sales tax "
+                            "of up to 1%. The library is open on Sundays. Meetings Thursday, October 8, "
+                            "7 p.m., Providence ES, on the tax"]
+    assert not patch.full_text
 
 
 def test_paused_search_resumes_and_results_are_cached(monkeypatch):
-    first = ("pause_turn", [_says("Searching", _cite(PATCH, "first passage"))])
-    fake = _install_search(monkeypatch, first, _referendum_answer())
+    first = ("pause_turn", [_says("Searching", _cite(PATCH, "first passage..."))])
+    fake = _install_search(monkeypatch, first, _referendum_answer(), NO_FETCH)
     pages = web_search.search("Fairfax City sales tax referendum", TODAY)
-    assert len(fake.calls) == 2
+    assert len(fake.calls) == 3
     # the resumed request carries the paused turn back, with no extra user message
     resumed = fake.calls[1]["messages"]
     assert [m["role"] for m in resumed] == ["user", "assistant"]
@@ -95,7 +139,7 @@ def test_paused_search_resumes_and_results_are_cached(monkeypatch):
     assert pages[0].passages == ["first passage", "Funds cannot go toward daily operating costs."]
     # the same query again is served from the cache
     again = web_search.search("  fairfax city SALES tax referendum ", TODAY)
-    assert again == pages and len(fake.calls) == 2
+    assert again == pages and len(fake.calls) == 3
 
 
 def test_refusal_returns_nothing(monkeypatch):
@@ -114,7 +158,7 @@ def test_allowlist_and_page_ages():
 
 
 def test_tool_numbers_pages_and_caps_lookups(monkeypatch):
-    _install_search(monkeypatch, _referendum_answer(), ("end_turn", []))
+    _install_search(monkeypatch, _referendum_answer(), NO_FETCH, ("end_turn", []))
     sources = ask_tools.Sources()
     nums, header = ask_tools.search_web(sources, "Fairfax City sales tax referendum")
     first = sources.get(nums[0])
@@ -131,7 +175,7 @@ def test_tool_numbers_pages_and_caps_lookups(monkeypatch):
 def test_answer_cites_a_web_page(client, db, monkeypatch):
     _seed(db)
     monkeypatch.setattr(ask_tools, "_today", lambda: TODAY)
-    _install_search(monkeypatch, _referendum_answer())
+    _install_search(monkeypatch, _referendum_answer(), NO_FETCH)
 
     def answer(messages):
         n = _number(messages[-1]["content"][0]["content"], "ffxnow.com")

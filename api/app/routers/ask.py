@@ -58,8 +58,12 @@ _PLACE = "the City of Fairfax, Virginia"
 _WEB = web_search.enabled()
 _WEB_ROUTE = ("""- Something about the City that the record and the candidate sources \
 can't answer (news, events outside meetings, how a ballot question works, \
-a specific candidate detail not on file): search_web, with a short keyword \
-query that names the City, after looking in the record first.
+dates and how-tos for voting, a specific candidate detail not on file): \
+search_web, with a short keyword query that names the City, after looking \
+in the record first. Also search_web when the record speaks to a current \
+matter but its latest word is old or tentative (staff "still waiting" on \
+details, a plan not yet final, a date months back on something still \
+unfolding): say what the record shows, then what later sources add.
 """ if _WEB else "")
 _WEB_RULE = ("""- Web sources are passages quoted from local government and news \
 sites, outside the meeting record, with approximate dates. Attribute them \
