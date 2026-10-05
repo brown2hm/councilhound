@@ -61,10 +61,14 @@ const LINK_LABEL: Record<string, string> = {
   roster: "Official roster",
   upcoming: "Open the agenda",
   candidate: "Open the outside source",
+  web: "Open the web page",
 };
 
+// sources from outside the meeting record, tagged so a reader can tell them apart
+const OUTSIDE = new Set(["candidate", "web"]);
+
 // sources that are records or summaries, not words someone said or wrote
-const NOT_QUOTED = new Set(["member", "comparison", "term", "roster", "profile", "project", "impact", "vote", "timeline", "candidate"]);
+const NOT_QUOTED = new Set(["member", "comparison", "term", "roster", "profile", "project", "impact", "vote", "timeline", "candidate", "web"]);
 
 function SourceRow({ c, turn }: { c: Citation; turn: number }) {
   const where = [
@@ -82,7 +86,7 @@ function SourceRow({ c, turn }: { c: Citation; turn: number }) {
       </span>
       <div className="min-w-0">
         <div className="text-[13px]">
-          {c.kind === "candidate" && (
+          {OUTSIDE.has(c.kind) && (
             <span className="mr-1.5 rounded bg-card px-1.5 py-px text-[10px] font-semibold uppercase tracking-[0.6px] text-muted">
               Outside the record
             </span>
