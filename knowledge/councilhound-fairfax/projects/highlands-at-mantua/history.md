@@ -1,13 +1,13 @@
 ---
 type: project-history
 title: Highlands at Mantua — meeting history
-description: Dated record of every meeting action on Highlands at Mantua, through 2026-07-27.
+description: Dated record of every meeting action on Highlands at Mantua, through 2026-09-22.
 resource: https://councilhound.net/development/The-Highlands-at-Mantua
 generated:
   by: process:councilhound-okf
-  at: '2026-07-27T00:00:00Z'
-timestamp: '2026-07-27'
-stale_after: '2026-09-22T23:00:00Z'
+  at: '2026-09-22T00:00:00Z'
+timestamp: '2026-09-22'
+stale_after: '2026-10-06T20:00:00Z'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
@@ -45,3 +45,13 @@ stale_after: '2026-09-22T23:00:00Z'
 - Outcome: Public hearing scheduled per the agenda; no minutes or actions report available.
 - [6a] A public hearing was scheduled for the Highlands at Mantua application, in which applicant RJL Associates, Inc. seeks to replace approximately 21,566 sq ft of office space with 14 front-loaded townhomes on 2.12 acres.
 - Status after: **in_progress**
+
+## 2026-09-22 — City Council Meeting
+
+**Agenda item 8a**: Public Hearing – 9495 Silver King Court Redevelopment (RJL Associates, Inc.)
+- Outcome: Comprehensive Plan Amendment approved unanimously. Rezoning (Z-24-00236) and General Development Plan Amendment approved 4-2 (Hall and McQuillen opposed). Certificate of Appropriateness approved 4-2 (Hall and McQuillen opposed).
+- Vote (passed): Adopt resolution recommending amendment of the Comprehensive Plan from Commercial Corridor Place Type to Townhouse/Single-Family Attached Neighborhood Place Type for Tax Map Parcel 58-2-10-0001-A-1. — Amos: yes, Bates: yes, Hall: yes, Hardy-Chandler: yes, McQuillen: yes, Peterson: yes
+- Vote (passed): Approve rezoning application Z-24-00236 to rezone 9495 Silver King Court from PDC to PDR-ACOD, approve the General Development Plan Amendment, and approve the Master Development Plan with commitments revised June 15, 2026. — Amos: yes, Bates: yes, Hall: no, Hardy-Chandler: yes, McQuillen: no, Peterson: yes
+- Vote (passed): Approve Certificate of Appropriateness for 9495 Silver King Court (Highlands at Mantua) per Section 110-6.5.6.B of the City Code, with stated conditions. — Amos: yes, Bates: yes, Hall: no, Hardy-Chandler: yes, McQuillen: no, Peterson: yes
+- [8a] Certificate of Appropriateness for the Highlands at Mantua (9495 Silver King Court) was approved 4-2, with conditions relating to plan conformance, required permits, and landscaping.
+- Status after: **approved**

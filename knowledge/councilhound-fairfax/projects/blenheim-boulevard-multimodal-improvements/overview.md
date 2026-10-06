@@ -6,20 +6,20 @@ description: The Blenheim Boulevard Multimodal Improvements Project is a City of
 resource: https://councilhound.net/development/Blenheim-Blvd-Multimodal-Improvements
 tags:
 - city-project
-- approved
+- in-progress
 generated:
-  by: process:councilhound-okf
-  at: '2026-06-23T00:00:00Z'
-timestamp: '2026-06-23'
-stale_after: '2026-09-22T23:00:00Z'
-project_status: approved
+  by: councilhound-curator/claude-sonnet-4-6
+  at: '2026-09-14T00:00:00Z'
+timestamp: '2026-09-14'
+stale_after: '2026-10-06T20:00:00Z'
+project_status: in_progress
 source: meetings
 evaluation_status: synthesized
 ---
 
 <!-- Curator-owned page: updated incrementally as new meetings land. Human edits are preserved. -->
 
-The Blenheim Boulevard Multimodal Improvements Project is a City of Fairfax transportation project focused on adding multimodal infrastructure along Blenheim Boulevard. As of early 2025, construction was anticipated to begin that year, with utility relocation confirmed underway as of March 2026. The approved project scope runs from Blenheim Hall Drive to Ridge Avenue; separate future planning efforts have been identified to potentially extend improvements into Old Town and through Fairfax Circle, but those extensions are not part of the current project. The City Council held a work session on the project on June 3, 2025, and authorized the exercise of quick-take condemnation powers for property acquisition on June 24, 2025. On April 28, 2026, the City Council unanimously (6-0) awarded a construction contract to Fort Myer Construction Corporation for $21,770,570, conditional on final VDOT approval. On June 23, 2026, the Council approved (5-0, Hall absent) a resolution authorizing the City Manager to sign a standard project agreement with NVTA for 70% funding of the project (SPA 2020-48-2).
+The Blenheim Boulevard Multimodal Improvements Project is a City of Fairfax transportation project focused on adding multimodal infrastructure along Blenheim Boulevard. As of early 2025, construction was anticipated to begin that year, with utility relocation confirmed underway as of March 2026. The approved project scope runs from Blenheim Hall Drive to Ridge Avenue; separate future planning efforts have been identified to potentially extend improvements into Old Town and through Fairfax Circle, but those extensions are not part of the current project. The City Council held a work session on the project on June 3, 2025, and authorized the exercise of quick-take condemnation powers for property acquisition on June 24, 2025. On April 28, 2026, the City Council unanimously (6-0) awarded a construction contract to Fort Myer Construction Corporation for $21,770,570, conditional on final VDOT approval. On June 23, 2026, the Council approved (5-0, Hall absent) a resolution authorizing the City Manager to sign a standard project agreement with NVTA for 70% funding of the project (SPA 2020-48-2). On September 14, 2026, City of Fairfax Public Works staff presented the plan to the School Board, including elements proposed for Fairfax High School grounds (a walking/biking path, benches, and an amphitheater); the School Board will continue discussion and form a recommendation to City Council at a future meeting.
 
 <!-- curator:off -->
 
