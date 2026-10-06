@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ContestTabs from "@/components/ContestTabs";
 import QuestionnaireCompare from "@/components/QuestionnaireCompare";
 import {
   api,
@@ -126,14 +127,13 @@ function CandidateCard({ c }: { c: ElectionCandidate }) {
 function Contest({ c }: { c: ElectionContest }) {
   const n = c.candidates.length;
   return (
-    <section id={c.key} className="scroll-mt-20">
-      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-3 border-b-2 border-ink pb-1.5">
-        <h2 className="font-display text-[28px] font-medium leading-none tracking-[-0.3px]">{c.name}</h2>
-        <span className="text-[13px] font-semibold text-muted">
-          {voteFor(c)} · {n} candidate{n === 1 ? "" : "s"}
-          {c.vote_for && c.vote_for > 1 ? ` for ${c.vote_for} seats` : ""}
-        </span>
-      </div>
+    <section>
+      {/* the selected tab names the race; the heading stays for screen readers and the outline */}
+      <h2 className="sr-only">{c.name}</h2>
+      <p className="mb-3 text-[13px] font-semibold text-muted">
+        {voteFor(c)} · {n} candidate{n === 1 ? "" : "s"}
+        {c.vote_for && c.vote_for > 1 ? ` for ${c.vote_for} seats` : ""}
+      </p>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {c.candidates.map((cand) => (
@@ -225,19 +225,18 @@ export default async function ElectionPage() {
         </p>
       </section>
 
-      <nav aria-label="Contests" className="mb-8 flex flex-wrap gap-2">
-        {e.contests.map((c) => (
-          <a key={c.key} href={`#${c.key}`} className="rounded-full border border-hairline px-3.5 py-1.5 text-[13px] font-medium hover:border-ink">
-            {c.name} <span className="text-muted">· {c.candidates.length}</span>
-          </a>
-        ))}
-      </nav>
-
-      <div className="flex flex-col gap-14">
+      <ContestTabs
+        tabs={e.contests.map((c) => ({
+          key: c.key,
+          name: c.name,
+          count: `${c.candidates.length} candidate${c.candidates.length === 1 ? "" : "s"}`,
+          rule: voteFor(c).toLowerCase(),
+        }))}
+      >
         {e.contests.map((c) => (
           <Contest key={c.key} c={c} />
         ))}
-      </div>
+      </ContestTabs>
 
       <p className="mt-12 text-[12px] text-muted">
         Candidate sources last swept {formatDate(e.checked)}. Something missing or wrong? Every fact links to the page it

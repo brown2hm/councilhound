@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import SearchBox from "@/components/SearchBox";
-import { electionAhead } from "@/lib/election";
+import { electionAheadNow } from "@/lib/election";
 
 const NAV = [
   { href: "/", label: "Briefing" },
@@ -16,11 +16,7 @@ const NAV = [
   { href: "/ask", label: "Ask" },
 ];
 
-function localDay(d: Date) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-const nav = () => NAV.filter((n) => n.href !== "/election" || electionAhead(localDay(new Date())));
+const nav = () => NAV.filter((n) => n.href !== "/election" || electionAheadNow());
 
 // the project pages live under /development; they belong to the directory
 function isActive(href: string, pathname: string) {
