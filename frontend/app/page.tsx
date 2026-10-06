@@ -388,7 +388,7 @@ const ASK_SUGGESTIONS = [
   "What's happening with the Fairfax Circle Small Area Plan?",
 ];
 
-function AskBand() {
+function AskBand({ election }: { election: boolean }) {
   return (
     <section aria-labelledby="ask-band" className="rounded-xl bg-pine px-4 py-5 text-white sm:px-6 sm:py-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-8">
@@ -420,6 +420,14 @@ function AskBand() {
             </button>
           </form>
           <div className="mt-2.5 flex flex-wrap gap-2">
+            {election && (
+              <Link
+                href="/election"
+                className="rounded-full bg-mint px-3 py-1 text-[12px] font-semibold leading-snug text-ink hover:bg-white"
+              >
+                Compare every candidate on the November 3 ballot →
+              </Link>
+            )}
             {ASK_SUGGESTIONS.map((q) => (
               <Link
                 key={q}
@@ -913,7 +921,7 @@ export default async function Briefing() {
         </div>
       )}
       <div className="mb-10">
-        <AskBand />
+        <AskBand election={electionAhead(today)} />
       </div>
       <div className="flex flex-col gap-10">
         <Docket entries={docket} advisory={advisory} today={today} />
