@@ -62,6 +62,21 @@ def cli():
     pass
 
 
+@cli.command("project-docs-index")
+@click.option("--slug", default=None, help="one project by its City page slug")
+@click.option("--refresh", is_flag=True, help="re-read documents already in the index")
+def project_docs_index(slug, refresh):
+    """Make the documents listed on each development project's City page
+    searchable by /ask: download (cached), extract, embed. Run locally
+    (fairfaxva.gov blocks cloud IPs) with DATABASE_URL pointed at the
+    database to fill. No model calls."""
+    from councilhound.db.session import get_session
+    from councilhound.project_docs import index_all
+
+    with get_session() as session:
+        click.echo(index_all(session, slug=slug, refresh=refresh))
+
+
 @cli.command("init-db")
 def init_db():
     """Create/upgrade the database schema via Alembic."""

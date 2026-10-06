@@ -1,7 +1,9 @@
 """The knowledge /ask can reach, as tools Claude calls: the meeting record
 (transcripts, agenda items with their roll calls, documents), the tracked
 topic records built from it (profiles, timelines, wiki pages, official
-project data, impact analyses), the members (voting records, how they
+project data, impact analyses and their estimates, the documents filed
+on each project's City page, and project lists by status, type or
+distance from an address), the members (voting records, how they
 line up with each other, and when their seats are next decided), and the
 candidates on the ballot (campaign, voter-guide, finance, official and
 news sources from outside the record), and a web search of local civic and
@@ -12,6 +14,7 @@ per question, so the [n] the model cites is the same [n] across tool calls
 and the citation list is built only from what the model was actually
 shown."""
 import datetime
+import logging
 import re
 from collections import Counter
 
@@ -24,17 +27,20 @@ from zoneinfo import ZoneInfo
 from councilhound.bodies import BODIES, label as body_label
 from councilhound.db.models import (
     AgendaItem, CityProject, Document, Entity, EntityAlias, EntityMention, EntityProfile,
-    EntityUpdate, Meeting, MeetingSpeaker, ProjectEvaluation, TranscriptChunk, UpcomingMeeting,
-    Vote, WikiPage,
+    EntityUpdate, Meeting, MeetingSpeaker, ProjectDocumentChunk, ProjectEvaluation,
+    TranscriptChunk, UpcomingMeeting, Vote, WikiPage,
 )
 from councilhound.embeddings.embed import embed_query
 from councilhound.extraction.speaker_names import public_speaker_join
 
 from app import candidates, terms, web_search
 from app.links import clip_link
+from app.routers import entities as entities_router
 from app.routers import members as members_router
 from app.routers.search import SEMANTIC_MAX_DISTANCE
 from app.wiki import generated_at, trust_block
+
+log = logging.getLogger(__name__)
 
 SEARCH_LIMIT = 10
 TIMELINE_LIMIT = 25
@@ -471,7 +477,8 @@ def get_topic(session: Session, sources: Sources, name: str) -> tuple[list[int],
         if ev:
             out.append(sources.add(
                 ("impact", ev.id), kind="impact", title=f"{cp.name}: impact analysis (modelled estimates)",
-                text=_clip(ev.report_markdown, REPORT_CHARS),
+                text=_clip(ev.report_markdown, REPORT_CHARS)
+                + "\n(The report's opening; get_impact gives its estimates and other sections.)",
                 date=(ev.synthesized_at or ev.updated_at).date().isoformat() if (ev.synthesized_at or ev.updated_at) else None,
                 link=f"/development/{cp.external_slug}", entity_id=e.id))
 
@@ -512,7 +519,367 @@ def get_topic(session: Session, sources: Sources, name: str) -> tuple[list[int],
         ).all()
         for v, meeting, item in reversed(vote_rows):
             out.append(_add_vote(sources, v, meeting, item))
+    out += _upcoming_for(session, sources, e)
     return out, header, e.id
+
+
+def _upcoming_for(session: Session, sources: Sources, e: Entity) -> list[int]:
+    """Posted agendas of upcoming meetings that name this record: when it's
+    next heard."""
+    out = []
+    for u in entities_router._on_upcoming_agendas(session, e)[:3]:
+        when = (u["starts_at"] or "")[:16].replace("T", " ") or "in progress"
+        out.append(sources.add(
+            ("upcoming_for", e.id, u["event_id"]), kind="upcoming",
+            title=f"{e.name} on the agenda: {_body_label(u['body'])}, {u['title']} ({when})",
+            text=(f"The posted agenda for this upcoming meeting names {e.name}."
+                  + (" The meeting is in progress." if u["in_progress"] else "")),
+            date=(u["starts_at"] or "")[:10] or None, link=u["agenda_url"], entity_id=e.id))
+    return out
+
+
+# ---------------------------------------------------------------- projects
+
+PROJECT_LIST_LIMIT = 25
+PROJECT_DOC_LIMIT = 8
+IMPACT_MODULES = {"economic": "economic", "fiscal": "fiscal (tax)", "bike_lane": "bike lane",
+                  "trail": "trail"}
+
+
+def match_project(session: Session, name: str) -> tuple[CityProject | None, list[str]]:
+    """The official project record a name refers to: by the City's project
+    name, else through the tracked topic it's linked to."""
+    needle = (name or "").strip()
+    if len(needle) < 2:
+        return None, []
+    rows = session.scalars(select(CityProject).where(CityProject.name.ilike(f"%{needle}%"))
+                           .order_by(func.length(CityProject.name))).all()
+    if not rows:
+        ids = [e.id for e in match_topics(session, needle)]
+        rows = session.scalars(select(CityProject).where(CityProject.entity_id.in_(ids))).all() if ids else []
+    exact = [r for r in rows if r.name.lower() == needle.lower()]
+    best = (exact or rows or [None])[0]
+    return best, [r.name for r in rows if r is not best]
+
+
+def _num(value, unit: str | None) -> str:
+    unit = unit or ""
+    v = float(value)
+    if "$" in unit:
+        return f"${v:,.0f}{unit.replace('$', '')}"
+    return f"{v:,.0f} {unit}".strip() if abs(v) >= 10 else f"{v:,.1f} {unit}".strip()
+
+
+def _metric_line(m: dict) -> str:
+    line = f"{m.get('name')}: {_num(m['value'], m.get('unit'))}"
+    if m.get("low") is not None and m.get("high") is not None and m["low"] != m["high"]:
+        line += f" (range {_num(m['low'], m.get('unit'))} to {_num(m['high'], m.get('unit'))})"
+    if m.get("method"):
+        line += f"; method: {m['method']}"
+    return line
+
+
+def _words(text: str) -> set[str]:
+    """Lowercase words of three letters or more, plurals folded ('students' -> 'student')."""
+    return {w[:-1] if w.endswith("s") and len(w) > 3 else w
+            for w in re.findall(r"[a-z0-9]+", (text or "").lower()) if len(w) > 2}
+
+
+def _report_sections(markdown: str) -> list[tuple[str, str]]:
+    """(heading, body) for each '## ' section of an impact report."""
+    parts = re.split(r"^## +", markdown or "", flags=re.M)
+    return [(p.split("\n", 1)[0].strip(), p.split("\n", 1)[1].strip() if "\n" in p else "")
+            for p in parts[1:]]
+
+
+def _impact_for(session: Session, sources: Sources, cp: CityProject, ev: ProjectEvaluation,
+                measure: str | None) -> tuple[list[int], str]:
+    when = (ev.synthesized_at or ev.updated_at)
+    date = when.date().isoformat() if when else None
+    link = f"/development/{cp.external_slug}"
+    wanted = _words(measure or "")
+    out, matched = [], 0
+    for m in ev.module_results or []:
+        module = m.get("module") or "other"
+        metrics = [x for x in (m.get("metrics") or []) if x.get("value") is not None]
+        if wanted:
+            hits = [x for x in metrics if wanted & _words(f"{x.get('name')} {module}")]
+            matched += len(hits)
+            metrics = hits
+        if not metrics:
+            continue
+        metrics.sort(key=lambda x: not x.get("headline"))
+        notes = " ".join(m.get("narrative_notes") or [])
+        out.append(sources.add(
+            ("impact_module", ev.id, module), kind="impact",
+            title=f"{cp.name}: {IMPACT_MODULES.get(module, module)} estimates (modelled)",
+            text="\n".join(_metric_line(x) for x in metrics) + (f"\nNotes: {_clip(notes, 700)}" if notes else ""),
+            date=date, link=link, entity_id=cp.entity_id))
+    for heading, body in _report_sections(ev.report_markdown):
+        h = heading.lower()
+        if (h.startswith("executive summary") or h.startswith("not evaluated")
+                or (wanted and wanted & _words(f"{heading} {body[:400]}"))):
+            out.append(sources.add(
+                ("impact_section", ev.id, heading), kind="impact",
+                title=f"{cp.name} impact analysis: {heading} (modelled estimates)",
+                text=_clip(body, REPORT_CHARS), date=date, link=link, entity_id=cp.entity_id))
+    header = f"Impact analysis of {cp.name}: modelled screening estimates with low-high ranges, not forecasts."
+    if wanted and not matched:
+        names = sorted({x.get("name") for m in ev.module_results or [] for x in m.get("metrics") or []})
+        header += (f" No estimate is named like '{measure}'; this analysis estimates: "
+                   + "; ".join(n for n in names if n) + ".")
+    return out, header
+
+
+def _impact_compared(session: Session, sources: Sources, measure: str) -> tuple[list[int], str]:
+    wanted = _words(measure)
+    rows = session.execute(
+        select(ProjectEvaluation, CityProject).join(CityProject)
+        .where(ProjectEvaluation.status == "synthesized")).all()
+    by_name: dict[str, list[tuple]] = {}
+    for ev, cp in rows:
+        for m in ev.module_results or []:
+            for x in m.get("metrics") or []:
+                if x.get("value") is not None and wanted & _words(x.get("name") or ""):
+                    by_name.setdefault(x["name"], []).append((cp, x))
+    if not by_name:
+        names = sorted({x.get("name") for ev, _ in rows for m in ev.module_results or []
+                        for x in m.get("metrics") or [] if x.get("name")})
+        return [], (f"No impact estimate is named like '{measure}'. Estimates available across "
+                    f"{len(rows)} analysed projects: " + "; ".join(names) + ".")
+    # the measure named most like the question, then the one most projects have
+    best = max(by_name, key=lambda n: (len(wanted & _words(n)),
+                                       len(wanted & _words(n)) / max(1, len(_words(n))),
+                                       len(by_name[n])))
+    ranked = sorted(by_name[best], key=lambda t: -float(t[1]["value"]))
+    lines = [f"{cp.name} ({cp.official_status or 'status not listed'}): "
+             + _metric_line(x).split(": ", 1)[1].split("; method")[0] for cp, x in ranked]
+    n = sources.add(("impact_compare", best), kind="impact",
+                    title=f"Impact estimates compared: {best} (modelled)",
+                    text="\n".join(lines), date=None, link="/development")
+    others = [k for k in by_name if k != best]
+    header = (f"'{best}' across the {len(ranked)} of {len(rows)} analysed projects that estimate it, "
+              "highest first. Modelled screening estimates, not forecasts; projects without an "
+              "analysis aren't ranked."
+              + (f" Related estimates: {'; '.join(others)}." if others else ""))
+    return [n], header
+
+
+def get_impact(session: Session, sources: Sources, project: str | None = None,
+               measure: str | None = None) -> tuple[list[int], str]:
+    """One project's impact estimates (all, or those matching a measure) with
+    the matching sections of its report, or one measure compared across
+    every analysed project."""
+    if not project:
+        if not measure:
+            return [], "Name a project, a measure to compare across projects, or both."
+        return _impact_compared(session, sources, measure)
+    cp, others = match_project(session, project)
+    if cp is None:
+        return [], f"No official project matches '{project}'."
+    ev = session.scalar(select(ProjectEvaluation).where(
+        ProjectEvaluation.city_project_id == cp.id, ProjectEvaluation.status == "synthesized"))
+    if ev is None:
+        return [], (f"{cp.name} has no completed impact analysis"
+                    + (f" (other matches: {', '.join(others)})" if others else "") + ".")
+    nums, header = _impact_for(session, sources, cp, ev, measure)
+    if others:
+        header += f" Other projects with similar names: {', '.join(others)}."
+    return nums, header
+
+
+def _geocode(address: str) -> dict | None:
+    from councilhound.geocode import geocode_address
+    try:
+        return geocode_address(address)
+    except Exception:
+        log.exception("geocode failed for %r", address)
+        return None
+
+
+def find_projects(session: Session, sources: Sources, status: str | None = None,
+                  project_type: str | None = None, query: str | None = None,
+                  near: str | None = None, radius_m: int = 1200) -> tuple[list[int], str]:
+    """Official development and City projects (and, without status or type
+    filters, projects known only from meetings), filtered by status, type,
+    words in the name or description, or distance from an address."""
+    analysed = set(session.scalars(select(ProjectEvaluation.city_project_id)
+                                   .where(ProjectEvaluation.status == "synthesized")))
+    counts = dict(session.execute(select(EntityUpdate.entity_id, func.count())
+                                  .group_by(EntityUpdate.entity_id)).all())
+    distance: dict[int, int] = {}
+    entity_distance: dict[int, int] = {}
+    where = ""
+    if near:
+        hit = _geocode(near)
+        if not hit:
+            return [], f"The address '{near}' couldn't be located."
+        radius_m = max(200, min(int(radius_m or 1200), 5000))
+        found = entities_router.near(lat=hit["lat"], lng=hit["lng"], radius_m=radius_m, limit=200,
+                                     session=session)
+        where = f" within {radius_m} m of {hit.get('matched_address') or near}"
+        for r in found["results"]:
+            if r["official"]:
+                distance[r["official"]["slug"]] = r["distance_m"]
+            elif r["entity_type"] == "project" and r["slug"]:
+                entity_distance[r["slug"]] = r["distance_m"]
+
+    q = select(CityProject, Entity).outerjoin(Entity, CityProject.entity_id == Entity.id)
+    if status:
+        q = q.where(func.lower(CityProject.official_status) == status.strip().lower())
+    if project_type:
+        q = q.where(func.lower(CityProject.project_type) == project_type.strip().lower())
+    if query:
+        like = f"%{query.strip()}%"
+        q = q.where(or_(CityProject.name.ilike(like), CityProject.description.ilike(like),
+                        CityProject.address.ilike(like)))
+    rows = session.execute(q).all()
+    if near:
+        rows = [r for r in rows if r[0].external_slug in distance]
+        rows.sort(key=lambda r: distance[r[0].external_slug])
+    else:
+        rows.sort(key=lambda r: r[0].name)
+    out = []
+    for cp, e in rows[:PROJECT_LIST_LIMIT]:
+        facts = [f"Official status: {cp.official_status or 'not listed'}",
+                 f"Type: {cp.project_type}" if cp.project_type else None,
+                 f"Address: {cp.address}" if cp.address else None,
+                 f"About {distance[cp.external_slug]} m away" if near else None,
+                 f"Impact analysis: {'yes' if cp.id in analysed else 'none'}",
+                 (f"Tracked in meetings: {counts.get(e.id, 0)} updates, latest status "
+                  f"{e.current_status or 'unknown'}") if e else None,
+                 _clip(cp.description, 300) if cp.description else None]
+        out.append(sources.add(
+            ("project_list", cp.id), kind="project", title=f"{cp.name}: official project record",
+            text="\n".join(f for f in facts if f),
+            date=cp.synced_at.date().isoformat() if cp.synced_at else None,
+            link=cp.detail_url, entity_id=cp.entity_id))
+
+    meeting_only = 0
+    if not (status or project_type):
+        linked = select(CityProject.entity_id).where(CityProject.entity_id.isnot(None))
+        eq = select(Entity).where(Entity.entity_type == "project", Entity.id.not_in(linked))
+        if query:
+            eq = eq.where(Entity.name.ilike(f"%{query.strip()}%"))
+        extra = [e for e in session.scalars(eq) if counts.get(e.id)]
+        if near:
+            extra = sorted((e for e in extra if e.canonical_slug in entity_distance),
+                           key=lambda e: entity_distance[e.canonical_slug])
+        else:
+            extra.sort(key=lambda e: -counts.get(e.id, 0))
+        meeting_only = len(extra)
+        room = max(0, PROJECT_LIST_LIMIT - len(out))
+        for e in extra[:room]:
+            out.append(sources.add(
+                ("project_entity", e.id), kind="project",
+                title=f"{e.name}: tracked from meetings (not in the City's project directory)",
+                text="\n".join(f for f in [
+                    f"Latest status in the record: {e.current_status or 'unknown'}",
+                    f"Tracked in meetings: {counts.get(e.id, 0)} updates",
+                    f"About {entity_distance[e.canonical_slug]} m away" if near else None] if f),
+                link=_topic_link(e, None), entity_id=e.id))
+    filters = ", ".join(f for f in [f"status {status}" if status else None,
+                                    f"type {project_type}" if project_type else None,
+                                    f"matching '{query}'" if query else None] if f)
+    header = (f"{len(rows)} official project{'s' if len(rows) != 1 else ''}"
+              + (f" ({filters})" if filters else "") + where
+              + (f", plus {meeting_only} known only from meetings" if meeting_only else "")
+              + (f"; the first {PROJECT_LIST_LIMIT} are shown" if len(rows) + meeting_only > PROJECT_LIST_LIMIT else "")
+              + ". Official statuses: Under Construction, Under Review, Pre-Application, Approved"
+              + " (City capital projects often list none). Types: Private Development, City Project.")
+    return out, header
+
+
+_DOC_DATE = re.compile(r"^[A-Z][a-z]+ \d{1,2}, \d{4}\s*|\s*\((?:PDF, )?[\d.]+\s*[KMG]B\)$")
+
+
+def _repeats(chunk: ProjectDocumentChunk, words: set[str], kept: list) -> bool:
+    """Mostly the same words as a kept passage: 70% within the same kind of
+    document (a resubmission), 85% across documents (a staff report carried
+    into both the Planning Commission's and Council's hearing packets)."""
+    shared = len(words & kept[2]) / max(1, min(len(words), len(kept[2])))
+    same_kind = _doc_kind(kept[0].doc_label) == _doc_kind(chunk.doc_label)
+    return shared >= (0.7 if same_kind else 0.85)
+
+
+def _doc_kind(label: str) -> str:
+    """'July 3, 2023 Transportation Impact Study (PDF, 22MB)' -> 'transportation impact study'."""
+    return _DOC_DATE.sub("", label or "").strip().lower()
+
+
+def _gist_words(text: str) -> set[str]:
+    """A passage's distinct words (no numbers), for spotting the same passage
+    in another revision of a document."""
+    return {w for w in re.findall(r"[a-z]+", (text or "").lower()) if len(w) > 2}
+
+
+def search_project_documents(session: Session, sources: Sources, query: str,
+                             project: str | None = None) -> tuple[list[int], str]:
+    """Passages from the documents filed on projects' City pages (narratives,
+    proffers, staff reports, transportation and fiscal studies), closest to
+    the query by meaning plus exact-phrase hits, within one project or all."""
+    cp, header = None, ""
+    if project:
+        cp, _others = match_project(session, project)
+        if cp is None:
+            return [], f"No official project matches '{project}'."
+        docs = session.execute(
+            select(ProjectDocumentChunk.doc_label, ProjectDocumentChunk.doc_date)
+            .where(ProjectDocumentChunk.city_project_id == cp.id)
+            .group_by(ProjectDocumentChunk.doc_label, ProjectDocumentChunk.doc_date)
+            .order_by(ProjectDocumentChunk.doc_date.desc().nulls_last())).all()
+        listed = len(cp.documents or [])
+        if not docs:
+            return [], (f"None of the {listed} documents on {cp.name}'s City page are indexed for "
+                        f"search; its page is {cp.detail_url}.")
+        header = (f"Documents indexed for {cp.name} ({len(docs)} of {listed} listed; drawings and "
+                  "appendices aren't indexed), newest first: " + "; ".join(label for label, _ in docs) + ".")
+    needle = (query or "").strip()
+    if not needle:
+        return [], header or "Give words to look for in the project documents."
+    base = (select(ProjectDocumentChunk, CityProject)
+            .join(CityProject, ProjectDocumentChunk.city_project_id == CityProject.id))
+    if cp is not None:
+        base = base.where(ProjectDocumentChunk.city_project_id == cp.id)
+    hits = []
+    if len(needle.split()) <= 6:
+        hits += session.execute(base.where(ProjectDocumentChunk.text.ilike(f"%{needle}%"))
+                                .order_by(ProjectDocumentChunk.doc_date.desc().nulls_last())
+                                .limit(PROJECT_DOC_LIMIT)).all()
+    vec = embed_query(needle)
+    for chunk, proj, d in session.execute(
+            base.add_columns(ProjectDocumentChunk.embedding.cosine_distance(vec).label("d"))
+            .where(ProjectDocumentChunk.embedding.isnot(None)).order_by("d")
+            .limit(PROJECT_DOC_LIMIT * 4)):
+        if float(d) <= SEMANTIC_MAX_DISTANCE:
+            hits.append((chunk, proj))
+    # applications are resubmitted with most text unchanged: the same passage
+    # from an older revision of the same document adds nothing, so a passage
+    # that mostly repeats a kept one from the same kind of document is
+    # dropped, and the newer revision of the two is the one kept
+    kept: list[list] = []   # [chunk, project, words], in relevance order
+    for chunk, proj in hits:
+        words = _gist_words(chunk.text)
+        twin = next((k for k in kept if k[1].id == proj.id and _repeats(chunk, words, k)), None)
+        if twin is None:
+            kept.append([chunk, proj, words])
+        elif (chunk.doc_date or datetime.date.min) > (twin[0].doc_date or datetime.date.min):
+            twin[0], twin[2] = chunk, words
+    out, seen = [], set()
+    for chunk, proj, _w in kept:
+        if chunk.id in seen:
+            continue
+        seen.add(chunk.id)
+        out.append(sources.add(
+            ("project_doc", chunk.id), kind="document",
+            title=f"{proj.name}: {chunk.doc_label}, page {chunk.page}",
+            text=chunk.text, date=chunk.doc_date.isoformat() if chunk.doc_date else None,
+            link=f"{chunk.doc_url}#page={chunk.page}", entity_id=proj.entity_id))
+        if len(out) == PROJECT_DOC_LIMIT:
+            break
+    note = (" Applicant documents (narratives, proffers, studies) state the applicant's case; "
+            "staff reports and hearing packets are the City's.")
+    return out, (header + note).strip()
 
 
 # ---------------------------------------------------------------- members
