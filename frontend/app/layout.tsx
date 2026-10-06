@@ -98,6 +98,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   Meeting calendar
                 </a>
               </p>
+              <p className="text-[12px] text-muted">
+                How it works:{" "}
+                <a href="/councilhound-white-paper.pdf" className="font-semibold underline underline-offset-2 hover:text-ink">
+                  White paper (PDF)
+                </a>
+                {" · "}
+                <a href="/impact-methodology.pdf" className="font-semibold underline underline-offset-2 hover:text-ink">
+                  Impact methodology (PDF)
+                </a>
+              </p>
             </div>
             <Image
               src="/brand/fox.png"
