@@ -81,6 +81,8 @@ def _s(url: str, publisher: str, kind: str, title: str, *facts: str,
 _PATCH = "Patch (Fairfax City)"
 _VOTE411 = "League of Women Voters (Vote411)"
 _GRANICUS = "City of Fairfax boards and commissions"
+_CITY = "City of Fairfax"
+_COUNCIL_PAGE = "https://www.fairfaxva.gov/Government/Council/Mayor-and-Council-Members/"
 _SCHOOLS = "City of Fairfax Schools"
 
 # ---- sources several candidates share: each candidate's entry repeats only
@@ -304,6 +306,12 @@ CANDIDATES: tuple[Candidate, ...] = (
                "The campaign site's slogan is \"Caring for Our Community, Creating Confidence in Our Future.\"",
                "The campaign site lists priority areas: cost of living, quality of life and land use, public "
                "safety, sustainability, schools, community engagement and ethics."),
+            _s(_COUNCIL_PAGE + "Councilmember-Thomas-D-Peterson", _CITY, "official", "Councilmember Thomas D. Peterson",
+               "The City's profile lists him as a Councilmember in his first term; it says he has lived in the City "
+               "since 2002 and chaired the Environmental Sustainability Committee from 2022-24.",
+               "It says he is founder, president and CEO of the Center for Climate Strategies and an adjunct "
+               "professor at Johns Hopkins University and George Mason University.",
+               checked=_D(2026, 10, 5)),
             _s("https://tom4fairfax.org/about", "Tom Peterson for Mayor", "campaign", "About Tom",
                "The site says he has lived in the City since 2002, founded and runs a national nonprofit, "
                "and also runs a historic tourist home business.",
@@ -360,6 +368,13 @@ CANDIDATES: tuple[Candidate, ...] = (
                "The campaign site lists priorities: public safety; environment and green spaces; fiscal "
                "responsibility; transparency; City schools; housing affordability; walkability; small "
                "business support; non-partisan leadership."),
+            _s(_COUNCIL_PAGE + "Councilmember-Stacy-R-Hall", _CITY, "official", "Councilmember Stacy R. Hall",
+               "The City's profile lists her as a Councilmember in her first term; it says she has lived in the City "
+               "since 2011 and served on the School Board from 2023-24, representing it on the Environmental "
+               "Sustainability Committee.",
+               "It says she works as a controller at ACI Biosciences and has been treasurer of the Cobbdale Civic "
+               "Association since 2022.",
+               checked=_D(2026, 10, 5)),
             _s("https://onyourballot.vote411.org/race-detail.do?id=4143051", _VOTE411, "questionnaire",
                "Vote411: Fairfax City Council",
                "Her Vote411 bio lists a finance degree, 15+ years as a controller, nine years of PTA "
@@ -398,6 +413,13 @@ CANDIDATES: tuple[Candidate, ...] = (
                "The campaign site lists priorities: affordability and responsible spending; smart, sustainable "
                "growth; resident engagement.",
                "The site shows an endorsement from Moms Demand Action."),
+            _s(_COUNCIL_PAGE + "Councilmember-Rachel-M-McQuillen", _CITY, "official", "Councilmember Rachel M. McQuillen",
+               "The City's profile lists her as a Councilmember in her first term; it describes her as a 14-year "
+               "City resident who served on the School Board from 2023-24, representing it on the Parks and "
+               "Recreation Advisory Board.",
+               "It says she worked in accounting and finance before launching a dog training and pet care service "
+               "in 2018, and holds officer roles in the Rotary Club of Fairfax.",
+               checked=_D(2026, 10, 5)),
             _s("https://onyourballot.vote411.org/race-detail.do?id=4143051", _VOTE411, "questionnaire",
                "Vote411: Fairfax City Council",
                "She lists as priorities affordability and responsible spending, schools and public safety, the "
@@ -446,6 +468,12 @@ CANDIDATES: tuple[Candidate, ...] = (
                "Anthony Amos for City Council",
                "The campaign site's slogan is \"Keeping Fairfax Moving Forward\"; the home page describes his "
                "military-family background and has accomplishments and issues sections."),
+            _s(_COUNCIL_PAGE + "Councilmember-Anthony-T-Amos", _CITY, "official", "Councilmember Anthony T. Amos",
+               "The City's profile lists him as a Councilmember in his first term; it says he was the City's "
+               "representative on the Fairfax Campus and Community Advisory Board in 2024.",
+               "It says he is a Development Associate with the Michaels Organization and previously worked as a "
+               "legislative and community outreach aide for the Fairfax County Board of Supervisors.",
+               checked=_D(2026, 10, 5)),
             _s("https://onyourballot.vote411.org/race-detail.do?id=4143051", _VOTE411, "questionnaire",
                "Vote411: Fairfax City Council",
                "His Vote411 bio says he grew up in a military family, raised in Germany, Missouri and Hawaii.",

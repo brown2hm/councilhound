@@ -54,6 +54,14 @@ def test_questionnaires_agree_with_the_candidate_table():
                     c.ballot_name
 
 
+def test_officeholders_have_an_official_source():
+    """Anyone who holds a City seat has the City's own page about them, so
+    the card never says 'Official record: none found' for a sitting member."""
+    for c in candidates.CANDIDATES:
+        if c.incumbent:
+            assert any(s.kind == "official" for s in c.sources), c.ballot_name
+
+
 # ---------------------------------------------------------------- the page
 
 def test_election_lists_every_contest_in_ballot_order(client):

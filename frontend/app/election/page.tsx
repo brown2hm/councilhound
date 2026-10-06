@@ -61,12 +61,22 @@ function CandidateCard({ c }: { c: ElectionCandidate }) {
       <dl className="mt-3 flex flex-col text-[13px]">
         {KINDS.map(([kind, label]) => {
           const found = byKind(kind);
+          // a voting record parsed from the minutes is an official record too
+          const record = kind === "official" ? c.member : null;
           return (
             <div key={kind} className="grid grid-cols-[120px_1fr] gap-2 border-t border-hairline-soft py-1.5">
               <dt className="text-muted">{label}</dt>
               <dd className="text-body">
-                {found.length ? (
+                {found.length || record ? (
                   <ul className="flex flex-col gap-1">
+                    {record && (
+                      <li className="leading-snug">
+                        <Link href={`/members/${record.slug}`} className="underline decoration-hairline underline-offset-2 hover:decoration-ink">
+                          Voting record
+                        </Link>
+                        <span className="text-[12px] text-muted"> · CouncilHound, from meeting minutes</span>
+                      </li>
+                    )}
                     {found.map((s) => (
                       <li key={s.url} className="leading-snug">
                         <a href={s.url} target="_blank" rel="noopener noreferrer" className="underline decoration-hairline underline-offset-2 hover:decoration-ink">
