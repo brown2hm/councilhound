@@ -29,7 +29,8 @@ Candidate information was reachable only by asking /ask the right question.
   other races.
 - **From Ask.** Until Election Day, "Who is running for City Council on
   November 3?" is a starter question, and any answer citing candidate sources
-  offers a link to the election page under "Ask next".
+  offers a link to the election page under "Ask next". The front page's Ask
+  band leads its suggestions with the same link.
 
 ## Unreleased — speakers named by voice (October 2026)
 
