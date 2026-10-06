@@ -246,6 +246,29 @@ class ProjectEvaluation(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
+class ProjectDocumentChunk(Base):
+    """One passage of a document the City lists on a development project's
+    page (narratives, staff reports, transportation studies), for /ask's
+    project-document search. Written by the LOCAL `project-docs-index` CLI
+    (fairfaxva.gov blocks cloud IPs, and the PDFs are already cached there
+    for the impact pipeline); drawing sets and appendices are skipped. Page
+    numbers are kept so a citation can open the PDF at the right page."""
+    __tablename__ = "project_document_chunks"
+    __table_args__ = (UniqueConstraint("doc_url", "ordinal"),)
+
+    id = Column(Integer, primary_key=True)
+    city_project_id = Column(Integer, ForeignKey("city_projects.id", ondelete="CASCADE"),
+                             nullable=False, index=True)
+    doc_url = Column(Text, nullable=False)
+    doc_label = Column(Text, nullable=False)  # as listed on the project page
+    doc_date = Column(Date)  # parsed from the label ("July 3, 2023 Narrative")
+    page = Column(Integer, nullable=False)  # 1-based page the passage starts on
+    ordinal = Column(Integer, nullable=False)  # passage order within the document
+    text = Column(Text, nullable=False)
+    embedding = Column(Vector(768))  # bge-base-en-v1.5, like transcript_chunks
+    indexed_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
 class WikiPage(Base):
     """One file of the OKF knowledge bundle (councilhound.okf), mirrored into
     the DB so the cloud API can serve project wikis. The bundle directory
