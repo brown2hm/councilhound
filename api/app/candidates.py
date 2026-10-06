@@ -67,7 +67,7 @@ CONTEST_NAME = {"mayor": "Mayor", "city_council": "City Council", "school_board"
 
 # when every not_found list was last swept (the daily update routine bumps
 # it); each source keeps its own date, the day its facts were verified
-CHECKED = _D(2026, 10, 5)
+CHECKED = _D(2026, 10, 6)
 # the day the first set of sources was verified page by page
 _FIRST_VERIFIED = _D(2026, 10, 5)
 
@@ -340,6 +340,19 @@ CANDIDATES: tuple[Candidate, ...] = (
                "voted for the April 2026 construction authorization; and opposed the added $4.6 million for "
                "the George Snyder Trail.",
                published=_FOUR_RECORDS.published),
+            _s("https://patch.com/virginia/fairfaxcity/tom-peterson-s-fairfax-voting-record-taxes-trails-housing-willard-sherwood",
+               _PATCH, "news", "Tom Peterson's Fairfax voting record: taxes, trails, housing and Willard-Sherwood",
+               "Patch reports he voted for the budgets adopted in May 2025 and May 2026 (both unanimous), the "
+               "4.5% meals-tax rate (passed 4-2), the $1.0725 real estate tax rate and the July 2026 request "
+               "for a sales-tax referendum.",
+               "He opposed all six October 2025 Willard-Sherwood approvals and voted for the April 2026 "
+               "construction authorization; after the added $4.6 million for the George Snyder Trail failed "
+               "3-3, he moved to cancel the trail, which passed 4-2.",
+               "He supported postponing the accessory dwelling unit ordinance and proposed postponing Highlands "
+               "at Mantua to review residents' concerns; after both delays failed he voted for approval. He "
+               "opposed the Davies rezoning and supported the Affordable Housing Strategic Plan and denying the "
+               "Combined Courthouse applications.",
+               published=_D(2026, 9, 24), checked=_D(2026, 10, 6)),
             _s("https://patch.com/virginia/fairfaxcity/lockhart-leads-peterson-fairfax-city-mayor-s-race-fundraising-after-30-000",
                _PATCH, "finance", "Lockhart leads Peterson in mayor's race fundraising after $30,000 donation",
                "His mayoral committee through August 31, 2026: $11,303.10 in contributions, $4,245.45 spent, "
@@ -399,10 +412,24 @@ CANDIDATES: tuple[Candidate, ...] = (
                "Donors named include a $1,000 contribution tied to Ox Hill Companies, former Mayor Steve "
                "Stombres and Council candidate Steve Chang ($500).",
                published=_D(2026, 10, 5)),
+            _s("https://patch.com/virginia/fairfaxcity/stacy-hall-puts-affordability-center-fairfax-city-council-reelection-bid",
+               _PATCH, "questionnaire", "Stacy Hall focuses on housing, taxes and affordability in Council race",
+               "In Patch's questionnaire she gives her age as 47 and lists a B.S. in finance (University of "
+               "Delaware); she has been a controller in the animal health sector since 2010, after nine years "
+               "as a public accountant, and runs her own accounting, bookkeeping and tax business in the City.",
+               "She lists City Council since January 2025 and one prior term on the School Board.",
+               "She names affordability as the most pressing issue, saying she will scrutinize the upfront and "
+               "long-term costs of major projects and look to expand housing options through responsible "
+               "development.",
+               "She says she would support projects whose scale fits their location and oppose proposals that "
+               "leave nearby neighborhoods significant impacts not adequately addressed.",
+               "She says she has aligned herself with a group of independent, nonpartisan candidates and that "
+               "her decisions on Council will remain her own.",
+               published=_D(2026, 9, 15), checked=_D(2026, 10, 6)),
             _s(_COMMON_GROUND.url, _PATCH, "news", _COMMON_GROUND.title,
                "She is a Council candidate in the 'Common Ground' group.", published=_COMMON_GROUND.published),
         ),
-        not_found=("a 2026 Patch candidate questionnaire", _NO_FORUM),
+        not_found=(_NO_FORUM,),
     ),
     Candidate(
         "Rachel M McQuillen", "city_council",
@@ -448,6 +475,18 @@ CANDIDATES: tuple[Candidate, ...] = (
                "for the April 2026 construction authorization; and opposed the added $4.6 million for the "
                "George Snyder Trail.",
                published=_FOUR_RECORDS.published),
+            _s("https://patch.com/virginia/fairfaxcity/rachel-mcquillen-s-fairfax-voting-record-taxes-trails-housing-willard-sherwood",
+               _PATCH, "news", "How Rachel McQuillen voted on key Fairfax decisions",
+               "Patch reports she voted for the budgets adopted in May 2025 and May 2026 (both unanimous) and the "
+               "$1.0725 real estate tax rate, and against the 4.5% meals-tax rate (passed 4-2); in a statement "
+               "she said it was not the right place or time to raise that tax.",
+               "She opposed five of six October 2025 Willard-Sherwood approvals (supporting the City site's "
+               "certificate of appropriateness) and voted for the April 2026 construction authorization; she "
+               "opposed the added $4.6 million for the George Snyder Trail and supported cancelling it.",
+               "She supported the Affordable Housing Strategic Plan and denying the Combined Courthouse "
+               "applications; she opposed the Davies rezoning, and supported postponing, then opposed, the "
+               "accessory dwelling unit ordinance and the Highlands at Mantua rezoning.",
+               published=_D(2026, 9, 24), checked=_D(2026, 10, 6)),
             _s("https://patch.com/virginia/fairfaxcity/mcquillen-raises-4-6k-2026-fairfax-city-council-campaign",
                _PATCH, "finance", "McQuillen raises $4.6K in 2026 Council campaign",
                "January 1 to August 31, 2026: $4,640.45 in contributions, $2,448.71 cash on hand, no debts.",
@@ -499,6 +538,18 @@ CANDIDATES: tuple[Candidate, ...] = (
                "construction authorization; and supported the added $4.6 million for the George Snyder Trail "
                "and opposed cancelling it.",
                published=_FOUR_RECORDS.published),
+            _s("https://patch.com/virginia/fairfaxcity/anthony-amos-s-fairfax-voting-record-taxes-trails-housing-willard-sherwood",
+               _PATCH, "news", "How Anthony Amos voted on key Fairfax decisions",
+               "Patch reports he voted for the budgets adopted in May 2025 and May 2026 (both unanimous), the "
+               "4.5% meals-tax rate (passed 4-2), the $1.0725 real estate tax rate and the July 2026 request "
+               "for a sales-tax referendum.",
+               "He supported all six October 2025 Willard-Sherwood approvals and the April 2026 construction "
+               "authorization; he supported the added $4.6 million for the George Snyder Trail (failed 3-3) "
+               "and opposed cancelling it (passed 4-2).",
+               "He opposed postponing the accessory dwelling unit ordinance and Highlands at Mantua, then voted "
+               "for both; he supported the Davies rezoning, the Affordable Housing Strategic Plan and denying "
+               "the Combined Courthouse applications.",
+               published=_D(2026, 9, 24), checked=_D(2026, 10, 6)),
             _s("https://patch.com/virginia/fairfaxcity/5k-donation-helps-amos-raise-nearly-21k-2026-fairfax-city-council-campaign",
                _PATCH, "finance", "$5K donation helps Amos raise nearly $21K in 2026",
                "January 1 to August 31, 2026: $20,912.50 in contributions, $5,286.96 spent, $20,136.67 cash "

@@ -279,7 +279,7 @@ QUESTIONNAIRES: tuple[Questionnaire, ...] = (
     Questionnaire(
         'patch_city_council', 'city_council', PATCH, "Patch's 2026 candidate questionnaire, City Council",
         'https://patch.com/virginia/fairfaxcity',
-        checked=_D(2026, 10, 5),
+        checked=_D(2026, 10, 6),
         questions=(
             ('slate', "City elections are traditionally non-partisan and candidates must run as "
                       "independents, according to both the city charter and the Code of Virginia. No party"
@@ -357,6 +357,37 @@ QUESTIONNAIRES: tuple[Questionnaire, ...] = (
                                    "and supporting the first Affordability and Housing Strategic Plan, the"
                                    " Urban Forest Master Plan and the first Community Survey."),
                url='https://patch.com/virginia/fairfaxcity/anthony-amos-favors-case-case-development-reviews-fairfax-city-council-bid', published=_D(2026, 9, 9)),
+            _r('Stacy R. Hall',
+               ('slate', 'Aligned with a group of independent, nonpartisan candidates'),
+               ('why', 'Seeking reelection as Fairfax is home and wants residents to have a '
+                       'strong voice. Says School Board and Council service showed how local decisions '
+                       'affect schools, taxes and daily life; wants to keep asking hard '
+                       'questions, clarify City finances and work toward practical solutions.'),
+               ('pressing', "Affordability: housing, taxes, everyday costs. Council can't control "
+                            "every household cost but can be clear about what its decisions cost. "
+                            "Will scrutinize projects' upfront and long-term costs, seek more "
+                            "housing via responsible development, make affordability central to "
+                            "budgets."),
+               ('development', 'Wants thoughtful redevelopment that grows the tax base and adds '
+                               'housing, businesses and public space; backs projects scaled to '
+                               'location with credible infrastructure plans, opposes ones not '
+                               'adequately addressing significant neighborhood impacts. Housing '
+                               'and character both matter.'),
+               ('differences', "Speaks to what she brings rather than defining others. Cites "
+                               "Council and School Board service and 25+ years of financial "
+                               "experience; says she is willing to back proposals when details "
+                               "justify it and raise concerns when they don't, even if less "
+                               "popular; makes her own decisions."),
+               ('platform', 'Strong schools, safe neighborhoods, responsible development, local '
+                            'businesses, and protecting green spaces and the tree canopy; '
+                            'accessible, transparent government so residents know what is '
+                            'proposed, what it will cost and how to be heard before decisions.'),
+               ('accomplishments', "Cites nine years in Providence Elementary's PTA (three as "
+                                   "president); on Council, pushing for more public budget talks, "
+                                   "separating upkeep from capital costs, pursuing a stronger "
+                                   "Willard-Sherwood cost plan, then voting yes; backing the "
+                                   "ethics code; moving daycare play to 8 a.m."),
+               url='https://patch.com/virginia/fairfaxcity/stacy-hall-puts-affordability-center-fairfax-city-council-reelection-bid', published=_D(2026, 9, 15)),
             _r('Sandi W. Slappey Brown',
                ('slate', "Endorsed by a recognized political party (clarifies it is a recommendation from "
                          "the City of Fairfax Democratic Committee)"),
