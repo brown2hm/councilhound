@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation";
 import FollowTopic from "@/components/FollowTopic";
 import Markdown from "@/components/Markdown";
 import StatusBadge from "@/components/StatusBadge";
+import { ELECTION_QUESTION, electionAheadNow } from "@/lib/election";
 import { formatDate, type AskMember, type AskResponse, type AskStreamEvent, type Citation } from "@/lib/api";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -16,6 +17,9 @@ const SUGGESTIONS = [
   "What did the council decide about accessory dwelling units?",
   "What's happening with the Fairfax Circle Small Area Plan?",
 ];
+
+// until Election Day, one of the starters is about the ballot
+const starters = () => (electionAheadNow() ? [ELECTION_QUESTION, ...SUGGESTIONS.slice(0, 2)] : SUGGESTIONS);
 
 function fmtTime(s: number) {
   return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
@@ -399,6 +403,9 @@ function AskInner() {
   const inThread = turns.length > 0 || pending?.followUp;
   // only the latest answer's suggestions: earlier ones have been moved past
   const suggestions = turns.at(-1)?.result.follow_ups ?? [];
+  // an answer drawing on candidate sources points to the full ballot guide
+  const aboutElection =
+    electionAheadNow() && (turns.at(-1)?.result.citations ?? []).some((c) => c.kind === "candidate");
 
   const form = (
     <>
@@ -438,7 +445,7 @@ function AskInner() {
         {form}
         {!loading && !error && (
           <div className="mt-5 flex flex-wrap gap-2">
-            {SUGGESTIONS.map((s) => (
+            {starters().map((s) => (
               <button
                 key={s}
                 onClick={() => {
@@ -472,10 +479,18 @@ function AskInner() {
       ))}
 
       <div className="mt-10 max-w-[760px] border-t border-hairline pt-6">
-        {!loading && suggestions.length > 0 && (
+        {!loading && (suggestions.length > 0 || aboutElection) && (
           <div className="mb-3">
             <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[1px] text-muted">Ask next</div>
             <div className="flex flex-wrap gap-2">
+              {aboutElection && (
+                <Link
+                  href="/election"
+                  className="rounded-full bg-pine px-4 py-2 text-left text-sm font-semibold text-white hover:bg-teal"
+                >
+                  Compare every candidate side by side on the election page →
+                </Link>
+              )}
               {suggestions.map((s) => (
                 <button
                   key={s}

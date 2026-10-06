@@ -22,6 +22,14 @@ Candidate information was reachable only by asking /ask the right question.
   in line with the questionnaires.
 - The nav entry and front-page link come down after Election Day
   (`frontend/lib/election.ts`).
+- **Races as tabs.** Mayor, City Council and School Board are tabs in a bar
+  pinned under the header, labelled "Choose a race", with candidate counts on
+  each tab. They follow the URL hash (`/election#city_council`), support arrow
+  keys and the back button, and end with "The ballot has more" buttons for the
+  other races.
+- **From Ask.** Until Election Day, "Who is running for City Council on
+  November 3?" is a starter question, and any answer citing candidate sources
+  offers a link to the election page under "Ask next".
 
 ## Unreleased — speakers named by voice (October 2026)
 
