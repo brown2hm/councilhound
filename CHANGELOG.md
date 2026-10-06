@@ -1,5 +1,28 @@
 # Changelog
 
+## Unreleased — election page (October 2026)
+
+Candidate information was reachable only by asking /ask the right question.
+
+- **`/election`** lists every contest on the City's November 3 sample ballot
+  in ballot order. Every candidate card has the same checklist of outside
+  sources (campaign, voter guides, finance, official record, forums, news),
+  "none found" where a kind is missing, and what was looked for and not found.
+  Candidates with a member page link to their voting record, matched on first
+  and last name together, never on a last name alone.
+- **Same questions, side by side.** `api/app/questionnaires.py` keeps the 2026
+  Vote411 and Patch questionnaires answer by answer: only questions every
+  candidate in the race was asked, a paraphrase of each answer (at most 280
+  characters and never longer than the answer itself), and blanks kept as
+  blanks. A separate check of all 94 paraphrases against the published text
+  led to 14 corrections. Readers can narrow the view to the candidates they
+  are weighing. Nothing is ranked or scored.
+- Rachel McQuillen's Vote411 answers (posted since the last sweep) are added
+  to the candidate table. A test keeps the table's "not yet responded" entries
+  in line with the questionnaires.
+- The nav entry and front-page link come down after Election Day
+  (`frontend/lib/election.ts`).
+
 ## Unreleased — speakers named by voice (October 2026)
 
 Transcript cues name most speakers, but staff are often addressed only as

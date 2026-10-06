@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import (
-    meetings, entities, ask, development, members, search, status, subscriptions,
+    meetings, entities, ask, development, election, members, search, status, subscriptions,
 )
 
 
@@ -42,6 +42,7 @@ app.include_router(entities.router, prefix="/entities", tags=["entities"])
 app.include_router(development.router, prefix="/development", tags=["development"])
 app.include_router(ask.router, prefix="/ask", tags=["ask"])
 app.include_router(members.router, prefix="/members", tags=["members"])
+app.include_router(election.router, prefix="/election", tags=["election"])
 app.include_router(search.router, prefix="/search", tags=["search"])
 app.include_router(subscriptions.router, prefix="/subscriptions", tags=["subscriptions"])
 app.include_router(status.router, prefix="/status", tags=["status"])
