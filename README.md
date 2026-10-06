@@ -16,7 +16,12 @@ IDs, and map that city's archive section names (see
 [Adapting to your city](#adapting-to-your-city)). `PLAN.md` is the phased
 build plan written against the reference city;
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) has the system diagrams, data
-model, and ops notes.
+model, and ops notes. The white paper
+([PDF](https://councilhound.net/councilhound-white-paper.pdf), source in
+`docs/councilhound-white-paper.tex`) explains what data is collected, how each
+stage processes it, and where models are used and how they are constrained;
+the [impact methodology report](https://councilhound.net/impact-methodology.pdf)
+covers the impact models.
 
 ## What it does
 
@@ -34,9 +39,26 @@ model, and ops notes.
 - **Watch the moment** — agenda items, votes, and timeline entries deep-link
   to the exact timestamp in the city's own Granicus video player. Videos are
   never hosted or embedded here.
-- **Ask the hound** — natural-language Q&A over transcripts and agenda items
-  (pgvector retrieval + Claude), with citations that link back to the source
-  video or document. Rate-limited per IP and capped by a global daily budget.
+- **Ask the hound** — a tool-using Claude agent that answers plain-language
+  questions from the record: hybrid keyword + pgvector search, documents,
+  topic wikis, voting records, what members said, member comparisons, terms
+  and the ballot, and upcoming agendas. Every citation links back to the
+  source video moment or document, and only sources a tool actually returned
+  can be linked. Follow-up questions carry the thread (up to four earlier
+  turns), and each answer suggests what to ask next. For what the record
+  doesn't hold, it searches an allowlist of local government and news sites
+  and quotes the pages verbatim, labelled "outside the record". Rate-limited
+  per IP and capped by a global daily budget.
+- **Election guide** — while a City election is ahead, `/election` shows each
+  contest on the official sample ballot as a tab, every candidate in ballot
+  order on an identical card (the same source checklist, "none found" gaps,
+  and what was looked for and not found), links to the voting records of
+  candidates who already hold office, and the Vote411 and Patch
+  questionnaire answers side by side, question by question. The candidate
+  table (`api/app/candidates.py`) and questionnaires
+  (`api/app/questionnaires.py`) are pinned by hand with dated sources; a
+  daily task proposes updates as pull requests for review. Nothing is
+  ranked or scored.
 - **Impact analysis** — per-project economic (Huff retail capture +
   foot-traffic index) and fiscal (revenue/cost ranges, comps-based projected
   value, school-split service costs) screening estimates over open data, with
