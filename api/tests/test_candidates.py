@@ -97,7 +97,7 @@ def test_one_candidate_with_opponents_and_gaps(fake_ballot):
     assert summary["kind"] == campaign["kind"] == "candidate"
     assert "Has no voting record in the meetings CouncilHound indexes" in summary["text"]
     assert "Also on the ballot for this contest: Carl D. Sitting." in summary["text"]
-    assert "Looked for and not found as of 2026-10-05: no Vote411 answers." in summary["text"]
+    assert f"Looked for and not found as of {candidates.CHECKED}: no Vote411 answers." in summary["text"]
     assert campaign["title"] == "Ann B. Newcomer: Ann for Mayor (campaign site)"
     assert campaign["link"] == "https://example.org/ann"
 
