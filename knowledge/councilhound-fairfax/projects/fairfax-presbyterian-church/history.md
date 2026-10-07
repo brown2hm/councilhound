@@ -8,6 +8,7 @@ generated:
   by: process:councilhound-okf
   at: '2025-10-06T00:00:00Z'
 timestamp: '2025-10-06'
+stale_after: '2026-10-15T08:00:00Z'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->

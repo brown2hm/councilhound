@@ -25,3 +25,8 @@
 ## 2026-09-19
 
 - Meeting history updated through 2026-07-27.
+
+## 2026-10-06
+
+- Meeting history updated through 2026-09-22.
+- Added September 22, 2026 City Council approval of the Highlands at Mantua Comprehensive Plan Amendment (unanimous) and associated 4-2 rezoning/GDP and Certificate of Appropriateness votes; resolved the open question on the July 27, 2026 Planning Commission hearing outcome; added member commentary for all six voting council members on the 8a items. (curator: claude-sonnet-4-6, through 2026-09-22)

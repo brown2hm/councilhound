@@ -11,6 +11,7 @@ generated:
   by: process:councilhound-okf
   at: '2026-07-19T00:00:00Z'
 timestamp: '2026-07-19'
+stale_after: '2026-10-15T08:00:00Z'
 project_status: in_progress
 source: official
 address: 10723 Main Street, Fairfax, VA 22030

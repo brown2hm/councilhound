@@ -2,13 +2,13 @@
 type: project-history
 title: City of Fairfax 2035 Comprehensive Plan — meeting history
 description: Dated record of every meeting action on City of Fairfax 2035 Comprehensive Plan,
-  through 2026-07-27.
+  through 2026-09-22.
 resource: https://councilhound.net/topics/city-of-fairfax-2035-comprehensive-plan
 generated:
   by: process:councilhound-okf
-  at: '2026-07-27T00:00:00Z'
-timestamp: '2026-07-27'
-stale_after: '2026-09-22T23:00:00Z'
+  at: '2026-09-22T00:00:00Z'
+timestamp: '2026-09-22'
+stale_after: '2026-10-08T23:00:00Z'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
@@ -136,3 +136,13 @@ stale_after: '2026-09-22T23:00:00Z'
 **Agenda item 6a**: Highlands at Mantua – Public Hearing ([watch the moment](https://fairfax.granicus.com/MediaPlayer.php?view_id=13&clip_id=4622&starttime=190&entrytime=190))
 - Outcome: Public hearing scheduled per the agenda; no minutes or actions report available.
 - [6a] The City of Fairfax 2035 Comprehensive Plan is implicated by the requested Comprehensive Plan Amendment for the Highlands at Mantua project.
+
+## 2026-09-22 — City Council Meeting
+
+**Agenda item 8a**: Public Hearing – 9495 Silver King Court Redevelopment (RJL Associates, Inc.)
+- Outcome: Comprehensive Plan Amendment approved unanimously. Rezoning (Z-24-00236) and General Development Plan Amendment approved 4-2 (Hall and McQuillen opposed). Certificate of Appropriateness approved 4-2 (Hall and McQuillen opposed).
+- Vote (passed): Adopt resolution recommending amendment of the Comprehensive Plan from Commercial Corridor Place Type to Townhouse/Single-Family Attached Neighborhood Place Type for Tax Map Parcel 58-2-10-0001-A-1. — Amos: yes, Bates: yes, Hall: yes, Hardy-Chandler: yes, McQuillen: yes, Peterson: yes
+- Vote (passed): Approve rezoning application Z-24-00236 to rezone 9495 Silver King Court from PDC to PDR-ACOD, approve the General Development Plan Amendment, and approve the Master Development Plan with commitments revised June 15, 2026. — Amos: yes, Bates: yes, Hall: no, Hardy-Chandler: yes, McQuillen: no, Peterson: yes
+- Vote (passed): Approve Certificate of Appropriateness for 9495 Silver King Court (Highlands at Mantua) per Section 110-6.5.6.B of the City Code, with stated conditions. — Amos: yes, Bates: yes, Hall: no, Hardy-Chandler: yes, McQuillen: no, Peterson: yes
+- [8a] The future land use map was amended for 9495 Silver King Court from Commercial Corridor Place Type to Townhouse/Single-Family Attached Neighborhood Place Type.
+- Status after: **approved**

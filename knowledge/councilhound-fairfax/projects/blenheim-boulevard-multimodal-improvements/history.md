@@ -2,13 +2,13 @@
 type: project-history
 title: Blenheim Boulevard Multimodal Improvements — meeting history
 description: Dated record of every meeting action on Blenheim Boulevard Multimodal Improvements,
-  through 2026-06-23.
+  through 2026-09-14.
 resource: https://councilhound.net/development/Blenheim-Blvd-Multimodal-Improvements
 generated:
   by: process:councilhound-okf
-  at: '2026-06-23T00:00:00Z'
-timestamp: '2026-06-23'
-stale_after: '2026-09-22T23:00:00Z'
+  at: '2026-09-14T00:00:00Z'
+timestamp: '2026-09-14'
+stale_after: '2026-10-12T23:00:00Z'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
@@ -56,3 +56,10 @@ stale_after: '2026-09-22T23:00:00Z'
 - Vote (passed): Approval of the consent agenda, including the NVTA project agreement for Blenheim Boulevard Multimodal Improvements (SPA 2020-48-2). — Amos: yes, Bates: yes, Hardy-Chandler: yes, McQuillen: yes, Peterson: yes, Hall: absent
 - [6c] A resolution authorizing the City Manager to sign the NVTA standard project agreement for 70% funding of Blenheim Boulevard Multimodal Improvements (SPA 2020-48-2) was approved as part of the consent agenda.
 - Status after: **approved**
+
+## 2026-09-14 — School Board Regular Meeting
+
+**Agenda item 2.05**: Blenheim Boulevard Multimodal Improvements Update
+- Outcome: Ms. Wendy Sanford and Mr. Sunny Sarna presented the Blenheim Boulevard Multimodal Improvement Plan; board members asked questions about the proposed amphitheater on school grounds and will continue discussion at a future meeting, along with a recommendation to City Council.
+- [2.05] City of Fairfax Public Works staff presented the plan — which includes a walking/biking path, benches, and an amphitheater on Fairfax High School grounds — and the board will continue discussion and form a recommendation to City Council at a future meeting.
+- Status after: **in_progress**
