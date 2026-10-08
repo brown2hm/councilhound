@@ -53,6 +53,7 @@ MAX_TOOL_ROUNDS = 5
 FIRST_SEARCH_LIMIT = 8
 
 _BODY_KEYS = list(BODIES)
+_BODY_NAMES = {b.key: b.label for b in BODIES.values()}
 _BODY_LIST = "; ".join(f"{b.key} = {b.label}" for b in BODIES.values())
 _PLACE = "the City of Fairfax, Virginia"
 _WEB = web_search.enabled()
@@ -94,7 +95,11 @@ when: list_members. What is \
 coming up: get_upcoming. A candidate on the November ballot (their \
 background, platform, finances), especially one who has never served: \
 get_candidate, by name or for a whole contest; for a candidate who sits \
-on a body, get_member too. Wording inside staff reports or minutes: \
+on a body, get_member too. How the candidates in a race differ on \
+something, or what each said to the same voter-guide question: \
+compare_answers. What happened at a particular meeting ("last \
+Tuesday's Council meeting", "the September 22 Planning Commission"): \
+get_meeting. Wording inside staff reports or minutes: \
 search_documents. A project's modelled impact estimates (residents, \
 students, taxes, spending), or one estimate compared across projects: \
 get_impact. Projects by status, type, or near an address: find_projects. \
@@ -127,6 +132,13 @@ attributed record doesn't show it.
 - Terms and elections: state them only from term or roster sources, \
 with the date the schedule was checked. Appointed members are not elected; \
 say when their appointment expires instead.
+- Questionnaire answers from compare_answers are short paraphrases of what \
+each candidate wrote: attribute each to its questionnaire ("in Patch's \
+questionnaire, Lough says …"), never present them as quotations, and \
+name the candidates who did not respond. Give each candidate's answer in \
+ballot order under their own name; don't sort candidates into camps, \
+label their positions (pro-growth, cautious) or summarize who is more or \
+less of anything; let residents compare.
 - Candidate sources come from outside the meeting record and say what a \
 campaign, voter guide, filing or news story stated as of the date checked. \
 Attribute each such claim to its source ("her campaign site lists \
@@ -270,6 +282,31 @@ TOOLS = [
          "query": {"type": "string", "description": "What to find, in plain words."},
          "project": {"type": "string", "description": "Project name or part of it."}},
          "required": ["query"], "additionalProperties": False}},
+    {"name": "compare_answers",
+     "description": "Every candidate's answer to the same question in the 2026 voter-guide "
+                    "questionnaires (League of Women Voters' Vote411 and Patch's candidate "
+                    "questionnaire), in ballot order, plus who did not respond. Give the contest "
+                    "and a question key or topic: priorities, qualifications, urgent issue, why "
+                    "running, pressing issue, development and housing, differences from rivals, "
+                    "platform, accomplishments, party or slate; the mayor's Patch questionnaire "
+                    "also asks about the mayor's role, working with those who disagree, and what "
+                    "the current Council has done well. The result lists every question asked.",
+     "input_schema": {"type": "object", "properties": {
+         "contest": {"type": "string", "enum": ["mayor", "city_council", "school_board"]},
+         "question": {"type": "string",
+                      "description": "A question key or topic, e.g. 'development', 'urgent', "
+                                     "'qualifications', 'slate'."}},
+         "required": ["contest", "question"], "additionalProperties": False}},
+    {"name": "get_meeting",
+     "description": "One meeting start to finish, in agenda order: each item's outcome and roll "
+                    "calls, the topics it moved and the sentence the record filed for each, how "
+                    "long it ran in the transcript, matters raised outside the numbered items, "
+                    "and links to the agenda and minutes. Give the body and the date; without a "
+                    "date, the body's most recent meeting.",
+     "input_schema": {"type": "object", "properties": {
+         "body": _BODY_PROP,
+         "date": {"type": "string", "description": "ISO date of the meeting."}},
+         "additionalProperties": False}},
     {"name": "get_upcoming",
      "description": "Upcoming meetings and the text of their posted agendas.",
      "input_schema": {"type": "object", "properties": {"body": _BODY_PROP},
@@ -325,6 +362,11 @@ def _step_label(name: str, args: dict) -> str:
         return "Checking the roster and election dates"
     if name == "get_upcoming":
         return "Checking upcoming agendas"
+    if name == "compare_answers":
+        return f"Comparing the candidates' answers on {args.get('question', '')}"
+    if name == "get_meeting":
+        return ("Reading the " + (_BODY_NAMES.get(args.get("body"), "") + " ").lstrip()
+                + (f"meeting of {args['date']}" if args.get("date") else "latest meeting")).replace("  ", " ")
     if name == "get_impact":
         if args.get("project"):
             return f"Reading the impact analysis of {args['project']}"
@@ -373,6 +415,13 @@ def _run_tool(session: Session, sources: ask_tools.Sources, name: str, args: dic
         return ask_tools._render(sources, ask_tools.get_upcoming(session, sources, args.get("body")))
     if name == "get_candidate":
         nums, header = ask_tools.get_candidate(sources, args.get("name"), args.get("contest"))
+        return ask_tools._render(sources, nums, header)
+    if name == "compare_answers":
+        nums, header = ask_tools.compare_answers(sources, str(args.get("contest", "")),
+                                                 str(args.get("question", "")))
+        return ask_tools._render(sources, nums, header)
+    if name == "get_meeting":
+        nums, header = ask_tools.get_meeting(session, sources, args.get("body"), args.get("date"))
         return ask_tools._render(sources, nums, header)
     if name == "get_impact":
         nums, header = ask_tools.get_impact(session, sources, args.get("project"), args.get("measure"))

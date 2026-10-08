@@ -723,7 +723,7 @@ export interface Citation {
   index: number;
   /** transcript, agenda_item, vote, document, timeline, profile, wiki,
    * project, impact, member, comparison, term, roster, commentary, upcoming,
-   * candidate (from outside the record: campaigns, voter guides, filings, news),
+   * meeting (one meeting's overview), candidate (from outside the record: campaigns, voter guides, filings, news),
    * web (passages quoted from local civic and news sites, outside the record) */
   kind: string;
   title: string;

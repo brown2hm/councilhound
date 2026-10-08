@@ -33,9 +33,10 @@ from councilhound.db.models import (
 from councilhound.embeddings.embed import embed_query
 from councilhound.extraction.speaker_names import public_speaker_join
 
-from app import candidates, terms, web_search
+from app import candidates, questionnaires, terms, web_search
 from app.links import clip_link
 from app.routers import entities as entities_router
+from app.routers import meetings as meetings_router
 from app.routers import members as members_router
 from app.routers.search import SEMANTIC_MAX_DISTANCE
 from app.wiki import generated_at, trust_block
@@ -1430,6 +1431,162 @@ def get_candidate(sources: Sources, name: str | None = None,
                     + ". Ask for one by full name.")
     c = hits[0]
     return _add_candidate(sources, c), ""
+
+
+# ---------------------------------------------------------------- questionnaires
+
+# words every question shares, which say nothing about its topic
+_QUESTION_FILLER = {"and", "the", "you", "your", "what", "are", "for", "with", "how", "would", "about",
+                    "this", "that", "from", "have", "city", "fairfax", "candidate", "question", "their",
+                    "they", "will", "think", "should", "position", "issue"}
+
+
+def _question_score(wanted: set[str], key: str, asked: str) -> int:
+    return len((wanted - _QUESTION_FILLER) & (_words(asked) | _words(key.replace("_", " "))))
+
+
+def compare_answers(sources: Sources, contest: str, question: str) -> tuple[list[int], str]:
+    """Every candidate's answer to the same question, from each voter-guide
+    questionnaire in the contest (Vote411, Patch), in ballot order, with who
+    did not respond. The question can be a key ('development') or the topic
+    in plain words; each questionnaire contributes its closest question."""
+    if contest not in candidates.CONTESTS:
+        return [], "Name a contest: mayor, city_council or school_board."
+    wanted = _words(question)
+    out, notes, listing = [], [], []
+    for q in questionnaires.QUESTIONNAIRES:
+        if q.contest != contest:
+            continue
+        exact = [(k, a) for k, a in q.questions if k == question.strip().lower()]
+        scored = sorted(q.questions, key=lambda qa: -_question_score(wanted, *qa))
+        pick = exact[0] if exact else (scored[0] if scored and _question_score(wanted, *scored[0]) else None)
+        listing.append(f"{q.title}: " + "; ".join(f"{k} = “{_clip(a, 90)}”" for k, a in q.questions))
+        if pick is None:
+            notes.append(f"{q.publisher} asked nothing close to '{question}'.")
+            continue
+        key, asked = pick
+        given = {r.candidate: r for r in q.responses}
+        silent = []
+        for c in candidates.in_contest(contest):
+            r = given.get(c.ballot_name)
+            answer = dict(r.answers).get(key) if r else None
+            if r is None:
+                silent.append(c.ballot_name)
+                continue
+            when = r.published or q.checked
+            out.append(sources.add(
+                ("answer", q.key, key, c.ballot_name), kind="candidate",
+                title=f"{c.ballot_name}: {q.publisher}, “{_clip(asked, 80)}”",
+                text=(f"Asked: {asked}\nAnswer (paraphrased from the candidate's written reply): "
+                      + (answer or "Left this question blank.")),
+                date=when.isoformat(), link=r.url or q.url))
+        if silent:
+            out.append(sources.add(
+                ("answer_silent", q.key), kind="candidate",
+                title=f"{q.title}: candidates who did not respond",
+                text=(f"As of {q.checked.isoformat()}, no reply from: " + ", ".join(silent) + "."),
+                date=q.checked.isoformat(), link=q.url))
+        notes.append(f"{q.publisher} asked: “{asked}”.")
+    header = (f"Answers to the same question in each questionnaire for "
+              f"{candidates.contest_label(contest)}, in ballot order. " + " ".join(notes)
+              + " Answers are short paraphrases checked against the published replies; say so, and "
+                "attribute each to its questionnaire. Questions available: " + " | ".join(listing))
+    return out, header
+
+
+# ---------------------------------------------------------------- one meeting
+
+MEETING_ITEM_LIMIT = 30
+
+
+def find_meeting(session: Session, body: str | None, date: str | None) -> tuple[Meeting | None, list[Meeting]]:
+    """The meeting a body and date name: that day's meeting of the body (or
+    of any body), else the body's latest meeting already held."""
+    q = select(Meeting).order_by(Meeting.meeting_date.desc(), Meeting.id.desc())
+    if body in BODIES:
+        q = q.where(Meeting.body == body)
+    day = _parse_date(date)
+    if day:
+        rows = session.scalars(q.where(Meeting.meeting_date == day)).all()
+    else:
+        rows = session.scalars(q.where(Meeting.meeting_date <= _today()).limit(1)).all()
+    return (rows[0] if rows else None), rows[1:]
+
+
+def _minutes(seconds) -> str:
+    m = round((seconds or 0) / 60)
+    return f"{m} min" if m else "under a minute"
+
+
+def get_meeting(session: Session, sources: Sources, body: str | None = None,
+                date: str | None = None) -> tuple[list[int], str]:
+    """One meeting start to finish: what came up, in agenda order, with each
+    item's outcome, roll calls, the topics it moved and how long it ran in
+    the transcript, plus matters raised outside the numbered items."""
+    meeting, others = find_meeting(session, body, date)
+    if meeting is None:
+        day = _parse_date(date)
+        if day and day > _today():
+            return [], "That date is in the future; get_upcoming has posted agendas."
+        return [], (f"No {_body_label(body) + ' ' if body in BODIES else ''}meeting is in the record"
+                    + (f" on {date}" if date else "") + ".")
+    d = meetings_router.get_meeting(meeting.id, session)
+    label = _body_label(meeting.body)
+    items = d["agenda_items"]
+    voted = sum(1 for it in items if it["votes"])
+    outline = [
+        f"{label}: {meeting.title}, {meeting.meeting_date.isoformat()}"
+        + (f", {_minutes(meeting.duration_seconds)} of video" if meeting.duration_seconds else ""),
+        f"{len(items)} agenda items, {voted} with recorded votes; "
+        + ("transcribed." if d["transcribed"] else "no transcript yet."),
+    ]
+    moved = [f"{t['name']} ({t['status_after']})" for t in d["topics"] if t.get("status_after")]
+    if moved:
+        outline.append("Topics whose status this meeting changed: " + "; ".join(moved) + ".")
+    if d["other_discussion"]:
+        outline.append("Raised outside the numbered items: " + "; ".join(
+            f"{r['name']}" + (f": {r['update_text']}" if r.get("update_text") else "")
+            for r in d["other_discussion"][:8]) + ".")
+    if d["named_in_discussion"]:
+        outline.append("Named in discussion though no item links them: " + ", ".join(
+            r["name"] for r in d["named_in_discussion"][:10]) + ".")
+    for doc in d["documents"]:
+        if doc["doc_type"] in ("minutes", "agenda", "actions_report"):
+            outline.append(f"{doc['doc_type'].replace('_', ' ').capitalize()}: {doc['source_url']}")
+    out = [sources.add(("meeting", meeting.id), kind="meeting",
+                       title=f"{label}: {meeting.title} ({meeting.meeting_date.isoformat()})",
+                       text="\n".join(outline), date=meeting.meeting_date.isoformat(),
+                       link=f"/meetings/{meeting.id}", meeting_id=meeting.id)]
+    for it in items[:MEETING_ITEM_LIMIT]:
+        lines = [f"{it['label'] or 'Item'}: {it['title']}"]
+        if it.get("description"):
+            lines.append(_clip(it["description"], 400))
+        if it.get("outcome"):
+            lines.append(f"Outcome: {it['outcome']}")
+        for v in it["votes"]:
+            lines.append(f"Roll call: {v['description'] or 'motion'} — {v['motion_result'] or 'result not recorded'}"
+                         + (f", {_tally_text(v['vote_breakdown'])}" if v.get("vote_breakdown") else ""))
+        for e in it["entities"]:
+            if e.get("update_text"):
+                lines.append(f"{e['name']}: {e['update_text']}"
+                             + (f" (status after: {e['status_after']})" if e.get("status_after") else ""))
+        disc = it.get("discussion")
+        if disc and disc.get("seconds"):
+            lines.append(f"Discussed for about {_minutes(disc['seconds'])} in the transcript"
+                         + (", naming " + ", ".join(n["name"] for n in disc["named"][:5]) if disc.get("named") else "")
+                         + ".")
+        out.append(sources.add(
+            ("meeting_item", it["id"]), kind="agenda_item",
+            title=f"{label} {meeting.meeting_date.isoformat()}: item {it['label'] or ''} {_clip(it['title'], 80)}".replace("  ", " "),
+            text="\n".join(lines), date=meeting.meeting_date.isoformat(),
+            link=it.get("watch_url") or f"/meetings/{meeting.id}", meeting_id=meeting.id,
+            agenda_item_id=it["id"], agenda_item_label=it.get("label")))
+    header = (f"{label} meeting of {meeting.meeting_date.isoformat()}: the meeting, then its agenda items in order."
+              + (f" Showing the first {MEETING_ITEM_LIMIT} of {len(items)} items." if len(items) > MEETING_ITEM_LIMIT else "")
+              + (" Other meetings that day: " + "; ".join(f"{_body_label(m.body)}: {m.title}" for m in others) + "."
+                 if others else "")
+              + ("" if date else " No date was given, so this is the body's most recent meeting."))
+    return out, header
 
 
 # ---------------------------------------------------------------- the web
