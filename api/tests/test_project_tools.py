@@ -11,7 +11,7 @@ from councilhound.db.models import (
     UpcomingMeeting,
 )
 
-from app import ask_tools, ratelimit
+from app import ask_tools
 from app.routers import ask
 
 from tests.test_ask import _install, _number, _text, _tool
@@ -23,10 +23,6 @@ FAR = [0.0, 1.0] + [0.0] * 766
 @pytest.fixture(autouse=True)
 def _query_vector(monkeypatch):
     monkeypatch.setattr("app.ask_tools.embed_query", lambda q: NEAR)
-    # /ask's per-IP limit counts every test client call in the run
-    ratelimit._by_ip.clear()
-    ratelimit._day.update(date="", count=0)
-
 
 def _metric(name, value, unit, low=None, high=None, headline=False):
     return {"name": name, "value": value, "unit": unit, "low": low, "high": high,

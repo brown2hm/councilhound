@@ -11,6 +11,7 @@ from sqlalchemy.orm import sessionmaker
 from councilhound.db import session as dbsession
 from councilhound.db.models import Base
 
+from app import ratelimit
 from app.db import db_session
 from app.main import app
 
@@ -49,3 +50,11 @@ def client(db):
         yield TestClient(app)
     finally:
         app.dependency_overrides.clear()
+
+
+@pytest.fixture(autouse=True)
+def _fresh_rate_limits():
+    """/ask's per-IP and daily limits are process-wide; every test starts
+    with them empty, or a long run trips them partway through."""
+    ratelimit._by_ip.clear()
+    ratelimit._day.update(date="", count=0)
