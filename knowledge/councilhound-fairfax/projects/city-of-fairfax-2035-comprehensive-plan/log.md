@@ -25,3 +25,8 @@
 ## 2026-09-19
 
 - Meeting history updated through 2026-07-27.
+
+## 2026-10-19
+
+- Meeting history updated through 2026-09-22.
+- Added September 22, 2026 City Council actions: Comprehensive Plan Amendment for 9495 Silver King Court approved unanimously; rezoning and Certificate of Appropriateness approved 4-2 (Hall and McQuillen opposed); future land use map updated; resolved Highlands at Mantua open question; added member commentary for Hardy-Chandler, Peterson, Amos, Bates, Hall, and McQuillen. (curator: claude-sonnet-4-6, through 2026-09-22)
