@@ -67,7 +67,7 @@ CONTEST_NAME = {"mayor": "Mayor", "city_council": "City Council", "school_board"
 
 # when every not_found list was last swept (the daily update routine bumps
 # it); each source keeps its own date, the day its facts were verified
-CHECKED = _D(2026, 10, 7)
+CHECKED = _D(2026, 10, 19)
 # the day the first set of sources was verified page by page
 _FIRST_VERIFIED = _D(2026, 10, 5)
 
@@ -140,8 +140,17 @@ _FORUM = _s(
     "organized by the League of Women Voters of the Fairfax Area and the Central Fairfax Chamber of "
     "Commerce.",
     "Mayoral and Council candidates who accepted were to give two-minute opening statements, then "
-    "meet voters. The article does not say which candidates accepted; no recording or recap was found.",
+    "meet voters. The article does not say which candidates accepted.",
     published=_D(2026, 9, 28))
+_FORUM_RECORDING = _s(
+    "https://www.youtube.com/watch?v=rN5Hu2BLf4w",
+    "Fairfax Public Access", "forum", "2026 City of Fairfax Candidates Night - September 30, 2026 (recording)",
+    "Fairfax Public Access posted a recording (about 35 minutes) of the September 30 event, organized by "
+    "the Central Fairfax Chamber of Commerce and the League of Women Voters of the Fairfax Area; the League "
+    "links it from its 2026 candidate events page.",
+    "The listing says the event brought together candidates for Mayor, City Council and School Board; it "
+    "does not name who took part or summarize what was said.",
+    published=_D(2026, 10, 14), checked=_D(2026, 10, 19))
 _VOTE411_INDEX = _s(
     "https://onyourballot.vote411.org/race-index.do?c=35886492",
     _VOTE411, "questionnaire", "Vote411 voter guide: City of Fairfax races",
@@ -216,17 +225,18 @@ _DANIELS_RUN = "https://www.ffxnow.com/2026/04/15/fairfax-city-school-board-dani
 # sources about a whole race rather than one candidate
 RACE_SOURCES: dict[str, tuple[CandidateSource, ...]] = {
     "mayor": (_OFFICIAL_LIST, _SAMPLE_BALLOTS, _EARLY_VOTING, _FFXNOW_PREVIEW, _FCT_PREVIEW, _FORUM,
-              _VOTE411_INDEX, _EARLY_MONEY, _DEMOCRATS, _COMMON_GROUND, _FOUR_RECORDS),
+              _FORUM_RECORDING, _VOTE411_INDEX, _EARLY_MONEY, _DEMOCRATS, _COMMON_GROUND, _FOUR_RECORDS),
     "city_council": (_OFFICIAL_LIST, _SAMPLE_BALLOTS, _EARLY_VOTING, _FFXNOW_PREVIEW, _FCT_PREVIEW,
-                     _FORUM, _VOTE411_INDEX, _EARLY_MONEY, _COUNCIL_MONEY, _DEMOCRATS, _COMMON_GROUND,
-                     _FOUR_RECORDS),
-    "school_board": (_OFFICIAL_LIST, _SAMPLE_BALLOTS, _EARLY_VOTING, _FCT_PREVIEW, _FORUM, _VOTE411_INDEX,
-                     _SB_ABOUT, _SB_2024, _SB_SWORN),
+                     _FORUM, _FORUM_RECORDING, _VOTE411_INDEX, _EARLY_MONEY, _COUNCIL_MONEY, _DEMOCRATS,
+                     _COMMON_GROUND, _FOUR_RECORDS),
+    "school_board": (_OFFICIAL_LIST, _SAMPLE_BALLOTS, _EARLY_VOTING, _FCT_PREVIEW, _FORUM, _FORUM_RECORDING,
+                     _VOTE411_INDEX, _SB_ABOUT, _SB_2024, _SB_SWORN),
 }
 
 # the same checklist for everyone, so a gap reads as a gap and not as silence
 _NO_VOTE411 = "Vote411 (League of Women Voters) answers: listed, not yet responded"
-_NO_FORUM = "a recording or recap of the September 30 candidate forum"
+_NO_FORUM = ("a recap of what they said at the September 30 candidate forum (a recording exists; its "
+             "listing does not name who took part)")
 _NO_VPAP = "VPAP's campaign finance pages (they could not be read)"
 _NO_2026_FINANCE = ("a dated 2026 campaign finance report (VPAP's race page lists small totals but "
                     "could not be read directly; Patch's finance coverage covered Council only)")
