@@ -140,7 +140,7 @@ _FORUM = _s(
     "organized by the League of Women Voters of the Fairfax Area and the Central Fairfax Chamber of "
     "Commerce.",
     "Mayoral and Council candidates who accepted were to give two-minute opening statements, then "
-    "meet voters. The article does not say which candidates accepted; no recording or recap was found.",
+    "meet voters.",
     published=_D(2026, 9, 28))
 _VOTE411_INDEX = _s(
     "https://onyourballot.vote411.org/race-index.do?c=35886492",
@@ -226,7 +226,6 @@ RACE_SOURCES: dict[str, tuple[CandidateSource, ...]] = {
 
 # the same checklist for everyone, so a gap reads as a gap and not as silence
 _NO_VOTE411 = "Vote411 (League of Women Voters) answers: listed, not yet responded"
-_NO_FORUM = "a recording or recap of the September 30 candidate forum"
 _NO_VPAP = "VPAP's campaign finance pages (they could not be read)"
 _NO_2026_FINANCE = ("a dated 2026 campaign finance report (VPAP's race page lists small totals but "
                     "could not be read directly; Patch's finance coverage covered Council only)")
@@ -295,7 +294,7 @@ CANDIDATES: tuple[Candidate, ...] = (
                "The Fairfax City Democratic Committee recommended her for Mayor.",
                published=_DEMOCRATS.published),
         ),
-        not_found=(_NO_FORUM, "an announcement story or profile outside Patch"),
+        not_found=("an announcement story or profile outside Patch",),
     ),
     Candidate(
         'Thomas D. "Tom" Peterson', "mayor",
@@ -350,7 +349,7 @@ CANDIDATES: tuple[Candidate, ...] = (
                "He is the mayoral candidate in the 'Common Ground' group of independent candidates.",
                published=_COMMON_GROUND.published),
         ),
-        not_found=(_NO_VOTE411, _NO_FORUM),
+        not_found=(_NO_VOTE411,),
     ),
     # ---------------------------------------------------------------- City Council
     Candidate(
@@ -402,7 +401,7 @@ CANDIDATES: tuple[Candidate, ...] = (
             _s(_COMMON_GROUND.url, _PATCH, "news", _COMMON_GROUND.title,
                "She is a Council candidate in the 'Common Ground' group.", published=_COMMON_GROUND.published),
         ),
-        not_found=("a 2026 Patch candidate questionnaire", _NO_FORUM),
+        not_found=("a 2026 Patch candidate questionnaire",),
     ),
     Candidate(
         "Rachel M McQuillen", "city_council",
@@ -457,7 +456,7 @@ CANDIDATES: tuple[Candidate, ...] = (
             _s(_COMMON_GROUND.url, _PATCH, "news", _COMMON_GROUND.title,
                "She is a Council candidate in the 'Common Ground' group.", published=_COMMON_GROUND.published),
         ),
-        not_found=(_NO_FORUM,),
+        not_found=(),
     ),
     Candidate(
         "Anthony T. Amos", "city_council",
@@ -510,7 +509,7 @@ CANDIDATES: tuple[Candidate, ...] = (
                "He is one of four Council candidates the Fairfax City Democratic Committee recommended.",
                published=_DEMOCRATS.published),
         ),
-        not_found=(_NO_FORUM,),
+        not_found=(),
     ),
     Candidate(
         "Sandi W. Slappey Brown", "city_council",
@@ -561,7 +560,7 @@ CANDIDATES: tuple[Candidate, ...] = (
                "She is one of four Council candidates the Fairfax City Democratic Committee recommended.",
                published=_DEMOCRATS.published),
         ),
-        not_found=(_NO_FORUM, "any earlier run for office"),
+        not_found=("any earlier run for office",),
     ),
     Candidate(
         "Kelly M. O'Brien", "city_council",
@@ -618,7 +617,7 @@ CANDIDATES: tuple[Candidate, ...] = (
                "She is one of four Council candidates the Fairfax City Democratic Committee recommended.",
                published=_DEMOCRATS.published),
         ),
-        not_found=(_NO_FORUM,),
+        not_found=(),
     ),
     Candidate(
         "Russell A. Jones", "city_council",
@@ -656,7 +655,7 @@ CANDIDATES: tuple[Candidate, ...] = (
                "$89.50 cash on hand.",
                published=_D(2026, 10, 5)),
         ),
-        not_found=(_NO_VOTE411, _NO_FORUM, "any earlier run for office"),
+        not_found=(_NO_VOTE411, "any earlier run for office"),
     ),
     Candidate(
         "Stephen S. Kim", "city_council",
@@ -676,7 +675,6 @@ CANDIDATES: tuple[Candidate, ...] = (
             _NO_VOTE411,
             "any City board or commission service",
             "any stated occupation, years in the City or biography",
-            _NO_FORUM,
         ),
     ),
     Candidate(
@@ -728,7 +726,7 @@ CANDIDATES: tuple[Candidate, ...] = (
             _s(_COMMON_GROUND.url, _PATCH, "news", _COMMON_GROUND.title,
                "She is a Council candidate in the 'Common Ground' group.", published=_COMMON_GROUND.published),
         ),
-        not_found=(_NO_VOTE411, _NO_FORUM),
+        not_found=(_NO_VOTE411,),
     ),
     Candidate(
         "María José Padmore", "city_council",
@@ -762,7 +760,6 @@ CANDIDATES: tuple[Candidate, ...] = (
             _NO_VOTE411,
             "any stated occupation or education",
             "any City board or commission service",
-            _NO_FORUM,
         ),
     ),
     Candidate(
@@ -798,7 +795,7 @@ CANDIDATES: tuple[Candidate, ...] = (
             _s(_COMMON_GROUND.url, _PATCH, "news", _COMMON_GROUND.title,
                "He is a Council candidate in the 'Common Ground' group.", published=_COMMON_GROUND.published),
         ),
-        not_found=(_NO_VOTE411, "any City board or commission service", _NO_FORUM),
+        not_found=(_NO_VOTE411, "any City board or commission service"),
     ),
     Candidate(
         "Jessica L. Lough", "city_council",
@@ -835,7 +832,7 @@ CANDIDATES: tuple[Candidate, ...] = (
             _s(_COMMON_GROUND.url, _PATCH, "news", _COMMON_GROUND.title,
                "She is a Council candidate in the 'Common Ground' group.", published=_COMMON_GROUND.published),
         ),
-        not_found=(_NO_VOTE411, "any City board or commission service", _NO_FORUM),
+        not_found=(_NO_VOTE411, "any City board or commission service"),
     ),
     # ---------------------------------------------------------------- School Board
     # all five are incumbents running unopposed for the five seats; little has

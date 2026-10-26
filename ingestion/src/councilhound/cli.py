@@ -1127,5 +1127,46 @@ def impact_status():
             click.echo(f"{slug:40} {ev.status:12} {stamp:%Y-%m-%d %H:%M} {name}")
 
 
+@cli.command("forum-transcribe")
+@click.argument("url")
+@click.argument("out", type=click.Path(dir_okay=False))
+def forum_transcribe(url, out):
+    """Download a candidate forum video's audio and transcribe + diarize it
+    locally (raw JSON for forum-runs / forum-build)."""
+    from councilhound.extraction import forum
+
+    forum.write(out, forum.transcribe_video(url))
+    click.echo(out)
+
+
+@cli.command("forum-runs")
+@click.argument("raw", type=click.Path(exists=True, dir_okay=False))
+def forum_runs(raw):
+    """Print a transcribed forum's speaker runs, start second first, to
+    write its plan from."""
+    import json
+
+    from councilhound.extraction import forum
+
+    for r in forum.speaker_runs(json.load(open(raw))):
+        click.echo(f"{int(r['start']):>5} {r['label']} ({int(r['end'] - r['start'])}s): {r['text']}")
+
+
+@cli.command("forum-build")
+@click.argument("raw", type=click.Path(exists=True, dir_okay=False))
+@click.argument("plan", type=click.Path(exists=True, dir_okay=False))
+@click.argument("out", type=click.Path(dir_okay=False))
+def forum_build(raw, plan, out):
+    """Apply a hand-written plan (speakers, questions, cuts) to a raw
+    forum transcript -> the API's pinned forum file."""
+    import json
+
+    from councilhound.extraction import forum
+
+    data = forum.build(json.load(open(raw)), json.load(open(plan)))
+    forum.write(out, data)
+    click.echo(f"{len(data['questions'])} questions, {len(data['turns'])} turns -> {out}")
+
+
 if __name__ == "__main__":
     cli()

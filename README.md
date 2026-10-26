@@ -58,7 +58,12 @@ covers the impact models.
   table (`api/app/candidates.py`) and questionnaires
   (`api/app/questionnaires.py`) are pinned by hand with dated sources; a
   daily task proposes updates as pull requests for review. Nothing is
-  ranked or scored.
+  ranked or scored. The candidate forums on video (Candidates Night, the
+  mayoral forum) are kept verbatim and timestamped in
+  `api/app/forum_transcripts/`, each answer linked to its moment in the video;
+  Ask quotes them through `search_forums`. They are transcribed locally with
+  `forum-transcribe`, and speakers are put to names in a hand-written plan
+  (`ingestion/forums/*.plan.json`) applied by `forum-build`.
 - **Impact analysis** — per-project economic (Huff retail capture +
   foot-traffic index) and fiscal (revenue/cost ranges, comps-based projected
   value, school-split service costs) screening estimates over open data, with

@@ -97,7 +97,8 @@ background, platform, finances), especially one who has never served: \
 get_candidate, by name or for a whole contest; for a candidate who sits \
 on a body, get_member too. How the candidates in a race differ on \
 something, or what each said to the same voter-guide question: \
-compare_answers. What happened at a particular meeting ("last \
+compare_answers. What a candidate said at a candidate forum or debate, \
+or how the candidates answered a forum question: search_forums. What happened at a particular meeting ("last \
 Tuesday's Council meeting", "the September 22 Planning Commission"): \
 get_meeting. Wording inside staff reports or minutes: \
 search_documents. A project's modelled impact estimates (residents, \
@@ -139,6 +140,11 @@ name the candidates who did not respond. Give each candidate's answer in \
 ballot order under their own name; don't sort candidates into camps, \
 label their positions (pro-growth, cautious) or summarize who is more or \
 less of anything; let residents compare.
+- Forum passages from search_forums are a candidate's own words on video \
+(an automatic transcript): quote them, with the forum and the time in the \
+video [n], rather than restating them as positions or facts, and keep each \
+quote's wording as given. When a forum question was put to everyone, give \
+each candidate's answer in ballot order; say who did not speak.
 - Candidate sources come from outside the meeting record and say what a \
 campaign, voter guide, filing or news story stated as of the date checked. \
 Attribute each such claim to its source ("her campaign site lists \
@@ -297,6 +303,21 @@ TOOLS = [
                       "description": "A question key or topic, e.g. 'development', 'urgent', "
                                      "'qualifications', 'slate'."}},
          "required": ["contest", "question"], "additionalProperties": False}},
+    {"name": "search_forums",
+     "description": "What candidates said at the 2026 candidate forums on video (Candidates Night, "
+                    "September 30: two-minute opening statements by the Mayor and City Council "
+                    "candidates; the Mayoral Candidate Forum, October 7: Lockhart and Peterson on "
+                    "growth and development, the comprehensive plan, the environment and stormwater, "
+                    "taxes and revenue, community safety and public safety resources). Verbatim "
+                    "passages with the time in the video. A query matching a forum question returns "
+                    "every candidate's answer to it; a candidate without a query returns their "
+                    "opening statements.",
+     "input_schema": {"type": "object", "properties": {
+         "query": {"type": "string", "description": "Topic in plain words, e.g. 'tree canopy', "
+                                                    "'tax rate', 'police staffing'."},
+         "candidate": {"type": "string", "description": "Full or last name."},
+         "contest": {"type": "string", "enum": ["mayor", "city_council", "school_board"]}},
+         "additionalProperties": False}},
     {"name": "get_meeting",
      "description": "One meeting start to finish, in agenda order: each item's outcome and roll "
                     "calls, the topics it moved and the sentence the record filed for each, how "
@@ -364,6 +385,10 @@ def _step_label(name: str, args: dict) -> str:
         return "Checking upcoming agendas"
     if name == "compare_answers":
         return f"Comparing the candidates' answers on {args.get('question', '')}"
+    if name == "search_forums":
+        who = args.get("candidate")
+        return ("Finding what " + (who or "the candidates") + " said at the forums"
+                + (f" about {args['query']}" if args.get("query") else ""))
     if name == "get_meeting":
         return ("Reading the " + (_BODY_NAMES.get(args.get("body"), "") + " ").lstrip()
                 + (f"meeting of {args['date']}" if args.get("date") else "latest meeting")).replace("  ", " ")
@@ -419,6 +444,10 @@ def _run_tool(session: Session, sources: ask_tools.Sources, name: str, args: dic
     if name == "compare_answers":
         nums, header = ask_tools.compare_answers(sources, str(args.get("contest", "")),
                                                  str(args.get("question", "")))
+        return ask_tools._render(sources, nums, header)
+    if name == "search_forums":
+        nums, header = ask_tools.search_forums(sources, str(args.get("query") or "") or None,
+                                               args.get("candidate"), args.get("contest"))
         return ask_tools._render(sources, nums, header)
     if name == "get_meeting":
         nums, header = ask_tools.get_meeting(session, sources, args.get("body"), args.get("date"))

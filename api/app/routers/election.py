@@ -5,14 +5,15 @@ everyone in a race, answer by answer.
 
 Nothing here comes from the meeting record except the link to a member
 page for candidates who already have a voting record; the rest is the
-pinned tables in app.candidates and app.questionnaires."""
+pinned tables in app.candidates and app.questionnaires, and the candidate
+forums' verbatim transcripts in app.forums."""
 import re
 import unicodedata
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app import candidates, questionnaires, terms
+from app import candidates, forums, questionnaires, terms
 from app.db import db_session
 from app.routers import members as members_router
 
@@ -81,6 +82,34 @@ def _questionnaire(q: questionnaires.Questionnaire) -> dict:
             "responses": rows}
 
 
+def _forum(f: forums.Forum, contest: str) -> dict | None:
+    """One forum for one contest: each question in order with the answers
+    of that contest's candidates, in ballot order, verbatim with links to
+    the moment in the video."""
+    running = [c.ballot_name for c in candidates.in_contest(contest)]
+    questions = []
+    for q in f.questions:
+        answers = []
+        for name in running:
+            turns = [t for t in f.turns if t.question == q.id and t.speaker == name]
+            if turns:
+                answers.append({"candidate": name, "turns": [
+                    {"start": t.start, "end": t.end, "link": f.link(t.start), "text": t.text}
+                    for t in turns]})
+        if answers:
+            questions.append({"id": q.id, "topic": q.topic, "asked": q.asked,
+                              "start": q.start, "link": f.link(q.start), "answers": answers})
+    if not questions:
+        return None
+    spoke = {a["candidate"] for q in questions for a in q["answers"]}
+    return {"key": f.key, "title": f.title, "held_on": f.held_on.isoformat(), "hosts": f.hosts,
+            "venue": f.venue, "video": f.video, "posted_by": f.posted_by, "format": f.format,
+            "note": forums.TRANSCRIPT_NOTE,
+            "absent": [{"candidate": n, "note": note} for n, note in f.absent if n in running],
+            "silent": [n for n in running if n not in spoke and n not in dict(f.absent)],
+            "questions": questions}
+
+
 @router.get("/")
 def election(session: Session = Depends(db_session)):
     pages = _member_pages(session)
@@ -106,6 +135,7 @@ def election(session: Session = Depends(db_session)):
             "questionnaires": [_questionnaire(q) for q in sorted(
                 (q for q in questionnaires.QUESTIONNAIRES if q.contest == key),
                 key=lambda q: -len(q.responses))],
+            "forums": [d for f in forums.in_contest(key) if (d := _forum(f, key))],
         })
     return {
         "ballot_url": terms._BALLOT,

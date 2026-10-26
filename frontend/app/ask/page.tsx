@@ -66,14 +66,15 @@ const LINK_LABEL: Record<string, string> = {
   upcoming: "Open the agenda",
   candidate: "Open the outside source",
   web: "Open the web page",
+  forum: "Watch this moment",
   meeting: "Open the meeting",
 };
 
 // sources from outside the meeting record, tagged so a reader can tell them apart
-const OUTSIDE = new Set(["candidate", "web"]);
+const OUTSIDE = new Set(["candidate", "web", "forum"]);
 
 // sources that are records or summaries, not words someone said or wrote
-const NOT_QUOTED = new Set(["member", "comparison", "term", "roster", "profile", "project", "impact", "vote", "timeline", "candidate", "web", "meeting"]);
+const NOT_QUOTED = new Set(["member", "comparison", "term", "roster", "profile", "project", "impact", "vote", "timeline", "candidate", "web", "meeting", "forum"]);
 
 // sources shown before "Show all" on narrow screens; wide screens scroll the full list
 const SOURCES_PREVIEW = 4;

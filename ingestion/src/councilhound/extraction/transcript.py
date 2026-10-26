@@ -57,7 +57,7 @@ def _pick_backend() -> str:
         return "faster-whisper"
 
 
-def _transcribe_mlx(audio_path: str) -> list[dict]:
+def _transcribe_mlx(audio_path: str, hallucination_silence: float | None) -> list[dict]:
     import mlx_whisper
     # mlx-whisper shells out to an ffmpeg binary for file input, which this
     # machine doesn't have — decode via PyAV (bundled with faster-whisper)
@@ -69,7 +69,7 @@ def _transcribe_mlx(audio_path: str) -> list[dict]:
     result = mlx_whisper.transcribe(
         audio, path_or_hf_repo=model, language="en", word_timestamps=True,
         condition_on_previous_text=False,
-        hallucination_silence_threshold=HALLUCINATION_SILENCE_SECONDS,
+        hallucination_silence_threshold=hallucination_silence,
     )
     return [
         {"start": s["start"], "end": s["end"], "text": s["text"].strip(),
@@ -80,7 +80,7 @@ def _transcribe_mlx(audio_path: str) -> list[dict]:
     ]
 
 
-def _transcribe_faster_whisper(audio_path: str) -> list[dict]:
+def _transcribe_faster_whisper(audio_path: str, hallucination_silence: float | None) -> list[dict]:
     from faster_whisper import WhisperModel
 
     model_name = os.environ.get("WHISPER_MODEL", DEFAULT_FW_MODEL)
@@ -88,7 +88,7 @@ def _transcribe_faster_whisper(audio_path: str) -> list[dict]:
     segments, _info = model.transcribe(
         audio_path, language="en", vad_filter=True, word_timestamps=True,
         condition_on_previous_text=False,
-        hallucination_silence_threshold=HALLUCINATION_SILENCE_SECONDS,
+        hallucination_silence_threshold=hallucination_silence,
     )
     return [
         {"start": s.start, "end": s.end, "text": s.text.strip(),
@@ -98,13 +98,17 @@ def _transcribe_faster_whisper(audio_path: str) -> list[dict]:
     ]
 
 
-def transcribe_audio(audio_path: str) -> list[dict]:
-    """Run whisper on an audio file -> [{'start','end','text','words'}, ...]."""
+def transcribe_audio(audio_path: str,
+                     hallucination_silence: float | None = HALLUCINATION_SILENCE_SECONDS) -> list[dict]:
+    """Run whisper on an audio file -> [{'start','end','text','words'}, ...].
+    hallucination_silence=None keeps every segment: the skip also drops real
+    phrases after a pause (about 2% of the words in a 35-minute forum), which
+    a verbatim quote can't afford."""
     backend = _pick_backend()
     log.info("transcribing %s with backend=%s", audio_path, backend)
     if backend == "mlx":
-        return _transcribe_mlx(audio_path)
-    return _transcribe_faster_whisper(audio_path)
+        return _transcribe_mlx(audio_path, hallucination_silence)
+    return _transcribe_faster_whisper(audio_path, hallucination_silence)
 
 
 def _speaker_at(turns: list[dict], starts: list[float], start: float, end: float) -> str | None:
