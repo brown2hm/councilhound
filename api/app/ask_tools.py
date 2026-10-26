@@ -33,7 +33,7 @@ from councilhound.db.models import (
 from councilhound.embeddings.embed import embed_query
 from councilhound.extraction.speaker_names import public_speaker_join
 
-from app import candidates, questionnaires, terms, web_search
+from app import candidates, forums, questionnaires, terms, web_search
 from app.links import clip_link
 from app.routers import entities as entities_router
 from app.routers import meetings as meetings_router
@@ -1371,6 +1371,11 @@ def _candidate_summary(c: candidates.Candidate) -> str:
         lines.append("Also on the ballot for this contest: " + ", ".join(rivals) + ".")
     kinds = sorted({candidates.KIND_LABEL[s.kind] for s in c.sources})
     lines.append("Sources on file: " + (", ".join(kinds) if kinds else "none") + ".")
+    for f, turns in forums.appearances(c.ballot_name):
+        lines.append(f"Spoke at the {f.title} ({f.held_on.isoformat()}, {f.hosts}): {len(turns)} "
+                     f"turn{'s' if len(turns) != 1 else ''} on video; their words are under search_forums.")
+    for f, note in forums.absences(c.ballot_name):
+        lines.append(f"Did not speak at the {f.title} ({f.held_on.isoformat()}): {note}")
     if c.not_found:
         lines.append(f"Looked for and not found as of {candidates.CHECKED.isoformat()}: "
                      + "; ".join(c.not_found) + ".")
@@ -1492,6 +1497,121 @@ def compare_answers(sources: Sources, contest: str, question: str) -> tuple[list
               + " Answers are short paraphrases checked against the published replies; say so, and "
                 "attribute each to its questionnaire. Questions available: " + " | ".join(listing))
     return out, header
+
+
+# ---------------------------------------------------------------- forums
+
+FORUM_PASSAGE_LIMIT = 8
+FORUM_PER_SPEAKER = 2
+FORUM_TURN_CHARS = 1600
+
+
+def _mmss(seconds: int) -> str:
+    h, rest = divmod(int(seconds), 3600)
+    return (f"{h}:" if h else "") + f"{rest // 60:0{2 if h else 1}d}:{rest % 60:02d}"
+
+
+def _add_forum_quote(sources: Sources, f: forums.Forum, turn: forums.Turn, start: int, text: str) -> int:
+    q = f.question(turn.question)
+    # the words first: the citation shows the opening of the text
+    asked = (f"\nAnswering the moderator's question on {q.topic}: “{q.asked}”" if q and q.asked
+             else f"\n({q.topic})" if q else "")
+    return sources.add(("forum", f.key, start), kind="forum",
+                       title=f"{turn.speaker} at the {f.title}, {_mmss(start)}",
+                       text=f"“{text}” (automatic transcript){asked}",
+                       date=f.held_on.isoformat(), link=f.link(start), start_seconds=start)
+
+
+def _forum_header(chosen: list[forums.Forum], running: set[str]) -> str:
+    out = []
+    for f in chosen:
+        line = (f"{f.title}, {f.held_on.isoformat()}, hosted by {f.hosts} at {f.venue} (video posted "
+                f"by {f.posted_by}). {f.format} Spoke: "
+                f"{', '.join(n for n in f.speakers() if n in running)}.")
+        if f.absent:
+            line += " " + " ".join(note for n, note in f.absent if n in running)
+        topics = [q.topic for q in f.questions if q.asked]
+        if topics:
+            line += " Questions: " + "; ".join(dict.fromkeys(topics)) + "."
+        out.append(line)
+    return ("Candidate forums on video, outside the meeting record: " + " | ".join(out) + " "
+            + forums.TRANSCRIPT_NOTE + " Quote candidates' words with the time and link, attributed "
+              "to the forum; never restate them as facts or findings, and don't characterize tone.")
+
+
+def search_forums(sources: Sources, query: str | None = None, candidate: str | None = None,
+                  contest: str | None = None) -> tuple[list[int], str]:
+    """What candidates said at the candidate forums, verbatim with the time
+    in the video. A query naming one of a forum's questions brings every
+    candidate's answer to it, in ballot order; otherwise the passages that
+    match best, a few per candidate. A candidate with no query gets their
+    opening statements."""
+    chosen = forums.in_contest(contest) if contest in candidates.CONTESTS else list(forums.FORUMS)
+    # a contest keeps only its own candidates (Candidates Night had two races)
+    running = ({c.ballot_name for c in candidates.in_contest(contest)} if contest in candidates.CONTESTS
+               else {c.ballot_name for c in candidates.CANDIDATES})
+    who = None
+    if candidate:
+        hits = candidates.match(candidate)
+        if len(hits) != 1:
+            return [], (f"No single candidate on the ballot matches “{candidate}”."
+                        + (" Matches: " + ", ".join(c.ballot_name for c in hits) + "." if hits else ""))
+        who = hits[0].ballot_name
+        running = {who}  # a name outranks a contest
+        chosen = [f for f in forums.FORUMS if any(t.speaker == who for t in f.turns)]
+        if not chosen:
+            gone = forums.absences(who)
+            return [], (f"{who} did not speak at any candidate forum on file"
+                        + (": " + " ".join(n for _, n in gone) if gone else
+                           " (forums on file: " + "; ".join(f"{f.title}, {f.held_on.isoformat()}"
+                                                           for f in forums.FORUMS) + ")") + ".")
+    order = {c.ballot_name: i for i, c in enumerate(candidates.CANDIDATES)}
+    wanted = forums.words(query or "")
+    out = []
+    if not wanted:
+        for f in chosen:
+            first = {}
+            for t in f.turns:
+                if t.speaker in running and t.speaker not in first:
+                    first[t.speaker] = t
+            for t in sorted(first.values(), key=lambda t: order.get(t.speaker, 99)):
+                out.append(_add_forum_quote(sources, f, t, t.start, _clip(t.text, FORUM_TURN_CHARS)))
+        return out, _forum_header(chosen, running) + " No topic was given: these are opening statements."
+    notes = []
+    for f in chosen:
+        # a question the query names: everyone's answer to it
+        scored = [(len(wanted & forums.words(f"{q.topic} {q.topic} {q.asked}")), q)
+                  for q in f.questions if q.asked]
+        best = max(scored, key=lambda sq: sq[0], default=(0, None))
+        if best[0] >= 2 or (best[1] and wanted <= forums.words(best[1].topic)):
+            q = best[1]
+            turns = [t for t in f.turns if t.question == q.id and t.speaker in running]
+            for t in sorted(turns, key=lambda t: (order.get(t.speaker, 99), t.start)):
+                out.append(_add_forum_quote(sources, f, t, t.start, _clip(t.text, FORUM_TURN_CHARS)))
+            notes.append(f"At the {f.title}, every answer to the question on {q.topic}, in ballot order.")
+            continue
+        ranked = []
+        for t in f.turns:
+            if t.speaker not in running:
+                continue
+            for p in forums.passages(t, f):
+                score = len(wanted & forums.words(p.text))
+                if score:
+                    ranked.append((score, p))
+        ranked.sort(key=lambda sp: (-sp[0], sp[1].start))
+        per, kept = Counter(), []
+        for _score, p in ranked:
+            if per[p.turn.speaker] < FORUM_PER_SPEAKER and len(kept) < FORUM_PASSAGE_LIMIT:
+                per[p.turn.speaker] += 1
+                kept.append(p)
+        for p in sorted(kept, key=lambda p: (order.get(p.turn.speaker, 99), p.start)):
+            out.append(_add_forum_quote(sources, f, p.turn, p.start, p.text))
+        silent = [n for n in f.speakers() if n not in per and n in running]
+        if silent and kept:
+            notes.append(f"At the {f.title}, nothing matching from: {', '.join(silent)}.")
+        elif not kept:
+            notes.append(f"Nothing matching at the {f.title}.")
+    return out, _forum_header(chosen, running) + " " + " ".join(notes)
 
 
 # ---------------------------------------------------------------- one meeting

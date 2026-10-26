@@ -1,0 +1,50 @@
+{
+ "key": "mayoral_forum_2026_10_07",
+ "video": "https://www.youtube.com/watch?v=OZgATGnljDM",
+ "notes": "SPEAKER_03 is the moderator (introduces the candidates and times answers), SPEAKER_02 Jennifer Rose of the Chamber, SPEAKER_01 a technician. Cuts remove the moderator's time calls and both candidates' mic checks at turn edges; a 'thank you' split across a hand-off stays with the speaker who started it. The video has no YouTube captions, so fixes come only from agreement with an earlier whisper pass (with the silence filter on).",
+ "speakers": {
+  "SPEAKER_03": "moderator", "SPEAKER_02": "host", "SPEAKER_01": "host",
+  "SPEAKER_04": "Kirsten Sides Lockhart",
+  "SPEAKER_00": "Thomas D. \"Tom\" Peterson"
+ },
+ "questions": [
+  {"id": "opening", "topic": "Opening statements", "start": 80},
+  {"id": "growth", "topic": "Growth and development", "start": 583, "asked_at": 583},
+  {"id": "comp_plan", "topic": "The comprehensive plan", "start": 1353, "asked_at": 1353},
+  {"id": "environment", "topic": "Environmental stewardship", "start": 1598, "asked_at": 1598},
+  {"id": "stormwater", "topic": "The stormwater utility fee", "start": 2026, "asked_at": 2026},
+  {"id": "environment_close", "topic": "The environment: closing remarks", "start": 2273, "asked_at": 2273},
+  {"id": "fiscal", "topic": "Taxes and revenue: fiscal priorities", "start": 2478, "asked_at": 2478},
+  {"id": "tax_rate", "topic": "The tax equalization rate", "start": 2992, "asked_at": 2992},
+  {"id": "safety", "topic": "Community safety", "start": 3454, "asked_at": 3454},
+  {"id": "public_safety", "topic": "Police, fire and emergency services resources", "start": 3981, "asked_at": 3981},
+  {"id": "closing", "topic": "Closing statements", "start": 4419}
+ ],
+ "drop": [1325],
+ "cuts": {
+  "583": {"prefix": "All right. Do you want to try it? Testing. I think it's working. Yeah. All right,"},
+  "1598": {"suffix": " all"},
+  "2026": {"suffix": " so"},
+  "2273": {"suffix": " a"},
+  "2478": {"prefix": "thanks"},
+  "3981": {"suffix": " Yeah,"},
+  "226": {"prefix": "We're good. All right."},
+  "403": {"prefix": "How's this"},
+  "636": {"suffix": " Thank"},
+  "971": {"prefix": "go ahead"},
+  "1129": {"prefix": "check check check to you better all right",
+           "fixes": [{"from": "the number that might brought up", "to": "the number that my opponent brought up"}]},
+  "1365": {"suffix": " thank"},
+  "1463": {"prefix": "you"},
+  "1616": {"prefix": "right", "suffix": " great thanks all"},
+  "1882": {"prefix": "Christian, you've got one minute in response.", "suffix": " Great. Tom, you've got one minute in"},
+  "2179": {"prefix": "you"},
+  "2283": {"fixes": [{"from": "big part of protecting the environment", "to": "A big part of protecting the environment"}]},
+  "2415": {"prefix": "Kirsten, two minutes."},
+  "3647": {"suffix": " kirsten"},
+  "3839": {"suffix": " One minute and follow up."},
+  "3908": {"suffix": " So"},
+  "4122": {"prefix": "you"},
+  "4335": {"suffix": " so"}
+ }
+}

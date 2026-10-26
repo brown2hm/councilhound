@@ -1,5 +1,6 @@
 import Link from "next/link";
 import ContestTabs from "@/components/ContestTabs";
+import ForumCompare from "@/components/ForumCompare";
 import QuestionnaireCompare from "@/components/QuestionnaireCompare";
 import {
   api,
@@ -155,6 +156,13 @@ function Contest({ c }: { c: ElectionContest }) {
         <div className="mt-8">
           <h3 className="mb-2 font-display text-[20px] font-medium tracking-[-0.2px]">Same questions, side by side</h3>
           <QuestionnaireCompare questionnaires={c.questionnaires} />
+        </div>
+      )}
+
+      {c.forums.length > 0 && (
+        <div className="mt-8">
+          <h3 className="mb-2 font-display text-[20px] font-medium tracking-[-0.2px]">At the forums, in their own words</h3>
+          <ForumCompare forums={c.forums} />
         </div>
       )}
 

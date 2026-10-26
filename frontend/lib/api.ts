@@ -871,6 +871,27 @@ export interface Questionnaire {
   responses: QuestionnaireResponse[]; // every candidate in the contest, ballot order
 }
 
+/** One candidate's turns on one forum question: verbatim automatic transcript. */
+export interface ForumAnswer {
+  candidate: string;
+  turns: { start: number; end: number; link: string; text: string }[];
+}
+
+export interface Forum {
+  key: string;
+  title: string;
+  held_on: string;
+  hosts: string;
+  venue: string;
+  video: string;
+  posted_by: string;
+  format: string;
+  note: string; // how the transcript was made
+  absent: { candidate: string; note: string }[];
+  silent: string[]; // in the contest, present or not, and never spoke
+  questions: { id: string; topic: string; asked: string | null; start: number; link: string; answers: ForumAnswer[] }[];
+}
+
 export interface ElectionContest {
   key: string; // mayor | city_council | school_board
   name: string;
@@ -881,6 +902,7 @@ export interface ElectionContest {
   candidates: ElectionCandidate[]; // ballot order
   race_sources: ElectionSource[];
   questionnaires: Questionnaire[];
+  forums: Forum[];
 }
 
 export interface Election {

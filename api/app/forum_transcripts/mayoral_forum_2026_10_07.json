@@ -1,0 +1,3954 @@
+{
+ "key": "mayoral_forum_2026_10_07",
+ "url": "https://www.youtube.com/watch?v=OZgATGnljDM",
+ "questions": [
+  {
+   "id": "opening",
+   "topic": "Opening statements",
+   "start": 80,
+   "asked": null
+  },
+  {
+   "id": "growth",
+   "topic": "Growth and development",
+   "start": 583,
+   "asked": "the first issue we will discuss is growth and development. The City of Fairfax continues to wrestle with growth, redevelopment, housing, and the future of its commercial corridors. What is your vision for how the city should grow and develop over the next decade, and which specific policies would you pursue? We're going to begin with Tom, and Tom, you've got three minutes."
+  },
+  {
+   "id": "comp_plan",
+   "topic": "The comprehensive plan",
+   "start": 1353,
+   "asked": "We're going to follow up with a question about the comprehensive plan and Kirsten, you're going to get to start on this one. What do you think about the, what do you like about the comprehensive plan and what do you think needs to be changed?"
+  },
+  {
+   "id": "environment",
+   "topic": "Environmental stewardship",
+   "start": 1598,
+   "asked": "all right that actually segues us to the next question which is around environmental stewardship and kirsten you're going to start on this one the city of fairfax is fortunate to have a network of parks trails trees waterways and open spaces what should the city's priorities be when it comes to environmental stewardship and this is three minutes"
+  },
+  {
+   "id": "stormwater",
+   "topic": "The stormwater utility fee",
+   "start": 2026,
+   "asked": "so this moves to our next question which is around stormwater utility the city of fairfax uses its stormwater utility fee to provide dedicated funding for managing stormwater runoff maintaining public infrastructure and complying with environmental regulations a five percent increase in the fee was approved this year how should this funding be used and do you anticipate additional increases in the coming years this is going to you first tom for two minutes"
+  },
+  {
+   "id": "environment_close",
+   "topic": "The environment: closing remarks",
+   "start": 2273,
+   "asked": "you'll each have one minute to close up on the topic of environment Tom you're gonna be first"
+  },
+  {
+   "id": "fiscal",
+   "topic": "Taxes and revenue: fiscal priorities",
+   "start": 2478,
+   "asked": "we're going to turn now to the issue of taxes and revenue and we will start actually with kirsten this on this question what are your priorities for the city's fiscal future and what specific steps would you take to accomplish them and this will be three minutes"
+  },
+  {
+   "id": "tax_rate",
+   "topic": "The tax equalization rate",
+   "start": 2992,
+   "asked": "So the tax equalization rate is the rate whereby the average homeowner would pay no more taxes in the prior year Could the city potentially achieve the tax equalization rate in the next few years and we're going to start with you Tom"
+  },
+  {
+   "id": "safety",
+   "topic": "Community safety",
+   "start": 3454,
+   "asked": "So we're on to our final issue for tonight which is our community safety. Residents expect the city of Fairfax to be a safe place to live, work and raise a family. What specific steps would you take as mayor to address the safety concerns of the community and Kirsten we're gonna start with you for three minutes."
+  },
+  {
+   "id": "public_safety",
+   "topic": "Police, fire and emergency services resources",
+   "start": 3981,
+   "asked": "that is the next question and you're going to get it first. Do you think that our police, fire and emergency services have the resources, staffing and support they need to adequately respond to crime and protect our community? I'm with two minutes."
+  },
+  {
+   "id": "closing",
+   "topic": "Closing statements",
+   "start": 4419,
+   "asked": null
+  }
+ ],
+ "turns": [
+  {
+   "start": 226,
+   "end": 365,
+   "speaker": "Kirsten Sides Lockhart",
+   "question": "opening",
+   "parts": [
+    {
+     "start": 227,
+     "text": "Thank you very much."
+    },
+    {
+     "start": 230,
+     "text": "Good evening. I'd like to start by thanking the Chamber of Commerce for hosting this event and"
+    },
+    {
+     "start": 234,
+     "text": "for all of you attending on relatively short notice. I believe it's so important for voters"
+    },
+    {
+     "start": 238,
+     "text": "to have opportunities to hear from candidates beyond the flyers and the social media posts,"
+    },
+    {
+     "start": 242,
+     "text": "so thank you. As you likely know by now, I have been an appointed member of the city's planning"
+    },
+    {
+     "start": 247,
+     "text": "commission since March of 2021. I'm currently the commission's vice chair. These past five plus"
+    },
+    {
+     "start": 253,
+     "text": "years of service have given me a chance to not just learn firsthand how the city functions,"
+    },
+    {
+     "start": 257,
+     "text": "but to form strong working relationships across all of its moving parts."
+    },
+    {
+     "start": 262,
+     "text": "We're an impressive city, from the hard-working staff to the amazing businesses"
+    },
+    {
+     "start": 266,
+     "text": "to the deep networks of community service, serving our neighbors,"
+    },
+    {
+     "start": 270,
+     "text": "and I'm really honored to have had the opportunity to champion all these voices in the city government"
+    },
+    {
+     "start": 275,
+     "text": "through my work on the Planning Commission."
+    },
+    {
+     "start": 277,
+     "text": "But also during this time, like many residents,"
+    },
+    {
+     "start": 281,
+     "text": "I became increasingly disappointed with the discourse on the dais."
+    },
+    {
+     "start": 285,
+     "text": "Quite frankly, it doesn't feel like we're moving towards the shared vision that we have articulated through so many of our formal plans and confirmed in so many resident studies."
+    },
+    {
+     "start": 294,
+     "text": "As a city, we prioritize walkability and safety and economic stability."
+    },
+    {
+     "start": 300,
+     "text": "So declaring my candidacy for mayor in January of this year felt like a very big step in light of these challenges."
+    },
+    {
+     "start": 305,
+     "text": "But it also felt like the next logical step for someone like me who works hard, seeks"
+    },
+    {
+     "start": 311,
+     "text": "out expertise, invites people to the table, and knows how to drive towards consensus."
+    },
+    {
+     "start": 316,
+     "text": "My husband and I chose to settle our family here in the City of Fairfax in 2017 for many"
+    },
+    {
+     "start": 321,
+     "text": "reasons."
+    },
+    {
+     "start": 322,
+     "text": "We value the schools, the services, and the interconnectedness of our lives and our kids'"
+    },
+    {
+     "start": 327,
+     "text": "lives with the community."
+    },
+    {
+     "start": 328,
+     "text": "I've said often on the campaign trail this year that Fairfax City is a great place to"
+    },
+    {
+     "start": 332,
+     "text": "be a kid and serving as mayor is one way to make sure that that continues to be"
+    },
+    {
+     "start": 336,
+     "text": "the case. Our city government is making decisions right now that will impact our"
+    },
+    {
+     "start": 340,
+     "text": "ability to maintain services and by extension quality of life in the future."
+    },
+    {
+     "start": 344,
+     "text": "But we seem to be led by a group of people who are really afraid of"
+    },
+    {
+     "start": 348,
+     "text": "criticism, answering to people who are mostly afraid of change. We need a fresh"
+    },
+    {
+     "start": 353,
+     "text": "perspective, someone who can help build the through line between what makes the"
+    },
+    {
+     "start": 356,
+     "text": "city great now and what will keep it great in the future. I look forward to"
+    },
+    {
+     "start": 359,
+     "text": "tonight's discussion and to earning your vote on or before November 3rd. Thank you."
+    }
+   ]
+  },
+  {
+   "start": 403,
+   "end": 533,
+   "speaker": "Thomas D. \"Tom\" Peterson",
+   "question": "opening",
+   "parts": [
+    {
+     "start": 405,
+     "text": "It's good to see everybody I know I've met most of you and in case I haven't just a little bit about me"
+    },
+    {
+     "start": 412,
+     "text": "My wife and I who's in the front room. Alyssa moved here 24 years ago"
+    },
+    {
+     "start": 416,
+     "text": "with our daughter Claire, like many people we love the city and we want to"
+    },
+    {
+     "start": 421,
+     "text": "continue to live here and make the city the best possible place it can be. I also"
+    },
+    {
+     "start": 426,
+     "text": "know that's very hard work and requires a lot of leadership. So I have a long"
+    },
+    {
+     "start": 430,
+     "text": "career of serving in government, business, nonprofit, and academia, 44 years. During"
+    },
+    {
+     "start": 436,
+     "text": "that period of time I've worked with many stakeholders, many government agencies,"
+    },
+    {
+     "start": 441,
+     "text": "on many issues and many locations here in the United States and in other"
+    },
+    {
+     "start": 445,
+     "text": "countries part of what I've specialized in is bringing people together to build"
+    },
+    {
+     "start": 450,
+     "text": "consensus as I've done that I've had the chance to work with people here in the"
+    },
+    {
+     "start": 456,
+     "text": "city of Fairfax in my role as a city council member and formerly in a role as"
+    },
+    {
+     "start": 461,
+     "text": "the chair of the environmental sustainability committee and that has"
+    },
+    {
+     "start": 464,
+     "text": "helped me have very deep experience and everything happening here in the city"
+    },
+    {
+     "start": 468,
+     "text": "and appreciation for what's like to serve as an elected official and I think"
+    },
+    {
+     "start": 472,
+     "text": "there's no substitute for that process when you work through it. So as I have"
+    },
+    {
+     "start": 479,
+     "text": "worked here in the city I have also been fortunate as a city council member to"
+    },
+    {
+     "start": 485,
+     "text": "represent the city on eight regional boards and commissions. I serve on the"
+    },
+    {
+     "start": 489,
+     "text": "Transportation Planning Board, the Northern Virginia Transportation"
+    },
+    {
+     "start": 493,
+     "text": "Authority Policy Committee, on Climate Energy Committee with the Washington"
+    },
+    {
+     "start": 499,
+     "text": "Council of Governments and on an infrastructure committee for the Virginia Municipal League and"
+    },
+    {
+     "start": 503,
+     "text": "then four other committees as well. So I have done quite a bit of work at the regional level."
+    },
+    {
+     "start": 507,
+     "text": "I also am a small business operator and owner of the Clint Center for Climate Strategies"
+    },
+    {
+     "start": 515,
+     "text": "24 years ago and operate as a non-profit technical and policy institution. It's operated"
+    },
+    {
+     "start": 521,
+     "text": "right here out of the city. In addition to that, I developed and managed a tourist home"
+    },
+    {
+     "start": 526,
+     "text": "in the Blue Ridge Mountains of Virginia on behalf of my mother,"
+    },
+    {
+     "start": 530,
+     "text": "and I serve as her guardian and conservator as well."
+    }
+   ]
+  },
+  {
+   "start": 636,
+   "end": 822,
+   "speaker": "Thomas D. \"Tom\" Peterson",
+   "question": "growth",
+   "parts": [
+    {
+     "start": 636,
+     "text": "Thank you so much. So my vision is pretty simple. It's democracy."
+    },
+    {
+     "start": 639,
+     "text": "and where that goes in terms of priorities and policies really comes out of a process of collaboration"
+    },
+    {
+     "start": 644,
+     "text": "with the citizens here in the city."
+    },
+    {
+     "start": 647,
+     "text": "It's very critical that the people of this city have a chance to choose their own future"
+    },
+    {
+     "start": 652,
+     "text": "and not have it chosen for them."
+    },
+    {
+     "start": 654,
+     "text": "And there's a way we go about doing that."
+    },
+    {
+     "start": 656,
+     "text": "We do that through planning and assessment processes."
+    },
+    {
+     "start": 658,
+     "text": "We do that through collaboration."
+    },
+    {
+     "start": 660,
+     "text": "With respect to land use, which involves a variety of different dimensions of development,"
+    },
+    {
+     "start": 666,
+     "text": "That includes a number of different economic sectors a number of different natural systems a number of different"
+    },
+    {
+     "start": 672,
+     "text": "institutions here in the city that all come together and"
+    },
+    {
+     "start": 675,
+     "text": "The way the city operates is we have an overarching comprehensive plan"
+    },
+    {
+     "start": 679,
+     "text": "We have more specific plans that deal with land use such as the small area plans"
+    },
+    {
+     "start": 683,
+     "text": "We have other planning and assessment processes that are however"
+    },
+    {
+     "start": 687,
+     "text": "Also very directly related to this and have an impact on it"
+    },
+    {
+     "start": 691,
+     "text": "So we have an affordable housing strategy and a planning process around that"
+    },
+    {
+     "start": 695,
+     "text": "transportation safety planning process involved at the moment very critically we have a commercial"
+    },
+    {
+     "start": 702,
+     "text": "development strategy assessment process underway right now and we have an energy plan a climate"
+    },
+    {
+     "start": 710,
+     "text": "plan a whole series of things that are underway right now all of these help shed light on a"
+    },
+    {
+     "start": 715,
+     "text": "similar set of issues that relate to our cost of living and quality of life and the central issue"
+    },
+    {
+     "start": 720,
+     "text": "of what we want to use our land for and how we should use it as we go through that process and"
+    },
+    {
+     "start": 727,
+     "text": "work together there are some very key issues that are facing us right now in the city with respect"
+    },
+    {
+     "start": 733,
+     "text": "to our decisions on land use a lot of them are focused on our urban areas or what we call our"
+    },
+    {
+     "start": 738,
+     "text": "small area plans one of the biggest ones is the question mark of our commercial development and"
+    },
+    {
+     "start": 746,
+     "text": "real estate base so our real estate assessments in the city have increased"
+    },
+    {
+     "start": 750,
+     "text": "almost nine percent over the last several years our commercial assessments"
+    },
+    {
+     "start": 755,
+     "text": "have only increased about 1.8 percent we've fallen behind we're about a third"
+    },
+    {
+     "start": 759,
+     "text": "of our neighbors in terms of our commercial development our commercial"
+    },
+    {
+     "start": 763,
+     "text": "development base has shrunken there are reasons for that the city's structure of"
+    },
+    {
+     "start": 767,
+     "text": "our commercial base is different than it is in the areas around it but we have a"
+    },
+    {
+     "start": 771,
+     "text": "lot of catching up to do that's our fiscal base for the city so it's critical"
+    },
+    {
+     "start": 775,
+     "text": "that we recover that commercial base"
+    },
+    {
+     "start": 778,
+     "text": "and we create a new future for it"
+    },
+    {
+     "start": 781,
+     "text": "that's modernized and sustainable."
+    },
+    {
+     "start": 783,
+     "text": "As a part of that,"
+    },
+    {
+     "start": 784,
+     "text": "we also have to focus on a resilient and dynamic"
+    },
+    {
+     "start": 786,
+     "text": "small business sector and retail sector."
+    },
+    {
+     "start": 789,
+     "text": "The housing sector is critical as well."
+    },
+    {
+     "start": 791,
+     "text": "Some major issues there involve"
+    },
+    {
+     "start": 793,
+     "text": "the movement towards price-appropriate housing"
+    },
+    {
+     "start": 796,
+     "text": "as a part of our housing strategy."
+    },
+    {
+     "start": 799,
+     "text": "And remember that the addition of housing"
+    },
+    {
+     "start": 801,
+     "text": "is not necessarily a housing strategy,"
+    },
+    {
+     "start": 803,
+     "text": "So we have a lot of work to do to have a targeted housing strategy for the city."
+    },
+    {
+     "start": 808,
+     "text": "We also have to pay attention to some very significant potential impacts as we move forward"
+    },
+    {
+     "start": 813,
+     "text": "with development, which include traffic congestion and safety, crime, and other issues, including"
+    },
+    {
+     "start": 820,
+     "text": "environmental impacts."
+    }
+   ]
+  },
+  {
+   "start": 825,
+   "end": 940,
+   "speaker": "Kirsten Sides Lockhart",
+   "question": "growth",
+   "parts": [
+    {
+     "start": 825,
+     "text": "Thank you."
+    },
+    {
+     "start": 826,
+     "text": "So, first I'd like to talk about the word growth, the growth of the city."
+    },
+    {
+     "start": 830,
+     "text": "I prefer to use the word evolution."
+    },
+    {
+     "start": 832,
+     "text": "Growth implies something that's sort of unstoppable, unchecked."
+    },
+    {
+     "start": 836,
+     "text": "Evolution, or some other word that implies more collaboration, is what I think we need"
+    },
+    {
+     "start": 840,
+     "text": "to think in terms of."
+    },
+    {
+     "start": 841,
+     "text": "We need to think of the through line between where we are now and how we get to where we"
+    },
+    {
+     "start": 845,
+     "text": "want to go."
+    },
+    {
+     "start": 845,
+     "text": "We need to grow in an integrated, livable manner guided by the extensively researched"
+    },
+    {
+     "start": 850,
+     "text": "and extensively coordinated planning documents that my opponent referred to."
+    },
+    {
+     "start": 853,
+     "text": "We already have these documents."
+    },
+    {
+     "start": 855,
+     "text": "They've been through years of hard work, input from experts, exposure to all different segments"
+    },
+    {
+     "start": 860,
+     "text": "of the city for feedback."
+    },
+    {
+     "start": 861,
+     "text": "They're not infallible."
+    },
+    {
+     "start": 862,
+     "text": "We need a review process, but we have this content and we need to be relying on it."
+    },
+    {
+     "start": 866,
+     "text": "We need a consistent, transparent, data-driven approach to how we are evaluating development"
+    },
+    {
+     "start": 871,
+     "text": "proposals and making decisions for the city."
+    },
+    {
+     "start": 873,
+     "text": "We need to bring people in and provide opportunities to participate meaningfully in the process"
+    },
+    {
+     "start": 878,
+     "text": "with real outputs."
+    },
+    {
+     "start": 879,
+     "text": "We need to be leveraging the experts that exist in this city and asking them for their"
+    },
+    {
+     "start": 883,
+     "text": "help, not just their feedback after the fact, but their real constructive inputs at the"
+    },
+    {
+     "start": 888,
+     "text": "beginning of our decision-making process. Going back to the comprehensive plan,"
+    },
+    {
+     "start": 895,
+     "text": "the intention of it is to be very actionable. It covers all areas of the"
+    },
+    {
+     "start": 898,
+     "text": "city. Specifically with regards to development, it has many different"
+    },
+    {
+     "start": 903,
+     "text": "avenues for land use and for categorization. I think we need to be"
+    },
+    {
+     "start": 907,
+     "text": "reflecting on that and consistent in our application of it because when we don't"
+    },
+    {
+     "start": 912,
+     "text": "rely on the documentation and the processes that are already there, our"
+    },
+    {
+     "start": 915,
+     "text": "Our decision making tends to look unpredictable and we get less desirable proposals to take"
+    },
+    {
+     "start": 920,
+     "text": "us to where we want to go."
+    },
+    {
+     "start": 921,
+     "text": "I would not have known if I were not in the planning commission how much Virginia is a"
+    },
+    {
+     "start": 925,
+     "text": "very property owner friendly state."
+    },
+    {
+     "start": 927,
+     "text": "The carrots and the sticks that we have to offer in terms of getting to where we want"
+    },
+    {
+     "start": 930,
+     "text": "to go are limited."
+    },
+    {
+     "start": 931,
+     "text": "But when we have participation early in the process and when we follow a process that's"
+    },
+    {
+     "start": 934,
+     "text": "repeatable and meaningfully data informed, we will get to a better outcome for the city."
+    }
+   ]
+  },
+  {
+   "start": 971,
+   "end": 1126,
+   "speaker": "Thomas D. \"Tom\" Peterson",
+   "question": "growth",
+   "parts": [
+    {
+     "start": 971,
+     "text": "so remind me two minutes to the prior question"
+    },
+    {
+     "start": 980,
+     "text": "great so the good news is that the city has many activities underway to try to understand more"
+    },
+    {
+     "start": 985,
+     "text": "clearly how we can move forward with our use of land and its development in the future but"
+    },
+    {
+     "start": 993,
+     "text": "we're not there yet a lot of these planning and assessment processes are out of date some of them"
+    },
+    {
+     "start": 999,
+     "text": "were incomplete and it's not necessarily clear that they involve the public the way they"
+    },
+    {
+     "start": 1003,
+     "text": "needed to be so that these are really driven by community based perspectives and solutions."
+    },
+    {
+     "start": 1008,
+     "text": "There's some clear areas of concern here."
+    },
+    {
+     "start": 1011,
+     "text": "For instance, the small area plans that contemplate adding 4700 new high density housing units"
+    },
+    {
+     "start": 1017,
+     "text": "in four urban areas or about 12 and a half thousand new people in the city have not yet"
+    },
+    {
+     "start": 1023,
+     "text": "conducted a cumulative impact analysis on transportation impacts and that includes congestion"
+    },
+    {
+     "start": 1028,
+     "text": "and safety. Those impacts are likely to be quite significant. We are a city that already has a"
+    },
+    {
+     "start": 1035,
+     "text": "stress transportation system. It has limited capacity for the absorption of new capacity."
+    },
+    {
+     "start": 1041,
+     "text": "On the safety front, we also have a transportation system that's at a point where its safety is being"
+    },
+    {
+     "start": 1048,
+     "text": "compromised already. We know this, and we know that moving forward, as we add more cars into the"
+    },
+    {
+     "start": 1054,
+     "text": "system that we're going to have some trade-offs that will be difficult. We"
+    },
+    {
+     "start": 1058,
+     "text": "haven't done an assessment of that to help guide us in choosing the correct"
+    },
+    {
+     "start": 1062,
+     "text": "levels of development and the types of development. The same is true for crime."
+    },
+    {
+     "start": 1066,
+     "text": "We haven't conducted an impact analysis on the potential changes in crime"
+    },
+    {
+     "start": 1073,
+     "text": "exposure for adding 12 and a half thousand people here in a"
+    },
+    {
+     "start": 1077,
+     "text": "relatively short period of time. The good news is that we now have a crime"
+    },
+    {
+     "start": 1081,
+     "text": "safety analyst as of last week in the police department I had a little bit to"
+    },
+    {
+     "start": 1085,
+     "text": "do with that the other really critical thing is we do not have an assessment of"
+    },
+    {
+     "start": 1090,
+     "text": "the redevelopment potential of our commercial land base that study is"
+    },
+    {
+     "start": 1094,
+     "text": "underway now but it has been lagging for many years it can provide us very"
+    },
+    {
+     "start": 1099,
+     "text": "critical input to understand where and how best to develop the commercial land"
+    },
+    {
+     "start": 1104,
+     "text": "base we have and avoid conflicts that are associated with housing in"
+    },
+    {
+     "start": 1108,
+     "text": "particular so that we're not killing the goose that lays the golden egg by"
+    },
+    {
+     "start": 1112,
+     "text": "pushing commercial development out as we push housing in all of these areas of"
+    },
+    {
+     "start": 1117,
+     "text": "inquiry are things that are critical and we got stopped still have a lot of work"
+    },
+    {
+     "start": 1121,
+     "text": "to do to be able to put these planning processes in the right place thank you"
+    }
+   ]
+  },
+  {
+   "start": 1129,
+   "end": 1251,
+   "speaker": "Kirsten Sides Lockhart",
+   "question": "growth",
+   "parts": [
+    {
+     "start": 1137,
+     "text": "thank you all right so the number that my opponent brought up 47,000 new"
+    },
+    {
+     "start": 1148,
+     "text": "units there's also been some mailing recently indicating the number of residents that will add"
+    },
+    {
+     "start": 1152,
+     "text": "to the city I'd like to take this opportunity to dive in and get a little bit wonky on the small"
+    },
+    {
+     "start": 1157,
+     "text": "area plans and that those are upper thresholds right that is if we built"
+    },
+    {
+     "start": 1160,
+     "text": "every single proposal exactly as its plan and it filled up immediately"
+    },
+    {
+     "start": 1165,
+     "text": "instantaneously as we've seen development is not always a smooth road in this city"
+    },
+    {
+     "start": 1168,
+     "text": "we have to approve projects that are coming back to the drawing board"
+    },
+    {
+     "start": 1171,
+     "text": "because they expired in terms of their time limits to get to development it is"
+    },
+    {
+     "start": 1179,
+     "text": "a bumpy road to develop that's absolutely true but I don't appreciate"
+    },
+    {
+     "start": 1182,
+     "text": "the fear-mongering of numbers that are simply never going to come to fruition"
+    },
+    {
+     "start": 1186,
+     "text": "in the way that my opponents have indicated."
+    },
+    {
+     "start": 1188,
+     "text": "We want to have maximum thresholds so we know the art of the possible."
+    },
+    {
+     "start": 1192,
+     "text": "We want to think in terms of what some may say is worst case scenario"
+    },
+    {
+     "start": 1195,
+     "text": "from the numbers of folks that we add and the number of cars on the road."
+    },
+    {
+     "start": 1198,
+     "text": "I can tell you that numerically we have not seen a worst case traffic impact from a project,"
+    },
+    {
+     "start": 1203,
+     "text": "not to say that we couldn't, and certainly not to say that it's not putting more cars on the road."
+    },
+    {
+     "start": 1206,
+     "text": "But the reality of development is more nuanced than that."
+    },
+    {
+     "start": 1210,
+     "text": "And it requires thought."
+    },
+    {
+     "start": 1212,
+     "text": "It requires being careful and being realistic about what we're being offered."
+    },
+    {
+     "start": 1216,
+     "text": "Personally, what disappoints me about what we've seen in development is the number of"
+    },
+    {
+     "start": 1220,
+     "text": "developers who have no ties to this area."
+    },
+    {
+     "start": 1222,
+     "text": "You know, in the Planning Commission, we're a pretty collegial bunch and we like to bring"
+    },
+    {
+     "start": 1225,
+     "text": "up the Independence Day Parade, and the number of developers who don't realize it takes up"
+    },
+    {
+     "start": 1229,
+     "text": "two streets on the Fourth of July is disappointing."
+    },
+    {
+     "start": 1232,
+     "text": "So again, I return to the fact that we have this documentation that's existed for years,"
+    },
+    {
+     "start": 1236,
+     "text": "that's been extensively coordinated."
+    },
+    {
+     "start": 1237,
+     "text": "We need to rely on that."
+    },
+    {
+     "start": 1238,
+     "text": "We should not be looking at special exceptions or special use cases or individual lobbying"
+    },
+    {
+     "start": 1243,
+     "text": "cases for the approval of development projects need to be consistent we need"
+    },
+    {
+     "start": 1247,
+     "text": "to be repeatable and we need to be data driven and how we're looking at our"
+    },
+    {
+     "start": 1250,
+     "text": "growth"
+    }
+   ]
+  },
+  {
+   "start": 1365,
+   "end": 1464,
+   "speaker": "Kirsten Sides Lockhart",
+   "question": "comp_plan",
+   "parts": [
+    {
+     "start": 1365,
+     "text": "The comprehensive plan is getting a lot of love tonight."
+    },
+    {
+     "start": 1367,
+     "text": "I love this."
+    },
+    {
+     "start": 1368,
+     "text": "So what I like about the comprehensive plan is that I got to help spearhead the last rewrite"
+    },
+    {
+     "start": 1372,
+     "text": "in 2024 and it was a phenomenal experience because we were out with every single boarding commission"
+    },
+    {
+     "start": 1377,
+     "text": "and every single staff directorate getting their input on how to make it the most actionable most"
+    },
+    {
+     "start": 1383,
+     "text": "realistic most goal oriented and tangible goal oriented plan that we could possibly make it"
+    },
+    {
+     "start": 1388,
+     "text": "i'm really proud of it it's a great artifact it took a lot of hard work across the planning"
+    },
+    {
+     "start": 1392,
+     "text": "commission and across all of the folks with whom we worked and certainly the planning staff so what"
+    },
+    {
+     "start": 1396,
+     "text": "i like most about the comprehensive plan is the plan itself and how comprehensive it is"
+    },
+    {
+     "start": 1401,
+     "text": "shockingly. What I don't like about it, fair is fair. I think I referred to this a little bit in"
+    },
+    {
+     "start": 1406,
+     "text": "my first answer, but we have some categories of land use that are still kind of squirrely."
+    },
+    {
+     "start": 1410,
+     "text": "We still have in our comprehensive plan a parcel-specific designation, which is something"
+    },
+    {
+     "start": 1416,
+     "text": "that we think the future of it is so weird that we can't possibly capture under one of our current"
+    },
+    {
+     "start": 1420,
+     "text": "zoning categories. And we don't have a way to get to that. It's just sort of like we feel that one"
+    },
+    {
+     "start": 1425,
+     "text": "place should be something different. And I strongly disagree with that. I think if we're going to have"
+    },
+    {
+     "start": 1430,
+     "text": "a category for development, it needs to be accessible to any developer, and we need to"
+    },
+    {
+     "start": 1433,
+     "text": "know what the gateways are to get into that category."
+    },
+    {
+     "start": 1436,
+     "text": "It's an ongoing battle that I have with our planning staff."
+    },
+    {
+     "start": 1439,
+     "text": "I think there's pros and cons to both approaches, but I'm going to continue to push for instituting"
+    },
+    {
+     "start": 1444,
+     "text": "process as much as possible across all of our plans so that we are consistent."
+    },
+    {
+     "start": 1448,
+     "text": "And similarly, it needs to make sure that it's aligned with all of our small area plans,"
+    },
+    {
+     "start": 1452,
+     "text": "as does zoning."
+    },
+    {
+     "start": 1453,
+     "text": "So once we get everything into tight alignment, we'll be in such a better place for our negotiations"
+    },
+    {
+     "start": 1457,
+     "text": "with developers and also for how we envision the total lay down of the city"
+    },
+    {
+     "start": 1462,
+     "text": "going forward"
+    }
+   ]
+  },
+  {
+   "start": 1463,
+   "end": 1598,
+   "speaker": "Thomas D. \"Tom\" Peterson",
+   "question": "comp_plan",
+   "parts": [
+    {
+     "start": 1463,
+     "text": "this is two minutes great thanks so much so the"
+    },
+    {
+     "start": 1469,
+     "text": "comprehensive plan is a starting place for the further development and"
+    },
+    {
+     "start": 1473,
+     "text": "implementation of more detailed approaches to dealing with specific"
+    },
+    {
+     "start": 1476,
+     "text": "issues and the good news is the comprehensive plan is just that it's a"
+    },
+    {
+     "start": 1480,
+     "text": "broad framework and that framework has been updated when I was with the"
+    },
+    {
+     "start": 1484,
+     "text": "Environmental Sustainability Committee we did a very full review and suggested"
+    },
+    {
+     "start": 1489,
+     "text": "edit to the comprehensive plan and most of what we suggested to be added was"
+    },
+    {
+     "start": 1494,
+     "text": "including a section on environmental sustainability so that's an example of"
+    },
+    {
+     "start": 1497,
+     "text": "growth in this overall framework that's very important but I'd remember also"
+    },
+    {
+     "start": 1502,
+     "text": "that there was one particular edit that we suggested that didn't make it through"
+    },
+    {
+     "start": 1507,
+     "text": "and I hope someday it will and that it was at the very beginning to add one"
+    },
+    {
+     "start": 1511,
+     "text": "single word before the word development and that word was sustainable. Sustainable development"
+    },
+    {
+     "start": 1519,
+     "text": "means making decisions today as if tomorrow matters. It means taking a holistic approach"
+    },
+    {
+     "start": 1525,
+     "text": "to the community impacts and issues that are involved in planning so that we are guarding"
+    },
+    {
+     "start": 1530,
+     "text": "against harm and a recognition that development while it provides benefits also has the potential"
+    },
+    {
+     "start": 1536,
+     "text": "to create harm, we have to guard against that by doing the kind of analysis, the kind of ground-truthing"
+    },
+    {
+     "start": 1544,
+     "text": "with the people who are affected by these actions that we contemplate taking to avoid them and do"
+    },
+    {
+     "start": 1550,
+     "text": "better than that. So while the comprehensive plan is a great starting place, it's not the end point."
+    },
+    {
+     "start": 1555,
+     "text": "These other processes I mentioned are things that are outgrowths of the comprehensive plan,"
+    },
+    {
+     "start": 1560,
+     "text": "which is good. It's a platform. But those other planning processes are quite critical in terms"
+    },
+    {
+     "start": 1565,
+     "text": "of getting the job done just to give you another comment on where the need to go into more"
+    },
+    {
+     "start": 1575,
+     "text": "detail is important is this whole suite of things we call community impacts and they're called out"
+    },
+    {
+     "start": 1581,
+     "text": "in the dylan rule the dylan rule says every five years you need to update your plan you also need"
+    },
+    {
+     "start": 1586,
+     "text": "to be covering a suite of critical community impacts five years was a long time ago we are"
+    },
+    {
+     "start": 1592,
+     "text": "due for significant updates on a number of these plans including the small area plans thank you"
+    }
+   ]
+  },
+  {
+   "start": 1616,
+   "end": 1679,
+   "speaker": "Kirsten Sides Lockhart",
+   "question": "environment",
+   "parts": [
+    {
+     "start": 1616,
+     "text": "thank you in terms of levers"
+    },
+    {
+     "start": 1619,
+     "text": "the city actually controls with regards to environmental stewardship. I think the first"
+    },
+    {
+     "start": 1624,
+     "text": "and most important one that I've gleaned from talking to residents throughout the city since"
+    },
+    {
+     "start": 1628,
+     "text": "January is access. City residents really value having trails and parks and green space. It's"
+    },
+    {
+     "start": 1635,
+     "text": "one of the things that comes up the most in any city survey as well as any conversation. It's why"
+    },
+    {
+     "start": 1639,
+     "text": "people move here, why they stay here. It also provides an opportunity for people to proactively"
+    },
+    {
+     "start": 1644,
+     "text": "engage with the city, whether it's through an organized volunteer group or just participating"
+    },
+    {
+     "start": 1649,
+     "text": "in terms of local activities. So the number one thing I think the city's environmental"
+    },
+    {
+     "start": 1654,
+     "text": "sort of approach needs to include is that we are stewards and we are facilitating access."
+    },
+    {
+     "start": 1660,
+     "text": "I also think it's extremely important that we are listening to experts"
+    },
+    {
+     "start": 1663,
+     "text": "when we are developing all of our plans. I'll be the first one to admit that from a functional"
+    },
+    {
+     "start": 1668,
+     "text": "perspective, this isn't my strongest area, but this is why it's important to be able to"
+    },
+    {
+     "start": 1672,
+     "text": "reach out to experts bring them in and hear from them explicitly"
+    }
+   ]
+  },
+  {
+   "start": 1679,
+   "end": 1882,
+   "speaker": "Thomas D. \"Tom\" Peterson",
+   "question": "environment",
+   "parts": [
+    {
+     "start": 1679,
+     "text": "two three three oh my goodness it's a lot of"
+    },
+    {
+     "start": 1683,
+     "text": "time okay so this question really focuses a lot on our landscape and I am"
+    },
+    {
+     "start": 1701,
+     "text": "going to focus on forests because that is one of the most critical parts of our"
+    },
+    {
+     "start": 1706,
+     "text": "environment here in the city and I'm going to focus in particular on our"
+    },
+    {
+     "start": 1711,
+     "text": "natural forests that last remaining set of lands that God gave us he's not"
+    },
+    {
+     "start": 1716,
+     "text": "making any more of it and now it's up to us to take care of those lands so we are"
+    },
+    {
+     "start": 1721,
+     "text": "the tree city USA well let's talk about what that might mean when it comes to"
+    },
+    {
+     "start": 1726,
+     "text": "protecting our natural forests we have possibly 200 acres left 100 acres or so"
+    },
+    {
+     "start": 1733,
+     "text": "is in the most before us where the George Snyder trail was to be"
+    },
+    {
+     "start": 1736,
+     "text": "constructed about 50 acres and Daniels run woods we have them about 30 acres"
+    },
+    {
+     "start": 1742,
+     "text": "and our resource protection areas are so-called RPAs these are essentially"
+    },
+    {
+     "start": 1746,
+     "text": "stream systems we have some land after that that's on private hands in the"
+    },
+    {
+     "start": 1752,
+     "text": "residential sector we don't know how much that's why planning and assessment"
+    },
+    {
+     "start": 1756,
+     "text": "is so important it hasn't been done yet to determine what our basic inventory"
+    },
+    {
+     "start": 1761,
+     "text": "of these lands really is in the city the good news is it's underway at strategy"
+    },
+    {
+     "start": 1766,
+     "text": "1.1 in our urban forest master plan that's under development I was proud to"
+    },
+    {
+     "start": 1771,
+     "text": "be a part of the formation of that plan and its basic capacity by bringing in"
+    },
+    {
+     "start": 1775,
+     "text": "an urban forest manager but we have to figure out what we have and what we can"
+    },
+    {
+     "start": 1780,
+     "text": "do to protect it and we may be our own worst enemy at times in terms of threats"
+    },
+    {
+     "start": 1786,
+     "text": "to this system and we do have control over the lands that are in public"
+    },
+    {
+     "start": 1790,
+     "text": "ownership and the RPAs so ironically there was a case where we had a"
+    },
+    {
+     "start": 1795,
+     "text": "development and it resulted in the loss of 5.7 acres of forest land and to make"
+    },
+    {
+     "start": 1801,
+     "text": "up for that if you will because of the impact that had on watersheds and"
+    },
+    {
+     "start": 1805,
+     "text": "stormwater system then the city moved to put in a stream restoration program in"
+    },
+    {
+     "start": 1811,
+     "text": "one of our parks that would have destroyed another 1.1 acres of forest"
+    },
+    {
+     "start": 1817,
+     "text": "land so we were in the ironic position of making up for the loss of trees by"
+    },
+    {
+     "start": 1823,
+     "text": "removing more of them I'm a subject matter expert in the area the science"
+    },
+    {
+     "start": 1827,
+     "text": "behind that I think needs a little bit more attention I think there are other"
+    },
+    {
+     "start": 1831,
+     "text": "options for how we handle that but what goes on inside our RPAs has a big impact on what's left"
+    },
+    {
+     "start": 1836,
+     "text": "in terms of our forest land in the city it's also critical that we do everything possible to protect"
+    },
+    {
+     "start": 1842,
+     "text": "and advance the forest canopy that we have on residential lands but that's different than a"
+    },
+    {
+     "start": 1848,
+     "text": "forested system there's no substitute for a system complete community of plants and animals together"
+    },
+    {
+     "start": 1855,
+     "text": "that we see in these actual forest lands but the residential canopy is really quite critical and"
+    },
+    {
+     "start": 1861,
+     "text": "And one of the areas of concern right now is for that last remaining set on the private"
+    },
+    {
+     "start": 1865,
+     "text": "lands, it is at risk."
+    },
+    {
+     "start": 1867,
+     "text": "We have not put in place sort of protective measures, whether they're incentives or disincentives,"
+    },
+    {
+     "start": 1873,
+     "text": "to try to protect that last set of lands."
+    },
+    {
+     "start": 1875,
+     "text": "But that is the most critical environmental action for our landscape that we need to contemplate"
+    },
+    {
+     "start": 1881,
+     "text": "now."
+    },
+    {
+     "start": 1881,
+     "text": "Great."
+    }
+   ]
+  },
+  {
+   "start": 1882,
+   "end": 1949,
+   "speaker": "Kirsten Sides Lockhart",
+   "question": "environment",
+   "parts": [
+    {
+     "start": 1884,
+     "text": "Thank you for acknowledging the majority of our tree canopy is actually on private property,"
+    },
+    {
+     "start": 1888,
+     "text": "ergo the actions that the city can take are slim."
+    },
+    {
+     "start": 1890,
+     "text": "but do involve engaging our residents proactively, making sure that people"
+    },
+    {
+     "start": 1893,
+     "text": "understand what they can do to contribute to the overall environmental health of"
+    },
+    {
+     "start": 1897,
+     "text": "our community. We also need to be incentivizing communication during"
+    },
+    {
+     "start": 1900,
+     "text": "development that we are prioritizing per the urban forestry master plan, tree"
+    },
+    {
+     "start": 1904,
+     "text": "canopy preservation, not simply tree replacement. These are all important"
+    },
+    {
+     "start": 1907,
+     "text": "things, but stream restoration is not tree destruction. Stream restoration is"
+    },
+    {
+     "start": 1911,
+     "text": "important engineering to preserve the safety of our neighborhoods, of our"
+    },
+    {
+     "start": 1914,
+     "text": "streets, and of the forest itself eventually. The biggest things we can do"
+    },
+    {
+     "start": 1918,
+     "text": "to improve that are actually also improvements on private land. It's"
+    },
+    {
+     "start": 1921,
+     "text": "neighborhoods looking at their impervious services, seeing where they"
+    },
+    {
+     "start": 1925,
+     "text": "can replace pavement with imper with permeable pavers, looking at where"
+    },
+    {
+     "start": 1928,
+     "text": "native plant landscaping can help with runoff water, water filtering before it"
+    },
+    {
+     "start": 1934,
+     "text": "hits the stream beds. There's a lot that we can do and we can communicate out to"
+    },
+    {
+     "start": 1938,
+     "text": "the city. It doesn't have to be fear-mongering to against development to"
+    },
+    {
+     "start": 1942,
+     "text": "also create a cohesive approach to managing our environmental resources."
+    }
+   ]
+  },
+  {
+   "start": 1954,
+   "end": 2027,
+   "speaker": "Thomas D. \"Tom\" Peterson",
+   "question": "environment",
+   "parts": [
+    {
+     "start": 1954,
+     "text": "So as I mentioned, the canopy that we have on manicured properties, houses, and businesses"
+    },
+    {
+     "start": 1962,
+     "text": "is crucial in a number of different ways. And it's always best to try to protect it"
+    },
+    {
+     "start": 1970,
+     "text": "before we lose it to prevent the loss of these trees because the replacement of them is very"
+    },
+    {
+     "start": 1975,
+     "text": "difficult to do an equal replacement. We're changing out mature trees with"
+    },
+    {
+     "start": 1979,
+     "text": "young trees and the survival rate of the young trees we put in is not necessarily"
+    },
+    {
+     "start": 1983,
+     "text": "so great. When we first started tracking this in the Environmental Sustainability"
+    },
+    {
+     "start": 1988,
+     "text": "Committee, only one out of eight of the trees that was replanted survived its"
+    },
+    {
+     "start": 1993,
+     "text": "first two years. So the death rate was extremely high. So we need to be very,"
+    },
+    {
+     "start": 1997,
+     "text": "very cautious about these decisions to remove trees even in the manicured"
+    },
+    {
+     "start": 2002,
+     "text": "canopy system but just to realize also that when we make a decision to develop a piece of property"
+    },
+    {
+     "start": 2012,
+     "text": "or to change its management or same or even some kind of intervention that is going to trigger"
+    },
+    {
+     "start": 2018,
+     "text": "something that is going to be difficult to replicate in terms of what preceded it so we"
+    },
+    {
+     "start": 2023,
+     "text": "need to be very very cautious about how we do that"
+    }
+   ]
+  },
+  {
+   "start": 2053,
+   "end": 2178,
+   "speaker": "Thomas D. \"Tom\" Peterson",
+   "question": "stormwater",
+   "parts": [
+    {
+     "start": 2053,
+     "text": "i'm not persuaded that we do need to increase the stormwater fee"
+    },
+    {
+     "start": 2057,
+     "text": "but I think the bigger issue is the organizing principle we use for implementation."
+    },
+    {
+     "start": 2063,
+     "text": "And there are many good things we can do with a pool of funds that are collected from this fee."
+    },
+    {
+     "start": 2068,
+     "text": "We've got a menu of practices that can be encouraged and incentivized by this."
+    },
+    {
+     "start": 2073,
+     "text": "But I would like to suggest a top priority for the use of these funds,"
+    },
+    {
+     "start": 2078,
+     "text": "and that is to create stronger restoration and resilience of the locations and the environment"
+    },
+    {
+     "start": 2086,
+     "text": "that is the source of these collections in the first place where we're seeing the rainwater"
+    },
+    {
+     "start": 2092,
+     "text": "collection takes place. So here's the deal. I run a national organization on climate change. It's my"
+    },
+    {
+     "start": 2098,
+     "text": "specialization. I do a whole lot of work on risk exposure, vulnerability, and response actions on"
+    },
+    {
+     "start": 2106,
+     "text": "climate change. Climate change has a very big effect on the landscape. Extreme heat, extreme cold,"
+    },
+    {
+     "start": 2112,
+     "text": "changes in precipitation both hot but both wet and dry the landscape is very"
+    },
+    {
+     "start": 2119,
+     "text": "heavily affected by this there are many things we can do to make the landscape"
+    },
+    {
+     "start": 2124,
+     "text": "more resilient and at the same time protect ourselves against the damages"
+    },
+    {
+     "start": 2129,
+     "text": "from extreme weather so we see extreme precipitation events that cause erosion"
+    },
+    {
+     "start": 2133,
+     "text": "that stress our stormwater systems because of variety of damages we've had"
+    },
+    {
+     "start": 2138,
+     "text": "back-to-back droughts in the last two years that has stressed our entire landscape so this is a"
+    },
+    {
+     "start": 2145,
+     "text": "great opportunity for us to use this mechanism to make all of these locations and other locations in"
+    },
+    {
+     "start": 2151,
+     "text": "the city more resilient against all of these changes by making our homes more resilient from"
+    },
+    {
+     "start": 2157,
+     "text": "these impacts from climate change we also cut the costs of loss and damage that occurs to our"
+    },
+    {
+     "start": 2163,
+     "text": "residential and business properties as a result of this and so I would advocate"
+    },
+    {
+     "start": 2168,
+     "text": "that we do everything we can with these funds to cut the loss and damage that"
+    },
+    {
+     "start": 2173,
+     "text": "occurs from these high-risk events and changes thank you"
+    }
+   ]
+  },
+  {
+   "start": 2179,
+   "end": 2274,
+   "speaker": "Kirsten Sides Lockhart",
+   "question": "stormwater",
+   "parts": [
+    {
+     "start": 2179,
+     "text": "I absolutely agree with mr. Peterson that"
+    },
+    {
+     "start": 2181,
+     "text": "the funding should be used for investments for climate resilience we"
+    },
+    {
+     "start": 2185,
+     "text": "need to address flooding we need to address the stability of our trees but"
+    },
+    {
+     "start": 2189,
+     "text": "climate impact is also climate justice and we need to be cognizant of the fact"
+    },
+    {
+     "start": 2193,
+     "text": "that these impacts are disproportionately impacting what we're calling the naturally occurring"
+    },
+    {
+     "start": 2197,
+     "text": "affordable housing in our city. Foxcroft colony floods routinely. It's getting worse. We need to"
+    },
+    {
+     "start": 2202,
+     "text": "make investments that ensure that our neighborhoods are not disproportionately impacted by the impacts"
+    },
+    {
+     "start": 2207,
+     "text": "of these extreme changes in climate and weather that we're seeing. Impermeable surfaces do generate"
+    },
+    {
+     "start": 2213,
+     "text": "more stormwater runoff, more issues. The stormwater tax tax is a way that we can effectively go after"
+    },
+    {
+     "start": 2219,
+     "text": "the worst kind of offenders in terms of what's impacting runoff and stormwater management issues"
+    },
+    {
+     "start": 2225,
+     "text": "in the city. So no politician probably should ever commit to things going up or things going down,"
+    },
+    {
+     "start": 2231,
+     "text": "but do I think it's a worthwhile tax credit? Do I tax to have? Do I think that it's fairly applied?"
+    },
+    {
+     "start": 2236,
+     "text": "Yes, I do. The other interesting thing about the stormwater tax is that there are credits that you"
+    },
+    {
+     "start": 2241,
+     "text": "as a homeowner can achieve to reduce the burden on yourself. I think as a mayor, I would definitely"
+    },
+    {
+     "start": 2247,
+     "text": "be working closely with the city to make sure that that's communicated better because even i"
+    },
+    {
+     "start": 2251,
+     "text": "as a relatively well-informed citizen right now do not entirely understand the process by which i"
+    },
+    {
+     "start": 2255,
+     "text": "could submit to get stormwater credits so that is something to counteract you know any potential"
+    },
+    {
+     "start": 2260,
+     "text": "future rate increase is better communication around how people can get involved and the ways"
+    },
+    {
+     "start": 2264,
+     "text": "that people get involved also help mitigate some of the impact so it's really a win-win for both"
+    },
+    {
+     "start": 2268,
+     "text": "the city and the resident but yes absolutely the priority needs to be investment against climate"
+    },
+    {
+     "start": 2272,
+     "text": "resilience"
+    }
+   ]
+  },
+  {
+   "start": 2283,
+   "end": 2414,
+   "speaker": "Thomas D. \"Tom\" Peterson",
+   "question": "environment_close",
+   "parts": [
+    {
+     "start": 2283,
+     "text": "A big part of protecting the environment is"
+    },
+    {
+     "start": 2286,
+     "text": "protecting the landscape but of course what we do on the land has an effect on"
+    },
+    {
+     "start": 2291,
+     "text": "what happens in the air and speaking of climate change the activities we engage"
+    },
+    {
+     "start": 2296,
+     "text": "in transportation would be the classic case but the use of energy in our"
+    },
+    {
+     "start": 2300,
+     "text": "buildings results in the release of greenhouse gas emissions which warm the"
+    },
+    {
+     "start": 2305,
+     "text": "earth and contribute to these very changes in the climate system that we"
+    },
+    {
+     "start": 2310,
+     "text": "need to build resilience against and that's an impact that we should include"
+    },
+    {
+     "start": 2314,
+     "text": "in our evaluations of decisions we make on how to use the land including how we"
+    },
+    {
+     "start": 2320,
+     "text": "use the urban landscape so here's an interesting little factoid to consider"
+    },
+    {
+     "start": 2326,
+     "text": "Every gallon of gasoline that an automobile burns deposits about 20 pounds of carbon dioxide."
+    },
+    {
+     "start": 2334,
+     "text": "That's like dropping a 20-pound sack of charcoal on the road every time you burn a gallon of gas."
+    },
+    {
+     "start": 2341,
+     "text": "It adds up real quickly."
+    },
+    {
+     "start": 2343,
+     "text": "If you add 6,000 new cars to the city and you add up the trips that are generated by that set of new cars,"
+    },
+    {
+     "start": 2352,
+     "text": "which run actually the estimate would be somewhere between 17,000 and 19,000 new trips a day"
+    },
+    {
+     "start": 2359,
+     "text": "associated with that set of new cars on the road you burn a lot of gasoline you create a lot of"
+    },
+    {
+     "start": 2366,
+     "text": "impacts on the environment climate change is one of those impacts that's exacerbated by that"
+    },
+    {
+     "start": 2371,
+     "text": "so it turns out those are institute of transportation engineer estimates for trip"
+    },
+    {
+     "start": 2377,
+     "text": "generation that come out of the contemplated small area plan goals."
+    },
+    {
+     "start": 2382,
+     "text": "That's an example of an impact that should be assessed and included when we're considering"
+    },
+    {
+     "start": 2387,
+     "text": "a development decision because the drivers of the flooding, of the extreme heat, of the"
+    },
+    {
+     "start": 2394,
+     "text": "extreme cold in the winter are caused by the release of emissions."
+    },
+    {
+     "start": 2397,
+     "text": "Now, they mix globally, so we're just contributing to a broader problem, but it comes home to"
+    },
+    {
+     "start": 2402,
+     "text": "us in terms of the harms that we face."
+    },
+    {
+     "start": 2404,
+     "text": "So we need to be thinking about the impacts in the air as well as the impacts on the ground"
+    },
+    {
+     "start": 2410,
+     "text": "and how they are connected as we think about the environment."
+    }
+   ]
+  },
+  {
+   "start": 2415,
+   "end": 2479,
+   "speaker": "Kirsten Sides Lockhart",
+   "question": "environment_close",
+   "parts": [
+    {
+     "start": 2416,
+     "text": "Thank you."
+    },
+    {
+     "start": 2416,
+     "text": "So I'm glad to hear my opponent agrees on the importance of walkable communities"
+    },
+    {
+     "start": 2419,
+     "text": "and getting people to live where they work and work where they live, vice versa,"
+    },
+    {
+     "start": 2423,
+     "text": "because that decreases the number of car trips"
+    },
+    {
+     "start": 2425,
+     "text": "and the number of cars that will be circulating around the city."
+    },
+    {
+     "start": 2427,
+     "text": "I think it's important that our plans recognize people do occasionally have to leave Fairfax City and come back."
+    },
+    {
+     "start": 2432,
+     "text": "So anything we can do to incentivize public transit options"
+    },
+    {
+     "start": 2435,
+     "text": "I personally have found that taking VRE to my job is the most cost-effective and time-effective way"
+    },
+    {
+     "start": 2440,
+     "text": "We do not currently have a public transit option that effectively gets you to the Burke VRE station"
+    },
+    {
+     "start": 2445,
+     "text": "There are gaps in the ways that we circulate around the city that we can address that will still reduce car trips"
+    },
+    {
+     "start": 2450,
+     "text": "Reduce the number of cars on our roads and that is an important environmental consideration that we should be working towards"
+    },
+    {
+     "start": 2456,
+     "text": "We hear all the time from residents that they value the walkability of the city"
+    },
+    {
+     "start": 2459,
+     "text": "it's certainly one of the reasons i worked here i moved here i don't want to get back in my car"
+    },
+    {
+     "start": 2463,
+     "text": "after commuting to drive to do all my errands i love that we can walk to things that needs to be"
+    },
+    {
+     "start": 2468,
+     "text": "encouraged that needs to be a central focus of our development and when we can provide more"
+    },
+    {
+     "start": 2472,
+     "text": "public transit options and environmentally friendly options for circulation we absolutely need to do so"
+    },
+    {
+     "start": 2478,
+     "text": "thanks"
+    }
+   ]
+  },
+  {
+   "start": 2493,
+   "end": 2591,
+   "speaker": "Kirsten Sides Lockhart",
+   "question": "fiscal",
+   "parts": [
+    {
+     "start": 2493,
+     "text": "thank you so my first and foremost priority is we"
+    },
+    {
+     "start": 2496,
+     "text": "need a sustainable balanced budget I think we actually have a really"
+    },
+    {
+     "start": 2500,
+     "text": "interesting way to attack that in the coming years because near term we have a"
+    },
+    {
+     "start": 2505,
+     "text": "five property portfolio that we need to decide what to do with as a city this is"
+    },
+    {
+     "start": 2509,
+     "text": "really a generational challenge to face it's a problem it's a great problem to"
+    },
+    {
+     "start": 2513,
+     "text": "have but it is a difficult one those properties are green acres the fire"
+    },
+    {
+     "start": 2517,
+     "text": "station three on university, a property that was gifted to the city on Main Street that must remain"
+    },
+    {
+     "start": 2523,
+     "text": "accessible and park related, the property yard which is frequently underwater as we just talked"
+    },
+    {
+     "start": 2529,
+     "text": "about recently, and the West Drive property that we are in talks to acquire from Fairfax County."
+    },
+    {
+     "start": 2534,
+     "text": "We need to be looking across all of those properties holistically and figuring out what we"
+    },
+    {
+     "start": 2537,
+     "text": "put where. We need to get operations out of the property yard that are threatened by flooding and"
+    },
+    {
+     "start": 2543,
+     "text": "find other places to put them. We need to make sure that our fire station and any other facilities"
+    },
+    {
+     "start": 2547,
+     "text": "we build are resilient and supportive of the demand signal that will be placed on them going forward"
+    },
+    {
+     "start": 2551,
+     "text": "but we also need to realize these could be opportunities to generate revenue whether that's"
+    },
+    {
+     "start": 2555,
+     "text": "through paid recreation opportunities potentially sale lease or public private partnerships again"
+    },
+    {
+     "start": 2561,
+     "text": "like i said it's a phenomenal opportunity it's going to require a lot of community engagement"
+    },
+    {
+     "start": 2564,
+     "text": "and it's a problem really look forward to diving into as mayor lastly we need to diversify our"
+    },
+    {
+     "start": 2570,
+     "text": "revenue streams through a strengthened commercial base we cannot continue to go back to the well of"
+    },
+    {
+     "start": 2574,
+     "text": "property tax to generate revenue to support our services. I don't want to say anything's off the"
+    },
+    {
+     "start": 2579,
+     "text": "table when a term comes to talking about the tax rate, but we do need to be looking at our revenue"
+    },
+    {
+     "start": 2583,
+     "text": "streams first and foremost before we go back and ask people to bear an increasing share of property"
+    },
+    {
+     "start": 2588,
+     "text": "of, excuse me, service provision throughout the city."
+    }
+   ]
+  },
+  {
+   "start": 2599,
+   "end": 2790,
+   "speaker": "Thomas D. \"Tom\" Peterson",
+   "question": "fiscal",
+   "parts": [
+    {
+     "start": 2599,
+     "text": "So I'm going to speak to the cost side of the equation first"
+    },
+    {
+     "start": 2604,
+     "text": "here and I'm sure many of you know that the way our budget is structured, the way"
+    },
+    {
+     "start": 2609,
+     "text": "our costs are structured in the city, there are three big areas. First is"
+    },
+    {
+     "start": 2613,
+     "text": "schools, the second is major projects, and third is operations and services. So"
+    },
+    {
+     "start": 2618,
+     "text": "schools are the big one. They occupy right now from a tuition expense"
+    },
+    {
+     "start": 2621,
+     "text": "standpoint about 35 37 percent of our budget we do this through an agreement"
+    },
+    {
+     "start": 2626,
+     "text": "with Fairfax County it's a historic agreement it's been in place for not"
+    },
+    {
+     "start": 2630,
+     "text": "quite 50 years provides many benefits but the growth in costs is high it's over"
+    },
+    {
+     "start": 2636,
+     "text": "8 percent per year and that is in comparison to the growth and cost of our"
+    },
+    {
+     "start": 2642,
+     "text": "general services in the city which is down at about 4.8 so schools are"
+    },
+    {
+     "start": 2647,
+     "text": "growing at almost twice the rate of the rest of our budget in terms of cost."
+    },
+    {
+     "start": 2651,
+     "text": "Obviously there's a conversation here that we're going to have to have about schools."
+    },
+    {
+     "start": 2655,
+     "text": "We're not alone in this conversation. We're not alone in this region. This is a big state issue."
+    },
+    {
+     "start": 2661,
+     "text": "It's a big regional issue, but we have to acknowledge that this is a major cost driver"
+    },
+    {
+     "start": 2666,
+     "text": "for our budget. We make room for the excellence of schools for good reason. We will continue to"
+    },
+    {
+     "start": 2672,
+     "text": "do that but as we do that it means that we have less room for other things we"
+    },
+    {
+     "start": 2676,
+     "text": "need to do and we have to acknowledge that the other area is major projects"
+    },
+    {
+     "start": 2681,
+     "text": "we call these capital improvement projects so five years ago our capital"
+    },
+    {
+     "start": 2686,
+     "text": "improvement project budget for the city was two hundred and eighty million"
+    },
+    {
+     "start": 2689,
+     "text": "dollars last year it was recommended to us by the Planning Commission at six"
+    },
+    {
+     "start": 2696,
+     "text": "hundred and thirty seven million dollars so that's an increase in the capital"
+    },
+    {
+     "start": 2700,
+     "text": "improvement project budget of about 25 per year it's a very high growth driver for our city"
+    },
+    {
+     "start": 2707,
+     "text": "these are major projects that turn into debt and they turn into debt service obligations that show"
+    },
+    {
+     "start": 2713,
+     "text": "up in our budget now we've looked at these these projects very carefully at the city council when"
+    },
+    {
+     "start": 2718,
+     "text": "we receive them we give them a higher level of scrutiny from a fiscal standpoint we look to see"
+    },
+    {
+     "start": 2724,
+     "text": "whether there are better alternatives that can bring the cost down our experience has been"
+    },
+    {
+     "start": 2729,
+     "text": "routinely that the answer is yes there are we saw that with the willard sherwood center when we were"
+    },
+    {
+     "start": 2734,
+     "text": "able to bring the cost of implementation to taxpayers down 55 we've seen that with the"
+    },
+    {
+     "start": 2740,
+     "text": "school bond issue where we've seen that instead of this costing 14 to 1500 a year for for each"
+    },
+    {
+     "start": 2747,
+     "text": "homeowner if it goes through property taxes that could be knocked back to two to three hundred"
+    },
+    {
+     "start": 2751,
+     "text": "dollars a year if it goes through a new revenue mechanism which is the one percent sales tax"
+    },
+    {
+     "start": 2756,
+     "text": "The point is that there are alternatives to these projects typically that can help reduce their costs and reduce this growth rate, which again 25% a year is an astonishing growth rate for major projects."
+    },
+    {
+     "start": 2770,
+     "text": "I don't think anybody expects that as a sustainable level of growth."
+    },
+    {
+     "start": 2775,
+     "text": "The numbers I just gave you don't include a big new number for the renovation and remediation activities at Catherine Johnson Middle School."
+    },
+    {
+     "start": 2783,
+     "text": "So we really need to focus hard on controlling the costs associated with major projects."
+    }
+   ]
+  },
+  {
+   "start": 2791,
+   "end": 2865,
+   "speaker": "Kirsten Sides Lockhart",
+   "question": "fiscal",
+   "parts": [
+    {
+     "start": 2791,
+     "text": "Sure, thank you."
+    },
+    {
+     "start": 2792,
+     "text": "So admittedly, the Planning Commission did wrestle with that giant increase in the total budget for the SIP that Mr. Peterson brought up."
+    },
+    {
+     "start": 2799,
+     "text": "We talked about it extensively in our deliberations, but the problem is that, and it's not a unique problem to Fairfax City,"
+    },
+    {
+     "start": 2807,
+     "text": "when you delay municipal investments and maintenance and in facility in public facilities"
+    },
+    {
+     "start": 2812,
+     "text": "you reap what you sow from a delay perspective the fire station that needs to be replaced"
+    },
+    {
+     "start": 2817,
+     "text": "there was an opportunity in the 90s to rebuild it then and instead it was renovated now it does"
+    },
+    {
+     "start": 2823,
+     "text": "need to be replaced full stop and things are more expensive now than they were in the mid 90s"
+    },
+    {
+     "start": 2828,
+     "text": "shockingly those are the decisions that no one has a crystal ball to know about but we do know"
+    },
+    {
+     "start": 2833,
+     "text": "that things get more expensive the longer you wait and the more you deliberate on them."
+    },
+    {
+     "start": 2836,
+     "text": "That doesn't mean rush full steam ahead into every decision,"
+    },
+    {
+     "start": 2840,
+     "text": "but that big increased number is driven by investments that we have to make"
+    },
+    {
+     "start": 2844,
+     "text": "and that we believe strongly we're in the best interest of the city to do."
+    },
+    {
+     "start": 2848,
+     "text": "I would like to state for the record that the out-year decrease or equalization"
+    },
+    {
+     "start": 2853,
+     "text": "in the Willard-Sherwood sustainment rate is based on staff providing revenue estimates"
+    },
+    {
+     "start": 2857,
+     "text": "for its operation and not on specific cost-cutting"
+    },
+    {
+     "start": 2861,
+     "text": "because revenue was always part of the calculation for the plan for that facility"
+    }
+   ]
+  },
+  {
+   "start": 2868,
+   "end": 2992,
+   "speaker": "Thomas D. \"Tom\" Peterson",
+   "question": "fiscal",
+   "parts": [
+    {
+     "start": 2868,
+     "text": "thanks just to catch something real quick"
+    },
+    {
+     "start": 2871,
+     "text": "i think we spent a whole heck of a lot of time bringing down the maintenance and operation costs"
+    },
+    {
+     "start": 2875,
+     "text": "for the willard sherwood center and converting that whole model into a revenue generation model"
+    },
+    {
+     "start": 2880,
+     "text": "and three council members stood up to make that happen there two of them are sitting in the front"
+    },
+    {
+     "start": 2885,
+     "text": "row here council member rachel mcquillen council member stacy hall and myself we were criticized"
+    },
+    {
+     "start": 2890,
+     "text": "for doing that. It was suggested, in fact, that we were disingenuous, but we ended up working"
+    },
+    {
+     "start": 2897,
+     "text": "closely with the staff to modify the financial design and the operating design of this facility"
+    },
+    {
+     "start": 2901,
+     "text": "to bring its cost down dramatically. That is part of something that this city needs to do"
+    },
+    {
+     "start": 2908,
+     "text": "on a regular basis and is a principal responsibility of the city council and something that the mayor"
+    },
+    {
+     "start": 2914,
+     "text": "has to help catalyze and facilitate."
+    },
+    {
+     "start": 2917,
+     "text": "That is the process of always looking for the best alternatives to projects,"
+    },
+    {
+     "start": 2922,
+     "text": "making sure we're getting the best value for our money"
+    },
+    {
+     "start": 2924,
+     "text": "and making sure that we're not leaving people behind as we do that."
+    },
+    {
+     "start": 2928,
+     "text": "In the Willard-Shirwood Center case, we did not cut services."
+    },
+    {
+     "start": 2932,
+     "text": "Interestingly, with the fire station,"
+    },
+    {
+     "start": 2934,
+     "text": "when you compare this facility that's being proposed"
+    },
+    {
+     "start": 2937,
+     "text": "to average facilities in Fairfax County, it's much larger."
+    },
+    {
+     "start": 2940,
+     "text": "The reason is a substantial portion of that is a build-out to incorporate new administrative headquarters, new training facilities for the fire station."
+    },
+    {
+     "start": 2950,
+     "text": "There are questions about whether that's really necessary because some of those facilities already exist elsewhere."
+    },
+    {
+     "start": 2957,
+     "text": "So the financial responsibilities the council have are very deep and strong."
+    },
+    {
+     "start": 2962,
+     "text": "It's what we are expected to do and requires us to inherit the recommendations we're receiving"
+    },
+    {
+     "start": 2968,
+     "text": "for projects but to shape them going forward."
+    },
+    {
+     "start": 2972,
+     "text": "So we don't operate in a world where we accept the primacy of staff or the primacy of boards"
+    },
+    {
+     "start": 2977,
+     "text": "and commissions."
+    },
+    {
+     "start": 2978,
+     "text": "We accept the primacy of the public."
+    },
+    {
+     "start": 2980,
+     "text": "We work on behalf of the public interest."
+    },
+    {
+     "start": 2983,
+     "text": "We respond to their concerns as we evaluate what we will do with these kinds of major"
+    },
+    {
+     "start": 2989,
+     "text": "financial decisions going forward."
+    }
+   ]
+  },
+  {
+   "start": 3005,
+   "end": 3201,
+   "speaker": "Thomas D. \"Tom\" Peterson",
+   "question": "tax_rate",
+   "parts": [
+    {
+     "start": 3005,
+     "text": "We asked for"
+    },
+    {
+     "start": 3008,
+     "text": "Received a five-year forecast of revenues and spending from a chief financial officer"
+    },
+    {
+     "start": 3013,
+     "text": "And our financial office is a part of our budget process this last year"
+    },
+    {
+     "start": 3017,
+     "text": "It's a little bit amazing that that had not already been in place."
+    },
+    {
+     "start": 3021,
+     "text": "That's routine."
+    },
+    {
+     "start": 3021,
+     "text": "I don't know many businesses that don't do financial forecasting for at least a five-year"
+    },
+    {
+     "start": 3028,
+     "text": "stretch of time."
+    },
+    {
+     "start": 3028,
+     "text": "So we were pleased to get that."
+    },
+    {
+     "start": 3030,
+     "text": "And that forecast that we receive certainly suggests it's going to be difficult without"
+    },
+    {
+     "start": 3036,
+     "text": "some changes."
+    },
+    {
+     "start": 3037,
+     "text": "Now those changes are possible."
+    },
+    {
+     "start": 3038,
+     "text": "I went through some areas that can be managed to change that."
+    },
+    {
+     "start": 3041,
+     "text": "There are revenue opportunities as well, but we don't know fully what those revenue opportunities are"
+    },
+    {
+     "start": 3048,
+     "text": "Nor do we know what the efficiency opportunities are for further reducing these costs"
+    },
+    {
+     "start": 3053,
+     "text": "But the good news is as a consequence of actions we took over a year ago on the budget"
+    },
+    {
+     "start": 3058,
+     "text": "This council asked for an independent third party"
+    },
+    {
+     "start": 3061,
+     "text": "Finance and efficiency audit of the city so that we could look through all of the different areas of spending"
+    },
+    {
+     "start": 3068,
+     "text": "all of the different programs and their designs and capacities to see whether in fact there might be a better way for"
+    },
+    {
+     "start": 3074,
+     "text": "approaching all this. That audit, that financial efficiency audit is underway now. We're looking forward to its results."
+    },
+    {
+     "start": 3080,
+     "text": "They may well tell us that we can approach or reach an equalization rate,"
+    },
+    {
+     "start": 3086,
+     "text": "but we're looking forward to finding out what the result of that is. Based on our experience going through budgets,"
+    },
+    {
+     "start": 3093,
+     "text": "twice since I've been there when we start to look for opportunities to reduce"
+    },
+    {
+     "start": 3098,
+     "text": "cost we find them the difficult thing in the budget is it's not enough time to"
+    },
+    {
+     "start": 3103,
+     "text": "thoughtfully go through everything we do the very best we can but this audit is"
+    },
+    {
+     "start": 3107,
+     "text": "going to help us understand more systematically where that can happen"
+    },
+    {
+     "start": 3110,
+     "text": "that needs to become a permanent function for the city this should not be"
+    },
+    {
+     "start": 3116,
+     "text": "a one-time finance and efficiency audit this should be routine that's how you"
+    },
+    {
+     "start": 3120,
+     "text": "manage a business that's how you manage a city when we get the results of that"
+    },
+    {
+     "start": 3124,
+     "text": "we will be in a much better position to understand how much we can cut where and"
+    },
+    {
+     "start": 3129,
+     "text": "how to do that responsibly and I'm watching the clock here and if you're"
+    },
+    {
+     "start": 3134,
+     "text": "done we're done well are we this is on you're good you have one more minute"
+    },
+    {
+     "start": 3137,
+     "text": "okay fantastic so the other side of this is the revenue side so there obviously"
+    },
+    {
+     "start": 3143,
+     "text": "are ways to increase revenues but sometimes those require changes and you"
+    },
+    {
+     "start": 3148,
+     "text": "have to be careful about whether or not they're warranted we think there are some"
+    },
+    {
+     "start": 3151,
+     "text": "areas and I say we because some of us on the council have looked at this to"
+    },
+    {
+     "start": 3155,
+     "text": "actually put in place new revenue generating programs they're going to"
+    },
+    {
+     "start": 3159,
+     "text": "have to be studied to be sure that they will work appropriately without loss one"
+    },
+    {
+     "start": 3162,
+     "text": "of them is our waste management system so in the city of Fairfax everybody"
+    },
+    {
+     "start": 3167,
+     "text": "wants very badly to continue without any interruption the collection of trash"
+    },
+    {
+     "start": 3171,
+     "text": "services I think everybody on the council is totally committed to doing"
+    },
+    {
+     "start": 3175,
+     "text": "that we also recognize that that system may not be as well targeted as it could be and that there"
+    },
+    {
+     "start": 3181,
+     "text": "are ways to make sure we're targeting it so that everybody is taken care of but we're not taking"
+    },
+    {
+     "start": 3185,
+     "text": "care of things unnecessarily or missing things and there's a model for this that we're looking"
+    },
+    {
+     "start": 3189,
+     "text": "at in the city of falls church where it's gone to a revenue-based model or an enterprise-based fund"
+    },
+    {
+     "start": 3194,
+     "text": "to do this that is an example of something potentially we can do but will require a lot"
+    },
+    {
+     "start": 3199,
+     "text": "more examination."
+    }
+   ]
+  },
+  {
+   "start": 3203,
+   "end": 3317,
+   "speaker": "Kirsten Sides Lockhart",
+   "question": "tax_rate",
+   "parts": [
+    {
+     "start": 3203,
+     "text": "Thank you. So first I'd like to point out"
+    },
+    {
+     "start": 3207,
+     "text": "the mayor actually has no say in setting the tax rate but in terms of participating in the discussion"
+    },
+    {
+     "start": 3213,
+     "text": "candidly can we achieve tax equalization in the near term? No I don't believe we can. We simply"
+    },
+    {
+     "start": 3218,
+     "text": "don't have the type of commercial property and development at scale to achieve the necessary"
+    },
+    {
+     "start": 3222,
+     "text": "tax rate cuts. We are not going to have data centers. I don't think anyone would want a data"
+    },
+    {
+     "start": 3226,
+     "text": "center we're not going to have casinos i don't think that would be in the public interest either"
+    },
+    {
+     "start": 3230,
+     "text": "those are the ways that you get to tax equalization is when you have those major sources of commercial"
+    },
+    {
+     "start": 3234,
+     "text": "revenue which simply don't exist in the city so the other side of the balance sheet as my opponent"
+    },
+    {
+     "start": 3239,
+     "text": "alluded to is looking at services looking at the cost of providing services nothing is getting"
+    },
+    {
+     "start": 3243,
+     "text": "less expensive so we really are talking about cutting services i'm not opposed to it like i"
+    },
+    {
+     "start": 3248,
+     "text": "said before everything is on the table the city just undertook a levels of service analysis"
+    },
+    {
+     "start": 3252,
+     "text": "specifically to talk about how we get proffers from major developers but you can use that same"
+    },
+    {
+     "start": 3256,
+     "text": "analysis i've done it in my day job to talk about what really happens if we lower the budget for a"
+    },
+    {
+     "start": 3261,
+     "text": "specific type of service provision and are we willing to accept the risk or the impacts that"
+    },
+    {
+     "start": 3265,
+     "text": "come with those types of things it's a difficult discussion you can get to reductions but everyone"
+    },
+    {
+     "start": 3270,
+     "text": "has to be on board i think mostly everyone i've talked to in the city really likes the services"
+    },
+    {
+     "start": 3275,
+     "text": "they have they like the access they have to our police and to our fire they like the parks they"
+    },
+    {
+     "start": 3279,
+     "text": "like the activities so it's a difficult conversation it's not an impossible one what we certainly"
+    },
+    {
+     "start": 3283,
+     "text": "cannot do is pick a tax rate that sort of feels comfortable that everyone sounds good for the"
+    },
+    {
+     "start": 3288,
+     "text": "coming year and then back into it in a way that leaves our services unsustainable it's very"
+    },
+    {
+     "start": 3292,
+     "text": "difficult to hire back staff it's very difficult to re-recruit police officers or firefighters"
+    },
+    {
+     "start": 3296,
+     "text": "or teachers we just simply cannot decide what feels good or what plays well with the fairfax"
+    },
+    {
+     "start": 3302,
+     "text": "city audience when we're talking about setting a budget it has to be data driven it has to be all"
+    },
+    {
+     "start": 3307,
+     "text": "hands on deck i don't think that it's a matter of time i think it's a matter of eyes on and input"
+    },
+    {
+     "start": 3311,
+     "text": "into the process and I look forward to being a participant in it again on the side of the dais."
+    }
+   ]
+  },
+  {
+   "start": 3321,
+   "end": 3395,
+   "speaker": "Thomas D. \"Tom\" Peterson",
+   "question": "tax_rate",
+   "parts": [
+    {
+     "start": 3321,
+     "text": "I think our experience in this council,"
+    },
+    {
+     "start": 3324,
+     "text": "the experience that organizations have routinely is that it's not necessarily the case"
+    },
+    {
+     "start": 3328,
+     "text": "that in order to cut costs you cut service. It's very important to realize that. What we have found"
+    },
+    {
+     "start": 3335,
+     "text": "by working closely with our staff and closely with each other and closely with partners is that we"
+    },
+    {
+     "start": 3341,
+     "text": "have been able to improve our performance and our efficiency without a sacrifice"
+    },
+    {
+     "start": 3345,
+     "text": "in services or quality. And the role of the mayor is important. The mayor enables"
+    },
+    {
+     "start": 3352,
+     "text": "the council to have the time, the support, the flexibility to be able to examine"
+    },
+    {
+     "start": 3357,
+     "text": "alternatives to go through this process, to work effectively with the staff and"
+    },
+    {
+     "start": 3362,
+     "text": "not be rushed artificially. It's very, very critical that a mayor plays a"
+    },
+    {
+     "start": 3368,
+     "text": "facilitative role for that process it's a difficult process I do this for a"
+    },
+    {
+     "start": 3372,
+     "text": "living with high-level people and we find a way it's rare that we can't find"
+    },
+    {
+     "start": 3379,
+     "text": "a better way to do things than we already are doing them right now the"
+    },
+    {
+     "start": 3384,
+     "text": "other thing we need to be aware of is when we're making growth decisions there"
+    },
+    {
+     "start": 3388,
+     "text": "are expenses associated with them that need to be factored into our spending"
+    },
+    {
+     "start": 3392,
+     "text": "forecast in the long term."
+    }
+   ]
+  },
+  {
+   "start": 3397,
+   "end": 3453,
+   "speaker": "Kirsten Sides Lockhart",
+   "question": "tax_rate",
+   "parts": [
+    {
+     "start": 3397,
+     "text": "I would be fascinated to see"
+    },
+    {
+     "start": 3400,
+     "text": "where the service provision was improved with less resources. I'm sure it's possible. I think"
+    },
+    {
+     "start": 3405,
+     "text": "it's unlikely to be done at scale across the city. Again, tax is obviously a very painful"
+    },
+    {
+     "start": 3412,
+     "text": "discussion across the campaign trail, certainly something that a lot of people are even campaigning"
+    },
+    {
+     "start": 3417,
+     "text": "on this year, and I understand that. No one likes to see their tax bill increase. Unfortunately,"
+    },
+    {
+     "start": 3422,
+     "text": "in previous years we had assessments go up at the same time as the tax rate went up. It was made a"
+    },
+    {
+     "start": 3426,
+     "text": "very unpleasant increase on anyone's property tax bill. Of course personal property tax also"
+    },
+    {
+     "start": 3431,
+     "text": "another enduring issue in the state of Virginia. Multiple governors across multiple parties have"
+    },
+    {
+     "start": 3435,
+     "text": "promised to get rid of it. It still stands. Maryland doesn't have personal property tax. We"
+    },
+    {
+     "start": 3439,
+     "text": "hear that a lot too but they do have local income tax which is not something I think anyone in Fairfax"
+    },
+    {
+     "start": 3444,
+     "text": "City would be interested in exploring. So again we're at the carrots and sticks are limited. It's"
+    },
+    {
+     "start": 3448,
+     "text": "important to have discussion and it's important to be realistic about what"
+    },
+    {
+     "start": 3451,
+     "text": "those discussions entail."
+    }
+   ]
+  },
+  {
+   "start": 3473,
+   "end": 3643,
+   "speaker": "Kirsten Sides Lockhart",
+   "question": "safety",
+   "parts": [
+    {
+     "start": 3473,
+     "text": "Thank you. So when I declared my"
+    },
+    {
+     "start": 3476,
+     "text": "candidacy in January one of the first conversations that I reached out to have"
+    },
+    {
+     "start": 3479,
+     "text": "was with our chief of police because I really wanted to understand what are the"
+    },
+    {
+     "start": 3482,
+     "text": "legal laterals in terms of safety of protecting all of our residents it was a"
+    },
+    {
+     "start": 3486,
+     "text": "fantastic conversation and I've continued to build on that relationship"
+    },
+    {
+     "start": 3489,
+     "text": "to the point where recently I did receive the Virginia Police Benevolent"
+    },
+    {
+     "start": 3493,
+     "text": "Association endorsement for my candidacy which I think is a phenomenal vote of"
+    },
+    {
+     "start": 3497,
+     "text": "confidence in my ability to work with our law enforcement both locally and in"
+    },
+    {
+     "start": 3501,
+     "text": "the surrounding region to address critical public safety issues I think"
+    },
+    {
+     "start": 3505,
+     "text": "I think it's also a good example of the importance of external relationships and being a good"
+    },
+    {
+     "start": 3509,
+     "text": "neighbor in terms of addressing safety issues."
+    },
+    {
+     "start": 3511,
+     "text": "Things like traffic, unhoused individuals, crime, prosecution of crimes, those things"
+    },
+    {
+     "start": 3517,
+     "text": "are not individual and will not be solved solely here within Fairfax City."
+    },
+    {
+     "start": 3521,
+     "text": "It's critical that we have leadership, particularly the mayor who goes out and serves on these"
+    },
+    {
+     "start": 3525,
+     "text": "boards and commissions, who's able to build really strong, positive, reliable working"
+    },
+    {
+     "start": 3530,
+     "text": "relationships."
+    },
+    {
+     "start": 3530,
+     "text": "These are issues that are nuanced, that require stakeholders, both public and private."
+    },
+    {
+     "start": 3536,
+     "text": "And I think it's really not going to be my priority as the mayor is to establish those"
+    },
+    {
+     "start": 3540,
+     "text": "and to continue to work hard on them to address safety issues in the community."
+    },
+    {
+     "start": 3544,
+     "text": "Certainly, I heard quite a bit about unhoused individuals on the campaign trail."
+    },
+    {
+     "start": 3549,
+     "text": "It's obviously a very public concern, especially in summer months when we do see that population increase."
+    },
+    {
+     "start": 3555,
+     "text": "And I do have three points that I want to address on that one."
+    },
+    {
+     "start": 3557,
+     "text": "First is what you're seeing most likely is someone in crisis."
+    },
+    {
+     "start": 3560,
+     "text": "I do not believe it's a kindness to let people in crisis continue along that path, and I"
+    },
+    {
+     "start": 3565,
+     "text": "think it's vital that we lobby in conjunction with our regional partners for additional"
+    },
+    {
+     "start": 3569,
+     "text": "mental health services available to not just unhoused people, really anyone."
+    },
+    {
+     "start": 3573,
+     "text": "As anyone who might have had to go down that path knows, it's incredibly difficult to get"
+    },
+    {
+     "start": 3577,
+     "text": "a mental health bet in this area, even as a person with insurance."
+    },
+    {
+     "start": 3580,
+     "text": "So imagine trying to do that with someone without documentation."
+    },
+    {
+     "start": 3583,
+     "text": "That's an incredibly vital place where we need to be united with our regional partners"
+    },
+    {
+     "start": 3587,
+     "text": "and moving forward."
+    },
+    {
+     "start": 3588,
+     "text": "We need to be a consistent funder of the services that we need to be successful in terms of"
+    },
+    {
+     "start": 3593,
+     "text": "addressing this issue."
+    },
+    {
+     "start": 3594,
+     "text": "That includes the Lamb Center, that includes the other grant recipients coming out of the"
+    },
+    {
+     "start": 3597,
+     "text": "city."
+    },
+    {
+     "start": 3598,
+     "text": "We need to say what we expect from the grant money that we're providing, be consistent"
+    },
+    {
+     "start": 3602,
+     "text": "year over year, and have reliable metrics on how that money is performing in terms of"
+    },
+    {
+     "start": 3606,
+     "text": "the services that we were requesting."
+    },
+    {
+     "start": 3610,
+     "text": "And lastly, we need to be vocal about the impacts of a lack of prosecution at the county"
+    },
+    {
+     "start": 3616,
+     "text": "level for petty crime issues. We need to be consistent again with our regional partners in"
+    },
+    {
+     "start": 3621,
+     "text": "terms of communicating the impacts to our city when there has what appears to be catch and release"
+    },
+    {
+     "start": 3626,
+     "text": "or a failure to follow up on things that are of importance to our community. So again, none of"
+    },
+    {
+     "start": 3631,
+     "text": "these things happen alone in Fairfax City. It's not something that the mayor or the council alone"
+    },
+    {
+     "start": 3635,
+     "text": "can solve. It requires deep, positive working relationships with all of our regional stakeholders"
+    },
+    {
+     "start": 3640,
+     "text": "and I'm well positioned to continue those."
+    }
+   ]
+  },
+  {
+   "start": 3647,
+   "end": 3839,
+   "speaker": "Thomas D. \"Tom\" Peterson",
+   "question": "safety",
+   "parts": [
+    {
+     "start": 3647,
+     "text": "So the two major areas that I'll address are transportation and crime and personal safety."
+    },
+    {
+     "start": 3653,
+     "text": "So we've talked a little bit about transportation already."
+    },
+    {
+     "start": 3657,
+     "text": "I do serve on two boards that actively solicit and review and process financial awards for investments by cities and counties on improvements to transportation safety."
+    },
+    {
+     "start": 3671,
+     "text": "It is a major issue everywhere in this city, particularly major."
+    },
+    {
+     "start": 3675,
+     "text": "I was in a conversation recently, the North Virginia Transportation Authority Policy Board,"
+    },
+    {
+     "start": 3681,
+     "text": "where Falls Church, Herndon, the city of Fairfax all shared this same very deep concern"
+    },
+    {
+     "start": 3686,
+     "text": "that the safety issues on our roads are worsening,"
+    },
+    {
+     "start": 3689,
+     "text": "and we're going to have to increase our level of investment"
+    },
+    {
+     "start": 3692,
+     "text": "and change a lot of our management to adjust to that."
+    },
+    {
+     "start": 3695,
+     "text": "The reality is that when you add more people to the roads,"
+    },
+    {
+     "start": 3700,
+     "text": "you increase the likelihood of accidents."
+    },
+    {
+     "start": 3702,
+     "text": "The small area plans contemplate adding 12,500 people, somewhere between 17 and 19,000 trips,"
+    },
+    {
+     "start": 3712,
+     "text": "vehicle trips, after the institution of a full suite of measures to reduce automobile use,"
+    },
+    {
+     "start": 3720,
+     "text": "including transit, what we call internal capture, pedestrian, biking, et cetera."
+    },
+    {
+     "start": 3724,
+     "text": "After all that, we still have a very substantial increase."
+    },
+    {
+     "start": 3727,
+     "text": "That increase in number of trips, that increase in number of cars, the number of people on bikes, etc.,"
+    },
+    {
+     "start": 3733,
+     "text": "on a fixed road system that's not expanding creates more hazardous conditions."
+    },
+    {
+     "start": 3738,
+     "text": "The estimates coming out of that is that the expansion of this kind of population and housing growth"
+    },
+    {
+     "start": 3744,
+     "text": "would lead to something like 70 nude accidents in the city each year,"
+    },
+    {
+     "start": 3748,
+     "text": "35 of which result in injuries and four of which are very serious."
+    },
+    {
+     "start": 3753,
+     "text": "Pickett Road has experienced 200 crashes in the last five years."
+    },
+    {
+     "start": 3756,
+     "text": "I was part of the process of obtaining an award to help us actually study better ways to protect road safety on Pickett Road,"
+    },
+    {
+     "start": 3767,
+     "text": "but it's only one of many places in this city."
+    },
+    {
+     "start": 3769,
+     "text": "We have intersections, driveways, and arterials throughout the city that are at expanded risk of traffic accidents,"
+    },
+    {
+     "start": 3778,
+     "text": "collisions, and injuries because of growth in the city, because of intensification of their use."
+    },
+    {
+     "start": 3784,
+     "text": "We are going to have to take the safety issue very seriously as we move forward."
+    },
+    {
+     "start": 3788,
+     "text": "It is going to require both investment and behavioral change if we continue to add more cars to the road."
+    },
+    {
+     "start": 3794,
+     "text": "The other thing to comment on is the issue of crime."
+    },
+    {
+     "start": 3798,
+     "text": "Now, I mentioned earlier that we're lucky that we have recently just added a crime safety analyst."
+    },
+    {
+     "start": 3803,
+     "text": "That was not an accident."
+    },
+    {
+     "start": 3805,
+     "text": "So when I joined the city, I lived with the police chief, but even before that with many residents,"
+    },
+    {
+     "start": 3810,
+     "text": "including some officers who live here in the city that recollected that we used to have a crime"
+    },
+    {
+     "start": 3815,
+     "text": "safety analyst and that position disappeared we brought it back we made room in the budget"
+    },
+    {
+     "start": 3820,
+     "text": "and that's critical to help us assess the risk exposure of development decisions as well as"
+    },
+    {
+     "start": 3827,
+     "text": "operating decisions for some facilities so that we understand our risk how to reduce and avoid those"
+    },
+    {
+     "start": 3832,
+     "text": "risks as we go forward those risks have been increasing"
+    }
+   ]
+  },
+  {
+   "start": 3839,
+   "end": 3905,
+   "speaker": "Kirsten Sides Lockhart",
+   "question": "safety",
+   "parts": [
+    {
+     "start": 3839,
+     "text": "Thank you."
+    },
+    {
+     "start": 3840,
+     "text": "I'd really like to pull the thread on connecting development decisions to increased crime risk."
+    },
+    {
+     "start": 3844,
+     "text": "As someone who lived in a 20-story building in Arlington but somehow still was a mentor"
+    },
+    {
+     "start": 3848,
+     "text": "at a middle school and a volunteer at the animal shelter and walked to the local farmer's"
+    },
+    {
+     "start": 3852,
+     "text": "market, I find it a bit insulting that you would imply that higher density living environments"
+    },
+    {
+     "start": 3856,
+     "text": "somehow are correlated exactly with higher crime as opposed to just a different place"
+    },
+    {
+     "start": 3861,
+     "text": "where people live."
+    },
+    {
+     "start": 3861,
+     "text": "I think it's important to note that development also means activation of spaces, and activation"
+    },
+    {
+     "start": 3865,
+     "text": "of spaces is the number one deterrent for petty crime."
+    },
+    {
+     "start": 3868,
+     "text": "We have empty parking lots right now."
+    },
+    {
+     "start": 3871,
+     "text": "We have underused or completely unused buildings sitting vacant."
+    },
+    {
+     "start": 3874,
+     "text": "That is an invitation to crimes of opportunity, not development where more people come in"
+    },
+    {
+     "start": 3878,
+     "text": "and are activating the space, using the space, investing in the space."
+    },
+    {
+     "start": 3881,
+     "text": "It's a spurious correlation and it makes me really nervous in terms of how we're talking"
+    },
+    {
+     "start": 3885,
+     "text": "about real public safety issues and tying them to things that people are concerned about"
+    },
+    {
+     "start": 3889,
+     "text": "in an entirely different sector."
+    },
+    {
+     "start": 3891,
+     "text": "Traffic safety is a significantly important concern, important thing to talk about."
+    },
+    {
+     "start": 3896,
+     "text": "I think it's also an avenue where community engagement is going to be a vital first step."
+    }
+   ]
+  },
+  {
+   "start": 3908,
+   "end": 3982,
+   "speaker": "Thomas D. \"Tom\" Peterson",
+   "question": "safety",
+   "parts": [
+    {
+     "start": 3908,
+     "text": "So the critical thing on safety is the forecast looking forward in terms of what is going to drive our exposure to risk and how we're going to manage that."
+    },
+    {
+     "start": 3921,
+     "text": "And so part of what we have to do, I mentioned these planning and assessment processes, is include risk analysis in those so that we know where we're headed and how we can avoid going somewhere where we don't want to go."
+    },
+    {
+     "start": 3933,
+     "text": "And we have choices to make once we go through that process."
+    },
+    {
+     "start": 3936,
+     "text": "The role of the mayor ends up being quite important in this because as we contemplate these decisions as a council making decisions, the mayor, as a chair of a voting body charged with the public interest, has a duty of care."
+    },
+    {
+     "start": 3951,
+     "text": "to help us understand when we may be headed in directions that create harm."
+    },
+    {
+     "start": 3957,
+     "text": "And to understand that and to search for alternatives that can avoid that wherever possible and instead make gains."
+    },
+    {
+     "start": 3964,
+     "text": "If we have an increased risk, we can mitigate by spending more funds to address that, i.e. increasing our capacity."
+    },
+    {
+     "start": 3972,
+     "text": "I believe that would be the next question."
+    },
+    {
+     "start": 3974,
+     "text": "So really where this goes is what is the capacity that we need to address the elevation and risk that exists."
+    }
+   ]
+  },
+  {
+   "start": 3993,
+   "end": 4120,
+   "speaker": "Thomas D. \"Tom\" Peterson",
+   "question": "public_safety",
+   "parts": [
+    {
+     "start": 3993,
+     "text": "thanks."
+    },
+    {
+     "start": 3994,
+     "text": "It's an upline question that I ask and I think most of us ask on the council every year at"
+    },
+    {
+     "start": 4000,
+     "text": "budget time is we ask the departments to tell us what their bottom line is in terms of having"
+    },
+    {
+     "start": 4007,
+     "text": "adequate capacity to protect the level of safety that we're expecting and provide the"
+    },
+    {
+     "start": 4013,
+     "text": "level of services we're expecting and that becomes a fundamental line that we draw on"
+    },
+    {
+     "start": 4019,
+     "text": "the budget to make sure we're protecting that capacity but the process is not simply to hear"
+    },
+    {
+     "start": 4024,
+     "text": "from our departments on that assessment we need to hear at the management the field level"
+    },
+    {
+     "start": 4029,
+     "text": "we need to hear some independent validation of what those benchmarks should look like one of"
+    },
+    {
+     "start": 4034,
+     "text": "the reasons that this finance and efficiency audit is so helpful is it's going to help"
+    },
+    {
+     "start": 4038,
+     "text": "us understand the benchmarks for capacities that we need to know whether we're on target,"
+    },
+    {
+     "start": 4043,
+     "text": "above, below, et cetera."
+    },
+    {
+     "start": 4046,
+     "text": "So we don't know necessarily what those capacity numbers look like until we go through that"
+    },
+    {
+     "start": 4052,
+     "text": "process, but we make a very big point of going through that so that that will be taken care"
+    },
+    {
+     "start": 4056,
+     "text": "of."
+    },
+    {
+     "start": 4057,
+     "text": "The big issue that we have to pay attention to, of course, is looking to the future."
+    },
+    {
+     "start": 4061,
+     "text": "We may be capacitated today, but that doesn't mean we will be capacitated tomorrow."
+    },
+    {
+     "start": 4066,
+     "text": "And just to go back to this idea that we're going to add 12,500 new people to the city"
+    },
+    {
+     "start": 4071,
+     "text": "and not add any additional police, fire, or safety capacity in the process"
+    },
+    {
+     "start": 4078,
+     "text": "and hold ourselves harmless in terms of exposure to potential risk,"
+    },
+    {
+     "start": 4082,
+     "text": "whether it's traffic risk, other forms of risk, is simply not good planning and analysis."
+    },
+    {
+     "start": 4087,
+     "text": "our police chief would be the very first to tell you that the capacity analysis that we do is absolutely crucial to answering that question."
+    },
+    {
+     "start": 4097,
+     "text": "It was a first order of business when I came on the council,"
+    },
+    {
+     "start": 4100,
+     "text": "and I played a principal role in ensuring that we increased our capacity for crime safety analysis,"
+    },
+    {
+     "start": 4106,
+     "text": "but also analysis in other areas, making room in the budget for an energy program manager"
+    },
+    {
+     "start": 4112,
+     "text": "to take a look at where people are in terms of the risk of exposure to cost increases in energy"
+    },
+    {
+     "start": 4118,
+     "text": "is another example"
+    }
+   ]
+  },
+  {
+   "start": 4122,
+   "end": 4227,
+   "speaker": "Kirsten Sides Lockhart",
+   "question": "public_safety",
+   "parts": [
+    {
+     "start": 4122,
+     "text": "i'm being very careful in my"
+    },
+    {
+     "start": 4124,
+     "text": "comments to be non-attributional i don't want anyone to get in trouble for me misquoting them"
+    },
+    {
+     "start": 4127,
+     "text": "or sharing something you know off the record but i will say that our first responders tend to"
+    },
+    {
+     "start": 4132,
+     "text": "refer to our service provision in the city as boutique we do have excellent service provision"
+    },
+    {
+     "start": 4137,
+     "text": "from our fire and emergency services, from our law enforcement."
+    },
+    {
+     "start": 4141,
+     "text": "It's extremely responsive."
+    },
+    {
+     "start": 4142,
+     "text": "I heard from someone at Early Voting who lives right on the county-city border"
+    },
+    {
+     "start": 4145,
+     "text": "that their neighbors asked them to call for emergency response at the county"
+    },
+    {
+     "start": 4149,
+     "text": "because the response will be so much faster and so much more thorough."
+    },
+    {
+     "start": 4152,
+     "text": "That's something to be proud of."
+    },
+    {
+     "start": 4153,
+     "text": "I mean, that is absolutely a benefit to living here in the city."
+    },
+    {
+     "start": 4156,
+     "text": "However, I do know from conversations and just from looking around"
+    },
+    {
+     "start": 4159,
+     "text": "that demand signal is increasing, absolutely."
+    },
+    {
+     "start": 4161,
+     "text": "We have very savvy leadership of our law enforcement, of police and fire."
+    },
+    {
+     "start": 4165,
+     "text": "they understand how to manage that demand signal."
+    },
+    {
+     "start": 4168,
+     "text": "They have great partnerships."
+    },
+    {
+     "start": 4169,
+     "text": "They speak highly of working with the county"
+    },
+    {
+     "start": 4170,
+     "text": "in terms of response."
+    },
+    {
+     "start": 4171,
+     "text": "But if you take station three, for example,"
+    },
+    {
+     "start": 4173,
+     "text": "the number one and two demand signal drivers"
+    },
+    {
+     "start": 4175,
+     "text": "for that station are George Mason and Woodley Chase,"
+    },
+    {
+     "start": 4178,
+     "text": "because they have the tower unit that can respond."
+    },
+    {
+     "start": 4180,
+     "text": "So we need to be cognizant that it's not just things"
+    },
+    {
+     "start": 4182,
+     "text": "that happen here in the city that are impacting demand,"
+    },
+    {
+     "start": 4184,
+     "text": "it's external."
+    },
+    {
+     "start": 4185,
+     "text": "And so how do we make sure that our city's agreements"
+    },
+    {
+     "start": 4187,
+     "text": "with the county is appropriately compensating us"
+    },
+    {
+     "start": 4189,
+     "text": "for our role in responding to their emergencies?"
+    },
+    {
+     "start": 4193,
+     "text": "Recruiting and retention are a challenge nationwide,"
+    },
+    {
+     "start": 4195,
+     "text": "but it's especially significant here"
+    },
+    {
+     "start": 4197,
+     "text": "because of the cost of living."
+    },
+    {
+     "start": 4198,
+     "text": "Almost all of our first responders"
+    },
+    {
+     "start": 4200,
+     "text": "are traveling from far away to get here,"
+    },
+    {
+     "start": 4201,
+     "text": "and personally, I find that unconsciousable."
+    },
+    {
+     "start": 4203,
+     "text": "Why introduce them to more risk"
+    },
+    {
+     "start": 4205,
+     "text": "when they're already doing our riskiest jobs?"
+    },
+    {
+     "start": 4207,
+     "text": "We need to be looking at the ability of the city"
+    },
+    {
+     "start": 4209,
+     "text": "to provide workforce housing,"
+    },
+    {
+     "start": 4210,
+     "text": "housing that's accessible for the folks"
+    },
+    {
+     "start": 4211,
+     "text": "that are providing critical services right here."
+    },
+    {
+     "start": 4215,
+     "text": "We need to make sure that our leadership"
+    },
+    {
+     "start": 4216,
+     "text": "is prepared to respond dynamically"
+    },
+    {
+     "start": 4218,
+     "text": "if those demand signals change,"
+    },
+    {
+     "start": 4220,
+     "text": "if the risk posture changes."
+    },
+    {
+     "start": 4221,
+     "text": "That's absolutely the position of the mayor"
+    },
+    {
+     "start": 4223,
+     "text": "to be working closely with the city staff leadership and with the region"
+    }
+   ]
+  },
+  {
+   "start": 4231,
+   "end": 4330,
+   "speaker": "Thomas D. \"Tom\" Peterson",
+   "question": "public_safety",
+   "parts": [
+    {
+     "start": 4231,
+     "text": "thanks so again one of the cross-cutting issues"
+    },
+    {
+     "start": 4236,
+     "text": "that the city has faced here in this last two years is improving its capability to assess"
+    },
+    {
+     "start": 4244,
+     "text": "its needs including needs for safety and risk reduction and we haven't had the capacity to"
+    },
+    {
+     "start": 4251,
+     "text": "include risk exposure and response in our planning and assessment processes"
+    },
+    {
+     "start": 4256,
+     "text": "across the board in a lot of different areas whether it's transportation"
+    },
+    {
+     "start": 4259,
+     "text": "whether it's energy whether it's housing those gaps have to be filled so that we"
+    },
+    {
+     "start": 4265,
+     "text": "can understand it stand more clearly the cause and effect relationship between"
+    },
+    {
+     "start": 4268,
+     "text": "the actions we take or don't take in the city and where that leaves us in terms"
+    },
+    {
+     "start": 4272,
+     "text": "of risk exposure so across the board the city has been trying to improve its"
+    },
+    {
+     "start": 4277,
+     "text": "capacity in all these areas our city manager is leading that effort we're very pleased that after"
+    },
+    {
+     "start": 4282,
+     "text": "a year of very hard work we found somebody who really understands how to manage a system that"
+    },
+    {
+     "start": 4287,
+     "text": "puts in place those kinds of assistance uh assessment so there's actually a technical"
+    },
+    {
+     "start": 4292,
+     "text": "name for it it's data-driven crime and safety ddax it's a paradigm that's being used in the"
+    },
+    {
+     "start": 4297,
+     "text": "city to answer the questions about what are our forecasted needs how do we respond to them how"
+    },
+    {
+     "start": 4302,
+     "text": "we ensure we have in place the necessary measurement systems to monitor and manage"
+    },
+    {
+     "start": 4308,
+     "text": "safety across the board we're not there yet we're making improvements we're growing but it's all"
+    },
+    {
+     "start": 4314,
+     "text": "the more reason to recognize that assessments we've done in the past did not include critical"
+    },
+    {
+     "start": 4320,
+     "text": "information that as we develop it will tell us new things that may lead us in directions of"
+    },
+    {
+     "start": 4326,
+     "text": "change in terms of how the city and its programs are managed thank you"
+    }
+   ]
+  },
+  {
+   "start": 4335,
+   "end": 4420,
+   "speaker": "Kirsten Sides Lockhart",
+   "question": "public_safety",
+   "parts": [
+    {
+     "start": 4335,
+     "text": "all right appreciate that so point taken on data injects and"
+    },
+    {
+     "start": 4339,
+     "text": "how we do our planning and our forced laydown absolutely important however"
+    },
+    {
+     "start": 4342,
+     "text": "another data in piece of data that we need to include is preparing for the"
+    },
+    {
+     "start": 4347,
+     "text": "likelihood of a statewide push towards collective bargaining it's important"
+    },
+    {
+     "start": 4350,
+     "text": "that we're prepared to go to the table to negotiate with all of our city"
+    },
+    {
+     "start": 4354,
+     "text": "employees but particularly fire and police in terms of how we create a"
+    },
+    {
+     "start": 4359,
+     "text": "culture that is competitive with our regions that offers them the autonomy"
+    },
+    {
+     "start": 4363,
+     "text": "and flexibility to respond to staffing changes staffing needs to try out"
+    },
+    {
+     "start": 4367,
+     "text": "different models of responding in a way that makes sure that our force gets the"
+    },
+    {
+     "start": 4370,
+     "text": "exposure and the training and the opportunities that they want to be"
+    },
+    {
+     "start": 4374,
+     "text": "successful and also to want to stay here because of course like I mentioned"
+    },
+    {
+     "start": 4377,
+     "text": "recruiting and retention are a challenge anywhere you go but certainly if we're"
+    },
+    {
+     "start": 4381,
+     "text": "allowing people to stagnate on our staff that's that's never going to be a"
+    },
+    {
+     "start": 4384,
+     "text": "selling point. In terms of other resources, other equipment investments, I"
+    },
+    {
+     "start": 4390,
+     "text": "think returning to the idea of public-private ventures to sort of offset"
+    },
+    {
+     "start": 4393,
+     "text": "some of the costs of making those new future investments is very important."
+    },
+    {
+     "start": 4396,
+     "text": "We have important models we can look at in the City of Alexandria and the City"
+    },
+    {
+     "start": 4400,
+     "text": "of Falls Church about how they've sort of modernized their forces through public"
+    },
+    {
+     "start": 4403,
+     "text": "and private investment. So there's absolutely areas that we can explore,"
+    },
+    {
+     "start": 4407,
+     "text": "but it's a critical area that we resource. It's a critical service that the city"
+    },
+    {
+     "start": 4411,
+     "text": "residents recognize and value and I look forward to continuing with those"
+    },
+    {
+     "start": 4415,
+     "text": "relationships"
+    }
+   ]
+  },
+  {
+   "start": 4427,
+   "end": 4520,
+   "speaker": "Kirsten Sides Lockhart",
+   "question": "closing",
+   "parts": [
+    {
+     "start": 4427,
+     "text": "thank you all right that went quickly thank"
+    },
+    {
+     "start": 4433,
+     "text": "you all very much for coming out and listening to us thank you very much to"
+    },
+    {
+     "start": 4438,
+     "text": "our moderator. Thank you to my opponent for bringing excellent questions,"
+    },
+    {
+     "start": 4442,
+     "text": "excellent points to share. I really wanted to share how grateful I am for all"
+    },
+    {
+     "start": 4446,
+     "text": "the conversations I've been able to have for the last 10 months. Stepping out as"
+    },
+    {
+     "start": 4450,
+     "text": "a candidate on January 1st, getting to have meetings all over the city with"
+    },
+    {
+     "start": 4454,
+     "text": "people who are willing to be very frank in terms of what they felt the city"
+    },
+    {
+     "start": 4458,
+     "text": "needed, what was going well, what was going poorly. It's been a tremendous"
+    },
+    {
+     "start": 4461,
+     "text": "learning experience and I'm just so grateful for it. I really feel very good"
+    },
+    {
+     "start": 4466,
+     "text": "about the future of the city based on all these conversations the art of the possible is tremendous"
+    },
+    {
+     "start": 4469,
+     "text": "i alluded to you know digging into those five property problems but really all of the momentum"
+    },
+    {
+     "start": 4474,
+     "text": "all of the enthusiasm that people have they chose to be here they're excited to be here they're"
+    },
+    {
+     "start": 4479,
+     "text": "happy to be here they're excited to be involved in the future i want to harness all of that good"
+    },
+    {
+     "start": 4483,
+     "text": "energy give people more opportunities to meaningfully and thoughtfully contribute i think"
+    },
+    {
+     "start": 4487,
+     "text": "it's so important that when we bring people into the city that we're not just sort of asking them"
+    },
+    {
+     "start": 4491,
+     "text": "to pay lip service to things but to give them a tangible output to own it's a real platform of mine"
+    },
+    {
+     "start": 4495,
+     "text": "as I've been out in the city."
+    },
+    {
+     "start": 4497,
+     "text": "We have boards and commissions."
+    },
+    {
+     "start": 4498,
+     "text": "We have volunteer opportunities."
+    },
+    {
+     "start": 4499,
+     "text": "But what do people in the city get to actually own"
+    },
+    {
+     "start": 4501,
+     "text": "from a process perspective?"
+    },
+    {
+     "start": 4502,
+     "text": "And I'd love to see that moving forward."
+    },
+    {
+     "start": 4504,
+     "text": "I hope this discussion demonstrated the ways"
+    },
+    {
+     "start": 4506,
+     "text": "in which I'll continue to be a steward of the city's vision"
+    },
+    {
+     "start": 4509,
+     "text": "and a champion for the residents"
+    },
+    {
+     "start": 4510,
+     "text": "that we can move forward into the future together."
+    },
+    {
+     "start": 4512,
+     "text": "I am the smart, compassionate, locked-in choice"
+    },
+    {
+     "start": 4515,
+     "text": "for mayor of the city of Fairfax,"
+    },
+    {
+     "start": 4516,
+     "text": "and that's why tonight I am asking for your vote."
+    },
+    {
+     "start": 4518,
+     "text": "Thank you."
+    }
+   ]
+  },
+  {
+   "start": 4524,
+   "end": 4637,
+   "speaker": "Thomas D. \"Tom\" Peterson",
+   "question": "closing",
+   "parts": [
+    {
+     "start": 4524,
+     "text": "Well, thanks, and it's great to be with everybody."
+    },
+    {
+     "start": 4525,
+     "text": "and it's been great to be serving for the last two years as your city council"
+    },
+    {
+     "start": 4530,
+     "text": "member that has been a real honor and a privilege I appreciate the votes that"
+    },
+    {
+     "start": 4534,
+     "text": "you gave me the trust you placed in me and the opportunity to serve you two"
+    },
+    {
+     "start": 4539,
+     "text": "years working as an elected official changes you the decisions you make are"
+    },
+    {
+     "start": 4543,
+     "text": "very real because people depend on you their safety their future it's a"
+    },
+    {
+     "start": 4549,
+     "text": "personal thing it also it's an incredible experience to work with six people on"
+    },
+    {
+     "start": 4557,
+     "text": "the council who have the same responsibilities and may come to each of"
+    },
+    {
+     "start": 4562,
+     "text": "them with different perspectives and different abilities but to work"
+    },
+    {
+     "start": 4565,
+     "text": "together to do the very best you can to make decisions I've been through that"
+    },
+    {
+     "start": 4569,
+     "text": "process for two years here I understand the realities of what that looks like"
+    },
+    {
+     "start": 4574,
+     "text": "here in the city to advance it I understand the challenges we face and"
+    },
+    {
+     "start": 4577,
+     "text": "and the potential we have to make improvements,"
+    },
+    {
+     "start": 4579,
+     "text": "what it takes to be able to do that."
+    },
+    {
+     "start": 4581,
+     "text": "It takes a lot of skill."
+    },
+    {
+     "start": 4584,
+     "text": "It takes a lot of patience."
+    },
+    {
+     "start": 4585,
+     "text": "It takes a lot of strength."
+    },
+    {
+     "start": 4588,
+     "text": "You have to love your city, and you have to love people,"
+    },
+    {
+     "start": 4592,
+     "text": "even when they don't love you."
+    },
+    {
+     "start": 4594,
+     "text": "And that can be a hard thing."
+    },
+    {
+     "start": 4596,
+     "text": "And it's a little easy to talk about issues"
+    },
+    {
+     "start": 4600,
+     "text": "as issues in the abstract, but when you start talking"
+    },
+    {
+     "start": 4604,
+     "text": "about them at the personal level"
+    },
+    {
+     "start": 4606,
+     "text": "and the effects they have on people, they take on a new dimension."
+    },
+    {
+     "start": 4610,
+     "text": "When you're working as an elected official, you are the final arbiter of decisions."
+    },
+    {
+     "start": 4615,
+     "text": "It's not good enough to accept a recommendation and analysis."
+    },
+    {
+     "start": 4619,
+     "text": "You actually have to translate that into an impact as somebody's personal life."
+    },
+    {
+     "start": 4625,
+     "text": "I've done that."
+    },
+    {
+     "start": 4627,
+     "text": "I'm ready to continue doing that for everybody here in the city to protect you,"
+    },
+    {
+     "start": 4632,
+     "text": "to make this a better place for all of us to live."
+    },
+    {
+     "start": 4635,
+     "text": "Thank you very much."
+    },
+    {
+     "start": 4636,
+     "text": "Thanks."
+    }
+   ]
+  }
+ ]
+}

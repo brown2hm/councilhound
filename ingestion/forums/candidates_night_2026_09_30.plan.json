@@ -1,0 +1,31 @@
+{
+ "key": "candidates_night_2026_09_30",
+ "video": "https://www.youtube.com/watch?v=rN5Hu2BLf4w",
+ "notes": "Speakers named from the emcee's introductions (ballot order). Cuts remove the emcee's words the diarizer gave the candidate; fixes are names whisper misspelled and one misheard number, checked against YouTube's automatic captions. Stephen Kim was absent (emcee, 21:39).",
+ "speakers": {
+  "SPEAKER_12": "host", "SPEAKER_11": "host",
+  "SPEAKER_03": "Kirsten Sides Lockhart",
+  "SPEAKER_06": "Thomas D. \"Tom\" Peterson",
+  "SPEAKER_02": "Stacy R. Hall",
+  "SPEAKER_05": "Rachel M McQuillen",
+  "SPEAKER_01": "Anthony T. Amos",
+  "SPEAKER_10": "Sandi W. Slappey Brown",
+  "SPEAKER_13": "Kelly M. O'Brien",
+  "SPEAKER_07": "Russell A. Jones",
+  "SPEAKER_00": "Susan Hartley Kuiler",
+  "SPEAKER_09": "María José Padmore",
+  "SPEAKER_08": "Steve S Chang",
+  "SPEAKER_04": "Jessica L. Lough"
+ },
+ "questions": [{"id": "opening", "topic": "Opening statements", "start": 0}],
+ "cuts": {
+  "243": {"suffix": " I warned them"},
+  "386": {"suffix": " Thank you, Tom. Thank you, Jennifer."},
+  "546": {"suffix": " Thank you, Stacey. Thank", "fixes": [{"from": "Stacey Hall", "to": "Stacy Hall"}]},
+  "682": {"fixes": [{"from": "for votes that's", "to": "Four votes. That's"},
+                    {"from": "McQuillan", "to": "McQuillen"}]},
+  "948": {"fixes": [{"from": "Sandy Slappy-Brown", "to": "Sandi Slappey Brown"}]},
+  "1444": {"suffix": " Thank you Maria"},
+  "1723": {"suffix": " Thank", "fixes": [{"from": "Jessica Locke", "to": "Jessica Lough"}]}
+ }
+}
