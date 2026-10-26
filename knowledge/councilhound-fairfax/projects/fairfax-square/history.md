@@ -6,7 +6,6 @@ resource: https://councilhound.net/development/Fairfax-Square
 generated:
   by: process:councilhound-okf
   at: '2025-12-01T00:00:00Z'
-timestamp: '2025-12-01'
 stale_after: '2026-09-22T23:00:00Z'
 ---
 

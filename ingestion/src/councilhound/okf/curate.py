@@ -292,10 +292,9 @@ def curate_project(session: Session, bundle_dir: str, entity: Entity) -> str:
     for rel, fm, new_body in [(f"{rel_dir}/overview.md", overview_fm, data["overview_body"]),
                               (f"{rel_dir}/positions.md", positions_fm, data["positions_body"])]:
         fm = dict(fm or {})
-        # the curator is now the producer of record (v0.2 §5.2); `timestamp`
-        # is the superseded v0.1 key, kept in step for one release
+        # the curator is now the producer of record (v0.2 §5.2)
         fm["generated"] = generated(curator_actor(DEFAULT_MODEL), stamp)
-        fm["timestamp"] = stamp
+        fm.pop("timestamp", None)  # retired v0.1 key
         changed = write_page(bundle_dir, rel, fm, new_body) or changed
     if changed:
         summary = (data.get("edit_summary") or "Curator update.").strip()

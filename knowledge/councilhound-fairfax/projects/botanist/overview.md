@@ -11,7 +11,6 @@ tags:
 generated:
   by: process:councilhound-okf
   at: '2026-07-19T00:00:00Z'
-timestamp: '2026-07-19'
 project_status: under_construction
 source: official
 address: 10306 Eaton Place, Fairfax, VA 22030

@@ -9,7 +9,6 @@ tags:
 generated:
   by: process:councilhound-okf
   at: '2026-08-04T00:00:00Z'
-timestamp: '2026-08-04'
 project_status: pre_application
 source: official
 address: 3570 Chain Bridge Road, Fairfax, VA 22030

@@ -6,7 +6,6 @@ resource: https://councilhound.net/development/Taco-Bell
 generated:
   by: councilhound-curator/claude-sonnet-4-6
   at: '2024-12-09T00:00:00Z'
-timestamp: '2024-12-09'
 stale_after: '2026-09-28T23:00:00Z'
 ---
 

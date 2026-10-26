@@ -164,7 +164,7 @@ def test_seed_creates_conformant_wiki(db_session, project, tmp_path):
     assert fm["project_status"] == "under review" and "status" not in fm
     assert fm["generated"] == {"by": "process:councilhound-okf",
                                "at": "2026-06-09T00:00:00Z"}
-    assert fm["timestamp"] == "2026-06-09"  # legacy key kept in step
+    assert "timestamp" not in fm  # the v0.1 key is retired
     assert "Official record" in body
 
     fm, body = _read(tmp_path, "projects/circle-gateway/history.md")
@@ -467,7 +467,7 @@ def test_curator_applies_minimal_edit(db_session, project, tmp_path, monkeypatch
     # the curator becomes the producer of record, versioned by its model
     assert fm["generated"] == {"by": f"councilhound-curator/{curate.DEFAULT_MODEL}",
                                "at": "2026-07-14T00:00:00Z"}
-    assert fm["timestamp"] == "2026-07-14"
+    assert "timestamp" not in fm
     assert "Noted the approval." in (
         tmp_path / "projects/circle-gateway/log.md").read_text()
 
@@ -705,7 +705,7 @@ def test_refresh_backfills_impact_for_a_later_synthesis(db_session, project,
     assert fm["type"] == "project-impact"
     # the one page with a real instant behind it: synthesized_at, in UTC
     assert fm["generated"]["at"] == "2026-07-20T12:00:00Z"
-    assert fm["timestamp"] == "2026-07-20"
+    assert "timestamp" not in fm
     assert "{{metric:new-households}}" in body and "248" not in body
     # the nav rebuild runs after the write, so the page links itself
     _, overview = _read(tmp_path, "projects/circle-gateway/overview.md")
@@ -747,12 +747,12 @@ def test_documents_page_is_pipeline_owned_and_stable(db_session, project,
         tmp_path, "projects/circle-gateway/overview.md")[1]
     assert lint_bundle(str(tmp_path), db_session) == []
 
-    # timestamp must not churn, or refresh is permanently dirty and the sync
+    # the stamp must not churn, or refresh is permanently dirty and the sync
     # loop loses its no-op
-    stamped = fm["timestamp"]
+    stamped = fm["generated"]["at"]
     assert refresh_bundle(db_session, str(tmp_path))["refreshed"] == 0
     assert _read(tmp_path, "projects/circle-gateway/documents.md")[0][
-        "timestamp"] == stamped
+        "generated"]["at"] == stamped
 
     # pipeline-owned: a hand edit is regenerated away, unlike impact.md
     doc = tmp_path / "projects/circle-gateway/documents.md"
@@ -1054,7 +1054,8 @@ def test_refresh_migrates_v01_pages_in_place(db_session, project, tmp_path):
     project_dir = tmp_path / "projects/circle-gateway"
     for name in ("overview", "positions", "impact"):
         fm, body = _read(tmp_path, f"projects/circle-gateway/{name}.md")
-        legacy = {k: v for k, v in fm.items() if k != "generated"}
+        legacy = dict({k: v for k, v in fm.items() if k != "generated"},
+                      timestamp=fm["generated"]["at"][:10])
         if name == "overview":
             legacy["status"] = legacy.pop("project_status")
         (project_dir / f"{name}.md").write_text(B.render_page(legacy, body))
@@ -1070,6 +1071,7 @@ def test_refresh_migrates_v01_pages_in_place(db_session, project, tmp_path):
                                "at": "2026-06-09T00:00:00Z"}
     assert fm["project_status"] == "under review" and "status" not in fm
     assert "Circle Gateway is a mixed-use redevelopment" in body
+    assert "timestamp" not in fm
     fm, _ = _read(tmp_path, "projects/circle-gateway/positions.md")
     assert fm["generated"]["by"] == "councilhound-curator/claude-x"
     # the LLM curator never edits impact.md, so the pipeline produced it
@@ -1100,7 +1102,7 @@ def test_refresh_migrates_an_unchanged_documents_page(db_session, project,
     fm, _ = _read(tmp_path, "projects/circle-gateway/documents.md")
     assert fm["generated"] == {"by": "process:councilhound-okf",
                                "at": "2026-01-02T00:00:00Z"}
-    assert fm["timestamp"] == "2026-01-02"
+    assert "timestamp" not in fm  # consumed by the migration
     assert refresh_bundle(db_session, str(tmp_path))["refreshed"] == 0
 
 
@@ -1113,7 +1115,8 @@ def test_refresh_migrates_a_history_page_whose_timeline_vanished(
     page = tmp_path / "projects/circle-gateway/history.md"
     fm, body = _read(tmp_path, "projects/circle-gateway/history.md")
     page.write_text(B.render_page(
-        {k: v for k, v in fm.items() if k != "generated"}, body))
+        dict({k: v for k, v in fm.items() if k != "generated"},
+             timestamp=fm["generated"]["at"][:10]), body))
     db_session.query(EntityUpdate).delete()
     db_session.commit()
 

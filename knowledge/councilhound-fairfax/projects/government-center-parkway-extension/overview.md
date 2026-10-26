@@ -10,7 +10,6 @@ tags:
 generated:
   by: process:councilhound-okf
   at: '2025-06-10T00:00:00Z'
-timestamp: '2025-06-10'
 stale_after: '2026-09-22T23:00:00Z'
 project_status: in_progress
 source: official

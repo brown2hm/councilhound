@@ -6,7 +6,6 @@ resource: https://councilhound.net/development/Circle-Gateway
 generated:
   by: process:councilhound-okf
   at: '2026-09-12T00:00:00Z'
-timestamp: '2026-09-12'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->

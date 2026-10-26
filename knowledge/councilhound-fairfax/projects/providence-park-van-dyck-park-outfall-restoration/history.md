@@ -7,7 +7,6 @@ resource: https://councilhound.net/development/Providence-Park-Van-Dyck-Park-Out
 generated:
   by: process:councilhound-okf
   at: '2026-05-26T00:00:00Z'
-timestamp: '2026-05-26'
 stale_after: '2026-09-22T23:00:00Z'
 ---
 

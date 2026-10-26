@@ -11,7 +11,6 @@ tags:
 generated:
   by: process:councilhound-okf
   at: '2026-08-04T00:00:00Z'
-timestamp: '2026-08-04'
 project_status: pre_application
 source: official
 address: 10560 Main Street, Fairfax, VA 22030
