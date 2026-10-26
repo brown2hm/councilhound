@@ -357,3 +357,87 @@ def test_merge_moves_named_speakers(db_session):
     s.commit()
     assert moved["speakers"] == 1
     assert s.scalar(select(MeetingSpeaker.entity_id)) == b.id
+
+
+def test_delete_meeting_cascades_and_repoints_to_replacement(db_session):
+    """Clip 4684 (Oct 19 2026) was cable-channel programming posted under a
+    School Board agenda and later pulled; clip 4685 is the real meeting.
+    delete_meeting dry-runs by default, then removes the bad meeting's rows,
+    moves the non-cascading references to the replacement, reports entities
+    left with no history, and leaves the replacement untouched."""
+    from councilhound.db.models import (
+        Document, EntityProfile, Extraction, MeetingSpeaker, TranscriptChunk,
+    )
+    from councilhound.dedupe import delete_meeting
+
+    s = db_session
+    bad, good = _meeting(s, 19), _meeting(s, 20)
+    item = AgendaItem(meeting_id=bad.id, label="1", title="Capital Project Updates")
+    s.add(item)
+    s.flush()
+    stray = Entity(entity_type="person", name="Mitch Fetterman", canonical_slug="mitch-fetterman",
+                   first_seen_meeting_id=bad.id)
+    blenheim = Entity(entity_type="project", name="Blenheim Blvd", canonical_slug="blenheim-blvd",
+                      first_seen_meeting_id=bad.id, current_status="under_review")
+    s.add_all([stray, blenheim])
+    s.flush()
+    chunk = TranscriptChunk(meeting_id=bad.id, start_seconds=944, end_seconds=960,
+                            text="I'm a firefighter paramedic", speaker_entity_id=stray.id)
+    s.add_all([
+        chunk,
+        Document(meeting_id=bad.id, agenda_item_id=item.id, doc_type="agenda_item_pdf",
+                 source_url="https://example.test/4684/1.pdf"),
+        MeetingSpeaker(meeting_id=bad.id, speaker_label="SPEAKER_07", name="Mitch Fetterman",
+                       entity_id=stray.id, role="staff", confidence="high", mixed=False),
+        Extraction(meeting_id=bad.id, prompt_version="v1"),
+        EntityProfile(entity_id=blenheim.id, summary="...", through_meeting_id=bad.id),
+        EntityUpdate(entity_id=blenheim.id, meeting_id=bad.id, agenda_item_id=item.id,
+                     update_text="Options presented.", status_after="under_review"),
+        EntityUpdate(entity_id=blenheim.id, meeting_id=good.id,
+                     update_text="Board picks option 2.", status_after="approved"),
+        TranscriptChunk(meeting_id=good.id, start_seconds=0, end_seconds=10, text="Good evening"),
+    ])
+    s.flush()
+    s.add(EntityMention(entity_id=stray.id, meeting_id=bad.id, transcript_chunk_id=chunk.id,
+                        role="speaker"))
+    s.commit()
+
+    preview = delete_meeting(s, bad.id, replaced_by=good.id)
+    assert preview["agenda_items"] == 1 and preview["documents"] == 1
+    assert preview["transcript_chunks"] == 1 and preview["speakers"] == 1
+    assert preview["updates"] == 1 and preview["mentions"] == 1 and preview["extractions"] == 1
+    assert preview["first_seen_repointed"] == 2 and preview["profiles_repointed"] == 1
+    assert preview["orphaned_entities"] == ["mitch-fetterman"]
+    assert s.get(Meeting, bad.id) is not None  # dry run
+
+    delete_meeting(s, bad.id, replaced_by=good.id, apply=True)
+    s.commit()
+    assert s.get(Meeting, bad.id) is None
+    assert s.scalar(select(func.count(AgendaItem.id))) == 0
+    assert s.scalar(select(func.count(Document.id))) == 0
+    assert s.scalar(select(func.count(TranscriptChunk.id))) == 1
+    assert s.scalar(select(func.count(MeetingSpeaker.id))) == 0
+    assert s.scalar(select(func.count(EntityMention.id))) == 0
+    assert s.scalar(select(func.count(EntityUpdate.id))) == 1
+    assert s.get(Entity, blenheim.id).first_seen_meeting_id == good.id
+    assert s.get(Entity, blenheim.id).current_status == "approved"
+    assert s.scalar(select(EntityProfile.through_meeting_id)) == good.id
+    assert s.get(Entity, stray.id) is not None  # reported, not deleted
+    assert s.get(Meeting, good.id) is not None
+
+
+def test_delete_meeting_without_replacement_clears_references(db_session):
+    from councilhound.dedupe import delete_meeting
+
+    s = db_session
+    bad = _meeting(s, 19)
+    e = Entity(entity_type="topic", name="Recycling", canonical_slug="recycling",
+               first_seen_meeting_id=bad.id)
+    s.add(e)
+    s.commit()
+    with pytest.raises(ValueError):
+        delete_meeting(s, bad.id, replaced_by=bad.id)
+    delete_meeting(s, bad.id, apply=True)
+    s.commit()
+    assert s.get(Meeting, bad.id) is None
+    assert s.get(Entity, e.id).first_seen_meeting_id is None

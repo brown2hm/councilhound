@@ -472,6 +472,36 @@ def purge_entity_cmd(slugs, apply_):
             session.commit()
 
 
+@cli.command("delete-meeting")
+@click.option("--clip-id", required=True, help="the meeting to remove, by Granicus clip_id")
+@click.option("--replaced-by", default=None,
+              help="clip_id of the meeting that supersedes it; non-cascading references move there")
+@click.option("--apply", "apply_", is_flag=True, help="delete (default: dry-run print of what would go)")
+def delete_meeting_cmd(clip_id, replaced_by, apply_):
+    """Delete a meeting the city posted by mistake and pulled from Granicus,
+    with everything hanging off it. Nothing re-creates it as long as the clip
+    stays out of the Granicus listing."""
+    from sqlalchemy import select
+
+    from councilhound.db.models import Meeting
+    from councilhound.db.session import get_session
+    from councilhound.dedupe import delete_meeting
+
+    with get_session() as session:
+        def meeting_id(clip):
+            mid = session.scalar(select(Meeting.id).where(Meeting.granicus_clip_id == str(clip)))
+            if mid is None:
+                raise click.ClickException(f"no meeting with clip_id {clip}")
+            return mid
+
+        counts = delete_meeting(session, meeting_id(clip_id),
+                                replaced_by=meeting_id(replaced_by) if replaced_by else None,
+                                apply=apply_)
+        click.echo(f"{'deleted' if apply_ else 'would delete'}: {counts}")
+        if apply_:
+            session.commit()
+
+
 @cli.command("merge-entities-batch")
 @click.argument("merge_file", type=click.Path(exists=True))
 @click.option("--apply", "apply_", is_flag=True, help="perform the merges (default: dry-run print)")
