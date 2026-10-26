@@ -17,13 +17,13 @@ drift). Two mechanisms:
 """
 import logging
 
-from sqlalchemy import func, select, update
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 
 from councilhound.db.models import (
-    AgendaItem, CityProject, Entity, EntityAlias, EntityGeocode, EntityMention,
-    EntityProfile, MeetingSpeaker, EntityUpdate, Meeting, TopicSubscription, TranscriptChunk,
-    WikiPage,
+    AgendaItem, CityProject, Document, Entity, EntityAlias, EntityGeocode, EntityMention,
+    EntityProfile, MeetingSpeaker, EntityUpdate, Extraction, Meeting, SpeakerVoice,
+    TopicSubscription, TranscriptChunk, Vote, WikiPage,
 )
 
 log = logging.getLogger(__name__)
@@ -394,6 +394,69 @@ def purge_entity(session: Session, slug: str, apply: bool = False) -> dict:
                         .where(TranscriptChunk.speaker_entity_id == entity.id)
                         .values(speaker_entity_id=None))
         session.delete(entity)
+        session.flush()
+    return counts
+
+
+def delete_meeting(session: Session, meeting_id: int, replaced_by: int | None = None,
+                   apply: bool = False) -> dict:
+    """Remove a meeting that should never have been ingested — a recording the
+    city posted by mistake and then pulled (clip 4684, Oct 19 2026: three hours
+    of cable-channel programming under a School Board agenda, reposted as clip
+    4685). Its own rows (items, documents, transcript, speakers, voices,
+    mentions, updates, votes, extractions) cascade in the database. The two
+    references that do not cascade — entities.first_seen_meeting_id and
+    entity_profiles.through_meeting_id — move to `replaced_by` when given,
+    else are cleared. Entities left with no history are reported, not
+    deleted (purge-entity is the tool for those). Dry-run by default."""
+    meeting = session.get(Meeting, meeting_id)
+    if meeting is None:
+        raise ValueError(f"unknown meeting id: {meeting_id}")
+    if replaced_by is not None and (replaced_by == meeting_id
+                                    or session.get(Meeting, replaced_by) is None):
+        raise ValueError(f"bad replacement meeting id: {replaced_by}")
+
+    def count(model, col):
+        return session.scalar(select(func.count()).select_from(model).where(col == meeting_id))
+
+    counts = {
+        "meeting": f"{meeting.title} {meeting.meeting_date} (clip {meeting.granicus_clip_id})",
+        "agenda_items": count(AgendaItem, AgendaItem.meeting_id),
+        "documents": count(Document, Document.meeting_id),
+        "transcript_chunks": count(TranscriptChunk, TranscriptChunk.meeting_id),
+        "speakers": count(MeetingSpeaker, MeetingSpeaker.meeting_id),
+        "voices": count(SpeakerVoice, SpeakerVoice.meeting_id),
+        "mentions": count(EntityMention, EntityMention.meeting_id),
+        "updates": count(EntityUpdate, EntityUpdate.meeting_id),
+        "votes": count(Vote, Vote.meeting_id),
+        "extractions": count(Extraction, Extraction.meeting_id),
+        "first_seen_repointed": count(Entity, Entity.first_seen_meeting_id),
+        "profiles_repointed": count(EntityProfile, EntityProfile.through_meeting_id),
+    }
+    touched = set(session.scalars(select(EntityUpdate.entity_id)
+                                  .where(EntityUpdate.meeting_id == meeting_id)))
+    touched |= set(session.scalars(select(EntityMention.entity_id)
+                                   .where(EntityMention.meeting_id == meeting_id)))
+    touched |= set(session.scalars(select(Entity.id)
+                                   .where(Entity.first_seen_meeting_id == meeting_id)))
+    elsewhere = set(session.scalars(select(EntityUpdate.entity_id).where(
+        EntityUpdate.entity_id.in_(touched), EntityUpdate.meeting_id != meeting_id)))
+    elsewhere |= set(session.scalars(select(EntityMention.entity_id).where(
+        EntityMention.entity_id.in_(touched), EntityMention.meeting_id != meeting_id)))
+    counts["orphaned_entities"] = sorted(session.scalars(
+        select(Entity.canonical_slug).where(Entity.id.in_(touched - elsewhere))))
+
+    if apply:
+        session.execute(update(Entity).where(Entity.first_seen_meeting_id == meeting_id)
+                        .values(first_seen_meeting_id=replaced_by))
+        session.execute(update(EntityProfile).where(EntityProfile.through_meeting_id == meeting_id)
+                        .values(through_meeting_id=replaced_by))
+        # core delete so the database cascades; the ORM relationships would
+        # try to null the children's non-nullable meeting_id instead
+        session.execute(delete(Meeting).where(Meeting.id == meeting_id))
+        session.expire_all()
+        for entity in session.scalars(select(Entity).where(Entity.id.in_(touched & elsewhere))):
+            _recompute_status(session, entity)
         session.flush()
     return counts
 
