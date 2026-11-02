@@ -35,3 +35,8 @@
 ## 2026-09-19
 
 - Meeting history updated through 2026-07-07.
+
+## 2026-11-02
+
+- Meeting history updated through 2026-10-26.
+- Added 2026-10-26 Planning Commission public hearing (agenda item 5b) to overview recent activity and opened new questions about commissioner and public testimony, per the new meeting record. (curator: claude-sonnet-4-6, through 2026-10-26)

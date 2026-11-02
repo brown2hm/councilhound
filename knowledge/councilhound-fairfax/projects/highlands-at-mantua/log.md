@@ -32,3 +32,8 @@
 ## 2026-09-19
 
 - Meeting history updated through 2026-07-27.
+
+## 2026-11-02
+
+- Meeting history updated through 2026-09-22.
+- Add 2026-09-22 City Council outcomes: unanimous Comp Plan Amendment, 4-2 rezoning/GDP Amendment and Certificate of Appropriateness approvals (Hall and McQuillen opposed); resolve no-longer-open question about 2026-07-27 PC hearing outcome status remains pending; update member positions accordingly. (curator: claude-sonnet-4-6, through 2026-09-22)
