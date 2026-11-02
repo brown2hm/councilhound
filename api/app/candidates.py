@@ -67,7 +67,7 @@ CONTEST_NAME = {"mayor": "Mayor", "city_council": "City Council", "school_board"
 
 # when every not_found list was last swept (the daily update routine bumps
 # it); each source keeps its own date, the day its facts were verified
-CHECKED = _D(2026, 10, 7)
+CHECKED = _D(2026, 11, 2)
 # the day the first set of sources was verified page by page
 _FIRST_VERIFIED = _D(2026, 10, 5)
 
@@ -163,6 +163,51 @@ _COUNCIL_MONEY = _s(
     "campaign finance reports: Chang first ($23,180), Padmore third ($17,394), Kuiler $9,283.71 "
     "across two committees, Lough $3,270.74.",
     published=_D(2026, 10, 5))
+_SEPT_MONEY = _s(
+    "https://patch.com/virginia/fairfaxcity/lockhart-leads-fairfax-city-mayor-fundraising-chang-tops-council-candidates",
+    _PATCH, "finance", "Lockhart leads Fairfax City mayor fundraising; Chang tops Council candidates",
+    "Patch's roundup of 2026 contributions through September 30, 2026, from reports filed with the State "
+    "Board of Elections: for Mayor, Lockhart $40,545.80 (cash on hand $29,201.90) and Peterson's mayoral "
+    "committee $17,950.31 ($2,262.39).",
+    "Council 2026 contributions / September 30 cash: Chang $25,050.00 / $15,373.34; Amos $24,376.50 / "
+    "$17,496.58; Padmore $24,359.00 / $20,042.65; Hall $11,429.58 / $6,370.16; O'Brien $9,587.65 / "
+    "$963.66; Slappey Brown $8,548.00 / $4,463.29; Kuiler $8,465.00 / $6,029.90; McQuillen $7,765.45 / "
+    "$3,073.85; Lough $4,920.74 / $2,346.09; Jones $440.00 / $227.91; Kim $0.00 / $234.00.",
+    "Patch says the totals include monetary and in-kind contributions and exclude candidate loans.",
+    published=_D(2026, 10, 26), checked=_D(2026, 11, 2))
+_OCT_MONEY = _s(
+    "https://patch.com/virginia/fairfaxcity/lockhart-leads-fairfax-city-mayor-fundraising-padmore-tops-council-candidates",
+    _PATCH, "finance", "Fairfax City campaign finance: who raised and spent the most before Election Day?",
+    "Patch's table of cumulative election-cycle receipts, spending and cash remaining through October 22, "
+    "2026: for Mayor, Lockhart $43,352.80 / $18,995.86 / $24,356.94 and Peterson $32,993.90 / $24,329.27 / "
+    "$8,664.63.",
+    "Council: Padmore $34,082.00 / $18,245.35 / $15,836.65; Amos $32,200.92 / $19,444.41 / $13,027.71; "
+    "Chang $28,613.60 / $19,533.97 / $9,079.63; Hall $17,558.91 / $11,820.32 / $7,083.09; Slappey Brown "
+    "$15,208.00 / $12,607.25 / $2,600.75; O'Brien $13,407.64 / $9,836.28 / $3,571.36; Kuiler $11,037.34 / "
+    "$5,087.34 / $5,950.00; McQuillen $9,915.45 / $5,723.02 / $4,740.24; Lough $9,042.80 / $6,313.92 / "
+    "$2,728.88; Jones $1,310.00 / $1,273.71 / $136.29. Patch says the filings it reviewed did not establish "
+    "comparable figures for Kim.",
+    "Patch says receipts can include in-kind support and loans, not only cash donations, and spending "
+    "includes in-kind support and loan repayments.",
+    published=_D(2026, 10, 29), checked=_D(2026, 11, 2))
+_PAC_STORY = _s(
+    "https://patch.com/virginia/fairfaxcity/petersen-linked-pac-transfers-15k-fairfax-city-candidates-debate-political",
+    _PATCH, "news", "Former lawmaker-linked PAC funding raises questions in Fairfax City election",
+    "Patch reports Fairfax Commonsense PAC, which it describes as associated with former state Sen. J. "
+    "Chapman \"Chap\" Petersen, gave $10,000 in September and $5,000 on October 28 to Keep Fairfax City "
+    "Independent PAC, a new PAC advocating for independence in the City's nonpartisan elections; former "
+    "Mayor Steve Stombres gave it $2,500. Patch notes Chap Petersen is not mayoral candidate Tom Peterson.",
+    "Patch reports the Keep Fairfax City Independent board says the PAC is independent of all candidates "
+    "and its activities are not coordinated with any; Patch says the disclosures do not by themselves show "
+    "coordination with candidates.",
+    "Patch reports the City of Fairfax Democratic Committee raised $21,474.05 and spent $12,994.89 in the "
+    "2026 cycle through September 30, including $8,518.18 for mailers; contributors named include Fairfax "
+    "County Supervisors Dalia Palchik, Andres Jimenez and Jimmy Bierman, Del. Paul Krizek, state Sens. Dave "
+    "Marsden and Jennifer Boysko, and the 11th Congressional District Democratic Committee.",
+    "The committee's chair told Patch candidates were evaluated with a written rubric covering 10 policy "
+    "areas, with no required set of positions; Patch says the committee's materials state that candidates "
+    "did not authorize them, while Fairfax Common Ground materials name participating campaigns as sponsors.",
+    published=_D(2026, 10, 29), checked=_D(2026, 11, 2))
 _DEMOCRATS = _s(
     "https://patch.com/virginia/fairfaxcity/fairfax-city-democrats-recommend-lockhart-mayor-four-council-candidates",
     _PATCH, "news", "Fairfax City Democrats recommend Lockhart for Mayor, four Council candidates",
@@ -216,10 +261,11 @@ _DANIELS_RUN = "https://www.ffxnow.com/2026/04/15/fairfax-city-school-board-dani
 # sources about a whole race rather than one candidate
 RACE_SOURCES: dict[str, tuple[CandidateSource, ...]] = {
     "mayor": (_OFFICIAL_LIST, _SAMPLE_BALLOTS, _EARLY_VOTING, _FFXNOW_PREVIEW, _FCT_PREVIEW, _FORUM,
-              _VOTE411_INDEX, _EARLY_MONEY, _DEMOCRATS, _COMMON_GROUND, _FOUR_RECORDS),
+              _VOTE411_INDEX, _EARLY_MONEY, _SEPT_MONEY, _OCT_MONEY, _DEMOCRATS, _COMMON_GROUND, _PAC_STORY,
+              _FOUR_RECORDS),
     "city_council": (_OFFICIAL_LIST, _SAMPLE_BALLOTS, _EARLY_VOTING, _FFXNOW_PREVIEW, _FCT_PREVIEW,
-                     _FORUM, _VOTE411_INDEX, _EARLY_MONEY, _COUNCIL_MONEY, _DEMOCRATS, _COMMON_GROUND,
-                     _FOUR_RECORDS),
+                     _FORUM, _VOTE411_INDEX, _EARLY_MONEY, _COUNCIL_MONEY, _SEPT_MONEY, _OCT_MONEY,
+                     _DEMOCRATS, _COMMON_GROUND, _PAC_STORY, _FOUR_RECORDS),
     "school_board": (_OFFICIAL_LIST, _SAMPLE_BALLOTS, _EARLY_VOTING, _FCT_PREVIEW, _FORUM, _VOTE411_INDEX,
                      _SB_ABOUT, _SB_2024, _SB_SWORN),
 }
@@ -293,6 +339,18 @@ CANDIDATES: tuple[Candidate, ...] = (
             _s(_DEMOCRATS.url, _PATCH, "news", _DEMOCRATS.title,
                "The Fairfax City Democratic Committee recommended her for Mayor.",
                published=_DEMOCRATS.published),
+            _s(_SEPT_MONEY.url, _PATCH, "finance", _SEPT_MONEY.title,
+               "Through September 30, 2026: $40,545.80 in 2026 contributions and $29,201.90 cash on hand; "
+               "September contributions of $2,010 included $400 from outgoing Mayor Catherine Read, and $5,618.18 "
+               "went to a campaign mailer.",
+               published=_SEPT_MONEY.published, checked=_D(2026, 11, 2)),
+            _s(_OCT_MONEY.url, _PATCH, "finance", _OCT_MONEY.title,
+               "Through October 22, 2026: $43,352.80 in cumulative receipts ($2,795 of it from October 1-22), "
+               "$18,995.86 spent, $24,356.94 remaining.",
+               published=_OCT_MONEY.published, checked=_D(2026, 11, 2)),
+            _s(_PAC_STORY.url, _PATCH, "news", _PAC_STORY.title,
+               "Patch lists her as the City of Fairfax Democratic Committee's recommended mayoral candidate.",
+               published=_PAC_STORY.published, checked=_D(2026, 11, 2)),
         ),
         not_found=("an announcement story or profile outside Patch",),
     ),
@@ -348,6 +406,22 @@ CANDIDATES: tuple[Candidate, ...] = (
             _s(_COMMON_GROUND.url, _PATCH, "news", _COMMON_GROUND.title,
                "He is the mayoral candidate in the 'Common Ground' group of independent candidates.",
                published=_COMMON_GROUND.published),
+            _s(_SEPT_MONEY.url, _PATCH, "finance", _SEPT_MONEY.title,
+               "His mayoral committee through September 30, 2026: $17,950.31 in 2026 contributions ($6,647.21 in "
+               "September) and $2,262.39 cash on hand after $11,442.47 in September spending; his Council "
+               "committee is not included.",
+               published=_SEPT_MONEY.published, checked=_D(2026, 11, 2)),
+            _s(_OCT_MONEY.url, _PATCH, "finance", _OCT_MONEY.title,
+               "Through October 22, 2026: $32,993.90 in cumulative receipts ($15,043.59 of it from October 1-22, "
+               "including in-kind support), $24,329.27 spent, $8,664.63 remaining.",
+               "Patch reports $5,631 paid to Eagle Mailing Service, a $300 advertisement with Independent News "
+               "Press, and $375 in in-kind support from former Mayor Steve Stombres for use of the Sherwood Center"
+               " for a mayoral forum.",
+               published=_OCT_MONEY.published, checked=_D(2026, 11, 2)),
+            _s(_PAC_STORY.url, _PATCH, "news", _PAC_STORY.title,
+               "Patch reports the Fairfax Common Ground website names his mayoral campaign as paying for it, and "
+               "that the Democratic Committee's reports show a $640 contribution from him on July 21.",
+               published=_PAC_STORY.published, checked=_D(2026, 11, 2)),
         ),
         not_found=(_NO_VOTE411,),
     ),
@@ -400,6 +474,19 @@ CANDIDATES: tuple[Candidate, ...] = (
                published=_D(2026, 10, 5)),
             _s(_COMMON_GROUND.url, _PATCH, "news", _COMMON_GROUND.title,
                "She is a Council candidate in the 'Common Ground' group.", published=_COMMON_GROUND.published),
+            _s(_SEPT_MONEY.url, _PATCH, "finance", _SEPT_MONEY.title,
+               "Through September 30, 2026: $11,429.58 in 2026 contributions ($4,225 in September, including from "
+               "former Mayor Steven Stombres) and $6,370.16 cash on hand; she also reported $1,722.03 in candidate"
+               " loans in September.",
+               published=_SEPT_MONEY.published, checked=_D(2026, 11, 2)),
+            _s(_OCT_MONEY.url, _PATCH, "finance", _OCT_MONEY.title,
+               "Through October 22, 2026: $17,558.91 in cumulative receipts, $11,820.32 spent, $7,083.09 "
+               "remaining.",
+               published=_OCT_MONEY.published, checked=_D(2026, 11, 2)),
+            _s(_PAC_STORY.url, _PATCH, "news", _PAC_STORY.title,
+               "Patch reports her campaign refunded Steve Chang's $500 contribution on October 18, and is one of "
+               "four campaigns listed as paying for a Fairfax Common Ground sample ballot.",
+               published=_PAC_STORY.published, checked=_D(2026, 11, 2)),
         ),
         not_found=("a 2026 Patch candidate questionnaire",),
     ),
@@ -455,6 +542,18 @@ CANDIDATES: tuple[Candidate, ...] = (
                published=_D(2026, 10, 5)),
             _s(_COMMON_GROUND.url, _PATCH, "news", _COMMON_GROUND.title,
                "She is a Council candidate in the 'Common Ground' group.", published=_COMMON_GROUND.published),
+            _s(_SEPT_MONEY.url, _PATCH, "finance", _SEPT_MONEY.title,
+               "Through September 30, 2026: $7,765.45 in 2026 contributions ($3,125 in September) and $3,073.85 "
+               "cash on hand.",
+               published=_SEPT_MONEY.published, checked=_D(2026, 11, 2)),
+            _s(_OCT_MONEY.url, _PATCH, "finance", _OCT_MONEY.title,
+               "Through October 22, 2026: $9,915.45 in cumulative receipts, $5,723.02 spent, $4,740.24 remaining.",
+               published=_OCT_MONEY.published, checked=_D(2026, 11, 2)),
+            _s(_PAC_STORY.url, _PATCH, "news", _PAC_STORY.title,
+               "Patch reports Steve Chang's campaign received $521.15 from hers on October 19, described as a "
+               "refund, and hers is one of four campaigns listed as paying for a Fairfax Common Ground sample "
+               "ballot.",
+               published=_PAC_STORY.published, checked=_D(2026, 11, 2)),
         ),
         not_found=(),
     ),
@@ -508,6 +607,18 @@ CANDIDATES: tuple[Candidate, ...] = (
             _s(_DEMOCRATS.url, _PATCH, "news", _DEMOCRATS.title,
                "He is one of four Council candidates the Fairfax City Democratic Committee recommended.",
                published=_DEMOCRATS.published),
+            _s(_SEPT_MONEY.url, _PATCH, "finance", _SEPT_MONEY.title,
+               "Through September 30, 2026: $24,376.50 in 2026 contributions ($3,464 in September, including "
+               "$1,000 from the Eastern Atlantic States Regional Council of Carpenters) and $17,496.58 cash on "
+               "hand.",
+               published=_SEPT_MONEY.published, checked=_D(2026, 11, 2)),
+            _s(_OCT_MONEY.url, _PATCH, "finance", _OCT_MONEY.title,
+               "Through October 22, 2026: $32,200.92 in cumulative receipts, $19,444.41 spent, $13,027.71 "
+               "remaining.",
+               published=_OCT_MONEY.published, checked=_D(2026, 11, 2)),
+            _s(_PAC_STORY.url, _PATCH, "news", _PAC_STORY.title,
+               "Patch lists him among the Council candidates the City of Fairfax Democratic Committee recommends.",
+               published=_PAC_STORY.published, checked=_D(2026, 11, 2)),
         ),
         not_found=(),
     ),
@@ -559,6 +670,17 @@ CANDIDATES: tuple[Candidate, ...] = (
             _s(_DEMOCRATS.url, _PATCH, "news", _DEMOCRATS.title,
                "She is one of four Council candidates the Fairfax City Democratic Committee recommended.",
                published=_DEMOCRATS.published),
+            _s(_SEPT_MONEY.url, _PATCH, "finance", _SEPT_MONEY.title,
+               "Through September 30, 2026 (listed as Sandra Slappey Brown): $8,548 in 2026 contributions ($375 "
+               "unitemized in September) and $4,463.29 cash on hand.",
+               published=_SEPT_MONEY.published, checked=_D(2026, 11, 2)),
+            _s(_OCT_MONEY.url, _PATCH, "finance", _OCT_MONEY.title,
+               "Through October 22, 2026: $15,208.00 in cumulative receipts, $12,607.25 spent, $2,600.75 "
+               "remaining.",
+               published=_OCT_MONEY.published, checked=_D(2026, 11, 2)),
+            _s(_PAC_STORY.url, _PATCH, "news", _PAC_STORY.title,
+               "Patch lists her among the Council candidates the City of Fairfax Democratic Committee recommends.",
+               published=_PAC_STORY.published, checked=_D(2026, 11, 2)),
         ),
         not_found=("any earlier run for office",),
     ),
@@ -616,6 +738,16 @@ CANDIDATES: tuple[Candidate, ...] = (
             _s(_DEMOCRATS.url, _PATCH, "news", _DEMOCRATS.title,
                "She is one of four Council candidates the Fairfax City Democratic Committee recommended.",
                published=_DEMOCRATS.published),
+            _s(_SEPT_MONEY.url, _PATCH, "finance", _SEPT_MONEY.title,
+               "Through September 30, 2026: $9,587.65 in 2026 contributions ($1,170.44 in September) and $963.66 "
+               "cash on hand.",
+               published=_SEPT_MONEY.published, checked=_D(2026, 11, 2)),
+            _s(_OCT_MONEY.url, _PATCH, "finance", _OCT_MONEY.title,
+               "Through October 22, 2026: $13,407.64 in cumulative receipts, $9,836.28 spent, $3,571.36 remaining.",
+               published=_OCT_MONEY.published, checked=_D(2026, 11, 2)),
+            _s(_PAC_STORY.url, _PATCH, "news", _PAC_STORY.title,
+               "Patch lists her among the Council candidates the City of Fairfax Democratic Committee recommends.",
+               published=_PAC_STORY.published, checked=_D(2026, 11, 2)),
         ),
         not_found=(),
     ),
@@ -654,6 +786,17 @@ CANDIDATES: tuple[Candidate, ...] = (
                "His committee reported $0 in contributions and loans from January 23 to August 31, 2026, with "
                "$89.50 cash on hand.",
                published=_D(2026, 10, 5)),
+            _s(_SEPT_MONEY.url, _PATCH, "finance", _SEPT_MONEY.title,
+               "Through September 30, 2026: $440 in contributions, all in September, including $250 from Council "
+               "candidate Steve Chang; $227.91 cash on hand.",
+               published=_SEPT_MONEY.published, checked=_D(2026, 11, 2)),
+            _s(_OCT_MONEY.url, _PATCH, "finance", _OCT_MONEY.title,
+               "Through October 22, 2026: $1,310.00 in cumulative receipts, $1,273.71 spent, $136.29 remaining.",
+               published=_OCT_MONEY.published, checked=_D(2026, 11, 2)),
+            _s(_PAC_STORY.url, _PATCH, "news", _PAC_STORY.title,
+               "Patch reports he is not part of Fairfax Common Ground and reported a $300 advertisement with "
+               "Independent News Press.",
+               published=_PAC_STORY.published, checked=_D(2026, 11, 2)),
         ),
         not_found=(_NO_VOTE411, "any earlier run for office"),
     ),
@@ -668,6 +811,12 @@ CANDIDATES: tuple[Candidate, ...] = (
                "Through August 31, 2026: $0 in contributions, $300 in loans from the candidate, $66 spent on "
                "voter data lists, $234 cash on hand.",
                published=_D(2026, 10, 5)),
+            _s(_SEPT_MONEY.url, _PATCH, "finance", _SEPT_MONEY.title,
+               "Through September 30, 2026: $0 in contributions and $234 cash on hand.",
+               published=_SEPT_MONEY.published, checked=_D(2026, 11, 2)),
+            _s(_OCT_MONEY.url, _PATCH, "finance", _OCT_MONEY.title,
+               "Patch says the filings it reviewed did not establish comparable October 22 figures for him.",
+               published=_OCT_MONEY.published, checked=_D(2026, 11, 2)),
         ),
         not_found=(
             "a campaign website",
@@ -725,6 +874,17 @@ CANDIDATES: tuple[Candidate, ...] = (
                published=_D(2026, 10, 5)),
             _s(_COMMON_GROUND.url, _PATCH, "news", _COMMON_GROUND.title,
                "She is a Council candidate in the 'Common Ground' group.", published=_COMMON_GROUND.published),
+            _s(_SEPT_MONEY.url, _PATCH, "finance", _SEPT_MONEY.title,
+               "Through September 30, 2026: $8,465 in 2026 contributions ($4,000 in September) and $6,029.90 cash "
+               "on hand; she reported $1,672.34 in new loans and $1,449.34 in loan repayments in September.",
+               published=_SEPT_MONEY.published, checked=_D(2026, 11, 2)),
+            _s(_OCT_MONEY.url, _PATCH, "finance", _OCT_MONEY.title,
+               "Through October 22, 2026: $11,037.34 in cumulative receipts, $5,087.34 spent, $5,950.00 remaining.",
+               published=_OCT_MONEY.published, checked=_D(2026, 11, 2)),
+            _s(_PAC_STORY.url, _PATCH, "news", _PAC_STORY.title,
+               "Patch lists her among the Fairfax Common Ground candidates; a banner promoting the six names all "
+               "six campaigns as sponsors.",
+               published=_PAC_STORY.published, checked=_D(2026, 11, 2)),
         ),
         not_found=(_NO_VOTE411,),
     ),
@@ -754,6 +914,20 @@ CANDIDATES: tuple[Candidate, ...] = (
             _s(_DEMOCRATS.url, _PATCH, "news", _DEMOCRATS.title,
                "She is one of four Council candidates the Fairfax City Democratic Committee recommended.",
                published=_DEMOCRATS.published),
+            _s(_SEPT_MONEY.url, _PATCH, "finance", _SEPT_MONEY.title,
+               "Through September 30, 2026: $24,359 in 2026 contributions ($6,965 in September, the most among "
+               "Council candidates) and $20,042.65 cash on hand, the largest Council balance.",
+               "Donors named include state Sen. Dave Marsden and state Sen. Stella G. Pekarsky's committee ($1,000"
+               " each, September), Fairfax County Supervisors Dalia Palchik and Andres Jimenez ($500 each) and "
+               "Del. Irene Shin's committee ($300).",
+               published=_SEPT_MONEY.published, checked=_D(2026, 11, 2)),
+            _s(_OCT_MONEY.url, _PATCH, "finance", _OCT_MONEY.title,
+               "Through October 22, 2026: $34,082.00 in cumulative receipts ($9,073 of it from October 1-22, "
+               "including $7,408 in-kind), $18,245.35 spent, $15,836.65 remaining.",
+               published=_OCT_MONEY.published, checked=_D(2026, 11, 2)),
+            _s(_PAC_STORY.url, _PATCH, "news", _PAC_STORY.title,
+               "Patch lists her among the Council candidates the City of Fairfax Democratic Committee recommends.",
+               published=_PAC_STORY.published, checked=_D(2026, 11, 2)),
         ),
         not_found=(
             "a Patch candidate questionnaire",
@@ -794,6 +968,19 @@ CANDIDATES: tuple[Candidate, ...] = (
                published=_D(2026, 10, 5)),
             _s(_COMMON_GROUND.url, _PATCH, "news", _COMMON_GROUND.title,
                "He is a Council candidate in the 'Common Ground' group.", published=_COMMON_GROUND.published),
+            _s(_SEPT_MONEY.url, _PATCH, "finance", _SEPT_MONEY.title,
+               "Through September 30, 2026: $25,050 in 2026 contributions ($1,870 in September, including $1,000 "
+               "in-kind from Robinhood Graphics) and $15,373.34 cash on hand.",
+               published=_SEPT_MONEY.published, checked=_D(2026, 11, 2)),
+            _s(_OCT_MONEY.url, _PATCH, "finance", _OCT_MONEY.title,
+               "Through October 22, 2026: $28,613.60 in cumulative receipts, $19,533.97 spent, $9,079.63 "
+               "remaining; Patch reports reimbursements to his campaign from McQuillen's and Hall's campaigns.",
+               published=_OCT_MONEY.published, checked=_D(2026, 11, 2)),
+            _s(_PAC_STORY.url, _PATCH, "news", _PAC_STORY.title,
+               "Patch reports his campaign paid $1,000 for a full-page ad promoting the Fairfax Common Ground "
+               "candidates in the newspaper he owns; he told Patch its newsroom operates independently of him and "
+               "that he had no involvement with either PAC.",
+               published=_PAC_STORY.published, checked=_D(2026, 11, 2)),
         ),
         not_found=(_NO_VOTE411, "any City board or commission service"),
     ),
@@ -831,6 +1018,17 @@ CANDIDATES: tuple[Candidate, ...] = (
                published=_D(2026, 10, 5)),
             _s(_COMMON_GROUND.url, _PATCH, "news", _COMMON_GROUND.title,
                "She is a Council candidate in the 'Common Ground' group.", published=_COMMON_GROUND.published),
+            _s(_SEPT_MONEY.url, _PATCH, "finance", _SEPT_MONEY.title,
+               "Through September 30, 2026: $4,920.74 in 2026 contributions ($1,650 in September, including $500 "
+               "from former Mayor Steven Stombres) and $2,346.09 cash on hand.",
+               published=_SEPT_MONEY.published, checked=_D(2026, 11, 2)),
+            _s(_OCT_MONEY.url, _PATCH, "finance", _OCT_MONEY.title,
+               "Through October 22, 2026: $9,042.80 in cumulative receipts, $6,313.92 spent, $2,728.88 remaining.",
+               published=_OCT_MONEY.published, checked=_D(2026, 11, 2)),
+            _s(_PAC_STORY.url, _PATCH, "news", _PAC_STORY.title,
+               "Patch reports Steve Chang's campaign reimbursed her $211.52 for the Fairfax Common Ground launch, "
+               "and hers is one of four campaigns listed as paying for a Common Ground sample ballot.",
+               published=_PAC_STORY.published, checked=_D(2026, 11, 2)),
         ),
         not_found=(_NO_VOTE411, "any City board or commission service"),
     ),
