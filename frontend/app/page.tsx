@@ -18,7 +18,7 @@ import {
   type UpcomingEvent,
 } from "@/lib/api";
 import { voteShape } from "@/lib/briefing";
-import { electionAhead } from "@/lib/election";
+import { electionAhead, electionInNews } from "@/lib/election";
 
 export const dynamic = "force-dynamic";
 
@@ -444,16 +444,20 @@ function AskBand({ election }: { election: boolean }) {
   );
 }
 
-function ElectionBand() {
+function ElectionBand({ ahead }: { ahead: boolean }) {
   return (
     <Link
       href="/election"
       className="flex flex-col gap-1 rounded-xl border border-hairline bg-callout px-4 py-3 hover:border-ink sm:flex-row sm:items-baseline sm:justify-between sm:px-5"
     >
       <span className="font-display text-[18px] font-medium leading-snug text-ink">
-        November 3 City election: every candidate, the same sources for each, answers side by side
+        {ahead
+          ? "November 3 City election: every candidate, the same sources for each, answers side by side"
+          : "November 3 City election results: who was elected Mayor, to Council and to the School Board"}
       </span>
-      <span className="shrink-0 text-[13px] font-semibold text-hound">Mayor · Council · School Board →</span>
+      <span className="shrink-0 text-[13px] font-semibold text-hound">
+        {ahead ? "Mayor · Council · School Board →" : "See the count →"}
+      </span>
     </Link>
   );
 }
@@ -915,9 +919,9 @@ export default async function Briefing() {
       <div className="mb-8">
         <LedeBlock lede={lede} />
       </div>
-      {electionAhead(today) && (
+      {electionInNews(today) && (
         <div className="mb-4">
-          <ElectionBand />
+          <ElectionBand ahead={electionAhead(today)} />
         </div>
       )}
       <div className="mb-10">

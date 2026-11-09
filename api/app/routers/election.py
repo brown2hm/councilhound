@@ -5,15 +5,16 @@ everyone in a race, answer by answer.
 
 Nothing here comes from the meeting record except the link to a member
 page for candidates who already have a voting record; the rest is the
-pinned tables in app.candidates and app.questionnaires, and the candidate
-forums' verbatim transcripts in app.forums."""
+pinned tables in app.candidates and app.questionnaires, the candidate
+forums' verbatim transcripts in app.forums, and, once the votes are
+counted, the results in app.results."""
 import re
 import unicodedata
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app import candidates, forums, questionnaires, terms
+from app import candidates, forums, questionnaires, results, terms
 from app.db import db_session
 from app.routers import members as members_router
 
@@ -110,6 +111,28 @@ def _forum(f: forums.Forum, contest: str) -> dict | None:
             "questions": questions}
 
 
+def _result(key: str) -> dict | None:
+    """The count for one contest, most votes first, with who won."""
+    r = results.RESULTS.get(key)
+    if r is None:
+        return None
+    won = set(r.winners())
+    return {"seats": r.seats, "total": r.total, "write_in": r.write_in,
+            "write_in_pct": results.pct(r.write_in, r.total),
+            "margin": r.margin() if len(r.votes) > r.seats else None,
+            "candidates": [{"ballot_name": n, "votes": v, "pct": results.pct(v, r.total),
+                            "won": n in won} for n, v in r.ranked()]}
+
+
+def _results_meta() -> dict:
+    return {"status": results.STATUS, "as_of": results.AS_OF.isoformat(),
+            "note": results.STATUS_NOTE, "source": results.SOURCE, "publisher": results.PUBLISHER,
+            "ballots_cast": results.BALLOTS_CAST, "registered": results.REGISTERED,
+            "referenda": [{"key": q.key, "title": q.title, "question": q.question,
+                           "yes": q.yes, "no": q.no, "yes_pct": results.pct(q.yes, q.yes + q.no),
+                           "passed": q.passed} for q in results.REFERENDA]}
+
+
 @router.get("/")
 def election(session: Session = Depends(db_session)):
     pages = _member_pages(session)
@@ -123,9 +146,11 @@ def election(session: Session = Depends(db_session)):
             "vote_for": _NUMBERS.get(m.group(1)) if m else None,
             "election_date": (d.isoformat() if (d := candidates.election_date(key)) else None),
             "seats_up": terms.TERMS[body].seats_up,
+            "result": _result(key),
             "candidates": [{
                 "ballot_name": c.ballot_name,
                 "incumbent": c.incumbent,
+                "won": (o[2] if (o := results.outcome(c.ballot_name)) else None),
                 "member": pages.get(c.ballot_name),
                 "sources": [_source(s) for s in c.sources],
                 "not_found": list(c.not_found),
@@ -142,4 +167,5 @@ def election(session: Session = Depends(db_session)):
         "checked": candidates.CHECKED.isoformat(),
         "voting": _source(candidates.VOTING),
         "contests": contests,
+        "results": _results_meta() if results.RESULTS else None,
     }

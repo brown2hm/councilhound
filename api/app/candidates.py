@@ -299,7 +299,7 @@ CANDIDATES: tuple[Candidate, ...] = (
     Candidate(
         'Thomas D. "Tom" Peterson', "mayor",
         aliases=("Tom Peterson", "Thomas Peterson", "Thomas D. Peterson"),
-        incumbent="City Councilmember (term ends December 31, 2026; not running for reelection to Council)",
+        incumbent="City Councilmember (term ends December 31, 2026; did not run for reelection to Council)",
         sources=(
             _s("https://tom4fairfax.org/", "Tom Peterson for Mayor", "campaign", "Tom Peterson for Mayor",
                "The campaign site's slogan is \"Caring for Our Community, Creating Confidence in Our Future.\"",
@@ -967,7 +967,7 @@ CANDIDATES: tuple[Candidate, ...] = (
 
 def election_date(contest: str) -> datetime.date | None:
     body, _ = CONTESTS[contest]
-    return terms.TERMS[body].next_election
+    return terms.TERMS[body].ballot_date   # the ballot these candidates were on
 
 
 def contest_label(contest: str) -> str:

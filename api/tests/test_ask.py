@@ -211,7 +211,8 @@ def test_compare_members_head_to_head(db):
     # each member's seat, from the pinned City schedule
     term = next(sources.get(n) for n in nums if sources.get(n)["kind"] == "term"
                 and "Catherine Read" in sources.get(n)["title"])
-    assert "Not on the ballot" in term["text"] and "2026-11-03" in term["text"]
+    # the November 3 2026 ballot is decided: the seat says how, and the next election is 2028
+    assert "Did not seek a third term as Mayor" in term["text"] and "2028-11-07" in term["text"]
 
 
 def test_get_member_and_ambiguity(db):
@@ -220,7 +221,7 @@ def test_get_member_and_ambiguity(db):
     nums, header, eid = ask_tools.get_member(db, sources, "Councilmember Hall")
     kinds = [sources.get(n)["kind"] for n in nums]
     assert kinds[0] == "member" and "term" in kinds
-    assert "On the ballot" in sources.get(nums[kinds.index("term")])["text"]
+    assert "Reelected to Council on November 3 2026" in sources.get(nums[kinds.index("term")])["text"]
     nums, header, eid = ask_tools.get_member(db, sources, "Nobody Atall")
     assert nums == [] and eid is None
 
@@ -230,12 +231,16 @@ def test_list_members_carries_the_ballot(db):
     sources = ask_tools.Sources()
     nums = ask_tools.list_members(db, sources, "city_council")
     text = sources.get(nums[0])["text"]
-    assert ("Catherine Read (Mayor; term ends 2026-12-31; not on the ballot; "
-            "Not seeking a third term as Mayor)") in text
-    assert "Stacy Hall (Councilmember; term ends 2026-12-31; on the ballot; Running for reelection to Council)" in text
-    # each contest names its own candidates, so council and mayoral runs never blur
-    assert "On the official ballot for Mayor (vote for one): Kirsten Sides Lockhart, " in text
-    assert "On the official ballot for City Council (vote for not more than six): Stacy R. Hall, " in text
+    assert ("Catherine Read (Mayor; term ends 2026-12-31; Did not seek a third term as Mayor; "
+            "leaves office December 31 2026)") in text
+    assert ("Stacy Hall (Councilmember; term ends 2026-12-31; Reelected to Council on November 3 2026 "
+            "for the term from January 1 2027)") in text
+    # the decided ballot: who was elected, contest by contest, with the count's status
+    assert "On the official ballot" not in text
+    assert ("Elected on 2026-11-03 for Mayor (unofficial results as of 2026-11-09, Virginia "
+            "Department of Elections): Kirsten Sides Lockhart.") in text
+    assert "Elected on 2026-11-03 for City Council (unofficial results" in text
+    assert "sitting members serve until their current term ends" in text
 
 
 def test_sources_are_numbered_once(db):
@@ -249,10 +254,11 @@ def test_sources_are_numbered_once(db):
 def test_member_routes_carry_the_term(client, db):
     _seed_members(db)
     read = client.get("/members/catherine-read").json()
-    assert read["term"]["next_election"] == "2026-11-03"
-    assert read["term"]["on_ballot"] is False
+    assert read["term"]["next_election"] == "2028-11-07"
+    assert read["term"]["ballot_date"] == "2026-11-03"
+    assert read["term"]["on_ballot"] is None  # decided; the note says how
     listing = {m["slug"]: m for m in client.get("/members/").json()}
-    assert listing["stacy-hall"]["term"]["on_ballot"] is True
+    assert "Reelected" in listing["stacy-hall"]["term"]["note"]
 
 
 # ---------------------------------------------------------------- across bodies
@@ -402,8 +408,8 @@ def test_members_of_different_bodies_compare_on_shared_matters(db):
     assert "out of conformance with the Comprehensive Plan" in shared["text"]
     # and both seats: one elected, one appointed and running for Mayor
     terms_ = " ".join(t["text"] for t in by_kind["term"])
-    assert "Running for Mayor rather than reelection to Council." in terms_
-    assert "Also a candidate for Mayor on November 3 2026." in terms_
+    assert "Ran for Mayor on November 3 2026 and was not elected" in terms_
+    assert "Elected Mayor on November 3 2026; takes office January 1 2027." in terms_
 
 
 def test_tendencies_read_the_same_on_either_body(db):

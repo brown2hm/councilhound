@@ -5,6 +5,7 @@ table says was and wasn't found."""
 from councilhound.db.models import Entity, EntityAlias
 
 from app import candidates, questionnaires, terms
+from app.routers.election import _NUMBERS, _VOTE_FOR
 
 
 def _ballot_order(contest: str) -> list[str]:
@@ -102,3 +103,48 @@ def test_member_pages_link_on_full_name_only(client, db):
     assert cands["Stacy R. Hall"]["member"] == {"slug": "stacy-hall", "roles": ["Councilmember"]}
     assert cands["Sandi W. Slappey Brown"]["member"] is None
     assert cands["Jessica L. Lough"]["member"] is None
+
+
+# ---------------------------------------------------------------- results
+
+def test_results_cover_the_ballot_exactly():
+    """Every name on the ballot has a count and nothing else does, in
+    ballot order, and each contest elects as many as the ballot says."""
+    from app import results
+    assert set(results.RESULTS) == set(candidates.CONTESTS)
+    for key, r in results.RESULTS.items():
+        assert [n for n, _ in r.votes] == _ballot_order(key), key
+        _, label = candidates.CONTESTS[key]
+        assert _NUMBERS[_VOTE_FOR.search(label.lower()).group(1)] == r.seats, key
+        assert len(r.winners()) == min(r.seats, len(r.votes))
+        assert all(v > 0 for _, v in r.votes) and r.write_in >= 0
+    assert results.STATUS in ("unofficial", "certified")
+
+
+def test_seat_notes_agree_with_the_count():
+    """A sitting member's note says reelected only if the count elects them."""
+    from app import results
+    from councilhound.entities import display_name
+    from councilhound.people import last_name
+    won = {last_name(n).lower() for r in results.RESULTS.values() for n in r.winners()}
+    for body in ("city_council", "school_board"):
+        for seat in terms.TERMS[body].members:
+            if seat.note and "Reelected" in seat.note:
+                assert last_name(seat.name).lower() in won, seat.name
+            if seat.note and "not elected" in seat.note:
+                assert last_name(display_name(seat.name)).lower() not in won, seat.name
+
+
+def test_election_page_carries_the_results(client):
+    e = client.get("/election/").json()
+    assert e["results"]["status"] == "unofficial"
+    assert e["results"]["referenda"][0]["passed"] is True
+    mayor = next(c for c in e["contests"] if c["key"] == "mayor")
+    assert mayor["result"]["candidates"][0] == {
+        "ballot_name": "Kirsten Sides Lockhart", "votes": 5964, "pct": 55.04, "won": True}
+    assert [c["won"] for c in mayor["candidates"]] == [True, False]
+    council = next(c for c in e["contests"] if c["key"] == "city_council")
+    assert sum(c["won"] for c in council["result"]["candidates"]) == 6
+    assert council["result"]["margin"] == 4792 - 4060
+    board = next(c for c in e["contests"] if c["key"] == "school_board")
+    assert board["result"]["margin"] is None and all(c["won"] for c in board["candidates"])
