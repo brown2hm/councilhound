@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import SearchBox from "@/components/SearchBox";
-import { electionAheadNow } from "@/lib/election";
+import { electionAheadNow, electionInNewsNow } from "@/lib/election";
 
 const NAV = [
   { href: "/", label: "Briefing" },
@@ -16,7 +16,11 @@ const NAV = [
   { href: "/ask", label: "Ask" },
 ];
 
-const nav = () => NAV.filter((n) => n.href !== "/election" || electionAheadNow());
+// "Election" while it is ahead, "Results" until the new terms begin
+const nav = () =>
+  NAV.filter((n) => n.href !== "/election" || electionInNewsNow()).map((n) =>
+    n.href === "/election" && !electionAheadNow() ? { ...n, label: "Results" } : n,
+  );
 
 // the project pages live under /development; they belong to the directory
 function isActive(href: string, pathname: string) {

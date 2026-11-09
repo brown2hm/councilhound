@@ -33,7 +33,7 @@ from councilhound.db.models import (
 from councilhound.embeddings.embed import embed_query
 from councilhound.extraction.speaker_names import public_speaker_join
 
-from app import candidates, forums, questionnaires, terms, web_search
+from app import candidates, forums, questionnaires, results, terms, web_search
 from app.links import clip_link
 from app.routers import entities as entities_router
 from app.routers import meetings as meetings_router
@@ -1319,7 +1319,8 @@ def list_members(session: Session, sources: Sources, body: str | None = None) ->
                 bits.append(f"term ends {t['term_ends']}")
             if t and t["on_ballot"] is not None:
                 bits.append("on the ballot" if t["on_ballot"] else "not on the ballot")
-            seat_note = t["note"] if t and t["on_ballot"] is not None else None
+            # a seat's note says whether it is on the ballot, or how that ballot came out
+            seat_note = t["note"] if t and (t["on_ballot"] is not None or t["ballot_date"]) else None
             if seat_note:
                 bits.append(seat_note.rstrip("."))
             lines.append(f"- {p['entity'].name} ({'; '.join(bits)})")
@@ -1356,12 +1357,32 @@ def get_upcoming(session: Session, sources: Sources, body: str | None = None, li
 
 # ---------------------------------------------------------------- candidates
 
+def _result_line(c: candidates.Candidate) -> str | None:
+    """How the candidate's race came out, once the votes are counted."""
+    o = results.outcome(c.ballot_name)
+    if o is None:
+        return None
+    r, votes, won = o
+    place = [n for n, _ in r.ranked()].index(c.ballot_name) + 1
+    seats = "the seat" if r.seats == 1 else f"the {r.seats} seats"
+    return (f"Result ({results.status_line()}, {results.PUBLISHER}): "
+            + ("elected" if won else "not elected") + f" with {votes:,} votes "
+            f"({results.pct(votes, r.total)}%), {place} of {len(r.votes)} for {seats}. "
+            "Elected: " + ", ".join(r.winners()) + "."
+            + (f" The last winner led the first runner-up by {r.margin():,} votes."
+               if len(r.votes) > r.seats else "")
+            + " " + results.STATUS_NOTE)
+
+
 def _candidate_summary(c: candidates.Candidate) -> str:
     when = candidates.election_date(c.contest)
+    decided = bool(when and when < _today())
     rivals = [o.ballot_name for o in candidates.in_contest(c.contest) if o is not c]
-    lines = [f"{c.ballot_name} is on the City's official sample ballot for "
+    lines = [f"{c.ballot_name} {'was' if decided else 'is'} on the City's official sample ballot for "
              f"{candidates.contest_label(c.contest)}"
              + (f" on {when.isoformat()}" if when else "") + "."]
+    if decided and (line := _result_line(c)):
+        lines.append(line)
     if c.incumbent:
         lines.append(f"Currently: {c.incumbent}. Their record in meetings is under get_member.")
     else:

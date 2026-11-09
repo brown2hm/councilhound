@@ -49,7 +49,9 @@ covers the impact models.
   doesn't hold, it searches an allowlist of local government and news sites
   and quotes the pages verbatim, labelled "outside the record". Rate-limited
   per IP and capped by a global daily budget.
-- **Election guide** — while a City election is ahead, `/election` shows each
+- **Election guide and results** — after Election Day, `/election` opens each
+  race with the count (`api/app/results.py`, marked unofficial until
+  certified) and winners, and keeps the guide below. Before Election Day, it shows each
   contest on the official sample ballot as a tab, every candidate in ballot
   order on an identical card (the same source checklist, "none found" gaps,
   and what was looked for and not found), links to the voting records of

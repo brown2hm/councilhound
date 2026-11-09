@@ -846,8 +846,31 @@ export interface ElectionCandidate {
   incumbent: string | null;
   /** their member page, when they already have a voting record */
   member: { slug: string; roles: string[] } | null;
+  /** elected, once the votes are counted (api/app/results.py); null before */
+  won: boolean | null;
   sources: ElectionSource[];
   not_found: string[];
+}
+
+/** One contest's count, most votes first. */
+export interface ContestResult {
+  seats: number;
+  total: number; // every vote cast in the contest, write-ins included
+  write_in: number;
+  write_in_pct: number;
+  margin: number | null; // last winner over first runner-up; null when everyone won
+  candidates: { ballot_name: string; votes: number; pct: number; won: boolean }[];
+}
+
+export interface ElectionResults {
+  status: "unofficial" | "certified";
+  as_of: string;
+  note: string;
+  source: string;
+  publisher: string;
+  ballots_cast: number;
+  registered: number;
+  referenda: { key: string; title: string; question: string; yes: number; no: number; yes_pct: number; passed: boolean }[];
 }
 
 /** One candidate's row in a questionnaire; answers are paraphrases, null where left blank. */
@@ -899,6 +922,7 @@ export interface ElectionContest {
   vote_for: number | null;
   election_date: string | null;
   seats_up: string | null;
+  result: ContestResult | null;
   candidates: ElectionCandidate[]; // ballot order
   race_sources: ElectionSource[];
   questionnaires: Questionnaire[];
@@ -910,6 +934,7 @@ export interface Election {
   checked: string;
   voting: ElectionSource;
   contests: ElectionContest[];
+  results: ElectionResults | null;
 }
 
 /** How long a fetched API payload is reused across requests. The record

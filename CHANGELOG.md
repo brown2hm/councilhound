@@ -1,5 +1,36 @@
 # Changelog
 
+## Unreleased — election results (November 2026)
+
+The November 3 City election is over, but the site still described it as
+ahead.
+
+- **Results.** `api/app/results.py` pins the count for Mayor, City Council
+  and School Board, plus the City's retail sales tax referendum, from the
+  Virginia Department of Elections' results site, with its status
+  (unofficial until certified) and when it was read. Winners are computed as
+  the top vote-getters, never written in by hand.
+- **`/election` becomes a results page.** Each race opens with the count,
+  most votes first, with winners marked and the margin for the last seat.
+  The candidate cards, questionnaires and forum answers stay below, with an
+  "Elected" badge. A banner gives the count's status and says the newly
+  elected take office January 1, 2027. The "How to vote" box is gone, and the
+  referendum appears under "Also on the City ballot".
+- **Nav and front page.** "Election" becomes "Results", and it and the
+  front-page band stay up until December 31 (`RESULTS_UNTIL` in
+  `frontend/lib/election.ts`).
+- **Terms.** City Council and School Board seats now say how the ballot came
+  out (reelected, did not run, ran for Mayor and was not elected); the next
+  election is November 7, 2028. The School Board's two-year terms are pinned
+  from the schools' own page. The 2026 ballot stays in `terms.py` under
+  `ballot_date`, which the candidate table now reads instead of
+  `next_election`. `on_ballot` is reported only while that ballot is ahead.
+- **Ask.** `get_candidate` leads with each candidate's result (votes, share,
+  place, who was elected, the margin for the last seat, the count's status).
+  `list_members` names who was elected. The prompt tells Ask to call results
+  unofficial until certified and not to describe members-elect as serving yet.
+- The daily candidate-updates routine is paused.
+
 ## Unreleased — election page (October 2026)
 
 Candidate information was reachable only by asking /ask the right question.
