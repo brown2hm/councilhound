@@ -10,7 +10,6 @@ tags:
 generated:
   by: process:councilhound-okf
   at: '2026-07-19T00:00:00Z'
-timestamp: '2026-07-19'
 project_status: under_construction
 source: official
 address: 10829 Fairfax Boulevard, 10807 Cedar Avenue, 3937 Walnut Street, and 3930-3934 Oak

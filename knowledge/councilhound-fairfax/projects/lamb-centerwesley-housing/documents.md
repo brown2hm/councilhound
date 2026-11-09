@@ -7,7 +7,6 @@ resource: https://councilhound.net/development/Lamb-Center-Wesley-Housing
 generated:
   by: process:councilhound-okf
   at: '2026-07-30T00:00:00Z'
-timestamp: '2026-07-30'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->

@@ -7,7 +7,6 @@ resource: https://councilhound.net/development/Government-Center-Parkway-Extensi
 generated:
   by: process:councilhound-okf
   at: '2025-06-10T00:00:00Z'
-timestamp: '2025-06-10'
 stale_after: '2026-09-22T23:00:00Z'
 ---
 

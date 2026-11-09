@@ -7,7 +7,6 @@ resource: https://councilhound.net/development/Fairfax-Presbyterian-Church
 generated:
   by: process:councilhound-okf
   at: '2025-10-06T00:00:00Z'
-timestamp: '2025-10-06'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->

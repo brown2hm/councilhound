@@ -27,7 +27,7 @@ LIFECYCLE_STATUSES = {"draft", "stable", "deprecated"}
 # frontmatter keys rendered first, in this order, so every page reads the
 # same way; producer-defined keys follow in insertion order
 _KEY_ORDER = ["type", "title", "description", "resource", "tags", "generated",
-              "verified", "timestamp", "status", "stale_after", "project_status"]
+              "verified", "status", "stale_after", "project_status"]
 _ISO_DATETIME_RE = re.compile(
     r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$")
 # §7: `human:<id>`, `process:<id>`, or `<producer>/<version>`
