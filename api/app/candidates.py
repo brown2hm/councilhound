@@ -67,7 +67,7 @@ CONTEST_NAME = {"mayor": "Mayor", "city_council": "City Council", "school_board"
 
 # when every not_found list was last swept (the daily update routine bumps
 # it); each source keeps its own date, the day its facts were verified
-CHECKED = _D(2026, 10, 7)
+CHECKED = _D(2026, 10, 8)
 # the day the first set of sources was verified page by page
 _FIRST_VERIFIED = _D(2026, 10, 5)
 
