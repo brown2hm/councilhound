@@ -67,7 +67,7 @@ CONTEST_NAME = {"mayor": "Mayor", "city_council": "City Council", "school_board"
 
 # when every not_found list was last swept (the daily update routine bumps
 # it); each source keeps its own date, the day its facts were verified
-CHECKED = _D(2026, 10, 7)
+CHECKED = _D(2026, 10, 15)
 # the day the first set of sources was verified page by page
 _FIRST_VERIFIED = _D(2026, 10, 5)
 
@@ -116,6 +116,18 @@ _EARLY_VOTING = _s(
     published=_D(2026, 9, 17))
 # when and where to vote, for the election page
 VOTING = _EARLY_VOTING
+_VOTER_GUIDE = _s(
+    "https://patch.com/virginia/fairfaxcity/voter-guide-fairfax-city-whats-ballot-early-voting-more",
+    _PATCH, "news", "Voter guide for Fairfax City: what's on the ballot, early voting and more",
+    "Patch's voter guide lists the same City candidates as the official list: two for Mayor, 11 for "
+    "City Council (vote for up to six) and five for School Board (vote for up to five), plus write-in "
+    "lines.",
+    "Patch reports in-person early voting at City Hall runs weekdays 8:30 a.m. to 5 p.m. through "
+    "October 31, and also on Sundays October 18 and 25 (noon to 5 p.m.) and Saturdays October 24 and "
+    "31 (8:30 a.m. to 5 p.m.).",
+    "The ballot also carries the City's 1% retail sales tax question and three statewide "
+    "constitutional amendments.",
+    published=_D(2026, 10, 14), checked=_D(2026, 10, 15))
 _FFXNOW_PREVIEW = _s(
     "https://www.ffxnow.com/2026/09/17/what-to-expect-as-early-voting-for-the-2026-election-kicks-off-friday-in-fairfax/",
     "FFXnow", "news", "What to expect as early voting for the 2026 election kicks off",
@@ -215,13 +227,13 @@ _DANIELS_RUN = "https://www.ffxnow.com/2026/04/15/fairfax-city-school-board-dani
 
 # sources about a whole race rather than one candidate
 RACE_SOURCES: dict[str, tuple[CandidateSource, ...]] = {
-    "mayor": (_OFFICIAL_LIST, _SAMPLE_BALLOTS, _EARLY_VOTING, _FFXNOW_PREVIEW, _FCT_PREVIEW, _FORUM,
-              _VOTE411_INDEX, _EARLY_MONEY, _DEMOCRATS, _COMMON_GROUND, _FOUR_RECORDS),
-    "city_council": (_OFFICIAL_LIST, _SAMPLE_BALLOTS, _EARLY_VOTING, _FFXNOW_PREVIEW, _FCT_PREVIEW,
-                     _FORUM, _VOTE411_INDEX, _EARLY_MONEY, _COUNCIL_MONEY, _DEMOCRATS, _COMMON_GROUND,
-                     _FOUR_RECORDS),
-    "school_board": (_OFFICIAL_LIST, _SAMPLE_BALLOTS, _EARLY_VOTING, _FCT_PREVIEW, _FORUM, _VOTE411_INDEX,
-                     _SB_ABOUT, _SB_2024, _SB_SWORN),
+    "mayor": (_OFFICIAL_LIST, _SAMPLE_BALLOTS, _EARLY_VOTING, _VOTER_GUIDE, _FFXNOW_PREVIEW, _FCT_PREVIEW,
+              _FORUM, _VOTE411_INDEX, _EARLY_MONEY, _DEMOCRATS, _COMMON_GROUND, _FOUR_RECORDS),
+    "city_council": (_OFFICIAL_LIST, _SAMPLE_BALLOTS, _EARLY_VOTING, _VOTER_GUIDE, _FFXNOW_PREVIEW,
+                     _FCT_PREVIEW, _FORUM, _VOTE411_INDEX, _EARLY_MONEY, _COUNCIL_MONEY, _DEMOCRATS,
+                     _COMMON_GROUND, _FOUR_RECORDS),
+    "school_board": (_OFFICIAL_LIST, _SAMPLE_BALLOTS, _EARLY_VOTING, _VOTER_GUIDE, _FCT_PREVIEW, _FORUM,
+                     _VOTE411_INDEX, _SB_ABOUT, _SB_2024, _SB_SWORN),
 }
 
 # the same checklist for everyone, so a gap reads as a gap and not as silence
