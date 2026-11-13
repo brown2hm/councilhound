@@ -1,19 +1,23 @@
 ---
 type: project-documents
 title: 10340 Democracy Lane — documents
-description: 6 document(s) published in the City of Fairfax project record for 10340 Democracy
+description: 10 document(s) published in the City of Fairfax project record for 10340 Democracy
   Lane.
 resource: https://councilhound.net/development/10340-Democracy-Lane
 generated:
   by: process:councilhound-okf
-  at: '2026-07-30T00:00:00Z'
-timestamp: '2026-07-30'
+  at: '2026-11-12T00:00:00Z'
+timestamp: '2026-11-12'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
 
 Documents published in the city's project record, in the order the city lists them. Labels are the city's own and usually carry the document date, format, and size.
 
+- [September 17, 2026 Master Development Plan (PDF, 25MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/democracy-lane/s1mdp917.pdf)
+- [September 17, 2026 Application (PDF, 110KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/democracy-lane/s1app917.pdf)
+- [September 17, 2026 Statement of Justification (PDF, 111KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/democracy-lane/s1soj917.pdf)
+- [September 17, 2026 Traffic Memo (PDF, 2MB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/democracy-lane/s1traffic917.pdf)
 - [January 23, 2026 Project Narrative (PDF, 121KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/democracy-lane/condensed-narriatve_1.pdf)
 - [January 23, 2026 Concept Plans (PDF, 984KB)](https://www.fairfaxva.gov/files/assets/city/v/1/development/documents/projects/democracy-lane/condensed-package_1.pdf)
 - [February 24, 2026 City Council Pre-Application Briefing](https://fairfax.granicus.com/GeneratedAgendaViewer.php?view_id=13&clip_id=4474)

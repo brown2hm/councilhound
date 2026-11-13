@@ -31,3 +31,8 @@
 ## 2026-09-19
 
 - Meeting history updated through 2026-06-23.
+
+## 2026-11-12
+
+- Meeting history updated through 2026-09-14.
+- Added September 14, 2026 School Board presentation of the Blenheim Boulevard plan (including Fairfax High School grounds improvements) to overview and added open question about pending School Board recommendation to City Council. (curator: claude-sonnet-4-6, through 2026-09-14)

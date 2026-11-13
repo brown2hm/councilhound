@@ -1,13 +1,13 @@
 ---
 type: project-history
 title: Gallery at City Center — meeting history
-description: Dated record of every meeting action on Gallery at City Center, through 2026-07-07.
+description: Dated record of every meeting action on Gallery at City Center, through 2026-10-26.
 resource: https://councilhound.net/development/Gallery-at-City-Center
 generated:
   by: process:councilhound-okf
-  at: '2026-07-07T00:00:00Z'
-timestamp: '2026-07-07'
-stale_after: '2026-09-22T23:00:00Z'
+  at: '2026-10-26T00:00:00Z'
+timestamp: '2026-10-26'
+stale_after: '2026-11-18T00:00:00Z'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
@@ -44,3 +44,9 @@ stale_after: '2026-09-22T23:00:00Z'
 - Outcome: Discussed during work session. No action taken; item was informational.
 - [5a] Council discussed the redevelopment request by Christopher Land, LLC for 4085-4117 Chain Bridge Road during the work session; no formal action was taken.
 - Status after: **in_progress**
+
+## 2026-10-26 — Planning Commission Regular Meeting
+
+**Agenda item 5b**: Gallery at City Center – Public Hearing (4085, 4101, 4103 and 4117 Chain Bridge Road) ([watch the moment](https://fairfax.granicus.com/MediaPlayer.php?view_id=13&clip_id=4693&starttime=6958&entrytime=6958))
+- Outcome: Scheduled per agenda; no minutes or actions report available.
+- [5b] A public hearing was scheduled for a proposal to replace approximately 119,934 square feet of office with a mix of office, retail/restaurant, and apartments in three buildings on 3.86 +/- acres at 4085, 4101, 4103, and 4117 Chain Bridge Road.

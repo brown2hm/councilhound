@@ -11,9 +11,9 @@ tags:
 - in-progress
 generated:
   by: councilhound-curator/claude-sonnet-4-6
-  at: '2026-07-07T00:00:00Z'
-timestamp: '2026-07-07'
-stale_after: '2026-09-22T23:00:00Z'
+  at: '2026-10-26T00:00:00Z'
+timestamp: '2026-10-26'
+stale_after: '2026-11-18T00:00:00Z'
 project_status: in_progress
 source: official
 address: 4085, 4101, 4103 and 4117 Chain Bridge Road, Fairfax, VA 22030
@@ -67,6 +67,7 @@ The applicant is proposing to replace three office buildings with a mixed-use de
 
 ## Recent activity
 
+- **2026-10-26 Planning Commission Regular Meeting** — Public hearing held for the Gallery at City Center (Agenda item 5b). Applicant E. John Regan, Jr. seeks to replace approximately 119,934 square feet of office with a mix of office, retail/restaurant, and apartments in three buildings on 3.86 +/- acres at 4085, 4101, 4103, and 4117 Chain Bridge Road. The request includes a zoning map amendment from CO Commercial Office to CU Commercial Urban while retaining the Old Town Fairfax Transition Overlay District, and approval of a general development plan with proffers. No minutes or actions report is available yet.
 - **2026-07-07 City Council Special Meeting & Work Session** — Council discussed the redevelopment request by Christopher Land, LLC for 4085-4117 Chain Bridge Road (Agenda item 5a). The item was informational; no formal action was taken.
 
 <!-- curator:off -->

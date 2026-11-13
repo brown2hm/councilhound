@@ -22,3 +22,8 @@
 ## 2026-09-19
 
 - Pipeline refresh.
+
+## 2026-11-12
+
+- Meeting history updated through 2026-11-10.
+- Added open question about lack of public testimony at the 2026-11-10 City Council public hearing on the Chain Bridge Road Shared Use Path (60% design presentation, no Council action taken). (curator: claude-sonnet-4-6, through 2026-11-10)
