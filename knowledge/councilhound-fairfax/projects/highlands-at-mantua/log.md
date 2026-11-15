@@ -32,3 +32,8 @@
 ## 2026-09-19
 
 - Meeting history updated through 2026-07-27.
+
+## 2026-11-15
+
+- Meeting history updated through 2026-09-22.
+- Added 2026-09-22 City Council approvals (Comp Plan unanimous, Rezoning/GDP and Certificate of Appropriateness each 4-2 with Hall and McQuillen opposed) to Recent activity; recorded Hall and McQuillen opposition votes in Member commentary; resolved open question about 2026-07-27 Planning Commission outcomes is still open (no record available), left as-is. (curator: claude-sonnet-4-6, through 2026-09-22)

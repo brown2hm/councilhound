@@ -22,3 +22,8 @@
 ## 2026-09-19
 
 - Pipeline refresh.
+
+## 2026-11-15
+
+- Meeting history updated through 2026-11-10.
+- Add 2026-11-10 City Council public hearing: 60% design plans presented, no Council action taken, no public speakers; note open question about future public comment opportunities. (curator: claude-sonnet-4-6, through 2026-11-10)

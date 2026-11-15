@@ -1,13 +1,13 @@
 ---
 type: project-history
 title: Courthouse Plaza — meeting history
-description: Dated record of every meeting action on Courthouse Plaza, through 2026-07-28.
+description: Dated record of every meeting action on Courthouse Plaza, through 2026-10-26.
 resource: https://councilhound.net/development/Courthouse-Plaza
 generated:
   by: process:councilhound-okf
-  at: '2026-07-28T00:00:00Z'
-timestamp: '2026-07-28'
-stale_after: '2026-09-22T23:00:00Z'
+  at: '2026-10-26T00:00:00Z'
+timestamp: '2026-10-26'
+stale_after: '2026-11-16T23:30:00Z'
 ---
 
 <!-- Pipeline-owned page: regenerated from the meeting record. Edits here will be overwritten. -->
@@ -169,3 +169,9 @@ stale_after: '2026-09-22T23:00:00Z'
 - Outcome: Post-submission work session held; no council action taken.
 - [11b] The Combined Courthouse LLC redevelopment at Courthouse Plaza was discussed in a post-submission work session; public comment during the initial comment period also referenced this proposal.
 - Status after: **in_progress**
+
+## 2026-10-26 — Planning Commission Regular Meeting
+
+**Agenda item 5a**: Courthouse Plaza – Public Hearing (10300 Willard Way and 3922 Blenheim Boulevard) ([watch the moment](https://fairfax.granicus.com/MediaPlayer.php?view_id=13&clip_id=4693&starttime=129&entrytime=129))
+- Outcome: Scheduled per agenda; no minutes or actions report available.
+- [5a] A public hearing was scheduled for the phased redevelopment of Courthouse Plaza Shopping Center, proposing two upper-story residential mixed-use buildings with first-floor retail, structured parking, expanded open space, and an expanded street network on approximately 10.34 acres across two phases.

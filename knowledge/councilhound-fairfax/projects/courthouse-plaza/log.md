@@ -36,3 +36,8 @@
 - Meeting history updated through 2026-07-28.
 - Meeting history updated through 2026-07-28.
 - Add July 28, 2026 City Council post-submission work session (no action taken), update BAR work session date to June 3, resubmission count to two, resolve the Council work session open question, add new open questions on special exceptions, and record public comment from Old Fairfax Muse HOA president. (curator: claude-sonnet-4-6, through 2026-07-28)
+
+## 2026-11-15
+
+- Meeting history updated through 2026-10-26.
+- Add 2026-10-26 Planning Commission public hearing to overview timeline and positions page; add two public commenters (Jim Gillespie and unattributed speaker); add open question about Commission recommendation outcome and ADU rate request; note no minutes/actions report available. (curator: claude-sonnet-4-6, through 2026-10-26)

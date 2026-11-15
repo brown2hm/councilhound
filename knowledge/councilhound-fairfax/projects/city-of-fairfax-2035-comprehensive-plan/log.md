@@ -25,3 +25,8 @@
 ## 2026-09-19
 
 - Meeting history updated through 2026-07-27.
+
+## 2026-11-15
+
+- Meeting history updated through 2026-09-22.
+- Added September 22, 2026 City Council approval of the Highlands at Mantua Comprehensive Plan Amendment (9495 Silver King Court, future land use map amended from Commercial Corridor to Townhouse/Single-Family Attached Neighborhood Place Type, unanimous), along with 4-2 rezoning/GDP and Certificate of Appropriateness votes (Hall and McQuillen opposed); resolved the open question on the July 27, 2026 Planning Commission hearing outcome; added member commentary for Hardy-Chandler, Peterson, Hall, McQuillen, Amos, and Bates. (curator: claude-sonnet-4-6, through 2026-09-22)
