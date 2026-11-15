@@ -7,7 +7,7 @@ from xml.sax.saxutils import escape as xml_escape
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import Response
-from sqlalchemy import String, case, exists, func, or_, select
+from sqlalchemy import String, case, exists, func, not_, or_, select
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Session
 
@@ -18,6 +18,7 @@ from councilhound.db.models import (
 from councilhound.hot_topics import MIN_VARIANT_LEN
 from councilhound.hot_topics import entity_discussion_series, hot_topics
 from councilhound.changes import recent_changes as compute_recent_changes, status_words
+from councilhound.procedural import PROCEDURAL_TOPIC_PATTERN
 from councilhound.notify import SITE_BASE_URL
 
 from app.db import db_session
@@ -122,6 +123,7 @@ def list_entities(
     official: bool | None = Query(None, description="true: only official city project records; false: only meeting-derived"),
     exclude_type: str | None = Query(None, description="drop one entity_type from the list (the directory hides people by default)"),
     q: str | None = Query(None, description="substring match on name or alias"),
+    include_procedural: bool = Query(False, description="keep agenda furniture (personnel matters, remote participation, minutes) in the list; a search (q) always keeps it"),
     sort: str = Query("recent", description="recent | active | name"),
     limit: int = Query(50, le=200),
     offset: int = 0,
@@ -168,6 +170,9 @@ def list_entities(
         query = query.where(CityProject.id.isnot(None))
     elif official is False:
         query = query.where(CityProject.id.is_(None))
+    if not q and not include_procedural:
+        query = query.where(or_(Entity.entity_type == "person",
+                                not_(Entity.name.op("~*")(PROCEDURAL_TOPIC_PATTERN))))
     if q:
         needle = f"%{q}%"
         query = query.where(or_(

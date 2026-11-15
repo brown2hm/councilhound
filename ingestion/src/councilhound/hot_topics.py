@@ -18,6 +18,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from councilhound.db.models import Entity, EntityAlias, Meeting, TranscriptChunk
+from councilhound.procedural import is_procedural_topic
 
 log = logging.getLogger(__name__)
 
@@ -113,7 +114,9 @@ def hot_topics(
         .where(TranscriptChunk.meeting_id.in_(meeting_ids))
     ).all()
 
-    entities = session.scalars(select(Entity).where(Entity.entity_type != "person")).all()
+    # procedural furniture is named at every meeting; it is not where the time went
+    entities = [e for e in session.scalars(select(Entity).where(Entity.entity_type != "person"))
+                if not is_procedural_topic(e.name)]
     aliases = defaultdict(list)
     for alias in session.execute(select(EntityAlias.entity_id, EntityAlias.alias)).all():
         aliases[alias.entity_id].append(alias.alias)

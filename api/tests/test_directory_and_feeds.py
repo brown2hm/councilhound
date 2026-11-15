@@ -232,3 +232,50 @@ def test_meeting_items_carry_topics_and_documents(client, db):
     assert [d["title"] for d in item["documents"]] == ["Staff report 7a"]
     assert [d["doc_type"] for d in detail["documents"] if d["agenda_item_id"] is None] == [
         "actions_report"]
+
+
+def test_procedural_topics_stay_out_of_feeds_and_rankings(client, db):
+    """Personnel matters and the remote-attendance motion recur at every
+    meeting; they keep their pages and stay searchable, but neither the
+    change feed nor the default directory lists them. An update that says
+    no action was taken is never a status change."""
+    seeded = _seed(db)
+    old, recent = seeded["old"], seeded["recent"]
+    personnel = Entity(entity_type="topic", name="Personnel Matters",
+                       canonical_slug="personnel-matters")
+    remote = Entity(entity_type="topic", name="Remote Participation Policy",
+                    canonical_slug="remote-participation-policy", current_status="approved")
+    housing = Entity(entity_type="topic", name="Affordable housing on tax-exempt properties",
+                     canonical_slug="affordable-housing-on-tax-exempt-properties",
+                     current_status="approved")
+    db.add_all([personnel, remote, housing])
+    db.flush()
+    db.add_all([
+        EntityUpdate(entity_id=personnel.id, meeting_id=old.id, update_text="Closed session."),
+        EntityUpdate(entity_id=personnel.id, meeting_id=recent.id, update_text="Closed session."),
+        EntityUpdate(entity_id=remote.id, meeting_id=old.id, update_text="Requested.",
+                     status_after="in_progress"),
+        EntityUpdate(entity_id=remote.id, meeting_id=recent.id,
+                     update_text="Remote participation approved.", status_after="approved"),
+        EntityUpdate(entity_id=housing.id, meeting_id=old.id, update_text="Introduced.",
+                     status_after="in_progress"),
+        EntityUpdate(entity_id=housing.id, meeting_id=recent.id,
+                     update_text="[6] No action specific to this topic at the consent stage.",
+                     status_after="approved"),
+    ])
+    db.commit()
+
+    changed = {c["slug"] for c in client.get("/entities/changes", params={"days": 7}).json()["changes"]}
+    assert "remote-participation-policy" not in changed
+    assert "affordable-housing-on-tax-exempt-properties" not in changed
+    assert "george-snyder-trail" in changed  # real moves still report
+
+    listed = {e["slug"] for e in client.get("/entities/", params={"sort": "active"}).json()}
+    assert "personnel-matters" not in listed and "remote-participation-policy" not in listed
+    assert "george-snyder-trail" in listed
+    # still reachable: by search, or by asking for them
+    found = {e["slug"] for e in client.get("/entities/", params={"q": "personnel"}).json()}
+    assert found == {"personnel-matters"}
+    everything = {e["slug"] for e in client.get("/entities/", params={"include_procedural": True}).json()}
+    assert "personnel-matters" in everything
+    assert client.get("/entities/personnel-matters").status_code == 200
