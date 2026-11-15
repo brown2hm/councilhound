@@ -8,10 +8,16 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from councilhound.db.models import AgendaItem, Entity, EntityUpdate, Meeting
+from councilhound.procedural import is_procedural_topic, says_no_action
 
 
 def recent_changes(session: Session, days: int,
-                   since: datetime.date | None = None) -> list[dict]:
+                   since: datetime.date | None = None,
+                   include_procedural: bool = False) -> list[dict]:
+    """Procedural topics (closed-session personnel matters, the remote-
+    attendance motion) are left out unless asked for. An update that reports
+    no action never counts as a status change, and does not become the
+    status later changes are measured against."""
     since = since or (datetime.date.today() - datetime.timedelta(days=days))
     touched = (select(EntityUpdate.entity_id)
                .join(Meeting, EntityUpdate.meeting_id == Meeting.id)
@@ -37,12 +43,13 @@ def recent_changes(session: Session, days: int,
         first = entity.id not in seen_before
         seen_before.add(entity.id)
         before = prev_status.get(entity.id)
+        idle = says_no_action(upd.update_text)
         kind = None
         if in_window and first:
             kind = "new"
-        elif in_window and upd.status_after and upd.status_after != before:
+        elif in_window and upd.status_after and upd.status_after != before and not idle:
             kind = "status_change"
-        if kind:
+        if kind and (include_procedural or not is_procedural_topic(entity.name)):
             changes.append({
                 "id": upd.id,
                 "kind": kind,
@@ -62,7 +69,7 @@ def recent_changes(session: Session, days: int,
                 "start_seconds": item.start_seconds if item else None,
                 "update_text": upd.update_text,
             })
-        if upd.status_after:
+        if upd.status_after and not idle:
             prev_status[entity.id] = upd.status_after
     changes.sort(key=lambda c: (c["date"], c["id"]), reverse=True)
     return changes

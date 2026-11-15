@@ -111,3 +111,37 @@ def test_entity_discussion_series(db_session):
     series = entity_discussion_series(s, trail)
     assert [(p["meeting_id"], p["seconds"]) for p in series] == [(m1.id, 120), (m2.id, 60)]
     assert series[0]["date"] < series[1]["date"]  # chronological
+
+
+def test_hot_topics_skips_procedural_furniture(db_session):
+    """Closed-session boilerplate is named at every meeting; it is not where
+    the time went."""
+    s = db_session
+    m = _meeting(s, "9", datetime.date(2025, 6, 1))
+    s.add_all([
+        Entity(entity_type="topic", name="Personnel Matters", canonical_slug="personnel-matters"),
+        Entity(entity_type="topic", name="Remote Participation Policy",
+               canonical_slug="remote-participation-policy"),
+        Entity(entity_type="project", name="Courthouse Plaza", canonical_slug="courthouse-plaza"),
+    ])
+    s.flush()
+    s.add(TranscriptChunk(meeting_id=m.id, start_seconds=0, end_seconds=900,
+                          text="Closed meeting to discuss personnel matters and the remote participation policy."))
+    s.add(TranscriptChunk(meeting_id=m.id, start_seconds=900, end_seconds=960,
+                          text="Courthouse Plaza presentation."))
+    s.commit()
+    result = hot_topics(s, n_meetings=1, top=10)
+    assert [t["slug"] for t in result["topics"]] == ["courthouse-plaza"]
+    assert result["window_seconds"] == 960  # the time still counts toward the denominator
+
+
+def test_procedural_topic_names():
+    from councilhound.procedural import is_procedural_topic, says_no_action
+    for name in ("Personnel Matters", "Remote Participation Policy", "Closed Session",
+                 "Approval of the Minutes", "Consent Agenda", "Adjournment"):
+        assert is_procedural_topic(name), name
+    for name in ("Small Area Plans", "Fairfax High School", "15-Minute City Study",
+                 "Personnel Policy Manual Update", "Capital Improvement Program", None):
+        assert not is_procedural_topic(name), name
+    assert says_no_action("[6] No action specific to this topic at the consent stage; see 7g.")
+    assert not says_no_action("Presented and discussed; no formal action taken.")

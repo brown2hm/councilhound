@@ -36,6 +36,7 @@ interface Decision {
   title: string;
   text: string;
   meetingId: number;
+  label: string | null; // the agenda item's label, to tie status moves to their vote
 }
 
 const TINTS: Record<string, string> = {
@@ -83,6 +84,7 @@ function deriveDecisions(details: MeetingDetail[]): Decision[] {
           title: item.title,
           text,
           meetingId: m.id,
+          label: item.label ?? null,
         });
       } else if (item.outcome && /recommend/i.test(item.outcome) && m.body === "planning_commission") {
         decisions.push({
@@ -96,6 +98,7 @@ function deriveDecisions(details: MeetingDetail[]): Decision[] {
           title: item.title,
           text: item.outcome,
           meetingId: m.id,
+          label: item.label ?? null,
         });
       }
     }
@@ -186,7 +189,7 @@ function relativeDay(iso: string, today: string): string {
 
 // agenda furniture that is tracked as a topic but is never the news
 const BOILERPLATE =
-  /personnel|closed (session|meeting)|city hall|appointment|proclamation|heritage month|safety month|\bminutes\b|adjourn|call to order|comment period|pledge|council chambers/i;
+  /personnel|closed (session|meeting)|remote participation|city hall|appointment|proclamation|heritage month|safety month|\bminutes\b|adjourn|call to order|comment period|pledge|council chambers/i;
 const substantiveTopic = (t: UpcomingAgendaTopic) => !BOILERPLATE.test(t.name);
 // what's concretely being decided outranks the plan it's decided under
 const TYPE_RANK: Record<string, number> = { location: 0, project: 1, case_number: 2, ordinance: 3, resolution: 4 };
@@ -615,7 +618,8 @@ function Docket({
 
 type Row =
   // a status move, carrying the vote that caused it when the record has both
-  | { kind: "move"; c: EntityChange; vote?: Decision }
+  // (`also`: the other topics the same agenda item moved — one action, one row)
+  | { kind: "move"; c: EntityChange; vote?: Decision; also: EntityChange[] }
   | { kind: "vote"; d: Decision };
 
 function Kind({ row }: { row: Row }) {
@@ -685,9 +689,24 @@ function Moved({ rows, fresh, days }: { rows: Row[]; fresh: EntityChange[]; days
             const date = row.kind === "move" ? row.c.date : row.d.date;
             return (
               <li key={i} className="grid gap-x-5 gap-y-1 py-3 md:grid-cols-[minmax(0,1.1fr)_auto_minmax(0,1.6fr)_110px]">
-                <Link href={href} className="min-w-0 text-[15px] font-semibold leading-snug underline-offset-2 hover:underline">
-                  {clip(name, 90)}
-                </Link>
+                <div className="min-w-0">
+                  <Link href={href} className="text-[15px] font-semibold leading-snug underline-offset-2 hover:underline">
+                    {clip(name, 90)}
+                  </Link>
+                  {row.kind === "move" && row.also.length > 0 && (
+                    <div className="mt-0.5 text-[12px] leading-snug text-muted">
+                      Same action:{" "}
+                      {row.also.map((a, j) => (
+                        <span key={a.id}>
+                          {j > 0 && ", "}
+                          <Link href={`/topics/${a.slug}#m-${a.meeting_id}`} className="underline-offset-2 hover:text-ink hover:underline">
+                            {clip(a.name, 60)}
+                          </Link>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <div className="md:pt-0.5">
                   <Kind row={row} />
                 </div>
@@ -721,7 +740,7 @@ function Moved({ rows, fresh, days }: { rows: Row[]; fresh: EntityChange[]; days
 }
 
 interface HotRow {
-  body: string;
+  bodies: string[]; // every body that named the topic: one row per topic, not per body
   topic: HotTopic;
   share: number;
   meetingsAsc: { id: number; title: string; date: string }[];
@@ -729,20 +748,29 @@ interface HotRow {
 }
 
 function Attention({ panels }: { panels: { body: string; hot: HotTopicsResponse }[] }) {
-  const rows: HotRow[] = [];
+  // A topic both bodies discussed is one line of attention, not two: sum its
+  // time and lay every meeting in the window side by side, oldest first.
+  const meetingsAsc = panels.flatMap((p) => p.hot.meetings).sort((a, b) => a.date.localeCompare(b.date));
+  const windowSeconds = panels.reduce((n, p) => n + p.hot.window_seconds, 0);
+  const cellMax = Math.max(1, ...panels.flatMap((p) => p.hot.topics.flatMap((t) => Object.values(t.per_meeting))));
+  const bySlug = new Map<string, HotRow>();
   for (const { body, hot } of panels) {
-    const meetingsAsc = [...hot.meetings].sort((a, b) => a.date.localeCompare(b.date));
-    const cellMax = Math.max(1, ...hot.topics.flatMap((t) => Object.values(t.per_meeting)));
     for (const topic of hot.topics) {
-      rows.push({
-        body,
-        topic,
-        share: hot.window_seconds ? Math.round((topic.seconds / hot.window_seconds) * 100) : 0,
-        meetingsAsc,
-        cellMax,
-      });
+      const cur = bySlug.get(topic.slug);
+      if (cur) {
+        cur.bodies.push(body);
+        cur.topic = {
+          ...cur.topic,
+          seconds: cur.topic.seconds + topic.seconds,
+          per_meeting: { ...cur.topic.per_meeting, ...topic.per_meeting },
+        };
+      } else {
+        bySlug.set(topic.slug, { bodies: [body], topic, share: 0, meetingsAsc, cellMax });
+      }
     }
   }
+  const rows = Array.from(bySlug.values());
+  for (const r of rows) r.share = windowSeconds ? Math.round((r.topic.seconds / windowSeconds) * 100) : 0;
   rows.sort((a, b) => b.topic.seconds - a.topic.seconds);
   const shown = rows.slice(0, 8);
   const max = Math.max(1, ...shown.map((r) => r.topic.seconds));
@@ -768,15 +796,19 @@ function Attention({ panels }: { panels: { body: string; hot: HotTopicsResponse 
             {shown.map((r) => {
               const at = r.meetingsAsc.filter((m) => (r.topic.per_meeting[String(m.id)] ?? 0) > 0).length;
               return (
-                <li key={`${r.body}-${r.topic.slug}`} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 py-2 sm:grid-cols-[minmax(0,1fr)_64px_minmax(80px,120px)_84px]">
+                <li key={r.topic.slug} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 py-2 sm:grid-cols-[minmax(0,1fr)_92px_minmax(80px,120px)_128px]">
                   <span className="flex min-w-0 items-center gap-2 text-[14px]">
-                    <span aria-hidden className={`h-2 w-2 shrink-0 rounded-full ${bodyDot(r.body)}`} />
+                    <span aria-hidden className="flex shrink-0 gap-0.5">
+                      {r.bodies.map((b) => (
+                        <span key={b} className={`h-2 w-2 rounded-full ${bodyDot(b)}`} />
+                      ))}
+                    </span>
                     <Link href={`/topics/${r.topic.slug}`} className="truncate font-semibold underline-offset-2 hover:underline">
                       {r.topic.name}
                     </Link>
                     <StatusBadge status={r.topic.current_status} variant="outline" />
                   </span>
-                  <span className="text-right text-[13px] font-semibold tabular-nums">
+                  <span className="whitespace-nowrap text-right text-[13px] font-semibold tabular-nums">
                     {Math.round(r.topic.seconds / 60)} min
                     {r.share > 0 && <span className="font-normal text-muted"> · {r.share}%</span>}
                   </span>
@@ -803,8 +835,8 @@ function Attention({ panels }: { panels: { body: string; hot: HotTopicsResponse 
                         );
                       })}
                     </span>
-                    <span className="text-[11px] tabular-nums text-muted">
-                      {at}/{r.meetingsAsc.length}
+                    <span className="whitespace-nowrap text-[11px] tabular-nums text-muted">
+                      {at} of {r.meetingsAsc.length}
                     </span>
                   </span>
                 </li>
@@ -818,7 +850,7 @@ function Attention({ panels }: { panels: { body: string; hot: HotTopicsResponse 
                 {BODY_LABELS[p.body] ?? p.body}
               </span>
             ))}
-            <span>Named discussion time across {transcribed || "no"} transcribed meetings, last 60 days. Share is of that body&apos;s hours.</span>
+            <span>Named discussion time across {transcribed || "no"} transcribed meetings, last 60 days. Percent is the share of all those hours; each square is one meeting, oldest first, with a count of the meetings that named the topic.</span>
           </p>
         </>
       )}
@@ -895,13 +927,35 @@ export default async function Briefing() {
   // keeps the row and borrows the vote's tally.
   const moves = changes.changes.filter((c) => c.kind === "status_change");
   const fresh = changes.changes.filter((c) => c.kind !== "status_change");
+  // One agenda item often moves several tracked topics at once (the plan, the
+  // code chapter it amends): that is one action, so it gets one row, led by
+  // the topic the item is named for. The consent agenda is the exception: it
+  // bundles unrelated matters under one vote, so its topics stay separate.
   const absorbed = new Set<Decision>();
-  const moveRows = moves.map((c): Row => {
-    const vote = decisions.find(
-      (d) => d.meetingId === c.meeting_id && !absorbed.has(d) && d.title.toLowerCase().includes(c.name.toLowerCase()),
-    );
+  const named = (d: Decision, c: EntityChange) => d.title.toLowerCase().includes(c.name.toLowerCase());
+  const instrument = (c: EntityChange) => (c.entity_type === "ordinance" || c.entity_type === "resolution" ? 1 : 0);
+  const groups = new Map<string, EntityChange[]>();
+  for (const c of moves) {
+    const item = c.agenda_item_label
+      ? decisions.find((d) => d.meetingId === c.meeting_id && d.label === c.agenda_item_label)
+      : undefined;
+    const key = c.agenda_item_label && !(item && isConsent(item)) ? `${c.meeting_id}:${c.agenda_item_label}` : `c${c.id}`;
+    groups.set(key, [...(groups.get(key) ?? []), c]);
+  }
+  const moveRows = Array.from(groups.values()).map((group): Row => {
+    const vote =
+      decisions.find((d) => d.meetingId === group[0].meeting_id && !absorbed.has(d) && group.some((c) => named(d, c))) ??
+      decisions.find(
+        (d) => d.meetingId === group[0].meeting_id && d.label !== null && d.label === group[0].agenda_item_label && !isConsent(d) && !absorbed.has(d),
+      );
     if (vote) absorbed.add(vote);
-    return { kind: "move", c, vote };
+    const [c, ...also] = [...group].sort(
+      (a, b) =>
+        Number(!!vote && named(vote, b)) - Number(!!vote && named(vote, a)) ||
+        instrument(a) - instrument(b) ||
+        (b.update_text?.length ?? 0) - (a.update_text?.length ?? 0),
+    );
+    return { kind: "move", c, vote, also };
   });
   const voteRow = (d: Decision): Row => ({ kind: "vote", d });
   const rows: Row[] = [
