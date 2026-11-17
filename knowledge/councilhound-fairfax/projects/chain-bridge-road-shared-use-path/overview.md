@@ -6,10 +6,13 @@ description: This project will construct a missing link of path on the west side
 resource: https://councilhound.net/development/Chain-Bridge-Road-Shared-Use-Path
 tags:
 - city-project
+- in-progress
 generated:
-  by: process:councilhound-okf
-  at: '2026-07-19T00:00:00Z'
-timestamp: '2026-07-19'
+  by: councilhound-curator/claude-sonnet-4-6
+  at: '2026-11-10T00:00:00Z'
+timestamp: '2026-11-10'
+stale_after: '2026-11-18T00:00:00Z'
+project_status: in_progress
 source: official
 address: Assembly Drive, 22030
 city_detail_url: https://www.fairfaxva.gov/Property-Business/Development/Projects/Chain-Bridge-Road-Shared-Use-Path
@@ -43,6 +46,7 @@ This project will construct a missing link of path on the west side of Chain Bri
 
 ## In this wiki
 
+- [Meeting history](/projects/chain-bridge-road-shared-use-path/history.md) — every action, vote, and update, with links to the moment in the meeting video
 - [Positions & open questions](/projects/chain-bridge-road-shared-use-path/positions.md)
 - [Impact analysis](/projects/chain-bridge-road-shared-use-path/impact.md) — screening estimates with assumptions and ranges
 

@@ -25,3 +25,8 @@
 ## 2026-09-19
 
 - Meeting history updated through 2026-07-27.
+
+## 2026-11-16
+
+- Meeting history updated through 2026-09-22.
+- Added September 22, 2026 City Council outcomes for the Highlands at Mantua / 9495 Silver King Court Comprehensive Plan Amendment (unanimous approval), rezoning and Certificate of Appropriateness (both 4-2, Hall and McQuillen opposed); resolved open question on July 27, 2026 Planning Commission hearing outcome; added member commentary for Amos, Bates, Hall, Hardy-Chandler, McQuillen, and Peterson. (curator: claude-sonnet-4-6, through 2026-09-22)

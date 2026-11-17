@@ -31,3 +31,8 @@
 ## 2026-09-19
 
 - Meeting history updated through 2026-06-23.
+
+## 2026-11-16
+
+- Meeting history updated through 2026-09-14.
+- Added September 14, 2026 School Board presentation of the plan (including proposed Fairfax High School elements) to overview and added open question about the pending School Board recommendation to City Council. (curator: claude-sonnet-4-6, through 2026-09-14)

@@ -32,3 +32,8 @@
 ## 2026-09-19
 
 - Meeting history updated through 2026-07-27.
+
+## 2026-11-16
+
+- Meeting history updated through 2026-09-22.
+- Added 2026-09-22 City Council approval outcomes: unanimous Comprehensive Plan Amendment, 4-2 rezoning/GDP/Certificate of Appropriateness approvals (Hall and McQuillen opposed); recorded Hall and McQuillen opposition positions; resolved no open questions (Planning Commission hearing still unresolved). (curator: claude-sonnet-4-6, through 2026-09-22)
