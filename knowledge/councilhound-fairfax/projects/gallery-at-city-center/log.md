@@ -35,3 +35,8 @@
 ## 2026-09-19
 
 - Meeting history updated through 2026-07-07.
+
+## 2026-11-17
+
+- Meeting history updated through 2026-10-26.
+- Added 2026-10-26 Planning Commission public hearing to Recent activity; added two open questions raised by the new record; noted applicant name (E. John Regan, Jr.) and updated rezoning description (CO to CU with GDP and proffers). (curator: claude-sonnet-4-6, through 2026-10-26)
